@@ -6,7 +6,7 @@ export default function getModAPI(
 ): ModAPI {
   return {
     log: (message: string): void => {
-      console.log('D2RMM.log', message);
+      console.log('D2RMM.log', mod.id, message);
     },
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);

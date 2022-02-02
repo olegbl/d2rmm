@@ -100,6 +100,8 @@ contextBridge.exposeInMainWorld('electron', {
         .split('\n')
         .map((line) => line.replace(/^(.*)\/\/.*$/, '$1'))
         .join('')
+        // remove multiline comments
+        .replace(/\/\*.*?\*\//, '')
         // remove trailing commas
         .replace(/\,(?=\s*?[\}\]])/g, '')
         // double escape escape characters

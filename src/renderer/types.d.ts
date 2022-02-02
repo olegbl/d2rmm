@@ -25,7 +25,7 @@ declare global {
 
   type ModAPI = {
     copyFile: (src: string, dst: string) => void;
-    log: (message: string) => void;
+    error: (message: string | Error) => void;
     readJson: (filePath: string) => JSONData;
     readTsv: (filePath: string) => TSVData;
     writeJson: (filePath: string, data: JSONData) => void;

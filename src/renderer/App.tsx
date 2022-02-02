@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertTitle,
   Box,
   Button,
   ButtonGroup,
@@ -10,12 +12,13 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Snackbar,
   SxProps,
   Tab,
   TextField,
   Theme,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import sandbox from './sandbox';
@@ -23,7 +26,7 @@ import getModAPI from './getModAPI';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Settings } from '@mui/icons-material';
+import { AlignVerticalBottom, Settings } from '@mui/icons-material';
 import useEnabledMods from './useEnabledMods';
 import { extendSxProp } from '@mui/system';
 import { useMods } from './useMods';
@@ -63,7 +66,11 @@ function TabPanelBox({
   );
 }
 
-async function installMods(paths: D2RMMPaths, mods: Mod[]): Promise<void> {
+async function installMods(
+  paths: D2RMMPaths,
+  mods: Mod[],
+  addError: (title: string, message: string) => unknown
+): Promise<void> {
   API.deleteFile(paths.mergedPath);
   API.createDirectory(paths.mergedPath);
   API.writeJson(paths.mergedPath + '\\..\\modinfo.json', {
@@ -74,7 +81,7 @@ async function installMods(paths: D2RMMPaths, mods: Mod[]): Promise<void> {
   for (let i = 0; i < mods.length; i++) {
     const mod = mods[i];
     const code = API.readModCode(paths.modPath, mod.id);
-    const api = getModAPI(mod, paths);
+    const api = getModAPI(mod, paths, addError);
     const fn = sandbox(code);
     await fn({ D2RMM: api, config: mod.config });
   }
@@ -91,10 +98,18 @@ function D2RMMRootView() {
     [selectedModID, mods]
   );
 
+  const [errors, setErrors] = useState<{ title: string; message: string }[]>(
+    []
+  );
+  const addError = useCallback((title: string, message: string): void => {
+    setErrors((prev) => [...prev, { title, message }]);
+  }, []);
+
   function onInstallMods() {
     installMods(
       paths,
-      mods.filter((mod) => enabledMods[mod.id] ?? false)
+      mods.filter((mod) => enabledMods[mod.id] ?? false),
+      addError
     ).then(() => {
       console.log('Mods Installed!');
     });
@@ -219,6 +234,33 @@ function D2RMMRootView() {
           />
         </TabPanelBox>
       </Box>
+      <Snackbar
+        open={errors.length > 0}
+        transitionDuration={0}
+        onClose={() => setErrors((prev) => prev.slice(1))}
+      >
+        <Alert
+          severity="error"
+          variant="filled"
+          onClose={() => setErrors((prev) => prev.slice(1))}
+        >
+          <AlertTitle>{errors[0]?.title}</AlertTitle>
+          {errors[0]?.message}
+          {errors.length > 1 ? (
+            <>
+              <br />
+              <br />
+              <Button
+                color="inherit"
+                variant="outlined"
+                onClick={() => setErrors([])}
+              >
+                Clear All Errors ({errors.length})
+              </Button>
+            </>
+          ) : null}
+        </Alert>
+      </Snackbar>
     </TabContext>
   );
 }

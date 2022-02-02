@@ -28,7 +28,7 @@ export default function sandbox(
       try {
         ${source}
       } catch(e) {
-        D2RMM.log('Error: ' + e.toString());
+        D2RMM.error(e);
       }
     })()`;
 

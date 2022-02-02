@@ -2,11 +2,16 @@ const API = window.electron.API;
 
 export default function getModAPI(
   mod: Mod,
-  { vanillaPath, mergedPath, modPath }: D2RMMPaths
+  { vanillaPath, mergedPath, modPath }: D2RMMPaths,
+  addError: (title: string, message: string) => unknown
 ): ModAPI {
   return {
-    log: (message: string): void => {
-      console.log('D2RMM.log', mod.id, message);
+    error: (message: string | Error): void => {
+      console.error('D2RMM.error', mod.id, message);
+      addError(
+        `Mod ${mod.info.name ?? mod.id} encountered an error!`,
+        typeof message === 'string' ? message : message.toString()
+      );
     },
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);

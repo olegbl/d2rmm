@@ -63,18 +63,21 @@ function TabPanelBox({
   );
 }
 
-function installMods(paths: D2RMMPaths, mods: Mod[]): void {
+async function installMods(paths: D2RMMPaths, mods: Mod[]): Promise<void> {
   API.deleteFile(paths.mergedPath);
   API.createDirectory(paths.mergedPath);
   API.writeJson(paths.mergedPath + '\\..\\modinfo.json', {
     name: 'D2RMM',
     savepath: 'D2RMM/',
   });
-  mods.forEach((mod) => {
+
+  for (let i = 0; i < mods.length; i++) {
+    const mod = mods[i];
     const code = API.readModCode(paths.modPath, mod.id);
     const api = getModAPI(mod, paths);
-    sandbox(code)({ D2RMM: api, config: mod.config });
-  });
+    const fn = sandbox(code);
+    await fn({ D2RMM: api, config: mod.config });
+  }
 }
 
 function D2RMMRootView() {
@@ -92,7 +95,9 @@ function D2RMMRootView() {
     installMods(
       paths,
       mods.filter((mod) => enabledMods[mod.id] ?? false)
-    );
+    ).then(() => {
+      console.log('Mods Installed!');
+    });
   }
 
   return (

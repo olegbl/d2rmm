@@ -20,7 +20,9 @@ function get(target: object, key: string | symbol): unknown {
   return (target as { [key: string | symbol]: unknown })[key];
 }
 
-export default function sandbox(source: string): (context: object) => void {
+export default function sandbox(
+  source: string
+): (context: object) => Promise<void> {
   const asyncSource = `
     (async function sandbox() {
       try {
@@ -33,7 +35,7 @@ export default function sandbox(source: string): (context: object) => void {
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const code = new Function('context', `with (context) {${asyncSource}}`);
 
-  return function execute(context: object): void {
+  return async function execute(context: object): Promise<void> {
     if (!contextProxies.has(context)) {
       const contextProxy = new Proxy(context, { has, get });
       contextProxies.set(context, contextProxy);

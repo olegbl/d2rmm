@@ -33,30 +33,41 @@ function copyDirSync(src: string, dest: string) {
 export function createAPI(): void {
   ipcMain.on('getAppPath', (event, localPath) => {
     console.log('API.getAppPath', localPath);
+
     event.returnValue = getAppPath();
   });
 
   ipcMain.on('createDirectory', (event, filePath) => {
     console.log('API.createDirectory', filePath);
 
-    if (!existsSync(filePath)) {
-      mkdirSync(filePath, { recursive: true });
-      event.returnValue = true;
-    } else {
-      event.returnValue = false;
+    try {
+      if (!existsSync(filePath)) {
+        mkdirSync(filePath, { recursive: true });
+        event.returnValue = true;
+      } else {
+        event.returnValue = false;
+      }
+    } catch (e) {
+      console.error('API.createDirectory', e);
+      event.returnValue = null;
     }
   });
 
   ipcMain.on('readDirectory', (event, filePath) => {
     console.log('API.readDirectory', filePath);
 
-    if (existsSync(filePath)) {
-      const entries = readdirSync(filePath, { withFileTypes: true });
-      event.returnValue = entries.map((entry) => [
-        entry.name,
-        entry.isDirectory(),
-      ]);
-    } else {
+    try {
+      if (existsSync(filePath)) {
+        const entries = readdirSync(filePath, { withFileTypes: true });
+        event.returnValue = entries.map((entry) => [
+          entry.name,
+          entry.isDirectory(),
+        ]);
+      } else {
+        event.returnValue = null;
+      }
+    } catch (e) {
+      console.error('API.readDirectory', e);
       event.returnValue = null;
     }
   });
@@ -64,12 +75,17 @@ export function createAPI(): void {
   ipcMain.on('readFile', (event, filePath) => {
     console.log('API.readFile', filePath);
 
-    if (existsSync(filePath)) {
-      event.returnValue = readFileSync(filePath, {
-        encoding: 'utf-8',
-        flag: 'r',
-      });
-    } else {
+    try {
+      if (existsSync(filePath)) {
+        event.returnValue = readFileSync(filePath, {
+          encoding: 'utf-8',
+          flag: 'r',
+        });
+      } else {
+        event.returnValue = null;
+      }
+    } catch (e) {
+      console.error('API.readFile', e);
       event.returnValue = null;
     }
   });
@@ -77,43 +93,58 @@ export function createAPI(): void {
   ipcMain.on('writeFile', (event, [filePath, data]) => {
     console.log('API.writeFile', filePath);
 
-    writeFileSync(filePath, data, {
-      encoding: 'utf-8',
-      flag: 'w',
-    });
-    event.returnValue = true;
+    try {
+      writeFileSync(filePath, data, {
+        encoding: 'utf-8',
+        flag: 'w',
+      });
+      event.returnValue = true;
+    } catch (e) {
+      console.error('API.writeFile', e);
+      event.returnValue = null;
+    }
   });
 
   ipcMain.on('deleteFile', (event, filePath) => {
     console.log('API.deleteFile', filePath);
 
-    if (existsSync(filePath)) {
-      const stat = statSync(filePath);
-      if (stat.isDirectory()) {
-        rmSync(filePath, { recursive: true, force: true });
+    try {
+      if (existsSync(filePath)) {
+        const stat = statSync(filePath);
+        if (stat.isDirectory()) {
+          rmSync(filePath, { recursive: true, force: true });
+        } else {
+          rmSync(filePath, { force: true });
+        }
+        event.returnValue = true;
       } else {
-        rmSync(filePath, { force: true });
+        event.returnValue = false;
       }
-      event.returnValue = true;
-    } else {
-      event.returnValue = false;
+    } catch (e) {
+      console.error('API.deleteFile', e);
+      event.returnValue = null;
     }
   });
 
   ipcMain.on('copyFile', (event, [fromPath, toPath, overwrite]) => {
     console.log('API.copyFile', [fromPath, toPath, overwrite]);
 
-    if (existsSync(fromPath) && (overwrite || !existsSync(toPath))) {
-      const stat = statSync(fromPath);
-      if (stat.isDirectory()) {
-        copyDirSync(fromPath, toPath);
+    try {
+      if (existsSync(fromPath) && (overwrite || !existsSync(toPath))) {
+        const stat = statSync(fromPath);
+        if (stat.isDirectory()) {
+          copyDirSync(fromPath, toPath);
+        } else {
+          mkdirSync(path.dirname(toPath), { recursive: true });
+          copyFileSync(fromPath, toPath);
+        }
+        event.returnValue = true;
       } else {
-        mkdirSync(path.dirname(toPath), { recursive: true });
-        copyFileSync(fromPath, toPath);
+        event.returnValue = false;
       }
-      event.returnValue = true;
-    } else {
-      event.returnValue = false;
+    } catch (e) {
+      console.error('API.copyFile', e);
+      event.returnValue = null;
     }
   });
 }

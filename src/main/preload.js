@@ -62,6 +62,7 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.readTsv', { filePath });
       const content = ipcRenderer.sendSync('readFile', filePath);
       if (content == null) {
+        console.warn('API.readTsv', 'file not found');
         return null;
       }
       const [headersRaw, ...rowsRaw] = content.split('\n');
@@ -89,6 +90,7 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.readJson', { filePath });
       const content = ipcRenderer.sendSync('readFile', filePath);
       if (content == null) {
+        console.warn('API.readJson', 'file not found');
         return {};
       }
       const cleanContent = content

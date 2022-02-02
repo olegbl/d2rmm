@@ -110,17 +110,7 @@
   "bugs": {
     "url": "https://github.com/olegbl/d2rmm/issues"
   },
-  "keywords": [
-    "electron",
-    "boilerplate",
-    "react",
-    "typescript",
-    "ts",
-    "sass",
-    "webpack",
-    "hot",
-    "reload"
-  ],
+  "keywords": [],
   "homepage": "https://github.com/olegbl/d2rmm#readme",
   "jest": {
     "testURL": "http://localhost/",

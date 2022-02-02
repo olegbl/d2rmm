@@ -4,21 +4,19 @@ contextBridge.exposeInMainWorld('electron', {
   API: {
     readMods: (modPath) => {
       console.log('API.readMods');
-      return ipcRenderer.sendSync('readDirectory', modPath) ?? [];
+      return (ipcRenderer.sendSync('readDirectory', modPath) ?? [])
+        .filter(([name, isDirectory]) => isDirectory)
+        .map(([name, isDirectory]) => name);
     },
     readModInfo: (modPath, id) => {
       const filePath = `${modPath}\\${id}\\${id}.json`;
       console.log('API.readModInfo', { id, filePath });
       const info = ipcRenderer.sendSync('readFile', filePath);
 
-      const defaultMod = {
-        name: id,
-      };
-
       if (info != null) {
         try {
           return {
-            ...defaultMod,
+            name: id,
             ...JSON.parse(info),
           };
         } catch (e) {
@@ -26,7 +24,7 @@ contextBridge.exposeInMainWorld('electron', {
         }
       }
 
-      return defaultMod;
+      return null;
     },
     readModConfig: (modPath, id) => {
       const filePath = `${modPath}\\${id}\\config.json`;

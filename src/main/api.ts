@@ -51,7 +51,11 @@ export function createAPI(): void {
     console.log('API.readDirectory', filePath);
 
     if (existsSync(filePath)) {
-      event.returnValue = readdirSync(filePath);
+      const entries = readdirSync(filePath, { withFileTypes: true });
+      event.returnValue = entries.map((entry) => [
+        entry.name,
+        entry.isDirectory(),
+      ]);
     } else {
       event.returnValue = null;
     }

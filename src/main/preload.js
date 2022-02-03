@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
   API: {
     readModInfo: (modPath, id) => {
-      const filePath = `${modPath}\\${id}\\${id}.json`;
+      const filePath = `${modPath}\\${id}\\mod.json`;
       console.log('API.readModInfo', { id, filePath });
       const info = ipcRenderer.sendSync('readFile', filePath);
 
@@ -36,7 +36,7 @@ contextBridge.exposeInMainWorld('electron', {
       return null;
     },
     readModCode: (modPath, id) => {
-      const filePath = `${modPath}\\${id}\\${id}.js`;
+      const filePath = `${modPath}\\${id}\\mod.js`;
       console.log('API.readMod', { id, filePath });
       return ipcRenderer.sendSync('readFile', filePath);
     },

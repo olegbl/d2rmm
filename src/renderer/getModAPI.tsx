@@ -1,17 +1,20 @@
+import { Toast } from './useToast';
+
 const API = window.electron.API;
 
 export default function getModAPI(
   mod: Mod,
   { vanillaPath, mergedPath, modPath }: D2RMMPaths,
-  addError: (title: string, message: string) => unknown
+  showToast: (toast: Toast) => unknown
 ): ModAPI {
   return {
     error: (message: string | Error): void => {
       console.error('D2RMM.error', mod.id, message);
-      addError(
-        `Mod ${mod.info.name ?? mod.id} encountered an error!`,
-        typeof message === 'string' ? message : message.toString()
-      );
+      showToast({
+        severity: 'error',
+        title: `Mod ${mod.info.name ?? mod.id} encountered an error!`,
+        description: typeof message === 'string' ? message : message.toString(),
+      });
     },
     readDirectory: (
       filePath: string,

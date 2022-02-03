@@ -1,18 +1,8 @@
 import {
-  Alert,
-  AlertTitle,
   Box,
   Button,
   ButtonGroup,
-  Checkbox,
   Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Snackbar,
   SxProps,
   Tab,
   TextField,
@@ -24,13 +14,6 @@ import './App.css';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Settings } from '@mui/icons-material';
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from 'react-beautiful-dnd';
 import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useEnabledMods from './useEnabledMods';
@@ -38,6 +21,8 @@ import useMods from './useMods';
 import ModSettings from './ModSettings';
 import usePaths from './usePaths';
 import useOrderedMods from './useOrderedMods';
+import ModList from './ModList';
+import useToast, { Toast } from './useToast';
 
 const API = window.electron.API;
 
@@ -74,7 +59,7 @@ function TabPanelBox({
 async function installMods(
   paths: D2RMMPaths,
   mods: Mod[],
-  addError: (title: string, message: string) => unknown
+  showToast: (toast: Toast) => unknown
 ): Promise<void> {
   API.deleteFile(paths.mergedPath);
   API.createDirectory(paths.mergedPath);
@@ -86,7 +71,7 @@ async function installMods(
   for (let i = 0; i < mods.length; i += 1) {
     const mod = mods[i];
     const code = API.readModCode(paths.modPath, mod.id);
-    const api = getModAPI(mod, paths, addError);
+    const api = getModAPI(mod, paths, showToast);
     const fn = sandbox(code);
     // eslint-disable-next-line no-await-in-loop
     await fn({ D2RMM: api, config: mod.config });
@@ -104,37 +89,26 @@ function D2RMMRootView() {
     () => mods.filter((mod) => mod.id === selectedModID).shift(),
     [selectedModID, mods]
   );
-
-  const [errors, setErrors] = useState<{ title: string; message: string }[]>(
-    []
-  );
-  const addError = useCallback((title: string, message: string): void => {
-    setErrors((prev) => [...prev, { title, message }]);
-  }, []);
+  const [toast, showToast] = useToast();
 
   const onInstallMods = useCallback((): void => {
     installMods(
       paths,
       orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
-      addError
+      showToast
     )
-      .then(() => {
-        console.log('Mods Installed!');
+      .then((): null => {
+        showToast({ severity: 'success', title: 'Mods Installed' });
         return null;
       })
-      .catch(() => {});
-  }, [paths, orderedMods, enabledMods, addError]);
-
-  const onDragEnd = useCallback(
-    ({ source, destination }: DropResult): void => {
-      const from = source.index;
-      const to = destination?.index;
-      if (to != null) {
-        reorderMods(from, to);
-      }
-    },
-    [reorderMods]
-  );
+      .catch((error: Error): void => {
+        showToast({
+          severity: 'error',
+          title: 'Error When Installing Mods',
+          description: error.toString(),
+        });
+      });
+  }, [paths, orderedMods, enabledMods, showToast]);
 
   return (
     <TabContext value={tab}>
@@ -151,87 +125,18 @@ function D2RMMRootView() {
           <Tab label="Settings" value="settings" />
         </TabList>
         <TabPanelBox value="mods">
-          <List sx={{ width: '100%', flex: 1 }}>
-            <DragDropContext onDragEnd={onDragEnd}>
-              <Droppable direction="vertical" droppableId="mods">
-                {(providedDroppable) => (
-                  <div
-                    {...providedDroppable.droppableProps}
-                    ref={providedDroppable.innerRef}
-                  >
-                    {orderedMods.map((mod, index) => {
-                      const labelId = `mod-label-${mod}`;
-
-                      return (
-                        <Draggable
-                          key={mod.id}
-                          draggableId={mod.id}
-                          index={index}
-                        >
-                          {(providedDraggable) => (
-                            <div
-                              ref={providedDraggable.innerRef}
-                              {...providedDraggable.draggableProps}
-                              {...providedDraggable.dragHandleProps}
-                            >
-                              <ListItem
-                                key={mod.id}
-                                disablePadding={true}
-                                secondaryAction={
-                                  mod.info.config == null ? null : (
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="Settings"
-                                      onClick={() => setSelectedModID(mod.id)}
-                                    >
-                                      <Settings />
-                                    </IconButton>
-                                  )
-                                }
-                              >
-                                <ListItemButton
-                                  role={undefined}
-                                  onClick={() =>
-                                    setEnabledMods((prev) => ({
-                                      ...prev,
-                                      [mod.id]: !prev[mod.id],
-                                    }))
-                                  }
-                                  dense={true}
-                                >
-                                  <ListItemIcon>
-                                    <Checkbox
-                                      edge="start"
-                                      checked={enabledMods[mod.id] ?? false}
-                                      tabIndex={-1}
-                                      disableRipple={true}
-                                      inputProps={{
-                                        'aria-labelledby': labelId,
-                                      }}
-                                    />
-                                  </ListItemIcon>
-                                  <ListItemText
-                                    id={labelId}
-                                    primary={mod.info.name}
-                                    secondary={
-                                      mod.info.author == null
-                                        ? null
-                                        : `by ${mod.info.author}`
-                                    }
-                                  />
-                                </ListItemButton>
-                              </ListItem>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {providedDroppable.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </List>
+          <ModList
+            mods={orderedMods}
+            enabledMods={enabledMods}
+            onToggleMod={(mod) =>
+              setEnabledMods((prev) => ({
+                ...prev,
+                [mod.id]: !prev[mod.id],
+              }))
+            }
+            onConfigureMod={(mod) => setSelectedModID(mod.id)}
+            onReorderMod={(from, to) => reorderMods(from, to)}
+          />
           <Drawer
             anchor="right"
             open={selectedMod != null}
@@ -285,33 +190,7 @@ function D2RMMRootView() {
           />
         </TabPanelBox>
       </Box>
-      <Snackbar
-        open={errors.length > 0}
-        transitionDuration={0}
-        onClose={() => setErrors((prev) => prev.slice(1))}
-      >
-        <Alert
-          severity="error"
-          variant="filled"
-          onClose={() => setErrors((prev) => prev.slice(1))}
-        >
-          <AlertTitle>{errors[0]?.title}</AlertTitle>
-          {errors[0]?.message}
-          {errors.length > 1 ? (
-            <>
-              <br />
-              <br />
-              <Button
-                color="inherit"
-                variant="outlined"
-                onClick={() => setErrors([])}
-              >
-                Clear All Errors ({errors.length})
-              </Button>
-            </>
-          ) : null}
-        </Alert>
-      </Snackbar>
+      {toast}
     </TabContext>
   );
 }

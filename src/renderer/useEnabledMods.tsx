@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 const ENABLED_MODS_KEY = 'enabled-mods';
 
-type EnabledMods = { [id: string]: boolean };
+export type EnabledMods = { [id: string]: boolean };
 
 export default function useEnabledMods(): [
   EnabledMods,

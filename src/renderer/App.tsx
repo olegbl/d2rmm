@@ -21,17 +21,23 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
-import sandbox from './sandbox';
-import getModAPI from './getModAPI';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { AlignVerticalBottom, Settings } from '@mui/icons-material';
+import { Settings } from '@mui/icons-material';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from 'react-beautiful-dnd';
+import sandbox from './sandbox';
+import getModAPI from './getModAPI';
 import useEnabledMods from './useEnabledMods';
-import { extendSxProp } from '@mui/system';
-import { useMods } from './useMods';
-import { ModSettings } from './ModSettings';
+import useMods from './useMods';
+import ModSettings from './ModSettings';
 import usePaths from './usePaths';
+import useOrderedMods from './useOrderedMods';
 
 const API = window.electron.API;
 
@@ -44,7 +50,6 @@ function TabPanelBox({
   sx?: SxProps<Theme>;
   value: string;
 }): JSX.Element {
-  extendSxProp;
   return (
     <TabPanel value={value} sx={{ height: '100%', position: 'relative' }}>
       <Box
@@ -73,16 +78,17 @@ async function installMods(
 ): Promise<void> {
   API.deleteFile(paths.mergedPath);
   API.createDirectory(paths.mergedPath);
-  API.writeJson(paths.mergedPath + '\\..\\modinfo.json', {
+  API.writeJson(`${paths.mergedPath}\\..\\modinfo.json`, {
     name: 'D2RMM',
     savepath: 'D2RMM/',
   });
 
-  for (let i = 0; i < mods.length; i++) {
+  for (let i = 0; i < mods.length; i += 1) {
     const mod = mods[i];
     const code = API.readModCode(paths.modPath, mod.id);
     const api = getModAPI(mod, paths, addError);
     const fn = sandbox(code);
+    // eslint-disable-next-line no-await-in-loop
     await fn({ D2RMM: api, config: mod.config });
   }
 }
@@ -91,6 +97,7 @@ function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
   const [paths, gamePath, setGamePath] = usePaths();
   const [mods, refreshMods] = useMods(paths);
+  const [orderedMods, reorderMods] = useOrderedMods(mods);
   const [enabledMods, setEnabledMods] = useEnabledMods();
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
   const selectedMod = useMemo(
@@ -105,15 +112,29 @@ function D2RMMRootView() {
     setErrors((prev) => [...prev, { title, message }]);
   }, []);
 
-  function onInstallMods() {
+  const onInstallMods = useCallback((): void => {
     installMods(
       paths,
-      mods.filter((mod) => enabledMods[mod.id] ?? false),
+      orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
       addError
-    ).then(() => {
-      console.log('Mods Installed!');
-    });
-  }
+    )
+      .then(() => {
+        console.log('Mods Installed!');
+        return null;
+      })
+      .catch(() => {});
+  }, [paths, orderedMods, enabledMods, addError]);
+
+  const onDragEnd = useCallback(
+    ({ source, destination }: DropResult): void => {
+      const from = source.index;
+      const to = destination?.index;
+      if (to != null) {
+        reorderMods(from, to);
+      }
+    },
+    [reorderMods]
+  );
 
   return (
     <TabContext value={tab}>
@@ -131,55 +152,85 @@ function D2RMMRootView() {
         </TabList>
         <TabPanelBox value="mods">
           <List sx={{ width: '100%', flex: 1 }}>
-            {mods.map((mod) => {
-              const labelId = `mod-label-${mod}`;
-
-              return (
-                <ListItem
-                  key={mod.id}
-                  disablePadding
-                  secondaryAction={
-                    mod.info.config == null ? null : (
-                      <IconButton
-                        edge="end"
-                        aria-label="Settings"
-                        onClick={() => setSelectedModID(mod.id)}
-                      >
-                        <Settings />
-                      </IconButton>
-                    )
-                  }
-                >
-                  <ListItemButton
-                    role={undefined}
-                    onClick={() =>
-                      setEnabledMods((prev) => ({
-                        ...prev,
-                        [mod.id]: !prev[mod.id],
-                      }))
-                    }
-                    dense
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable direction="vertical" droppableId="mods">
+                {(providedDroppable) => (
+                  <div
+                    {...providedDroppable.droppableProps}
+                    ref={providedDroppable.innerRef}
                   >
-                    <ListItemIcon>
-                      <Checkbox
-                        edge="start"
-                        checked={enabledMods[mod.id] ?? false}
-                        tabIndex={-1}
-                        disableRipple
-                        inputProps={{ 'aria-labelledby': labelId }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      id={labelId}
-                      primary={mod.info.name}
-                      secondary={
-                        mod.info.author == null ? null : `by ${mod.info.author}`
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
+                    {orderedMods.map((mod, index) => {
+                      const labelId = `mod-label-${mod}`;
+
+                      return (
+                        <Draggable
+                          key={mod.id}
+                          draggableId={mod.id}
+                          index={index}
+                        >
+                          {(providedDraggable) => (
+                            <div
+                              ref={providedDraggable.innerRef}
+                              {...providedDraggable.draggableProps}
+                              {...providedDraggable.dragHandleProps}
+                            >
+                              <ListItem
+                                key={mod.id}
+                                disablePadding={true}
+                                secondaryAction={
+                                  mod.info.config == null ? null : (
+                                    <IconButton
+                                      edge="end"
+                                      aria-label="Settings"
+                                      onClick={() => setSelectedModID(mod.id)}
+                                    >
+                                      <Settings />
+                                    </IconButton>
+                                  )
+                                }
+                              >
+                                <ListItemButton
+                                  role={undefined}
+                                  onClick={() =>
+                                    setEnabledMods((prev) => ({
+                                      ...prev,
+                                      [mod.id]: !prev[mod.id],
+                                    }))
+                                  }
+                                  dense={true}
+                                >
+                                  <ListItemIcon>
+                                    <Checkbox
+                                      edge="start"
+                                      checked={enabledMods[mod.id] ?? false}
+                                      tabIndex={-1}
+                                      disableRipple={true}
+                                      inputProps={{
+                                        'aria-labelledby': labelId,
+                                      }}
+                                    />
+                                  </ListItemIcon>
+                                  <ListItemText
+                                    id={labelId}
+                                    primary={mod.info.name}
+                                    secondary={
+                                      mod.info.author == null
+                                        ? null
+                                        : `by ${mod.info.author}`
+                                    }
+                                  />
+                                </ListItemButton>
+                              </ListItem>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {providedDroppable.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </List>
           <Drawer
             anchor="right"

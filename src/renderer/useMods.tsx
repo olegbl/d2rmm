@@ -32,7 +32,7 @@ function getMods(paths: D2RMMPaths): Mod[] {
     .filter((mod): mod is Mod => mod != null);
 }
 
-export function useMods(paths: D2RMMPaths): [Mod[], () => unknown] {
+export default function useMods(paths: D2RMMPaths): [Mod[], () => unknown] {
   const [mods, setMods] = useState<Mod[]>(() => getMods(paths));
 
   // automatically refresh mods when paths change

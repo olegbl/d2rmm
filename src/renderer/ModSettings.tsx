@@ -9,38 +9,14 @@ import { useCallback, useState } from 'react';
 
 const API = window.electron.API;
 
-export function ModSettings({
-  mod,
-  onClose,
-  paths,
-}: {
-  mod: Mod;
-  onClose: () => unknown;
-  paths: D2RMMPaths;
-}): JSX.Element | null {
-  // this should never happen as there should be no settings
-  // button available on mods without a config
-  if (mod.info.config == null) {
-    return null;
-  }
-
-  return (
-    <>
-      <FormGroup sx={{ padding: 1, minWidth: 240 }}>
-        {mod.info.config.map((field) => (
-          <ModSettingsField
-            key={mod.id}
-            field={field}
-            mod={mod}
-            paths={paths}
-          />
-        ))}
-        <Button variant="outlined" onClick={onClose}>
-          Close
-        </Button>
-      </FormGroup>
-    </>
-  );
+function setConfig(
+  paths: D2RMMPaths,
+  mod: Mod,
+  field: string,
+  value: ModConfigSingleValue
+): void {
+  mod.config[field] = value;
+  API.writeModConfig(paths.modPath, mod.id, mod.config);
 }
 
 function ModSettingsField({
@@ -80,12 +56,36 @@ function ModSettingsField({
   return null;
 }
 
-function setConfig(
-  paths: D2RMMPaths,
-  mod: Mod,
-  field: string,
-  value: ModConfigSingleValue
-): void {
-  mod.config[field] = value;
-  API.writeModConfig(paths.modPath, mod.id, mod.config);
+export default function ModSettings({
+  mod,
+  onClose,
+  paths,
+}: {
+  mod: Mod;
+  onClose: () => unknown;
+  paths: D2RMMPaths;
+}): JSX.Element | null {
+  // this should never happen as there should be no settings
+  // button available on mods without a config
+  if (mod.info.config == null) {
+    return null;
+  }
+
+  return (
+    <>
+      <FormGroup sx={{ padding: 1, minWidth: 240 }}>
+        {mod.info.config.map((field) => (
+          <ModSettingsField
+            key={mod.id}
+            field={field}
+            mod={mod}
+            paths={paths}
+          />
+        ))}
+        <Button variant="outlined" onClick={onClose}>
+          Close
+        </Button>
+      </FormGroup>
+    </>
+  );
 }

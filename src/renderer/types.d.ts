@@ -26,6 +26,10 @@ declare global {
   type ModAPI = {
     copyFile: (src: string, dst: string) => void;
     error: (message: string | Error) => void;
+    readDirectory: (
+      filePath: string,
+      options: { directoriesOnly?: boolean; filesOnly?: boolean }
+    ) => string[];
     readJson: (filePath: string) => JSONData;
     readTsv: (filePath: string) => TSVData;
     writeJson: (filePath: string, data: JSONData) => void;
@@ -74,11 +78,14 @@ declare global {
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;
+    readDirectory: (
+      filePath: string,
+      options: { directoriesOnly?: boolean; filesOnly?: boolean }
+    ) => string[];
     readJson: (filePath: string) => JSONData;
     readModCode: (modPath: string, id: string) => string;
     readModConfig: (modPath: string, id: string) => JSON;
     readModInfo: (modPath: string, id: string) => ModInfo;
-    readMods: (modPath: string) => string[];
     readTsv: (filePath: string) => TSVData;
     writeJson: (filePath: string, data: JSONData) => void;
     writeModConfig: (

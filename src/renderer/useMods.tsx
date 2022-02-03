@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 const API = window.electron.API;
 
 function getMods(paths: D2RMMPaths): Mod[] {
-  const modIDs = API.readMods(paths.modPath);
+  const modIDs = API.readDirectory(paths.modPath, { directoriesOnly: true });
   return modIDs
     .map((modID) => {
       const info = API.readModInfo(paths.modPath, modID);

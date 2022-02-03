@@ -13,6 +13,14 @@ export default function getModAPI(
         typeof message === 'string' ? message : message.toString()
       );
     },
+    readDirectory: (
+      filePath: string,
+      options: { directoriesOnly?: boolean; filesOnly?: boolean }
+    ): string[] => {
+      console.log('D2RMM.readDir', filePath);
+      const vanillaFilePath = `${vanillaPath}\\${filePath}`;
+      return API.readDirectory(vanillaFilePath, options);
+    },
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);
       const vanillaFilePath = `${vanillaPath}\\${filePath}`;

@@ -2,12 +2,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
-    readMods: (modPath) => {
-      console.log('API.readMods');
-      return (ipcRenderer.sendSync('readDirectory', modPath) ?? [])
-        .filter(([name, isDirectory]) => isDirectory)
-        .map(([name, isDirectory]) => name);
-    },
     readModInfo: (modPath, id) => {
       const filePath = `${modPath}\\${id}\\${id}.json`;
       console.log('API.readModInfo', { id, filePath });
@@ -46,6 +40,16 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.readMod', { id, filePath });
       return ipcRenderer.sendSync('readFile', filePath);
     },
+    readDirectory: (filePath, options = {}) => {
+      console.log('API.readDirectory');
+      return (ipcRenderer.sendSync('readDirectory', filePath) ?? [])
+        .filter(
+          ([_name, isDirectory]) =>
+            (options.directoriesOnly ? isDirectory : true) &&
+            (options.filesOnly ? !isDirectory : true)
+        )
+        .map(([name, _isDirectory]) => name);
+    },
     createDirectory: (filePath) => {
       console.log('API.createDirectory');
       return ipcRenderer.sendSync('createDirectory', filePath);
@@ -67,13 +71,18 @@ contextBridge.exposeInMainWorld('electron', {
       }
       const [headersRaw, ...rowsRaw] = content.split('\n');
       const headers = headersRaw.split('\t');
-      const rows = rowsRaw.map((row) => {
-        const rowRaw = row.split('\t');
-        return rowRaw.reduce((agg, value, index) => {
-          agg[headers[index]] = value;
-          return agg;
-        }, {});
-      });
+      const rows = rowsRaw
+        .map((row) => {
+          if (row === '') {
+            return null;
+          }
+          const rowRaw = row.split('\t');
+          return rowRaw.reduce((agg, value, index) => {
+            agg[headers[index]] = value;
+            return agg;
+          }, {});
+        })
+        .filter(Boolean);
       return { headers, rows };
     },
     writeTsv: (filePath, data) => {
@@ -83,7 +92,7 @@ contextBridge.exposeInMainWorld('electron', {
       const rowsRaw = rows.map((row) =>
         headers.map((header) => row[header] ?? '').join('\t')
       );
-      const content = [headersRaw, ...rowsRaw].join('\n');
+      const content = [headersRaw, ...rowsRaw, ''].join('\n');
       ipcRenderer.sendSync('writeFile', [filePath, content]);
     },
     readJson: (filePath) => {
@@ -103,7 +112,7 @@ contextBridge.exposeInMainWorld('electron', {
         // remove multiline comments
         .replace(/\/\*.*?\*\//, '')
         // remove trailing commas
-        .replace(/\,(?=\s*?[\}\]])/g, '')
+        .replace(/,(?=\s*?[}\]])/g, '')
         // double escape escape characters
         .replace(/\\/g, '\\\\');
       try {

@@ -125,7 +125,7 @@ export function createAPI(): void {
   });
 
   ipcMain.on('readDirectory', (event, filePath) => {
-    console.log('API.readDirectory');
+    console.log('API.readDirectory', filePath);
 
     try {
       if (existsSync(filePath)) {

@@ -20,22 +20,14 @@ function get(target: object, key: string | symbol): unknown {
   return (target as { [key: string | symbol]: unknown })[key];
 }
 
-export default function sandbox(
-  source: string
-): (context: object) => Promise<void> {
-  const asyncSource = `
-    (async function sandbox() {
-      try {
-        ${source}
-      } catch(e) {
-        D2RMM.error(e);
-      }
-    })()`;
-
+export default function sandbox(source: string): (context: object) => void {
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
-  const code = new Function('context', `with (context) {${asyncSource}}`);
+  const code = new Function(
+    'context',
+    `with (context) { try { ${source} } catch(e) { D2RMM.error(e); } }`
+  );
 
-  return async function execute(context: object): Promise<void> {
+  return function execute(context: object): void {
     if (!contextProxies.has(context)) {
       const contextProxy = new Proxy(context, { has, get });
       contextProxies.set(context, contextProxy);

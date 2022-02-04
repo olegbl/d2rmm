@@ -5,7 +5,6 @@ import {
   Drawer,
   SxProps,
   Tab,
-  TextField,
   Theme,
 } from '@mui/material';
 import { useCallback, useMemo, useState } from 'react';
@@ -23,6 +22,7 @@ import usePaths from './usePaths';
 import useOrderedMods from './useOrderedMods';
 import ModList from './ModList';
 import useToast, { Toast } from './useToast';
+import ModManagerSettings from './ModManagerSettings';
 
 const API = window.electron.API;
 
@@ -31,7 +31,7 @@ function TabPanelBox({
   sx,
   value,
 }: {
-  children: JSX.Element[];
+  children: React.ReactNode;
   sx?: SxProps<Theme>;
   value: string;
 }): JSX.Element {
@@ -62,7 +62,9 @@ async function installMods(
   showToast: (toast: Toast) => unknown
 ): Promise<void> {
   API.deleteFile(paths.mergedPath);
+
   API.createDirectory(paths.mergedPath);
+
   API.writeJson(`${paths.mergedPath}\\..\\modinfo.json`, {
     name: 'D2RMM',
     savepath: 'D2RMM/',
@@ -165,28 +167,10 @@ function D2RMMRootView() {
           </Box>
         </TabPanelBox>
         <TabPanelBox value="settings" sx={{ padding: 2 }}>
-          <TextField
-            label="Diablo II Resurrected Game Directory"
-            value={gamePath}
-            onChange={(event) => setGamePath(event.target.value)}
-          />
-          <br />
-          <TextField
-            label="Diablo II Resurrected Vanilla Files"
-            value={paths.vanillaPath}
-            disabled={true}
-          />
-          <br />
-          <TextField
-            label="Diablo II Resurrected Mod Files"
-            value={paths.mergedPath}
-            disabled={true}
-          />
-          <br />
-          <TextField
-            label="D2RMM Mod Files"
-            value={paths.modPath}
-            disabled={true}
+          <ModManagerSettings
+            paths={paths}
+            gamePath={gamePath}
+            onChangeGamePath={setGamePath}
           />
         </TabPanelBox>
       </Box>

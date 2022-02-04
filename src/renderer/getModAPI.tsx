@@ -4,7 +4,7 @@ const API = window.electron.API;
 
 export default function getModAPI(
   mod: Mod,
-  { vanillaPath, mergedPath, modPath }: D2RMMPaths,
+  { gamePath, mergedPath, modPath }: D2RMMPaths,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   return {
@@ -16,19 +16,10 @@ export default function getModAPI(
         description: typeof message === 'string' ? message : message.toString(),
       });
     },
-    readDirectory: (
-      filePath: string,
-      options: { directoriesOnly?: boolean; filesOnly?: boolean }
-    ): string[] => {
-      console.log('D2RMM.readDir', filePath);
-      const vanillaFilePath = `${vanillaPath}\\${filePath}`;
-      return API.readDirectory(vanillaFilePath, options);
-    },
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);
-      const vanillaFilePath = `${vanillaPath}\\${filePath}`;
       const mergedFilePath = `${mergedPath}\\${filePath}`;
-      API.copyFile(vanillaFilePath, mergedFilePath);
+      API.extractFile(gamePath, filePath, mergedFilePath);
       return API.readTsv(mergedFilePath);
     },
     writeTsv: (filePath: string, data: TSVData): void => {
@@ -38,9 +29,8 @@ export default function getModAPI(
     },
     readJson: (filePath: string): JSONData => {
       console.log('D2RMM.readJson', filePath);
-      const vanillaFilePath = `${vanillaPath}\\${filePath}`;
       const mergedFilePath = `${mergedPath}\\${filePath}`;
-      API.copyFile(vanillaFilePath, mergedFilePath);
+      API.extractFile(gamePath, filePath, mergedFilePath);
       return API.readJson(mergedFilePath);
     },
     writeJson: (filePath: string, data: JSONData): void => {

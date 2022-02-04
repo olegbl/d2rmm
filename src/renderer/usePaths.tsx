@@ -17,7 +17,6 @@ export default function usePaths(): [
   const paths = useMemo(
     () => ({
       gamePath,
-      vanillaPath: `${gamePath}\\mods\\Vanilla\\Vanilla.mpq\\data`,
       mergedPath: `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`,
       modPath: `${gamePath}\\mods\\D2RMM\\mods`,
     }),

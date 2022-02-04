@@ -2,7 +2,13 @@ const { contextBridge, ipcRenderer, shell } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
+    extractFile: (gamePath, filePath, targetPath) => {
+      console.log('API.extractFile', { gamePath, filePath, targetPath });
+      ipcRenderer.sendSync('extractFile', [gamePath, filePath, targetPath]);
+      return null;
+    },
     openURL: (url) => {
+      console.log('API.openURL', url);
       shell.openExternal(url);
     },
     readModInfo: (modPath, id) => {

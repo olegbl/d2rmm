@@ -1,7 +1,6 @@
 declare global {
   type D2RMMPaths = {
     gamePath: string;
-    vanillaPath: string;
     mergedPath: string;
     modPath: string;
   };
@@ -26,10 +25,6 @@ declare global {
   type ModAPI = {
     copyFile: (src: string, dst: string) => void;
     error: (message: string | Error) => void;
-    readDirectory: (
-      filePath: string,
-      options: { directoriesOnly?: boolean; filesOnly?: boolean }
-    ) => string[];
     readJson: (filePath: string) => JSONData;
     readTsv: (filePath: string) => TSVData;
     writeJson: (filePath: string, data: JSONData) => void;
@@ -76,19 +71,25 @@ declare global {
   type ModConfigField = ModConfigFieldCheckbox | ModConfigFieldNumber;
 
   type WindowAPI = {
-    openURL: (url: string) => void;
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;
+    extractFile: (
+      gamePath: string,
+      filePath: string,
+      targetPath: string
+    ) => void;
+    openURL: (url: string) => void;
     readDirectory: (
       filePath: string,
-      options: { directoriesOnly?: boolean; filesOnly?: boolean }
+      options?: { directoriesOnly?: boolean; filesOnly?: boolean }
     ) => string[];
     readJson: (filePath: string) => JSONData;
     readModCode: (modPath: string, id: string) => string;
     readModConfig: (modPath: string, id: string) => JSON;
     readModInfo: (modPath: string, id: string) => ModInfo;
     readTsv: (filePath: string) => TSVData;
+    runTool: (tool: string, params?: string[]) => void;
     writeJson: (filePath: string, data: JSONData) => void;
     writeModConfig: (
       modPath: string,

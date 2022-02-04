@@ -10,6 +10,8 @@ import {
   writeFileSync,
 } from 'fs';
 import path from 'path';
+import ffi from 'ffi-napi';
+import ref from 'ref-napi';
 
 export function getAppPath(): string {
   return app.isPackaged
@@ -24,13 +26,88 @@ function copyDirSync(src: string, dest: string) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    entry.isDirectory()
-      ? copyDirSync(srcPath, destPath)
-      : copyFileSync(srcPath, destPath);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      copyFileSync(srcPath, destPath);
+    }
   });
 }
 
+const voidPtr = ref.refType(ref.types.void);
+const voidPtrPtr = ref.refType(voidPtr);
+const dwordPtr = ref.refType(ref.types.uint32);
+
+const CascLib = ffi.Library(path.join(getAppPath(), 'tools', 'CascLib.dll'), {
+  CascCloseFile: ['bool', [voidPtr]],
+  CascCloseStorage: ['bool', [voidPtr]],
+  CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],
+  CascOpenStorage: ['bool', ['string', 'int', voidPtrPtr]],
+  CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
+});
+
 export function createAPI(): void {
+  ipcMain.on('extractFile', (event, [gamePath, filePath, targetPath]) => {
+    console.log('API.extractFile', [gamePath, filePath, targetPath]);
+
+    try {
+      // if file is already extracted, don't need to extract it again
+      if (existsSync(targetPath)) {
+        event.returnValue = true;
+        return;
+      }
+
+      const storagePtr = ref.alloc(voidPtrPtr);
+      if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, storagePtr)) {
+        const storage = storagePtr.deref();
+
+        const filePtr = ref.alloc(voidPtrPtr);
+        if (
+          CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+        ) {
+          const file = filePtr.deref();
+          const bytesReadPtr = ref.alloc(dwordPtr);
+
+          // if the file is larger than 10 MB... I got bad news for you.
+          const size = 10 * 1024 * 1024;
+          const buffer = Buffer.alloc(size) as ref.Pointer<void>;
+          buffer.type = ref.types.void;
+
+          if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
+            const data = buffer.readCString();
+            mkdirSync(path.dirname(targetPath), { recursive: true });
+            writeFileSync(targetPath, data, {
+              encoding: 'utf-8',
+              flag: 'w',
+            });
+            event.returnValue = true;
+          } else {
+            console.log('API.extractFile', 'Failed to read CASC file');
+          }
+
+          if (!CascLib.CascCloseFile(file)) {
+            console.log('API.extractFile', 'Failed to close CASC file');
+          }
+        } else {
+          console.log('API.extractFile', 'Failed to open CASC file');
+        }
+
+        if (!CascLib.CascCloseStorage(storage)) {
+          console.log('API.extractFile', 'Failed to close CASC storage');
+        }
+      } else {
+        console.log('API.extractFile', 'Failed to open CASC storage');
+      }
+    } catch (e) {
+      console.error('API.extractFile', e);
+      event.returnValue = false;
+    }
+
+    if (typeof event.returnValue !== 'boolean') {
+      event.returnValue = false;
+    }
+  });
+
   ipcMain.on('getAppPath', (event, localPath) => {
     console.log('API.getAppPath', localPath);
 

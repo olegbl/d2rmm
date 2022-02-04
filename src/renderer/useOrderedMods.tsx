@@ -48,7 +48,7 @@ export default function useOrderedMods(
   );
 
   const orderedMods = useMemo(
-    () => modsOrder.map((mod) => modByID[mod]),
+    () => modsOrder.map((mod) => modByID[mod]).filter(Boolean),
     [modByID, modsOrder]
   );
 

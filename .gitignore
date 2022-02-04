@@ -1,6 +1,9 @@
 # Mods
 mods
 
+# Releases
+release/*.zip
+
 # Logs
 logs
 *.log

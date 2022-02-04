@@ -66,7 +66,7 @@ export default function ModSettings({
     <>
       <FormGroup sx={{ padding: 1, minWidth: 240 }}>
         {mod.info.config.map((field) => (
-          <ModSettingsField key={mod.id} field={field} mod={mod} />
+          <ModSettingsField key={field.name} field={field} mod={mod} />
         ))}
         <Button variant="outlined" onClick={onClose}>
           Close

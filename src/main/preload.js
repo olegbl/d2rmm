@@ -1,7 +1,10 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, shell } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
+    openURL: (url) => {
+      shell.openExternal(url);
+    },
     readModInfo: (modPath, id) => {
       const filePath = `${modPath}\\${id}\\mod.json`;
       console.log('API.readModInfo', { id, filePath });

@@ -53,6 +53,7 @@ declare global {
     description?: string;
     author?: string;
     website?: string;
+    version?: string;
     config?: readonly ModConfigField[];
   };
 
@@ -75,6 +76,7 @@ declare global {
   type ModConfigField = ModConfigFieldCheckbox | ModConfigFieldNumber;
 
   type WindowAPI = {
+    openURL: (url: string) => void;
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;

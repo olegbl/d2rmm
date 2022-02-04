@@ -1,20 +1,7 @@
-import { Settings } from '@mui/icons-material';
-import {
-  Checkbox,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from '@mui/material';
+import { List } from '@mui/material';
 import { useCallback } from 'react';
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  DropResult,
-} from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import ModListItem from './ModListItem';
 import { EnabledMods } from './useEnabledMods';
 
 type Props = {
@@ -52,64 +39,16 @@ export default function ModList({
               {...providedDroppable.droppableProps}
               ref={providedDroppable.innerRef}
             >
-              {mods.map((mod, index) => {
-                const labelId = `mod-label-${mod}`;
-
-                return (
-                  <Draggable key={mod.id} draggableId={mod.id} index={index}>
-                    {(providedDraggable) => (
-                      <div
-                        ref={providedDraggable.innerRef}
-                        {...providedDraggable.draggableProps}
-                        {...providedDraggable.dragHandleProps}
-                      >
-                        <ListItem
-                          key={mod.id}
-                          disablePadding={true}
-                          secondaryAction={
-                            mod.info.config == null ? null : (
-                              <IconButton
-                                edge="end"
-                                aria-label="Settings"
-                                onClick={() => onConfigureMod(mod)}
-                              >
-                                <Settings />
-                              </IconButton>
-                            )
-                          }
-                        >
-                          <ListItemButton
-                            role={undefined}
-                            onClick={() => onToggleMod(mod)}
-                            dense={true}
-                          >
-                            <ListItemIcon>
-                              <Checkbox
-                                edge="start"
-                                checked={enabledMods[mod.id] ?? false}
-                                tabIndex={-1}
-                                disableRipple={true}
-                                inputProps={{
-                                  'aria-labelledby': labelId,
-                                }}
-                              />
-                            </ListItemIcon>
-                            <ListItemText
-                              id={labelId}
-                              primary={mod.info.name}
-                              secondary={
-                                mod.info.author == null
-                                  ? null
-                                  : `by ${mod.info.author}`
-                              }
-                            />
-                          </ListItemButton>
-                        </ListItem>
-                      </div>
-                    )}
-                  </Draggable>
-                );
-              })}
+              {mods.map((mod, index) => (
+                <ModListItem
+                  key={mod.id}
+                  mod={mod}
+                  index={index}
+                  isEnabled={enabledMods[mod.id] ?? false}
+                  onConfigureMod={onConfigureMod}
+                  onToggleMod={onToggleMod}
+                />
+              ))}
               {providedDroppable.placeholder}
             </div>
           )}

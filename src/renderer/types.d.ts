@@ -72,7 +72,7 @@ declare global {
 
     // shows an error message to the user (you probably don't need to do this manually, just throw the error)
     // e.g.:
-    // D2RMM.erorr('Something went wrong!');
+    // D2RMM.error('Something went wrong!');
     // D2RMM.error(new Error('Something went wrong!'));
     error: (message: string | Error) => void;
   };

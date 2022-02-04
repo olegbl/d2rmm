@@ -31,7 +31,7 @@ export default function ModList({
   );
 
   return (
-    <List sx={{ width: '100%', flex: 1 }}>
+    <List sx={{ width: '100%', flex: 1, overflow: 'auto' }}>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable direction="vertical" droppableId="mods">
           {(providedDroppable) => (

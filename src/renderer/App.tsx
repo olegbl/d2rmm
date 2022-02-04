@@ -44,7 +44,6 @@ function TabPanelBox({
           display: 'flex',
           flexDirection: 'column',
           left: 0,
-          overflowY: 'auto',
           position: 'absolute',
           right: 0,
           top: 0,

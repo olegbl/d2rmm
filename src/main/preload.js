@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer, shell } = require('electron');
+const json5 = require('json5');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
@@ -115,21 +116,9 @@ contextBridge.exposeInMainWorld('electron', {
       }
       const cleanContent = content
         // remove byte order mark
-        .replace(/^\uFEFF/, '')
-        // remove carriage returns
-        .replace(/\r+/g, '')
-        // remove comments
-        .split('\n')
-        .map((line) => line.replace(/^(.*)\/\/.*$/, '$1'))
-        .join('')
-        // remove multiline comments
-        .replace(/\/\*.*?\*\//, '')
-        // remove trailing commas
-        .replace(/,(?=\s*?[}\]])/g, '')
-        // double escape escape characters
-        .replace(/\\/g, '\\\\');
+        .replace(/^\uFEFF/, '');
       try {
-        return JSON.parse(cleanContent);
+        return json5.parse(cleanContent);
       } catch (e) {
         console.error('API.readJson', e, { content, cleanContent });
       }
@@ -137,9 +126,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     writeJson: (filePath, data) => {
       console.log('API.writeJson', { filePath, data });
-      const content = JSON.stringify(data)
-        // single escape escape characters
-        .replace(/\\\\/g, '\\');
+      const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
       ipcRenderer.sendSync('writeFile', [
         filePath,
         false,

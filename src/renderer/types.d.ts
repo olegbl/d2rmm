@@ -2,7 +2,6 @@ declare global {
   type D2RMMPaths = {
     gamePath: string;
     mergedPath: string;
-    modPath: string;
   };
 
   type TSVDataHeader = string;
@@ -80,22 +79,15 @@ declare global {
       targetPath: string
     ) => void;
     openURL: (url: string) => void;
-    readDirectory: (
-      filePath: string,
-      options?: { directoriesOnly?: boolean; filesOnly?: boolean }
-    ) => string[];
+    readModDirectory: () => string[];
     readJson: (filePath: string) => JSONData;
-    readModCode: (modPath: string, id: string) => string;
-    readModConfig: (modPath: string, id: string) => JSON;
-    readModInfo: (modPath: string, id: string) => ModInfo;
+    readModCode: (id: string) => string;
+    readModConfig: (id: string) => JSON;
+    readModInfo: (id: string) => ModInfo;
     readTsv: (filePath: string) => TSVData;
     runTool: (tool: string, params?: string[]) => void;
     writeJson: (filePath: string, data: JSONData) => void;
-    writeModConfig: (
-      modPath: string,
-      id: string,
-      value: ModConfigValue
-    ) => JSON;
+    writeModConfig: (id: string, value: ModConfigValue) => JSON;
     writeTsv: (filePath: string, data: TSVData) => void;
   };
 

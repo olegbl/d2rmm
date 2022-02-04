@@ -18,7 +18,6 @@ export default function usePaths(): [
     () => ({
       gamePath,
       mergedPath: `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`,
-      modPath: `${gamePath}\\mods\\D2RMM\\mods`,
     }),
     [gamePath]
   );

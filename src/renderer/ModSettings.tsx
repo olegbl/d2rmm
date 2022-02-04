@@ -9,24 +9,17 @@ import { useCallback, useState } from 'react';
 
 const API = window.electron.API;
 
-function setConfig(
-  paths: D2RMMPaths,
-  mod: Mod,
-  field: string,
-  value: ModConfigSingleValue
-): void {
+function setConfig(mod: Mod, field: string, value: ModConfigSingleValue): void {
   mod.config[field] = value;
-  API.writeModConfig(paths.modPath, mod.id, mod.config);
+  API.writeModConfig(mod.id, mod.config);
 }
 
 function ModSettingsField({
   field,
   mod,
-  paths,
 }: {
   field: ModConfigField;
   mod: Mod;
-  paths: D2RMMPaths;
 }): JSX.Element | null {
   const [, setCacheBreaker] = useState(0);
   const refresh = useCallback(() => setCacheBreaker((value) => value + 1), []);
@@ -38,7 +31,7 @@ function ModSettingsField({
       <Checkbox
         checked={Boolean(mod.config[field.id])}
         onChange={(event) => {
-          setConfig(paths, mod, field.id, event.target.checked);
+          setConfig(mod, field.id, event.target.checked);
           refresh();
         }}
       />
@@ -59,11 +52,9 @@ function ModSettingsField({
 export default function ModSettings({
   mod,
   onClose,
-  paths,
 }: {
   mod: Mod;
   onClose: () => unknown;
-  paths: D2RMMPaths;
 }): JSX.Element | null {
   // this should never happen as there should be no settings
   // button available on mods without a config
@@ -75,12 +66,7 @@ export default function ModSettings({
     <>
       <FormGroup sx={{ padding: 1, minWidth: 240 }}>
         {mod.info.config.map((field) => (
-          <ModSettingsField
-            key={mod.id}
-            field={field}
-            mod={mod}
-            paths={paths}
-          />
+          <ModSettingsField key={mod.id} field={field} mod={mod} />
         ))}
         <Button variant="outlined" onClick={onClose}>
           Close

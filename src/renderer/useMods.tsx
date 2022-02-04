@@ -1,22 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const API = window.electron.API;
 
-function getMods(paths: D2RMMPaths): Mod[] {
-  const modIDs = API.readDirectory(paths.modPath, { directoriesOnly: true });
+function getMods(): Mod[] {
+  const modIDs = API.readModDirectory();
   return modIDs
     .map((modID) => {
-      const info = API.readModInfo(paths.modPath, modID);
-      console.log(modID, info);
+      const info = API.readModInfo(modID);
 
       if (info == null) {
         return null;
       }
 
-      const config = API.readModConfig(
-        paths.modPath,
-        modID
-      ) as unknown as ModConfigValue;
+      const config = API.readModConfig(modID) as unknown as ModConfigValue;
 
       const defaultConfig = info.config?.reduce((agg, field) => {
         agg[field.id] = field.defaultValue as unknown as ModConfigSingleValue;
@@ -32,18 +28,13 @@ function getMods(paths: D2RMMPaths): Mod[] {
     .filter((mod): mod is Mod => mod != null);
 }
 
-export default function useMods(paths: D2RMMPaths): [Mod[], () => unknown] {
-  const [mods, setMods] = useState<Mod[]>(() => getMods(paths));
-
-  // automatically refresh mods when paths change
-  useEffect(() => {
-    setMods(getMods(paths));
-  }, [paths]);
+export default function useMods(): [Mod[], () => unknown] {
+  const [mods, setMods] = useState<Mod[]>(() => getMods());
 
   // manually refresh mods
   const refreshMods = useCallback(() => {
-    setMods(getMods(paths));
-  }, [paths]);
+    setMods(getMods());
+  }, []);
 
   return [mods, refreshMods];
 }

@@ -72,7 +72,7 @@ async function installMods(
 
   for (let i = 0; i < mods.length; i += 1) {
     const mod = mods[i];
-    const code = API.readModCode(paths.modPath, mod.id);
+    const code = API.readModCode(mod.id);
     const api = getModAPI(mod, paths, showToast);
     const fn = sandbox(code);
     // eslint-disable-next-line no-await-in-loop
@@ -83,7 +83,7 @@ async function installMods(
 function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
   const [paths, gamePath, setGamePath] = usePaths();
-  const [mods, refreshMods] = useMods(paths);
+  const [mods, refreshMods] = useMods();
   const [orderedMods, reorderMods] = useOrderedMods(mods);
   const [enabledMods, setEnabledMods] = useEnabledMods();
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
@@ -148,7 +148,6 @@ function D2RMMRootView() {
               <ModSettings
                 mod={selectedMod}
                 onClose={() => setSelectedModID(null)}
-                paths={paths}
               />
             )}
           </Drawer>

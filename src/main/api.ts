@@ -108,12 +108,6 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('getAppPath', (event, localPath) => {
-    console.log('API.getAppPath', localPath);
-
-    event.returnValue = getAppPath();
-  });
-
   ipcMain.on('createDirectory', (event, filePath) => {
     console.log('API.createDirectory', filePath);
 
@@ -130,27 +124,30 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('readDirectory', (event, filePath) => {
-    console.log('API.readDirectory', filePath);
+  ipcMain.on('readModDirectory', (event) => {
+    console.log('API.readModDirectory');
 
     try {
+      const filePath = path.join(getAppPath(), 'mods');
       if (existsSync(filePath)) {
         const entries = readdirSync(filePath, { withFileTypes: true });
-        event.returnValue = entries.map((entry) => [
-          entry.name,
-          entry.isDirectory(),
-        ]);
+        event.returnValue = entries
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name);
       } else {
         event.returnValue = null;
       }
     } catch (e) {
-      console.error('API.readDirectory', e);
+      console.error('API.readModDirectory', e);
       event.returnValue = null;
     }
   });
 
-  ipcMain.on('readFile', (event, filePath) => {
-    console.log('API.readFile', filePath);
+  ipcMain.on('readFile', (event, [inputPath, isRelative]) => {
+    console.log('API.readFile', [inputPath, isRelative]);
+    const filePath = isRelative
+      ? path.join(getAppPath(), inputPath)
+      : inputPath;
 
     try {
       if (existsSync(filePath)) {
@@ -167,8 +164,11 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('writeFile', (event, [filePath, data]) => {
-    console.log('API.writeFile', filePath);
+  ipcMain.on('writeFile', (event, [inputPath, isRelative, data]) => {
+    console.log('API.writeFile', [inputPath, isRelative]);
+    const filePath = isRelative
+      ? path.join(getAppPath(), inputPath)
+      : inputPath;
 
     try {
       writeFileSync(filePath, data, {
@@ -182,8 +182,11 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('deleteFile', (event, filePath) => {
-    console.log('API.deleteFile', filePath);
+  ipcMain.on('deleteFile', (event, [inputPath, isRelative]) => {
+    console.log('API.deleteFile', [inputPath, isRelative]);
+    const filePath = isRelative
+      ? path.join(getAppPath(), inputPath)
+      : inputPath;
 
     try {
       if (existsSync(filePath)) {
@@ -203,10 +206,11 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('copyFile', (event, [fromPath, toPath, overwrite]) => {
-    console.log('API.copyFile', [fromPath, toPath, overwrite]);
+  ipcMain.on('copyFile', (event, [fromInputPath, toPath, overwrite]) => {
+    console.log('API.copyFile', [fromInputPath, toPath, overwrite]);
 
     try {
+      const fromPath = path.join(getAppPath(), 'mods', fromInputPath);
       if (existsSync(fromPath) && (overwrite || !existsSync(toPath))) {
         const stat = statSync(fromPath);
         if (stat.isDirectory()) {

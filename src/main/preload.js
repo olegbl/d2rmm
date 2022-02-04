@@ -11,10 +11,10 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.openURL', url);
       shell.openExternal(url);
     },
-    readModInfo: (modPath, id) => {
-      const filePath = `${modPath}\\${id}\\mod.json`;
+    readModInfo: (id) => {
+      const filePath = `mods\\${id}\\mod.json`;
       console.log('API.readModInfo', { id, filePath });
-      const info = ipcRenderer.sendSync('readFile', filePath);
+      const info = ipcRenderer.sendSync('readFile', [filePath, true]);
 
       if (info != null) {
         try {
@@ -29,35 +29,33 @@ contextBridge.exposeInMainWorld('electron', {
 
       return null;
     },
-    readModConfig: (modPath, id) => {
-      const filePath = `${modPath}\\${id}\\config.json`;
+    readModConfig: (id) => {
+      const filePath = `mods\\${id}\\config.json`;
       console.log('API.readModConfig', { id, filePath });
-      const config = ipcRenderer.sendSync('readFile', filePath);
+      const config = ipcRenderer.sendSync('readFile', [filePath, true]);
       if (config != null) {
         return JSON.parse(config);
       }
       return null;
     },
-    writeModConfig: (modPath, id, value) => {
-      const filePath = `${modPath}\\${id}\\config.json`;
+    writeModConfig: (id, value) => {
+      const filePath = `mods\\${id}\\config.json`;
       console.log('API.writeModConfig', { id, filePath });
-      ipcRenderer.sendSync('writeFile', [filePath, JSON.stringify(value)]);
+      ipcRenderer.sendSync('writeFile', [
+        filePath,
+        true,
+        JSON.stringify(value),
+      ]);
       return null;
     },
-    readModCode: (modPath, id) => {
-      const filePath = `${modPath}\\${id}\\mod.js`;
+    readModCode: (id) => {
+      const filePath = `mods\\${id}\\mod.js`;
       console.log('API.readMod', { id, filePath });
-      return ipcRenderer.sendSync('readFile', filePath);
+      return ipcRenderer.sendSync('readFile', [filePath, true]);
     },
-    readDirectory: (filePath, options = {}) => {
-      console.log('API.readDirectory');
-      return (ipcRenderer.sendSync('readDirectory', filePath) ?? [])
-        .filter(
-          ([_name, isDirectory]) =>
-            (options.directoriesOnly ? isDirectory : true) &&
-            (options.filesOnly ? !isDirectory : true)
-        )
-        .map(([name, _isDirectory]) => name);
+    readModDirectory: (filePath) => {
+      console.log('API.readModDirectory');
+      return ipcRenderer.sendSync('readModDirectory', filePath) ?? [];
     },
     createDirectory: (filePath) => {
       console.log('API.createDirectory');
@@ -65,7 +63,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     deleteFile: (filePath) => {
       console.log('API.deleteFile');
-      return ipcRenderer.sendSync('deleteFile', filePath);
+      return ipcRenderer.sendSync('deleteFile', [filePath, false]);
     },
     copyFile: (fromPath, toPath, overwrite = false) => {
       console.log('API.copyFile', { fromPath, toPath, overwrite });
@@ -73,7 +71,7 @@ contextBridge.exposeInMainWorld('electron', {
     },
     readTsv: (filePath) => {
       console.log('API.readTsv', { filePath });
-      const content = ipcRenderer.sendSync('readFile', filePath);
+      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
       if (content == null) {
         console.warn('API.readTsv', 'file not found');
         return null;
@@ -102,11 +100,11 @@ contextBridge.exposeInMainWorld('electron', {
         headers.map((header) => row[header] ?? '').join('\t')
       );
       const content = [headersRaw, ...rowsRaw, ''].join('\n');
-      ipcRenderer.sendSync('writeFile', [filePath, content]);
+      ipcRenderer.sendSync('writeFile', [filePath, false, content]);
     },
     readJson: (filePath) => {
       console.log('API.readJson', { filePath });
-      const content = ipcRenderer.sendSync('readFile', filePath);
+      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
       if (content == null) {
         console.warn('API.readJson', 'file not found');
         return {};
@@ -136,7 +134,7 @@ contextBridge.exposeInMainWorld('electron', {
       const content = JSON.stringify(data)
         // single escape escape characters
         .replace(/\\\\/g, '\\');
-      ipcRenderer.sendSync('writeFile', [filePath, content]);
+      ipcRenderer.sendSync('writeFile', [filePath, false, content]);
     },
   },
 });

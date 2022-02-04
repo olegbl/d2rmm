@@ -4,7 +4,7 @@ const API = window.electron.API;
 
 export default function getModAPI(
   mod: Mod,
-  { gamePath, mergedPath, modPath }: D2RMMPaths,
+  { gamePath, mergedPath }: D2RMMPaths,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   return {
@@ -40,7 +40,7 @@ export default function getModAPI(
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.log('D2RMM.copyFile', src, dst);
-      const srcPath = `${modPath}\\${mod.id}\\${src}`;
+      const srcPath = `${mod.id}\\${src}`;
       const dstPath = `${mergedPath}\\${dst}`;
       API.copyFile(srcPath, dstPath, overwrite);
     },

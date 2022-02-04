@@ -62,10 +62,14 @@ export default function ModListItem({
 
   const menuOptions = [
     mod.info.config == null ? null : (
-      <MenuItem onClick={onConfigureMod}>Settings</MenuItem>
+      <MenuItem key="settings" onClick={onConfigureMod}>
+        Settings
+      </MenuItem>
     ),
     mod.info.website == null ? null : (
-      <MenuItem onClick={onOpenWebsite}>Website</MenuItem>
+      <MenuItem key="website" onClick={onOpenWebsite}>
+        Website
+      </MenuItem>
     ),
   ].filter(Boolean);
 

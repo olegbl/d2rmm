@@ -114,8 +114,10 @@ contextBridge.exposeInMainWorld('electron', {
         return {};
       }
       const cleanContent = content
-        // remove non-line breaking whitespace
-        .replace(/[ \t\r]+/g, '')
+        // remove byte order mark
+        .replace(/^\uFEFF/, '')
+        // remove carriage returns
+        .replace(/\r+/g, '')
         // remove comments
         .split('\n')
         .map((line) => line.replace(/^(.*)\/\/.*$/, '$1'))
@@ -138,7 +140,12 @@ contextBridge.exposeInMainWorld('electron', {
       const content = JSON.stringify(data)
         // single escape escape characters
         .replace(/\\\\/g, '\\');
-      ipcRenderer.sendSync('writeFile', [filePath, false, content]);
+      ipcRenderer.sendSync('writeFile', [
+        filePath,
+        false,
+        // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
+        `\uFEFF${content}`,
+      ]);
     },
   },
 });

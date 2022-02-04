@@ -170,10 +170,11 @@ export function createAPI(): void {
 
     try {
       if (existsSync(filePath)) {
-        event.returnValue = readFileSync(filePath, {
+        const result = readFileSync(filePath, {
           encoding: 'utf-8',
           flag: 'r',
         });
+        event.returnValue = result;
       } else {
         event.returnValue = null;
       }

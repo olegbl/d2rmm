@@ -4,8 +4,8 @@ import { useCallback, useMemo } from 'react';
 const API = window.electron.API;
 
 function getIsValidGamePath(paths: D2RMMPaths): boolean {
-  const files = API.readDirectory(paths.gamePath, { filesOnly: true });
-  return files.indexOf('D2R.exe') !== -1;
+  const files = API.readDirectory(paths.gamePath);
+  return files.find(({ name }) => name === 'D2R.exe') != null;
 }
 
 type Props = {

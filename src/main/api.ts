@@ -124,6 +124,25 @@ export function createAPI(): void {
     }
   });
 
+  ipcMain.on('readDirectory', (event, filePath) => {
+    console.log('API.readDirectory');
+
+    try {
+      if (existsSync(filePath)) {
+        const entries = readdirSync(filePath, { withFileTypes: true });
+        event.returnValue = entries.map((entry) => ({
+          name: entry.name,
+          isDirectory: entry.isDirectory(),
+        }));
+      } else {
+        event.returnValue = null;
+      }
+    } catch (e) {
+      console.error('API.readDirectory', e);
+      event.returnValue = null;
+    }
+  });
+
   ipcMain.on('readModDirectory', (event) => {
     console.log('API.readModDirectory');
 

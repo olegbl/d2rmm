@@ -79,6 +79,9 @@ declare global {
       targetPath: string
     ) => void;
     openURL: (url: string) => void;
+    readDirectory: (
+      filePath: string
+    ) => { name: string; isDirectory: boolean }[];
     readModDirectory: () => string[];
     readJson: (filePath: string) => JSONData;
     readModCode: (id: string) => string;

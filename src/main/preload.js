@@ -57,6 +57,10 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.readModDirectory');
       return ipcRenderer.sendSync('readModDirectory', filePath) ?? [];
     },
+    readDirectory: (filePath) => {
+      console.log('API.readDirectory');
+      return ipcRenderer.sendSync('readDirectory', filePath) ?? [];
+    },
     createDirectory: (filePath) => {
       console.log('API.createDirectory');
       return ipcRenderer.sendSync('createDirectory', filePath);

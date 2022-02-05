@@ -21,6 +21,7 @@ declare global {
 
   type JSONData = { [key: string]: JSONDataValues | JSONData };
 
+  // this is the structure of the "D2RMM" global variable provided to mods' "mod.js" file
   type ModAPI = {
     // reads a JSON D2R file (ignoring comments, whitespace, and various mistakes in JSON formatting that D2R makes)
     // the file is the result of previously installed mods operating on it
@@ -89,6 +90,7 @@ declare global {
     [key: string]: ModConfigSingleValue;
   };
 
+  // this is the structure of the "mod.json" file that mods should provide
   type ModInfo = {
     name: string;
     description?: string;
@@ -98,11 +100,7 @@ declare global {
     config?: readonly ModConfigField[];
   };
 
-  type ModConfigFieldBase = {
-    id: string;
-    name: string;
-    description: string;
-  };
+  type ModConfigField = ModConfigFieldCheckbox | ModConfigFieldNumber;
 
   type ModConfigFieldCheckbox = ModConfigFieldBase & {
     type: 'checkbox';
@@ -114,7 +112,11 @@ declare global {
     defaultValue: number;
   };
 
-  type ModConfigField = ModConfigFieldCheckbox | ModConfigFieldNumber;
+  type ModConfigFieldBase = {
+    id: string;
+    name: string;
+    description: string;
+  };
 
   type WindowAPI = {
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;

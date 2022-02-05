@@ -1,4 +1,5 @@
-import { Button, FormGroup } from '@mui/material';
+import { Close } from '@mui/icons-material';
+import { Box, FormGroup, IconButton } from '@mui/material';
 import ModSettingsField from './ModSettingsField';
 
 type Props = {
@@ -17,13 +18,15 @@ export default function ModSettings({
   }
 
   return (
-    <FormGroup sx={{ padding: 1, minWidth: 240 }}>
+    <FormGroup sx={{ padding: 2, minWidth: 240 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <IconButton color="default" onClick={onClose}>
+          <Close />
+        </IconButton>
+      </Box>
       {mod.info.config.map((field) => (
         <ModSettingsField key={field.name} field={field} mod={mod} />
       ))}
-      <Button variant="outlined" onClick={onClose}>
-        Close
-      </Button>
     </FormGroup>
   );
 }

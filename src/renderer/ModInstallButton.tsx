@@ -41,7 +41,7 @@ export default function ModInstallButton({
           const code = API.readModCode(mod.id);
           const api = getModAPI(mod, paths, showToast);
           const installMod = sandbox(code);
-          installMod({ D2RMM: api, config: mod.config });
+          installMod({ D2RMM: api, config: mod.config, Math });
         } catch (error) {
           showToast({
             severity: 'error',

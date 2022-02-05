@@ -1,4 +1,5 @@
-import { Checkbox } from '@mui/material';
+import { FormControlLabel, Switch } from '@mui/material';
+import { useCallback } from 'react';
 
 type Props = {
   field: ModConfigFieldCheckbox;
@@ -9,14 +10,24 @@ type Props = {
 export default function ModSettingsCheckboxField({
   field,
   mod,
-  onChange,
+  onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const fieldID = field.id;
+  const checked = Boolean(mod.config[fieldID]);
+
+  const onChange = useCallback(
+    (_event: React.ChangeEvent<HTMLInputElement>, newValue: boolean): void => {
+      onChangeFromProps(fieldID, newValue);
+    },
+    [fieldID, onChangeFromProps]
+  );
+
   return (
-    <Checkbox
-      checked={Boolean(mod.config[field.id])}
-      onChange={(event) => {
-        onChange(field.id, event.target.checked);
-      }}
+    <FormControlLabel
+      control={
+        <Switch checked={checked} onChange={onChange} name={field.name} />
+      }
+      label={checked ? 'On' : 'Off'}
     />
   );
 }

@@ -1,5 +1,7 @@
-import { FormControlLabel, Tooltip } from '@mui/material';
+import { Box, FormLabel, Tooltip } from '@mui/material';
 import { useCallback, useState } from 'react';
+import { Help } from '@mui/icons-material';
+import ModSettingsNumberField from './ModSettingsNumberField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 
 const API = window.electron.API;
@@ -30,11 +32,19 @@ export default function ModSettingsField({
     [mod, refresh]
   );
 
-  let control = null;
+  let result = null;
 
   if (field.type === 'checkbox') {
-    control = (
+    result = (
       <ModSettingsCheckboxField
+        field={field}
+        mod={mod}
+        onChange={onChangeConfig}
+      />
+    );
+  } else if (field.type === 'number') {
+    result = (
+      <ModSettingsNumberField
         field={field}
         mod={mod}
         onChange={onChangeConfig}
@@ -42,13 +52,28 @@ export default function ModSettingsField({
     );
   }
 
-  if (control != null) {
-    let result = <FormControlLabel control={control} label={field.name} />;
-    if (field.description != null) {
-      result = <Tooltip title={field.description}>{result}</Tooltip>;
-    }
-    return result;
+  if (result == null) {
+    return null;
   }
 
-  return null;
+  return (
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          paddingBottom: 1,
+          paddingTop: 1,
+        }}
+      >
+        <FormLabel component="legend">{field.name}</FormLabel>
+        {field.description == null ? null : (
+          <Tooltip title={field.description}>
+            <Help fontSize="small" color="disabled" />
+          </Tooltip>
+        )}
+      </Box>
+      {result}
+    </>
+  );
 }

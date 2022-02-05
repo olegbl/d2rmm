@@ -110,6 +110,8 @@ declare global {
   type ModConfigFieldNumber = ModConfigFieldBase & {
     type: 'number';
     defaultValue: number;
+    minValue?: number;
+    maxValue?: number;
   };
 
   type ModConfigFieldBase = {

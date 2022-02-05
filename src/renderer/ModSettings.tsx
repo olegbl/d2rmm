@@ -25,7 +25,7 @@ export default function ModSettings({
         </IconButton>
       </Box>
       {mod.info.config.map((field) => (
-        <ModSettingsField key={field.name} field={field} mod={mod} />
+        <ModSettingsField key={field.id} field={field} mod={mod} />
       ))}
     </FormGroup>
   );

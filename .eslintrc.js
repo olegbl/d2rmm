@@ -7,6 +7,7 @@ module.exports = {
     'react/jsx-boolean-value': ['error', 'always'],
     'react/jsx-props-no-spreading': 'off',
     'react/require-default-props': 'off',
+    'operator-assignment': ['warn', 'never'],
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {

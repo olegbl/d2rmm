@@ -46,7 +46,40 @@ const CascLib = ffi.Library(path.join(getAppPath(), 'tools', 'CascLib.dll'), {
   CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
 });
 
+const cascStoragePtr = ref.alloc(voidPtrPtr);
+let cascStorageIsOpen = false;
+
 export function createAPI(): void {
+  ipcMain.on('openStorage', (event, gamePath) => {
+    console.log('API.openStorage', gamePath);
+
+    if (!cascStorageIsOpen) {
+      if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
+        cascStorageIsOpen = true;
+      } else {
+        console.log('API.extractFile', 'Failed to open CASC storage');
+      }
+    }
+
+    event.returnValue = cascStorageIsOpen;
+  });
+
+  ipcMain.on('closeStorage', (event) => {
+    console.log('API.closeStorage');
+
+    if (cascStorageIsOpen) {
+      const storage = cascStoragePtr.deref();
+      if (CascLib.CascCloseStorage(storage)) {
+        cascStorageIsOpen = false;
+      } else {
+        cascStorageIsOpen = false;
+        console.log('API.extractFile', 'Failed to close CASC storage');
+      }
+    }
+
+    event.returnValue = !cascStorageIsOpen;
+  });
+
   ipcMain.on('extractFile', (event, [gamePath, filePath, targetPath]) => {
     console.log('API.extractFile', [gamePath, filePath, targetPath]);
 
@@ -57,46 +90,43 @@ export function createAPI(): void {
         return;
       }
 
-      const storagePtr = ref.alloc(voidPtrPtr);
-      if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, storagePtr)) {
-        const storage = storagePtr.deref();
+      if (!cascStorageIsOpen) {
+        console.log('API.extractFile', 'CASC storage is not open');
+        event.returnValue = false;
+        return;
+      }
 
-        const filePtr = ref.alloc(voidPtrPtr);
-        if (
-          CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
-        ) {
-          const file = filePtr.deref();
-          const bytesReadPtr = ref.alloc(dwordPtr);
+      const storage = cascStoragePtr.deref();
 
-          // if the file is larger than 10 MB... I got bad news for you.
-          const size = 10 * 1024 * 1024;
-          const buffer = Buffer.alloc(size) as ref.Pointer<void>;
-          buffer.type = ref.types.void;
+      const filePtr = ref.alloc(voidPtrPtr);
+      if (
+        CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+      ) {
+        const file = filePtr.deref();
+        const bytesReadPtr = ref.alloc(dwordPtr);
 
-          if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
-            const data = buffer.readCString();
-            mkdirSync(path.dirname(targetPath), { recursive: true });
-            writeFileSync(targetPath, data, {
-              encoding: 'utf-8',
-              flag: 'w',
-            });
-            event.returnValue = true;
-          } else {
-            console.log('API.extractFile', 'Failed to read CASC file');
-          }
+        // if the file is larger than 10 MB... I got bad news for you.
+        const size = 10 * 1024 * 1024;
+        const buffer = Buffer.alloc(size) as ref.Pointer<void>;
+        buffer.type = ref.types.void;
 
-          if (!CascLib.CascCloseFile(file)) {
-            console.log('API.extractFile', 'Failed to close CASC file');
-          }
+        if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
+          const data = buffer.readCString();
+          mkdirSync(path.dirname(targetPath), { recursive: true });
+          writeFileSync(targetPath, data, {
+            encoding: 'utf-8',
+            flag: 'w',
+          });
+          event.returnValue = true;
         } else {
-          console.log('API.extractFile', 'Failed to open CASC file');
+          console.log('API.extractFile', 'Failed to read CASC file');
         }
 
-        if (!CascLib.CascCloseStorage(storage)) {
-          console.log('API.extractFile', 'Failed to close CASC storage');
+        if (!CascLib.CascCloseFile(file)) {
+          console.log('API.extractFile', 'Failed to close CASC file');
         }
       } else {
-        console.log('API.extractFile', 'Failed to open CASC storage');
+        console.log('API.extractFile', 'Failed to open CASC file');
       }
     } catch (e) {
       console.error('API.extractFile', e);

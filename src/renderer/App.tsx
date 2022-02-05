@@ -85,6 +85,8 @@ function D2RMMRootView() {
         savepath: 'D2RMM/',
       });
 
+      API.openStorage(paths.gamePath);
+
       for (let i = 0; i < modsToInstall.length; i += 1) {
         setInstallingMod(i + 1);
         const mod = modsToInstall[i];
@@ -93,6 +95,8 @@ function D2RMMRootView() {
         const installMod = sandbox(code);
         installMod({ D2RMM: api, config: mod.config });
       }
+
+      API.closeStorage();
 
       showToast({ severity: 'success', title: 'Mods Installed' });
     } catch (error) {

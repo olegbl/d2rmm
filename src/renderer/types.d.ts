@@ -120,6 +120,8 @@ declare global {
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;
+    openStorage: (gamePath: string) => void;
+    closeStorage: () => void;
     extractFile: (
       gamePath: string,
       filePath: string,

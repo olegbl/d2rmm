@@ -12,22 +12,19 @@ export default function ModSettingsCheckboxField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
-  const fieldID = field.id;
-  const checked = Boolean(mod.config[fieldID]);
+  const value = Boolean(mod.config[field.id]);
 
   const onChange = useCallback(
     (_event: React.ChangeEvent<HTMLInputElement>, newValue: boolean): void => {
-      onChangeFromProps(fieldID, newValue);
+      onChangeFromProps(field.id, newValue);
     },
-    [fieldID, onChangeFromProps]
+    [field, onChangeFromProps]
   );
 
   return (
     <FormControlLabel
-      control={
-        <Switch checked={checked} onChange={onChange} name={field.name} />
-      }
-      label={checked ? 'On' : 'Off'}
+      control={<Switch checked={value} onChange={onChange} name={field.name} />}
+      label={value ? 'On' : 'Off'}
     />
   );
 }

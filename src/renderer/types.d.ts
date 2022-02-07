@@ -100,7 +100,10 @@ declare global {
     config?: readonly ModConfigField[];
   };
 
-  type ModConfigField = ModConfigFieldCheckbox | ModConfigFieldNumber;
+  type ModConfigField =
+    | ModConfigFieldCheckbox
+    | ModConfigFieldNumber
+    | ModConfigFieldSelect;
 
   type ModConfigFieldCheckbox = ModConfigFieldBase & {
     type: 'checkbox';
@@ -112,6 +115,12 @@ declare global {
     defaultValue: number;
     minValue?: number;
     maxValue?: number;
+  };
+
+  type ModConfigFieldSelect = ModConfigFieldBase & {
+    type: 'select';
+    defaultValue: string;
+    options: string[];
   };
 
   type ModConfigFieldBase = {

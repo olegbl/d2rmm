@@ -1,7 +1,8 @@
-import { Box, FormLabel, Tooltip } from '@mui/material';
+import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import { useCallback, useState } from 'react';
-import { Help } from '@mui/icons-material';
+import { Help, Refresh } from '@mui/icons-material';
 import ModSettingsNumberField from './ModSettingsNumberField';
+import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 
 const API = window.electron.API;
@@ -32,6 +33,10 @@ export default function ModSettingsField({
     [mod, refresh]
   );
 
+  const onReset = useCallback((): void => {
+    onChangeConfig(field.id, field.defaultValue);
+  }, [field, onChangeConfig]);
+
   let result = null;
 
   if (field.type === 'checkbox') {
@@ -50,6 +55,14 @@ export default function ModSettingsField({
         onChange={onChangeConfig}
       />
     );
+  } else if (field.type === 'select') {
+    result = (
+      <ModSettingsSelectField
+        field={field}
+        mod={mod}
+        onChange={onChangeConfig}
+      />
+    );
   }
 
   if (result == null) {
@@ -60,6 +73,7 @@ export default function ModSettingsField({
     <>
       <Box
         sx={{
+          alignItems: 'center',
           display: 'flex',
           justifyContent: 'space-between',
           paddingBottom: 1,
@@ -67,11 +81,28 @@ export default function ModSettingsField({
         }}
       >
         <FormLabel component="legend">{field.name}</FormLabel>
-        {field.description == null ? null : (
-          <Tooltip title={field.description}>
-            <Help fontSize="small" color="disabled" />
-          </Tooltip>
-        )}
+        <Box
+          sx={{
+            alignItems: 'center',
+            display: 'flex',
+            marginTop: -1,
+            marginBottom: -1,
+          }}
+        >
+          {JSON.stringify(mod.config[field.id]) ===
+          JSON.stringify(field.defaultValue) ? null : (
+            <Tooltip title="Revert to Default">
+              <IconButton size="small" onClick={onReset}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+          )}
+          {field.description == null ? null : (
+            <Tooltip title={field.description}>
+              <Help fontSize="small" color="disabled" />
+            </Tooltip>
+          )}
+        </Box>
       </Box>
       {result}
     </>

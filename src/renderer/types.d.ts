@@ -120,7 +120,11 @@ declare global {
   type ModConfigFieldSelect = ModConfigFieldBase & {
     type: 'select';
     defaultValue: string;
-    options: string[];
+    options: {
+      description?: string;
+      label: string;
+      value: ModConfigSingleValue;
+    }[];
   };
 
   type ModConfigFieldBase = {

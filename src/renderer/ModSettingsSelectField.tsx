@@ -1,4 +1,4 @@
-import { MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { useCallback } from 'react';
 
 type Props = {
@@ -15,7 +15,7 @@ export default function ModSettingsCheckboxField({
   const value = mod.config[field.id] as string;
 
   const onChange = useCallback(
-    (event: SelectChangeEvent<string | undefined>): void => {
+    (event: SelectChangeEvent<void | ModConfigSingleValue>): void => {
       const newValue = event.target.value;
       if (newValue != null) {
         onChangeFromProps(field.id, newValue);
@@ -27,9 +27,23 @@ export default function ModSettingsCheckboxField({
   return (
     <Select value={value} onChange={onChange}>
       {field.options.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-          {option === field.defaultValue ? ' (Default)' : ''}
+        <MenuItem
+          key={option.label}
+          value={
+            // this is not a string, but the types for this component are wrong
+            option.value as string
+          }
+        >
+          <Box>
+            {option.label}
+            {option.description == null ? null : (
+              <Box
+                sx={{ color: 'text.secondary', fontSize: 'subtitle2.fontSize' }}
+              >
+                {option.description}
+              </Box>
+            )}
+          </Box>
         </MenuItem>
       ))}
     </Select>

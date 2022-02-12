@@ -7,7 +7,7 @@ import {
   Tab,
   Theme,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import TabContext from '@mui/lab/TabContext';
@@ -22,6 +22,8 @@ import ModList from './ModList';
 import ModManagerSettings from './ModManagerSettings';
 import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
+
+const API = window.electron.API;
 
 function TabPanelBox({
   children,
@@ -55,7 +57,7 @@ function TabPanelBox({
 function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
   const [paths, gamePath, setGamePath] = usePaths();
-  const [mods, refreshMods] = useMods();
+  const [mods, onRefreshMods] = useMods();
   const [orderedMods, reorderMods] = useOrderedMods(mods);
   const [enabledMods, setEnabledMods] = useEnabledMods();
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
@@ -63,6 +65,10 @@ function D2RMMRootView() {
     () => mods.filter((mod) => mod.id === selectedModID).shift(),
     [selectedModID, mods]
   );
+
+  const onRunGame = useCallback(() => {
+    API.execute(`${paths.gamePath}\\D2R.exe`, ['-mod', 'D2RMM', '-txt']);
+  }, [paths.gamePath]);
 
   return (
     <ToastProvider>
@@ -113,7 +119,8 @@ function D2RMMRootView() {
               }}
             >
               <ButtonGroup variant="outlined">
-                <Button onClick={refreshMods}>Refresh Mod List</Button>
+                <Button onClick={onRunGame}>Run D2R</Button>
+                <Button onClick={onRefreshMods}>Refresh Mod List</Button>
                 <ModInstallButton
                   paths={paths}
                   orderedMods={orderedMods}

@@ -134,6 +134,7 @@ declare global {
   };
 
   type WindowAPI = {
+    execute: (executablePath: string, args?: string[]) => void;
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;

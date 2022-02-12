@@ -12,6 +12,7 @@ import {
 import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
+import { execFileSync } from 'child_process';
 
 export function getAppPath(): string {
   return app.isPackaged
@@ -50,6 +51,17 @@ const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
 
 export function createAPI(): void {
+  ipcMain.on('execute', (event, [executablePath, args]) => {
+    console.log('API.execute', [executablePath, args]);
+    try {
+      execFileSync(executablePath, args ?? []);
+      event.returnValue = true;
+    } catch (e) {
+      console.error('API.execute', e);
+      event.returnValue = false;
+    }
+  });
+
   ipcMain.on('openStorage', (event, gamePath) => {
     console.log('API.openStorage', gamePath);
 

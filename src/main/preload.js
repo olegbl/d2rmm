@@ -3,6 +3,11 @@ const json5 = require('json5');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
+    execute: (executablePath, args) => {
+      console.log('API.execute', { executablePath, args });
+      ipcRenderer.sendSync('execute', [executablePath, args]);
+      return null;
+    },
     openStorage: (gamePath) => {
       console.log('API.openStorage', { gamePath });
       ipcRenderer.sendSync('openStorage', gamePath);

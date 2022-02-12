@@ -1,4 +1,4 @@
-import { Toast } from './useToast';
+import { Toast } from './ToastContext';
 
 const API = window.electron.API;
 

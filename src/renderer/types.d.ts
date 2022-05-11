@@ -23,6 +23,9 @@ declare global {
 
   // this is the structure of the "D2RMM" global variable provided to mods' "mod.js" file
   type ModAPI = {
+    // returns the version of D2RMM
+    getVersion: () => number;
+
     // reads a JSON D2R file (ignoring comments, whitespace, and various mistakes in JSON formatting that D2R makes)
     // the file is the result of previously installed mods operating on it
     // or is ripped directly from D2R game files if no preceding mod has needed it yet
@@ -60,6 +63,23 @@ declare global {
     // D2RMM.writeTsv('global\\excel\\treasureclassex.txt', treasureclassex);
     writeTsv: (filePath: string, data: TSVData) => void;
 
+    // reads a D2R file as plain text
+    // the file is the result of previously installed mods operating on it
+    // or is ripped directly from D2R game files if no preceding mod has needed it yet
+    // e.g.:
+    // const nextStringIDRaw = D2RMM.readJson('local\\next_string_id.txt');
+    // let nextStringID = nextStringIDRaw.match(/[0-9]+/)[0]; // next valid string id
+    readTxt: (filePath: string) => string;
+
+    // writes a D2R file as plain text to the data directory
+    // e.g.:
+    // const nextStringIDRaw = D2RMM.readTxt('local\\next_string_id.txt');
+    // let nextStringID = nextStringIDRaw.match(/[0-9]+/)[0]; // next valid string id
+    // nextStringID ++;
+    // nextStringIDRaw.replace(/[0-9]+/, nextStringID);
+    // D2RMM.writeTxt('local\\next_string_id.txt', nextStringIDRaw);
+    writeTxt: (filePath: string, data: string) => void;
+
     // copies a file or directory from the mod directory to the data directory
     // you should use this for non-mergeable assets like sprites
     // avoid using it for TSV and JSON data (but I'm not the police, you do you)
@@ -70,6 +90,10 @@ declare global {
     //   true // overwrite any conflicts
     // );
     copyFile: (src: string, dst: string, overwrite?: boolean) => void;
+
+    // returns the next valid string ID from "next_string_id.txt"
+    // and incremenets the id inside the file
+    getNextStringID: () => number;
 
     // shows an error message to the user (you probably don't need to do this manually, just throw the error)
     // e.g.:
@@ -134,6 +158,7 @@ declare global {
   };
 
   type WindowAPI = {
+    getVersion: () => string;
     execute: (executablePath: string, args?: string[]) => void;
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
     createDirectory: (filePath: string) => void;
@@ -155,10 +180,12 @@ declare global {
     readModConfig: (id: string) => JSON;
     readModInfo: (id: string) => ModInfo;
     readTsv: (filePath: string) => TSVData;
+    readTxt: (filePath: string) => string;
     runTool: (tool: string, params?: string[]) => void;
     writeJson: (filePath: string, data: JSONData) => void;
     writeModConfig: (id: string, value: ModConfigValue) => JSON;
     writeTsv: (filePath: string, data: TSVData) => void;
+    writeTxt: (filePath: string, data: string) => void;
   };
 
   interface Window {

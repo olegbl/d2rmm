@@ -14,6 +14,8 @@ import ffi from 'ffi-napi';
 import ref from 'ref-napi';
 import { execFileSync } from 'child_process';
 
+import packageManifest from '../../release/app/package.json';
+
 export function getAppPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, '../')
@@ -51,6 +53,11 @@ const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
 
 export function createAPI(): void {
+  ipcMain.on('getVersion', (event) => {
+    console.log('API.getVersion');
+    event.returnValue = packageManifest.version;
+  });
+
   ipcMain.on('execute', (event, [executablePath, args]) => {
     console.log('API.execute', [executablePath, args]);
     try {

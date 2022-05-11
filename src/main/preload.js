@@ -3,6 +3,10 @@ const json5 = require('json5');
 
 contextBridge.exposeInMainWorld('electron', {
   API: {
+    getVersion: () => {
+      console.log('API.getVersion');
+      return ipcRenderer.sendSync('getVersion');
+    },
     execute: (executablePath, args) => {
       console.log('API.execute', { executablePath, args });
       ipcRenderer.sendSync('execute', [executablePath, args]);
@@ -148,6 +152,19 @@ contextBridge.exposeInMainWorld('electron', {
         // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
         `\uFEFF${content}`,
       ]);
+    },
+    readTxt: (filePath) => {
+      console.log('API.readTxt', { filePath });
+      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
+      if (content == null) {
+        console.warn('API.readTxt', 'file not found');
+        return null;
+      }
+      return content;
+    },
+    writeTxt: (filePath, data) => {
+      console.log('API.writeTxt', { filePath, data });
+      ipcRenderer.sendSync('writeFile', [filePath, false, data]);
     },
   },
 });

@@ -75,6 +75,10 @@ const createWindow = async () => {
     },
   });
 
+  const packageManifest = require('../../release/app/package.json');
+  const { version } = packageManifest;
+  mainWindow.setTitle(`[D2RMM] Diablo II: Resurrected Mod Manager ${version}`);
+
   mainWindow.removeMenu();
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));

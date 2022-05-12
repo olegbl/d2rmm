@@ -2,6 +2,7 @@ import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { Help, Refresh } from '@mui/icons-material';
 import ModSettingsNumberField from './ModSettingsNumberField';
+import ModSettingsTextField from './ModSettingsTextField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 
@@ -54,6 +55,10 @@ export default function ModSettingsField({
         mod={mod}
         onChange={onChangeConfig}
       />
+    );
+  } else if (field.type === 'text') {
+    result = (
+      <ModSettingsTextField field={field} mod={mod} onChange={onChangeConfig} />
     );
   } else if (field.type === 'select') {
     result = (

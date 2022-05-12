@@ -7,7 +7,7 @@ type Props = {
   onChange: (fieldID: string, value: ModConfigSingleValue) => unknown;
 };
 
-export default function ModSettingsCheckboxField({
+export default function ModSettingsNumberField({
   field,
   mod,
   onChange: onChangeFromProps,

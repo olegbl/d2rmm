@@ -9,22 +9,42 @@ contextBridge.exposeInMainWorld('electron', {
     },
     execute: (executablePath, args) => {
       console.log('API.execute', { executablePath, args });
-      ipcRenderer.sendSync('execute', [executablePath, args]);
+      const result = ipcRenderer.sendSync('execute', [executablePath, args]);
+      if (result instanceof Error) {
+        console.error('API.execute', result);
+        throw result;
+      }
       return null;
     },
     openStorage: (gamePath) => {
       console.log('API.openStorage', { gamePath });
-      ipcRenderer.sendSync('openStorage', gamePath);
+      const result = ipcRenderer.sendSync('openStorage', gamePath);
+      if (result instanceof Error) {
+        console.error('API.openStorage', result);
+        throw result;
+      }
       return null;
     },
     closeStorage: () => {
       console.log('API.closeStorage');
-      ipcRenderer.sendSync('closeStorage');
+      const result = ipcRenderer.sendSync('closeStorage');
+      if (result instanceof Error) {
+        console.error('API.closeStorage', result);
+        throw result;
+      }
       return null;
     },
     extractFile: (gamePath, filePath, targetPath) => {
       console.log('API.extractFile', { gamePath, filePath, targetPath });
-      ipcRenderer.sendSync('extractFile', [gamePath, filePath, targetPath]);
+      const result = ipcRenderer.sendSync('extractFile', [
+        gamePath,
+        filePath,
+        targetPath,
+      ]);
+      if (result instanceof Error) {
+        console.error('API.extractFile', result);
+        throw result;
+      }
       return null;
     },
     openURL: (url) => {
@@ -34,17 +54,18 @@ contextBridge.exposeInMainWorld('electron', {
     readModInfo: (id) => {
       const filePath = `mods\\${id}\\mod.json`;
       console.log('API.readModInfo', { id, filePath });
-      const info = ipcRenderer.sendSync('readFile', [filePath, true]);
+      const result = ipcRenderer.sendSync('readFile', [filePath, true]);
 
-      if (info != null) {
-        try {
-          return {
-            name: id,
-            ...JSON.parse(info),
-          };
-        } catch (e) {
-          console.error('API.readModInfo', e);
-        }
+      if (result instanceof Error) {
+        console.error('API.readModInfo', result);
+        throw result;
+      }
+
+      if (result != null) {
+        return {
+          name: id,
+          ...JSON.parse(result),
+        };
       }
 
       return null;
@@ -52,55 +73,120 @@ contextBridge.exposeInMainWorld('electron', {
     readModConfig: (id) => {
       const filePath = `mods\\${id}\\config.json`;
       console.log('API.readModConfig', { id, filePath });
-      const config = ipcRenderer.sendSync('readFile', [filePath, true]);
-      if (config != null) {
-        return JSON.parse(config);
+      const result = ipcRenderer.sendSync('readFile', [filePath, true]);
+
+      if (result instanceof Error) {
+        console.error('API.readModConfig', result);
+        throw result;
+      }
+
+      if (result != null) {
+        return JSON.parse(result);
       }
       return null;
     },
     writeModConfig: (id, value) => {
       const filePath = `mods\\${id}\\config.json`;
       console.log('API.writeModConfig', { id, filePath });
-      ipcRenderer.sendSync('writeFile', [
+      const result = ipcRenderer.sendSync('writeFile', [
         filePath,
         true,
         JSON.stringify(value),
       ]);
+
+      if (result instanceof Error) {
+        console.error('API.writeModConfig', result);
+        throw result;
+      }
+
       return null;
     },
     readModCode: (id) => {
       const filePath = `mods\\${id}\\mod.js`;
       console.log('API.readMod', { id, filePath });
-      return ipcRenderer.sendSync('readFile', [filePath, true]);
+      const result = ipcRenderer.sendSync('readFile', [filePath, true]);
+
+      if (result instanceof Error) {
+        console.error('API.readMod', result);
+        throw result;
+      }
+
+      return result;
     },
     readModDirectory: (filePath) => {
       console.log('API.readModDirectory');
-      return ipcRenderer.sendSync('readModDirectory', filePath) ?? [];
+      const result = ipcRenderer.sendSync('readModDirectory', filePath) ?? [];
+
+      if (result instanceof Error) {
+        console.error('API.readModDirectory', result);
+        throw result;
+      }
+
+      return result;
     },
     readDirectory: (filePath) => {
       console.log('API.readDirectory');
-      return ipcRenderer.sendSync('readDirectory', filePath) ?? [];
+      const result = ipcRenderer.sendSync('readDirectory', filePath) ?? [];
+
+      if (result instanceof Error) {
+        console.error('API.readDirectory', result);
+        throw result;
+      }
+
+      return result;
     },
     createDirectory: (filePath) => {
       console.log('API.createDirectory');
-      return ipcRenderer.sendSync('createDirectory', filePath);
+      const result = ipcRenderer.sendSync('createDirectory', filePath);
+
+      if (result instanceof Error) {
+        console.error('API.createDirectory', result);
+        throw result;
+      }
+
+      return result;
     },
     deleteFile: (filePath) => {
       console.log('API.deleteFile');
-      return ipcRenderer.sendSync('deleteFile', [filePath, false]);
+      const result = ipcRenderer.sendSync('deleteFile', [filePath, false]);
+
+      if (result instanceof Error) {
+        console.error('API.deleteFile', result);
+        throw result;
+      }
+
+      return result;
     },
     copyFile: (fromPath, toPath, overwrite = false) => {
       console.log('API.copyFile', { fromPath, toPath, overwrite });
-      return ipcRenderer.sendSync('copyFile', [fromPath, toPath, overwrite]);
+      const result = ipcRenderer.sendSync('copyFile', [
+        fromPath,
+        toPath,
+        overwrite,
+      ]);
+
+      if (result instanceof Error) {
+        console.error('API.copyFile', result);
+        throw result;
+      }
+
+      return result;
     },
     readTsv: (filePath) => {
       console.log('API.readTsv', { filePath });
-      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
-      if (content == null) {
+      const result = ipcRenderer.sendSync('readFile', [filePath, false]);
+
+      if (result instanceof Error) {
+        console.error('API.readTsv', result);
+        throw result;
+      }
+
+      if (result == null) {
         console.warn('API.readTsv', 'file not found');
         return null;
       }
-      const [headersRaw, ...rowsRaw] = content.split('\n');
+
+      const [headersRaw, ...rowsRaw] = result.split('\n');
       const headers = headersRaw.split('\t');
       const rows = rowsRaw
         .map((row) => {
@@ -124,47 +210,86 @@ contextBridge.exposeInMainWorld('electron', {
         headers.map((header) => row[header] ?? '').join('\t')
       );
       const content = [headersRaw, ...rowsRaw, ''].join('\n');
-      ipcRenderer.sendSync('writeFile', [filePath, false, content]);
+      const result = ipcRenderer.sendSync('writeFile', [
+        filePath,
+        false,
+        content,
+      ]);
+
+      if (result instanceof Error) {
+        console.error('API.writeTsv', result);
+        throw result;
+      }
+
+      return result;
     },
     readJson: (filePath) => {
       console.log('API.readJson', { filePath });
-      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
-      if (content == null) {
+      const result = ipcRenderer.sendSync('readFile', [filePath, false]);
+
+      if (result instanceof Error) {
+        console.error('API.readTxt', result);
+        throw result;
+      }
+
+      if (result == null) {
         console.warn('API.readJson', 'file not found');
         return {};
       }
-      const cleanContent = content
+
+      const cleanContent = result
         // remove byte order mark
         .replace(/^\uFEFF/, '');
       try {
         return json5.parse(cleanContent);
       } catch (e) {
-        console.error('API.readJson', e, { content, cleanContent });
+        console.error('API.readJson', e, { result, cleanContent });
+        throw e;
       }
-      return {};
     },
     writeJson: (filePath, data) => {
       console.log('API.writeJson', { filePath, data });
       const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
-      ipcRenderer.sendSync('writeFile', [
+      const result = ipcRenderer.sendSync('writeFile', [
         filePath,
         false,
         // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
         `\uFEFF${content}`,
       ]);
+
+      if (result instanceof Error) {
+        console.error('API.writeJson', result);
+        throw result;
+      }
+
+      return result;
     },
     readTxt: (filePath) => {
       console.log('API.readTxt', { filePath });
-      const content = ipcRenderer.sendSync('readFile', [filePath, false]);
-      if (content == null) {
+      const result = ipcRenderer.sendSync('readFile', [filePath, false]);
+
+      if (result instanceof Error) {
+        console.error('API.readTxt', result);
+        throw result;
+      }
+
+      if (result == null) {
         console.warn('API.readTxt', 'file not found');
         return null;
       }
-      return content;
+
+      return result;
     },
     writeTxt: (filePath, data) => {
       console.log('API.writeTxt', { filePath, data });
-      ipcRenderer.sendSync('writeFile', [filePath, false, data]);
+      const result = ipcRenderer.sendSync('writeFile', [filePath, false, data]);
+
+      if (result instanceof Error) {
+        console.error('API.writeTxt', result);
+        throw result;
+      }
+
+      return result;
     },
   },
 });

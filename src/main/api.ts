@@ -41,13 +41,68 @@ const voidPtr = ref.refType(ref.types.void);
 const voidPtrPtr = ref.refType(voidPtr);
 const dwordPtr = ref.refType(ref.types.uint32);
 
+// http://www.zezula.net/en/casc/casclib.html
 const CascLib = ffi.Library(path.join(getAppPath(), 'tools', 'CascLib.dll'), {
   CascCloseFile: ['bool', [voidPtr]],
   CascCloseStorage: ['bool', [voidPtr]],
   CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],
   CascOpenStorage: ['bool', ['string', 'int', voidPtrPtr]],
   CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
+  GetLastError: ['int', []],
 });
+
+// CascLib Error Codes for GetLastError()
+const KnownCastLibErrorCodes: { [code: number]: string } = {
+  0: 'ERROR_SUCCESS',
+  2: 'ERROR_PATH_NOT_FOUND',
+  1: 'ERROR_ACCESS_DENIED',
+  9: 'ERROR_INVALID_HANDLE',
+  12: 'ERROR_NOT_ENOUGH_MEMORY',
+  45: 'ERROR_NOT_SUPPORTED',
+  22: 'ERROR_INVALID_PARAMETER',
+  28: 'ERROR_DISK_FULL',
+  17: 'ERROR_ALREADY_EXISTS',
+  55: 'ERROR_INSUFFICIENT_BUFFER',
+  1000: 'ERROR_BAD_FORMAT',
+  1001: 'ERROR_NO_MORE_FILES',
+  1002: 'ERROR_HANDLE_EOF',
+  1003: 'ERROR_CAN_NOT_COMPLETE',
+  1004: 'ERROR_FILE_CORRUPT',
+  1005: 'ERROR_FILE_ENCRYPTED',
+  1006: 'ERROR_FILE_TOO_LARGE',
+  1007: 'ERROR_ARITHMETIC_OVERFLOW',
+  1008: 'ERROR_NETWORK_NOT_AVAILABLE',
+};
+
+function processErrorCode(errorCodeArg: string | number): string {
+  let errorCode = errorCodeArg;
+  if (typeof errorCode === 'string') {
+    errorCode = parseInt(errorCode, 10);
+  }
+  return KnownCastLibErrorCodes[errorCode];
+}
+
+function createError(
+  method: string,
+  message: string,
+  errorCodeArg?: unknown
+): Error {
+  console.error('API.execute', method, message, errorCodeArg);
+
+  const prefix = `${method}: ${message}`;
+  let errorCode = errorCodeArg;
+  if (errorCode != null) {
+    if (typeof errorCode === 'string' || typeof errorCode === 'number') {
+      errorCode = processErrorCode(errorCode) ?? errorCode;
+    }
+    return new Error(`${prefix}: ${String(errorCode)}`);
+  }
+  return new Error(prefix);
+}
+
+// TODO: use CascFindFirstFile & CascFindNextFile to implement an "extractFiles" API
+//       that would recursively extract all files in a directory
+// e.g. https://github.com/ladislav-zezula/CascLib/blob/4fc4c18bd5a49208337199a7f4256271675cae44/test/CascTest.cpp#L816
 
 const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
@@ -63,9 +118,12 @@ export function createAPI(): void {
     try {
       execFileSync(executablePath, args ?? []);
       event.returnValue = true;
-    } catch (e) {
-      console.error('API.execute', e);
-      event.returnValue = false;
+    } catch (error) {
+      event.returnValue = createError(
+        'API.execute',
+        'Failed to execute file',
+        error
+      );
     }
   });
 
@@ -76,7 +134,12 @@ export function createAPI(): void {
       if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
         cascStorageIsOpen = true;
       } else {
-        console.log('API.extractFile', 'Failed to open CASC storage');
+        event.returnValue = createError(
+          'API.openStorage',
+          'Failed to open CASC storage',
+          CascLib.GetLastError()
+        );
+        return;
       }
     }
 
@@ -91,8 +154,12 @@ export function createAPI(): void {
       if (CascLib.CascCloseStorage(storage)) {
         cascStorageIsOpen = false;
       } else {
-        cascStorageIsOpen = false;
-        console.log('API.extractFile', 'Failed to close CASC storage');
+        event.returnValue = createError(
+          'API.closeStorage',
+          'Failed to close CASC storage',
+          CascLib.GetLastError()
+        );
+        return;
       }
     }
 
@@ -110,8 +177,10 @@ export function createAPI(): void {
       }
 
       if (!cascStorageIsOpen) {
-        console.log('API.extractFile', 'CASC storage is not open');
-        event.returnValue = false;
+        event.returnValue = createError(
+          'API.extractFile',
+          'CASC storage is not open'
+        );
         return;
       }
 
@@ -138,22 +207,36 @@ export function createAPI(): void {
           });
           event.returnValue = true;
         } else {
-          console.log('API.extractFile', 'Failed to read CASC file');
+          event.returnValue = createError(
+            'API.extractFile',
+            'Failed to read CASC file',
+            CascLib.GetLastError()
+          );
+          return;
         }
 
         if (!CascLib.CascCloseFile(file)) {
-          console.log('API.extractFile', 'Failed to close CASC file');
+          event.returnValue = createError(
+            'API.extractFile',
+            'Failed to close CASC file',
+            CascLib.GetLastError()
+          );
+          return;
         }
       } else {
-        console.log('API.extractFile', 'Failed to open CASC file');
+        event.returnValue = createError(
+          'API.extractFile',
+          'Failed to open CASC file',
+          CascLib.GetLastError()
+        );
+        return;
       }
     } catch (e) {
-      console.error('API.extractFile', e);
-      event.returnValue = false;
-    }
-
-    if (typeof event.returnValue !== 'boolean') {
-      event.returnValue = false;
+      event.returnValue = createError(
+        'API.extractFile',
+        'Failed to extract file',
+        String(e)
+      );
     }
   });
 
@@ -168,8 +251,11 @@ export function createAPI(): void {
         event.returnValue = false;
       }
     } catch (e) {
-      console.error('API.createDirectory', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.createDirectory',
+        'Failed to create directory',
+        CascLib.GetLastError()
+      );
     }
   });
 
@@ -187,8 +273,11 @@ export function createAPI(): void {
         event.returnValue = null;
       }
     } catch (e) {
-      console.error('API.readDirectory', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.readDirectory',
+        'Failed to read directory',
+        String(e)
+      );
     }
   });
 
@@ -206,8 +295,11 @@ export function createAPI(): void {
         event.returnValue = null;
       }
     } catch (e) {
-      console.error('API.readModDirectory', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.readModDirectory',
+        'Failed to read directory',
+        String(e)
+      );
     }
   });
 
@@ -228,8 +320,11 @@ export function createAPI(): void {
         event.returnValue = null;
       }
     } catch (e) {
-      console.error('API.readFile', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.readFile',
+        'Failed to read file',
+        String(e)
+      );
     }
   });
 
@@ -246,8 +341,11 @@ export function createAPI(): void {
       });
       event.returnValue = true;
     } catch (e) {
-      console.error('API.writeFile', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.writeFile',
+        'Failed to write file',
+        String(e)
+      );
     }
   });
 
@@ -270,8 +368,11 @@ export function createAPI(): void {
         event.returnValue = false;
       }
     } catch (e) {
-      console.error('API.deleteFile', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.deleteFile',
+        'Failed to delete file',
+        String(e)
+      );
     }
   });
 
@@ -293,8 +394,11 @@ export function createAPI(): void {
         event.returnValue = false;
       }
     } catch (e) {
-      console.error('API.copyFile', e);
-      event.returnValue = null;
+      event.returnValue = createError(
+        'API.copyFile',
+        'Failed to copy file',
+        String(e)
+      );
     }
   });
 }

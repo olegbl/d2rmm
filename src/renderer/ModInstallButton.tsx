@@ -26,14 +26,13 @@ export default function ModInstallButton({
   );
   const onInstallMods = useCallback((): void => {
     try {
+      API.openStorage(paths.gamePath);
       API.deleteFile(paths.mergedPath);
       API.createDirectory(paths.mergedPath);
       API.writeJson(`${paths.mergedPath}\\..\\modinfo.json`, {
         name: 'D2RMM',
         savepath: 'D2RMM/',
       });
-
-      API.openStorage(paths.gamePath);
 
       for (let i = 0; i < modsToInstall.length; i += 1) {
         const mod = modsToInstall[i];

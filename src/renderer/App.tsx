@@ -7,7 +7,7 @@ import {
   Tab,
   Theme,
 } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import TabContext from '@mui/lab/TabContext';
@@ -23,8 +23,6 @@ import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
 import PathsProvider from './PathsProvider';
 import RunGameButton from './RunGameButton';
-
-const API = window.electron.API;
 
 function TabPanelBox({
   children,

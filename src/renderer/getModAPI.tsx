@@ -12,6 +12,7 @@ export default function getModAPI(
     dataPath,
     gamePath,
     isDirectMode,
+    isDryRun,
     isPreExtractedData,
     mergedPath,
   }: IPreferences,
@@ -70,7 +71,9 @@ export default function getModAPI(
     },
     writeTsv: (filePath: string, data: TSVData): void => {
       console.log('D2RMM.writeTsv', filePath, data);
-      API.writeTsv(getDestinationFilePath(filePath), data);
+      if (!isDryRun) {
+        API.writeTsv(getDestinationFilePath(filePath), data);
+      }
     },
     readJson: (filePath: string): JSONData => {
       console.log('D2RMM.readJson', filePath);
@@ -79,7 +82,9 @@ export default function getModAPI(
     },
     writeJson: (filePath: string, data: JSONData): void => {
       console.log('D2RMM.writeJson', filePath, data);
-      API.writeJson(getDestinationFilePath(filePath), data);
+      if (!isDryRun) {
+        API.writeJson(getDestinationFilePath(filePath), data);
+      }
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.log('D2RMM.copyFile', src, dst);
@@ -96,7 +101,9 @@ export default function getModAPI(
     },
     writeTxt: (filePath: string, data: string): void => {
       console.log('D2RMM.writeTxt', filePath, data);
-      API.writeTxt(getDestinationFilePath(filePath), data);
+      if (!isDryRun) {
+        API.writeTxt(getDestinationFilePath(filePath), data);
+      }
     },
     getNextStringID: (): number => {
       console.log('D2RMM.getNextStringID');
@@ -116,10 +123,12 @@ export default function getModAPI(
       nextStringID = nextStringID + 1;
 
       if (nextStringIDRaw != null) {
-        API.writeTxt(
-          getDestinationFilePath(filePath),
-          nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
-        );
+        if (!isDryRun) {
+          API.writeTxt(
+            getDestinationFilePath(filePath),
+            nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
+          );
+        }
       }
 
       return stringID;

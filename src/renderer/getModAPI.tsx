@@ -16,6 +16,7 @@ export default function getModAPI(
     isPreExtractedData,
     mergedPath,
   }: IPreferences,
+  extractedFiles: Record<string, boolean>,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
@@ -35,6 +36,15 @@ export default function getModAPI(
   }
 
   function extractFile(filePath: string): void {
+    // if we're using direct mode, then we want to delete any existing file
+    // and extract it during the very first time we use it so that we're
+    // always applying to clean vanilla data rather than the output of a
+    // previous installation
+    if (isDirectMode && !extractedFiles[filePath]) {
+      API.deleteFile(getDestinationFilePath(filePath));
+    }
+    extractedFiles[filePath] = true;
+
     if (isPreExtractedData) {
       const success = API.copyFile(
         getPreExtractedSourceFilePath(filePath),

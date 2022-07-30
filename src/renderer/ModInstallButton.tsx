@@ -42,11 +42,13 @@ export default function ModInstallButton({
         });
       }
 
+      const extractedFiles = {};
+
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
         try {
           const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, preferences, showToast);
+          const api = getModAPI(mod, preferences, extractedFiles, showToast);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
         } catch (error) {

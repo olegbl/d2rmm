@@ -4,10 +4,10 @@ import useSavedState from './useSavedState';
 export type IPreferences = {
   dataPath: string;
   gamePath: string;
-  isDirectData: boolean;
+  isPreExtractedData: boolean;
   mergedPath: string;
   rawGamePath: string;
-  setIsDirectData: (value: boolean) => void;
+  setIsPreExtractedData: (value: boolean) => void;
   setRawGamePath: (value: string) => void;
 };
 
@@ -31,8 +31,8 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     'C:\\Battle.net\\Games\\Diablo II Resurrected'
   );
 
-  const [isDirectData, setIsDirectData] = useSavedState(
-    'direct-data',
+  const [isPreExtractedData, setIsPreExtractedData] = useSavedState(
+    'pre-extracted-data',
     false,
     (bool) => String(bool),
     (str) => str === 'true'
@@ -46,19 +46,19 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     (): IPreferences => ({
       dataPath,
       gamePath,
-      isDirectData,
+      isPreExtractedData,
       mergedPath,
       rawGamePath,
-      setIsDirectData,
+      setIsPreExtractedData,
       setRawGamePath,
     }),
     [
       dataPath,
       gamePath,
-      isDirectData,
+      isPreExtractedData,
       mergedPath,
       rawGamePath,
-      setIsDirectData,
+      setIsPreExtractedData,
       setRawGamePath,
     ]
   );

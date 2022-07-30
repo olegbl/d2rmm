@@ -19,7 +19,7 @@ export default function ModInstallButton({
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
-  const { gamePath, mergedPath, isDirectData } = preferences;
+  const { gamePath, mergedPath, isPreExtractedData } = preferences;
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
@@ -28,7 +28,7 @@ export default function ModInstallButton({
 
   const onInstallMods = useCallback((): void => {
     try {
-      if (!isDirectData) {
+      if (!isPreExtractedData) {
         API.openStorage(gamePath);
       }
 
@@ -55,7 +55,7 @@ export default function ModInstallButton({
         }
       }
 
-      if (!isDirectData) {
+      if (!isPreExtractedData) {
         API.closeStorage();
       }
 
@@ -69,7 +69,7 @@ export default function ModInstallButton({
     }
   }, [
     gamePath,
-    isDirectData,
+    isPreExtractedData,
     mergedPath,
     modsToInstall,
     preferences,

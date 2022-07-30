@@ -8,7 +8,7 @@ let nextStringID: number = 0;
 
 export default function getModAPI(
   mod: Mod,
-  { dataPath, gamePath, mergedPath, isDirectData }: IPreferences,
+  { dataPath, gamePath, mergedPath, isPreExtractedData }: IPreferences,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   function getLocalDataFilePath(filePath: string): string {
@@ -25,7 +25,7 @@ export default function getModAPI(
   }
 
   function extractFile(filePath: string): void {
-    if (isDirectData) {
+    if (isPreExtractedData) {
       const success = API.copyFile(
         getLocalDataFilePath(filePath),
         getMergedFilePath(filePath),

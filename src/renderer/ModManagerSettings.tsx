@@ -22,9 +22,9 @@ type Props = Record<string, never>;
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const {
     gamePath,
-    isDirectData,
+    isPreExtractedData,
     rawGamePath,
-    setIsDirectData,
+    setIsPreExtractedData,
     setRawGamePath,
   } = usePreferences();
 
@@ -54,12 +54,14 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         }
       />
       <ListItem disablePadding={true}>
-        <Tooltip title="Use data from the /data directory instead of extracting it from the game.">
-          <ListItemButton onClick={() => setIsDirectData(!isDirectData)}>
+        <Tooltip title="Use data directly from the game's data directory, instead of extracting it from the game's CASC archive. You will need to manually extract game data using CascView in order to use this option.">
+          <ListItemButton
+            onClick={() => setIsPreExtractedData(!isPreExtractedData)}
+          >
             <ListItemIcon>
               <Checkbox
                 edge="start"
-                checked={isDirectData}
+                checked={isPreExtractedData}
                 tabIndex={-1}
                 disableRipple={true}
                 inputProps={{
@@ -67,7 +69,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 }}
               />
             </ListItemIcon>
-            <ListItemText id="use-direct-data" primary="Use Direct Data" />
+            <ListItemText
+              id="use-direct-data"
+              primary="Use Pre-Extracted Data"
+            />
           </ListItemButton>
         </Tooltip>
       </ListItem>

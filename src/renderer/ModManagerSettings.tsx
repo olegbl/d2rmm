@@ -23,9 +23,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const {
     gamePath,
     isDirectMode,
+    isDryRun,
     isPreExtractedData,
     rawGamePath,
     setIsDirectMode,
+    setIsDryRun,
     setIsPreExtractedData,
     setRawGamePath,
   } = usePreferences();
@@ -64,6 +66,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               // data that we're writing as also the source of truth
               if (!isPreExtractedData) {
                 setIsDirectMode(false);
+                setIsDryRun(false);
               }
             }}
           >
@@ -109,6 +112,33 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               />
             </ListItemIcon>
             <ListItemText id="use-direct-mode" primary="Use Direct Mode" />
+          </ListItemButton>
+        </Tooltip>
+      </ListItem>
+      <ListItem disablePadding={true}>
+        <Tooltip title="Extract game files and let mods process them, but don't save changes, so the files won't actually be modified. This can let you easily revert any changes to your /data/ directory if you were using direct mode.">
+          <ListItemButton
+            onClick={() => {
+              setIsDryRun(!isDryRun);
+              // these two options are incompatible since we can't use the same
+              // data that we're writing as also the source of truth
+              if (!isDirectMode) {
+                setIsPreExtractedData(false);
+              }
+            }}
+          >
+            <ListItemIcon>
+              <Checkbox
+                edge="start"
+                checked={isDryRun}
+                tabIndex={-1}
+                disableRipple={true}
+                inputProps={{
+                  'aria-labelledby': 'use-dry-run',
+                }}
+              />
+            </ListItemIcon>
+            <ListItemText id="use-dry-run" primary="Dry Run" />
           </ListItemButton>
         </Tooltip>
       </ListItem>

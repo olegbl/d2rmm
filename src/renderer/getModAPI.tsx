@@ -1,3 +1,4 @@
+import { IPathsContext } from './PathsContext';
 import { Toast } from './ToastContext';
 
 const API = window.electron.API;
@@ -7,7 +8,7 @@ let nextStringID: number = 0;
 
 export default function getModAPI(
   mod: Mod,
-  { gamePath, mergedPath }: D2RMMPaths,
+  { gamePath, mergedPath }: IPathsContext,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   return {

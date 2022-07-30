@@ -1,39 +1,37 @@
 import { TextField } from '@mui/material';
 import { useCallback, useMemo } from 'react';
+import { usePathsContext } from './PathsContext';
 
 const API = window.electron.API;
 
-function getIsValidGamePath(paths: D2RMMPaths): boolean {
-  const files = API.readDirectory(paths.gamePath);
+function getIsValidGamePath(path: string): boolean {
+  const files = API.readDirectory(path);
   return files.find(({ name }) => name === 'D2R.exe') != null;
 }
 
-type Props = {
-  paths: D2RMMPaths;
-  gamePath: string;
-  onChangeGamePath: (newPath: string) => unknown;
-};
+type Props = Record<string, never>;
 
-export default function ModManagerSettings({
-  paths,
-  gamePath,
-  onChangeGamePath: onChangeGamePathFromProps,
-}: Props): JSX.Element {
-  const isValidGamePath = useMemo(() => getIsValidGamePath(paths), [paths]);
+export default function ModManagerSettings(_props: Props): JSX.Element {
+  const { gamePath, rawGamePath, setRawGamePath } = usePathsContext();
 
-  const onChangeGamePath = useCallback(
+  const onChange = useCallback(
     (event): void => {
-      onChangeGamePathFromProps(event.target.value);
+      setRawGamePath(event.target.value);
     },
-    [onChangeGamePathFromProps]
+    [setRawGamePath]
+  );
+
+  const isValidGamePath = useMemo(
+    () => getIsValidGamePath(gamePath),
+    [gamePath]
   );
 
   return (
     <>
       <TextField
         label="Diablo II Resurrected Game Directory"
-        value={gamePath}
-        onChange={onChangeGamePath}
+        value={rawGamePath}
+        onChange={onChange}
         error={!isValidGamePath}
         helperText={
           isValidGamePath

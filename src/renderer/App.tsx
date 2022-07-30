@@ -16,12 +16,13 @@ import TabPanel from '@mui/lab/TabPanel';
 import useEnabledMods from './useEnabledMods';
 import useMods from './useMods';
 import ModSettings from './ModSettings';
-import usePaths from './usePaths';
 import useOrderedMods from './useOrderedMods';
 import ModList from './ModList';
 import ModManagerSettings from './ModManagerSettings';
 import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
+import PathsProvider from './PathsProvider';
+import RunGameButton from './RunGameButton';
 
 const API = window.electron.API;
 
@@ -56,7 +57,6 @@ function TabPanelBox({
 
 function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
-  const [paths, gamePath, setGamePath] = usePaths();
   const [mods, onRefreshMods] = useMods();
   const [orderedMods, reorderMods] = useOrderedMods(mods);
   const [enabledMods, setEnabledMods] = useEnabledMods();
@@ -66,88 +66,81 @@ function D2RMMRootView() {
     [selectedModID, mods]
   );
 
-  const onRunGame = useCallback(() => {
-    API.execute(`${paths.gamePath}\\D2R.exe`, ['-mod', 'D2RMM', '-txt']);
-  }, [paths.gamePath]);
-
   return (
-    <ToastProvider>
-      <TabContext value={tab}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            width: '100%',
-          }}
-        >
-          <TabList onChange={(_event, value) => setTab(value)}>
-            <Tab label="Mods" value="mods" />
-            <Tab label="Settings" value="settings" />
-          </TabList>
-          <TabPanelBox value="mods">
-            <ModList
-              mods={orderedMods}
-              enabledMods={enabledMods}
-              onToggleMod={(mod) =>
-                setEnabledMods((prev) => ({
-                  ...prev,
-                  [mod.id]: !prev[mod.id],
-                }))
-              }
-              onConfigureMod={(mod) => setSelectedModID(mod.id)}
-              onReorderMod={(from, to) => reorderMods(from, to)}
-            />
-            <Drawer
-              anchor="right"
-              open={selectedMod != null}
-              onClose={() => setSelectedModID(null)}
-            >
-              {selectedMod == null ? null : (
-                <ModSettings
-                  mod={selectedMod}
-                  onClose={() => setSelectedModID(null)}
-                />
-              )}
-            </Drawer>
-            <Box
-              sx={{
-                alignItems: 'flex-end',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: 1,
-              }}
-            >
-              <ButtonGroup variant="outlined">
-                <Button onClick={onRunGame}>Run D2R</Button>
-                <Button onClick={onRefreshMods}>Refresh Mod List</Button>
-                <ModInstallButton
-                  paths={paths}
-                  orderedMods={orderedMods}
-                  enabledMods={enabledMods}
-                />
-              </ButtonGroup>
-            </Box>
-          </TabPanelBox>
-          <TabPanelBox value="settings" sx={{ padding: 2 }}>
-            <ModManagerSettings
-              paths={paths}
-              gamePath={gamePath}
-              onChangeGamePath={setGamePath}
-            />
-          </TabPanelBox>
-        </Box>
-      </TabContext>
-    </ToastProvider>
+    <TabContext value={tab}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        <TabList onChange={(_event, value) => setTab(value)}>
+          <Tab label="Mods" value="mods" />
+          <Tab label="Settings" value="settings" />
+        </TabList>
+        <TabPanelBox value="mods">
+          <ModList
+            mods={orderedMods}
+            enabledMods={enabledMods}
+            onToggleMod={(mod) =>
+              setEnabledMods((prev) => ({
+                ...prev,
+                [mod.id]: !prev[mod.id],
+              }))
+            }
+            onConfigureMod={(mod) => setSelectedModID(mod.id)}
+            onReorderMod={(from, to) => reorderMods(from, to)}
+          />
+          <Drawer
+            anchor="right"
+            open={selectedMod != null}
+            onClose={() => setSelectedModID(null)}
+          >
+            {selectedMod == null ? null : (
+              <ModSettings
+                mod={selectedMod}
+                onClose={() => setSelectedModID(null)}
+              />
+            )}
+          </Drawer>
+          <Box
+            sx={{
+              alignItems: 'flex-end',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 1,
+            }}
+          >
+            <ButtonGroup variant="outlined">
+              <RunGameButton />
+              <Button onClick={onRefreshMods}>Refresh Mod List</Button>
+              <ModInstallButton
+                orderedMods={orderedMods}
+                enabledMods={enabledMods}
+              />
+            </ButtonGroup>
+          </Box>
+        </TabPanelBox>
+        <TabPanelBox value="settings" sx={{ padding: 2 }}>
+          <ModManagerSettings />
+        </TabPanelBox>
+      </Box>
+    </TabContext>
   );
 }
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<D2RMMRootView />} />
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <PathsProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<D2RMMRootView />} />
+          </Routes>
+        </Router>
+      </PathsProvider>
+    </ToastProvider>
   );
 }

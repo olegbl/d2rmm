@@ -4,37 +4,39 @@ import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useToast from './useToast';
 import { EnabledMods } from './useEnabledMods';
+import { usePathsContext } from './PathsContext';
 
 const API = window.electron.API;
 
 type Props = {
   enabledMods: EnabledMods;
   orderedMods: Mod[];
-  paths: D2RMMPaths;
 };
 
 export default function ModInstallButton({
   enabledMods,
   orderedMods,
-  paths,
 }: Props): JSX.Element {
   const showToast = useToast();
+  const paths = usePathsContext();
+  const { gamePath, mergedPath } = paths;
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
     [orderedMods, enabledMods]
   );
+
   const onInstallMods = useCallback((): void => {
     try {
-      API.openStorage(paths.gamePath);
-      API.deleteFile(paths.mergedPath);
-      API.createDirectory(paths.mergedPath);
-      API.writeJson(`${paths.mergedPath}\\..\\modinfo.json`, {
+      API.openStorage(gamePath);
+      API.deleteFile(mergedPath);
+      API.createDirectory(mergedPath);
+      API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
         name: 'D2RMM',
         savepath: 'D2RMM/',
       });
 
-      for (let i = 0; i < modsToInstall.length; i += 1) {
+      for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
         try {
           const code = API.readModCode(mod.id);
@@ -60,7 +62,7 @@ export default function ModInstallButton({
         description: String(error),
       });
     }
-  }, [paths, modsToInstall, showToast]);
+  }, [gamePath, mergedPath, showToast, modsToInstall, paths]);
 
   return (
     <LoadingButton onClick={onInstallMods} variant="outlined">

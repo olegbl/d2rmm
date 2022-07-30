@@ -1,9 +1,4 @@
 declare global {
-  type D2RMMPaths = {
-    gamePath: string;
-    mergedPath: string;
-  };
-
   type TSVDataHeader = string;
 
   type TSVDataRow = {

@@ -1,12 +1,30 @@
-import { useMemo } from 'react';
-import PathsContext from './PathsContext';
+import React, { useContext, useMemo } from 'react';
 import useSavedState from './useSavedState';
+
+export type IPreferences = {
+  gamePath: string;
+  isDirectData: boolean;
+  mergedPath: string;
+  rawGamePath: string;
+  setIsDirectData: (value: boolean) => void;
+  setRawGamePath: (value: string) => void;
+};
+
+export const Context = React.createContext<IPreferences | null>(null);
+
+export function usePreferences(): IPreferences {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return context;
+}
 
 type Props = {
   children: React.ReactNode;
 };
 
-export default function PathsProvider({ children }: Props): JSX.Element {
+export function PreferencesProvider({ children }: Props): JSX.Element {
   const [rawGamePath, setRawGamePath] = useSavedState(
     'paths',
     'C:\\Battle.net\\Games\\Diablo II Resurrected'
@@ -44,7 +62,5 @@ export default function PathsProvider({ children }: Props): JSX.Element {
     ]
   );
 
-  return (
-    <PathsContext.Provider value={context}>{children}</PathsContext.Provider>
-  );
+  return <Context.Provider value={context}>{children}</Context.Provider>;
 }

@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useCallback, useMemo } from 'react';
-import { usePathsContext } from './PathsContext';
+import { usePreferences } from './Preferences';
 
 const API = window.electron.API;
 
@@ -26,7 +26,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     rawGamePath,
     setIsDirectData,
     setRawGamePath,
-  } = usePathsContext();
+  } = usePreferences();
 
   const onChange = useCallback(
     (event): void => {

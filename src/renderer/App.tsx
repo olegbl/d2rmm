@@ -21,7 +21,7 @@ import ModList from './ModList';
 import ModManagerSettings from './ModManagerSettings';
 import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
-import PathsProvider from './PathsProvider';
+import { PreferencesProvider } from './Preferences';
 import RunGameButton from './RunGameButton';
 
 function TabPanelBox({
@@ -132,13 +132,13 @@ function D2RMMRootView() {
 export default function App() {
   return (
     <ToastProvider>
-      <PathsProvider>
+      <PreferencesProvider>
         <Router>
           <Routes>
             <Route path="/" element={<D2RMMRootView />} />
           </Routes>
         </Router>
-      </PathsProvider>
+      </PreferencesProvider>
     </ToastProvider>
   );
 }

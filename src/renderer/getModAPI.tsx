@@ -1,4 +1,4 @@
-import { IPathsContext } from './PathsContext';
+import { IPreferences } from './Preferences';
 import { Toast } from './ToastContext';
 
 const API = window.electron.API;
@@ -8,7 +8,7 @@ let nextStringID: number = 0;
 
 export default function getModAPI(
   mod: Mod,
-  { gamePath, mergedPath }: IPathsContext,
+  { gamePath, mergedPath }: IPreferences,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   return {

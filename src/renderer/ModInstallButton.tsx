@@ -4,7 +4,7 @@ import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useToast from './useToast';
 import { EnabledMods } from './useEnabledMods';
-import { usePathsContext } from './PathsContext';
+import { usePreferences } from './Preferences';
 
 const API = window.electron.API;
 
@@ -18,8 +18,8 @@ export default function ModInstallButton({
   orderedMods,
 }: Props): JSX.Element {
   const showToast = useToast();
-  const paths = usePathsContext();
-  const { gamePath, mergedPath } = paths;
+  const preferences = usePreferences();
+  const { gamePath, mergedPath } = preferences;
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
@@ -40,7 +40,7 @@ export default function ModInstallButton({
         const mod = modsToInstall[i];
         try {
           const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, paths, showToast);
+          const api = getModAPI(mod, preferences, showToast);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
         } catch (error) {
@@ -62,7 +62,7 @@ export default function ModInstallButton({
         description: String(error),
       });
     }
-  }, [gamePath, mergedPath, showToast, modsToInstall, paths]);
+  }, [gamePath, mergedPath, showToast, modsToInstall, preferences]);
 
   return (
     <LoadingButton onClick={onInstallMods} variant="outlined">

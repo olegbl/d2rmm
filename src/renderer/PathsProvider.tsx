@@ -1,33 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import PathsContext from './PathsContext';
-
-const PATHS_KEY = 'paths';
+import useSavedState from './useSavedState';
 
 type Props = {
   children: React.ReactNode;
 };
 
 export default function PathsProvider({ children }: Props): JSX.Element {
-  const [rawGamePath, setRawGamePath] = useState(
-    localStorage.getItem(PATHS_KEY) ??
-      'C:\\Battle.net\\Games\\Diablo II Resurrected'
+  const [rawGamePath, setRawGamePath] = useSavedState(
+    'paths',
+    'C:\\Battle.net\\Games\\Diablo II Resurrected'
   );
 
   const gamePath = rawGamePath.replace(/\\$/, '');
+  const mergedPath = `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`;
+  const dataPath = `${gamePath}\\data`;
 
   const context = useMemo(
     () => ({
       gamePath,
       rawGamePath,
-      mergedPath: `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`,
+      mergedPath,
       setRawGamePath,
+      dataPath,
     }),
-    [gamePath, rawGamePath]
+    [dataPath, gamePath, mergedPath, rawGamePath, setRawGamePath]
   );
-
-  useEffect(() => {
-    localStorage.setItem(PATHS_KEY, rawGamePath);
-  }, [rawGamePath]);
 
   return (
     <PathsContext.Provider value={context}>{children}</PathsContext.Provider>

@@ -1,4 +1,12 @@
-import { TextField } from '@mui/material';
+import {
+  Checkbox,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  TextField,
+  Tooltip,
+} from '@mui/material';
 import { useCallback, useMemo } from 'react';
 import { usePathsContext } from './PathsContext';
 
@@ -12,7 +20,13 @@ function getIsValidGamePath(path: string): boolean {
 type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
-  const { gamePath, rawGamePath, setRawGamePath } = usePathsContext();
+  const {
+    gamePath,
+    isDirectData,
+    rawGamePath,
+    setIsDirectData,
+    setRawGamePath,
+  } = usePathsContext();
 
   const onChange = useCallback(
     (event): void => {
@@ -39,6 +53,24 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             : "Doesn't look like a valid D2R game directory."
         }
       />
+      <ListItem disablePadding={true}>
+        <Tooltip title="Use data from the /data directory instead of extracting it from the game.">
+          <ListItemButton onClick={() => setIsDirectData(!isDirectData)}>
+            <ListItemIcon>
+              <Checkbox
+                edge="start"
+                checked={isDirectData}
+                tabIndex={-1}
+                disableRipple={true}
+                inputProps={{
+                  'aria-labelledby': 'use-direct-data',
+                }}
+              />
+            </ListItemIcon>
+            <ListItemText id="use-direct-data" primary="Use Direct Data" />
+          </ListItemButton>
+        </Tooltip>
+      </ListItem>
     </>
   );
 }

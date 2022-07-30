@@ -12,19 +12,36 @@ export default function PathsProvider({ children }: Props): JSX.Element {
     'C:\\Battle.net\\Games\\Diablo II Resurrected'
   );
 
+  const [isDirectData, setIsDirectData] = useSavedState(
+    'direct-data',
+    false,
+    (bool) => String(bool),
+    (str) => str === 'true'
+  );
+
   const gamePath = rawGamePath.replace(/\\$/, '');
   const mergedPath = `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`;
   const dataPath = `${gamePath}\\data`;
 
   const context = useMemo(
     () => ({
-      gamePath,
-      rawGamePath,
-      mergedPath,
-      setRawGamePath,
       dataPath,
+      gamePath,
+      isDirectData,
+      mergedPath,
+      rawGamePath,
+      setIsDirectData,
+      setRawGamePath,
     }),
-    [dataPath, gamePath, mergedPath, rawGamePath, setRawGamePath]
+    [
+      dataPath,
+      gamePath,
+      isDirectData,
+      mergedPath,
+      rawGamePath,
+      setIsDirectData,
+      setRawGamePath,
+    ]
   );
 
   return (

@@ -7,11 +7,15 @@ const API = window.electron.API;
 type Props = Record<string, never>;
 
 export default function RunGameButton(_props: Props): JSX.Element {
-  const { gamePath } = usePreferences();
+  const { gamePath, isDirectMode } = usePreferences();
 
   const onRunGame = useCallback(() => {
-    API.execute(`${gamePath}\\D2R.exe`, ['-mod', 'D2RMM', '-txt']);
-  }, [gamePath]);
+    if (isDirectMode) {
+      API.execute(`${gamePath}\\D2R.exe`, ['-direct', '-txt']);
+    } else {
+      API.execute(`${gamePath}\\D2R.exe`, ['-mod', 'D2RMM', '-txt']);
+    }
+  }, [isDirectMode, gamePath]);
 
   return <Button onClick={onRunGame}>Run D2R</Button>;
 }

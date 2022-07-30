@@ -4,9 +4,11 @@ import useSavedState from './useSavedState';
 export type IPreferences = {
   dataPath: string;
   gamePath: string;
+  isDirectMode: boolean;
   isPreExtractedData: boolean;
   mergedPath: string;
   rawGamePath: string;
+  setIsDirectMode: (value: boolean) => void;
   setIsPreExtractedData: (value: boolean) => void;
   setRawGamePath: (value: string) => void;
 };
@@ -38,6 +40,13 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     (str) => str === 'true'
   );
 
+  const [isDirectMode, setIsDirectMode] = useSavedState(
+    'direct-mod',
+    false,
+    (bool) => String(bool),
+    (str) => str === 'true'
+  );
+
   const gamePath = rawGamePath.replace(/\\$/, '');
   const mergedPath = `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`;
   const dataPath = `${gamePath}\\data`;
@@ -46,18 +55,22 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     (): IPreferences => ({
       dataPath,
       gamePath,
+      isDirectMode,
       isPreExtractedData,
       mergedPath,
       rawGamePath,
+      setIsDirectMode,
       setIsPreExtractedData,
       setRawGamePath,
     }),
     [
       dataPath,
       gamePath,
+      isDirectMode,
       isPreExtractedData,
       mergedPath,
       rawGamePath,
+      setIsDirectMode,
       setIsPreExtractedData,
       setRawGamePath,
     ]

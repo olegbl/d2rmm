@@ -161,7 +161,11 @@ declare global {
   type WindowAPI = {
     getVersion: () => string;
     execute: (executablePath: string, args?: string[]) => void;
-    copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => void;
+    copyFile: (
+      fromPath: string,
+      toPath: string,
+      overwrite?: boolean
+    ) => boolean;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;
     openStorage: (gamePath: string) => void;

@@ -25,7 +25,13 @@ export default function getModAPI(
 
   function extractFile(filePath: string): void {
     if (isDirectData) {
-      API.copyFile(getLocalDataFilePath(filePath), getMergedFilePath(filePath));
+      const success = API.copyFile(
+        getLocalDataFilePath(filePath),
+        getMergedFilePath(filePath)
+      );
+      if (!success) {
+        throw new Error(`file "${filePath}" was not found`);
+      }
     } else {
       API.extractFile(gamePath, filePath, getMergedFilePath(filePath));
     }

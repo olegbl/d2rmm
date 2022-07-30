@@ -19,7 +19,8 @@ export default function ModInstallButton({
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
-  const { gamePath, mergedPath, isPreExtractedData } = preferences;
+  const { gamePath, mergedPath, isPreExtractedData, isDirectMode } =
+    preferences;
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
@@ -32,12 +33,14 @@ export default function ModInstallButton({
         API.openStorage(gamePath);
       }
 
-      API.deleteFile(mergedPath);
-      API.createDirectory(mergedPath);
-      API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
-        name: 'D2RMM',
-        savepath: 'D2RMM/',
-      });
+      if (!isDirectMode) {
+        API.deleteFile(mergedPath);
+        API.createDirectory(mergedPath);
+        API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
+          name: 'D2RMM',
+          savepath: 'D2RMM/',
+        });
+      }
 
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
@@ -69,6 +72,7 @@ export default function ModInstallButton({
     }
   }, [
     gamePath,
+    isDirectMode,
     isPreExtractedData,
     mergedPath,
     modsToInstall,

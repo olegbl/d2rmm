@@ -8,36 +8,45 @@ let nextStringID: number = 0;
 
 export default function getModAPI(
   mod: Mod,
-  { dataPath, gamePath, mergedPath, isPreExtractedData }: IPreferences,
+  {
+    dataPath,
+    gamePath,
+    isDirectMode,
+    isPreExtractedData,
+    mergedPath,
+  }: IPreferences,
   showToast: (toast: Toast) => unknown
 ): ModAPI {
-  function getLocalDataFilePath(filePath: string): string {
+  function getPreExtractedSourceFilePath(filePath: string): string {
     return `${dataPath}\\${filePath}`;
   }
 
-  function getModFilePath(filePath: string): string {
+  function getModSourceFilePath(filePath: string): string {
     const appPath = API.getAppPath();
     return `${appPath}\\mods\\${mod.id}\\${filePath}`;
   }
 
-  function getMergedFilePath(filePath: string): string {
+  function getDestinationFilePath(filePath: string): string {
+    if (isDirectMode) {
+      return getPreExtractedSourceFilePath(filePath);
+    }
     return `${mergedPath}\\${filePath}`;
   }
 
   function extractFile(filePath: string): void {
     if (isPreExtractedData) {
       const success = API.copyFile(
-        getLocalDataFilePath(filePath),
-        getMergedFilePath(filePath),
+        getPreExtractedSourceFilePath(filePath),
+        getDestinationFilePath(filePath),
         false // don't overwrite if it already exists
       );
       if (success === 2) {
         throw new Error(
-          `file "${getLocalDataFilePath(filePath)}" was not found`
+          `file "${getPreExtractedSourceFilePath(filePath)}" was not found`
         );
       }
     } else {
-      API.extractFile(gamePath, filePath, getMergedFilePath(filePath));
+      API.extractFile(gamePath, filePath, getDestinationFilePath(filePath));
     }
   }
 
@@ -57,33 +66,37 @@ export default function getModAPI(
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);
       extractFile(filePath);
-      return API.readTsv(getMergedFilePath(filePath));
+      return API.readTsv(getDestinationFilePath(filePath));
     },
     writeTsv: (filePath: string, data: TSVData): void => {
       console.log('D2RMM.writeTsv', filePath, data);
-      API.writeTsv(getMergedFilePath(filePath), data);
+      API.writeTsv(getDestinationFilePath(filePath), data);
     },
     readJson: (filePath: string): JSONData => {
       console.log('D2RMM.readJson', filePath);
       extractFile(filePath);
-      return API.readJson(getMergedFilePath(filePath));
+      return API.readJson(getDestinationFilePath(filePath));
     },
     writeJson: (filePath: string, data: JSONData): void => {
       console.log('D2RMM.writeJson', filePath, data);
-      API.writeJson(getMergedFilePath(filePath), data);
+      API.writeJson(getDestinationFilePath(filePath), data);
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.log('D2RMM.copyFile', src, dst);
-      API.copyFile(getModFilePath(src), getMergedFilePath(dst), overwrite);
+      API.copyFile(
+        getModSourceFilePath(src),
+        getDestinationFilePath(dst),
+        overwrite
+      );
     },
     readTxt: (filePath: string): string => {
       console.log('D2RMM.readTxt', filePath);
       extractFile(filePath);
-      return API.readTxt(getMergedFilePath(filePath));
+      return API.readTxt(getDestinationFilePath(filePath));
     },
     writeTxt: (filePath: string, data: string): void => {
       console.log('D2RMM.writeTxt', filePath, data);
-      API.writeTxt(getMergedFilePath(filePath), data);
+      API.writeTxt(getDestinationFilePath(filePath), data);
     },
     getNextStringID: (): number => {
       console.log('D2RMM.getNextStringID');
@@ -92,7 +105,7 @@ export default function getModAPI(
 
       if (nextStringIDRaw == null) {
         extractFile(filePath);
-        nextStringIDRaw = API.readTxt(getMergedFilePath(filePath));
+        nextStringIDRaw = API.readTxt(getDestinationFilePath(filePath));
         nextStringID = parseInt(
           nextStringIDRaw?.match(/[0-9]+/)?.[0] ?? '0',
           10
@@ -104,7 +117,7 @@ export default function getModAPI(
 
       if (nextStringIDRaw != null) {
         API.writeTxt(
-          getMergedFilePath(filePath),
+          getDestinationFilePath(filePath),
           nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
         );
       }

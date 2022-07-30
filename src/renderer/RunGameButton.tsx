@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { Button } from '@mui/material';
-import { usePathsContext } from './PathsContext';
+import { usePreferences } from './Preferences';
 
 const API = window.electron.API;
 
 type Props = Record<string, never>;
 
 export default function RunGameButton(_props: Props): JSX.Element {
-  const { gamePath } = usePathsContext();
+  const { gamePath } = usePreferences();
 
   const onRunGame = useCallback(() => {
     API.execute(`${gamePath}\\D2R.exe`, ['-mod', 'D2RMM', '-txt']);

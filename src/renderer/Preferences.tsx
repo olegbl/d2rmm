@@ -2,6 +2,7 @@ import React, { useContext, useMemo } from 'react';
 import useSavedState from './useSavedState';
 
 export type IPreferences = {
+  dataPath: string;
   gamePath: string;
   isDirectData: boolean;
   mergedPath: string;
@@ -42,7 +43,7 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
   const dataPath = `${gamePath}\\data`;
 
   const context = useMemo(
-    () => ({
+    (): IPreferences => ({
       dataPath,
       gamePath,
       isDirectData,

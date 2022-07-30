@@ -19,7 +19,7 @@ export default function ModInstallButton({
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
-  const { gamePath, mergedPath } = preferences;
+  const { gamePath, mergedPath, isDirectData } = preferences;
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
@@ -28,7 +28,10 @@ export default function ModInstallButton({
 
   const onInstallMods = useCallback((): void => {
     try {
-      API.openStorage(gamePath);
+      if (!isDirectData) {
+        API.openStorage(gamePath);
+      }
+
       API.deleteFile(mergedPath);
       API.createDirectory(mergedPath);
       API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
@@ -52,7 +55,9 @@ export default function ModInstallButton({
         }
       }
 
-      API.closeStorage();
+      if (!isDirectData) {
+        API.closeStorage();
+      }
 
       showToast({ severity: 'success', title: 'Mods Installed' });
     } catch (error) {
@@ -62,7 +67,14 @@ export default function ModInstallButton({
         description: String(error),
       });
     }
-  }, [gamePath, mergedPath, showToast, modsToInstall, preferences]);
+  }, [
+    gamePath,
+    isDirectData,
+    mergedPath,
+    modsToInstall,
+    preferences,
+    showToast,
+  ]);
 
   return (
     <LoadingButton onClick={onInstallMods} variant="outlined">

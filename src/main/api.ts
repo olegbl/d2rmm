@@ -254,7 +254,7 @@ export function createAPI(): void {
       event.returnValue = createError(
         'API.createDirectory',
         'Failed to create directory',
-        CascLib.GetLastError()
+        String(e)
       );
     }
   });

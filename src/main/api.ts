@@ -113,6 +113,11 @@ export function createAPI(): void {
     event.returnValue = packageManifest.version;
   });
 
+  ipcMain.on('getAppPath', (event) => {
+    console.log('API.getAppPath');
+    event.returnValue = getAppPath();
+  });
+
   ipcMain.on('execute', (event, [executablePath, args]) => {
     console.log('API.execute', [executablePath, args]);
     try {
@@ -376,22 +381,28 @@ export function createAPI(): void {
     }
   });
 
-  ipcMain.on('copyFile', (event, [fromInputPath, toPath, overwrite]) => {
-    console.log('API.copyFile', [fromInputPath, toPath, overwrite]);
+  ipcMain.on('copyFile', (event, [fromPath, toPath, overwrite]) => {
+    console.log('API.copyFile', [fromPath, toPath, overwrite]);
 
     try {
-      const fromPath = path.join(getAppPath(), 'mods', fromInputPath);
-      if (existsSync(fromPath) && (overwrite || !existsSync(toPath))) {
-        const stat = statSync(fromPath);
-        if (stat.isDirectory()) {
-          copyDirSync(fromPath, toPath);
+      if (existsSync(fromPath)) {
+        if (overwrite || !existsSync(toPath)) {
+          const stat = statSync(fromPath);
+          if (stat.isDirectory()) {
+            copyDirSync(fromPath, toPath);
+          } else {
+            mkdirSync(path.dirname(toPath), { recursive: true });
+            copyFileSync(fromPath, toPath);
+          }
+          // file copied successfully
+          event.returnValue = 0;
         } else {
-          mkdirSync(path.dirname(toPath), { recursive: true });
-          copyFileSync(fromPath, toPath);
+          // destination file already exists
+          event.returnValue = 1;
         }
-        event.returnValue = true;
       } else {
-        event.returnValue = false;
+        // source file doesn't exist
+        event.returnValue = 2;
       }
     } catch (e) {
       event.returnValue = createError(

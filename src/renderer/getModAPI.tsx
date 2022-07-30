@@ -16,7 +16,8 @@ export default function getModAPI(
   }
 
   function getModFilePath(filePath: string): string {
-    return `${mod.id}\\${filePath}`;
+    const appPath = API.getAppPath();
+    return `${appPath}\\mods\\${mod.id}\\${filePath}`;
   }
 
   function getMergedFilePath(filePath: string): string {
@@ -27,10 +28,13 @@ export default function getModAPI(
     if (isDirectData) {
       const success = API.copyFile(
         getLocalDataFilePath(filePath),
-        getMergedFilePath(filePath)
+        getMergedFilePath(filePath),
+        false // don't overwrite if it already exists
       );
-      if (!success) {
-        throw new Error(`file "${filePath}" was not found`);
+      if (success === 2) {
+        throw new Error(
+          `file "${getLocalDataFilePath(filePath)}" was not found`
+        );
       }
     } else {
       API.extractFile(gamePath, filePath, getMergedFilePath(filePath));

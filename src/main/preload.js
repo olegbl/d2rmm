@@ -7,6 +7,10 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.getVersion');
       return ipcRenderer.sendSync('getVersion');
     },
+    getAppPath: () => {
+      console.log('API.getAppPath');
+      return ipcRenderer.sendSync('getAppPath');
+    },
     execute: (executablePath, args) => {
       console.log('API.execute', { executablePath, args });
       const result = ipcRenderer.sendSync('execute', [executablePath, args]);

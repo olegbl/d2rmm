@@ -12,7 +12,7 @@ function useIsFocused(): [
   return [isFocused, onFocus, onBlur];
 }
 
-const PATTERN = '^[0-9]*(\\.[0-9]*)?$';
+const PATTERN = '^[0-9]*(\.[0-9]*)?$';
 
 type Props = {
   field: ModConfigFieldNumber;

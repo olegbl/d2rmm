@@ -44,6 +44,7 @@ export default function ModInstallButton({
 
       const extractedFiles = {};
 
+      const modsInstalled = [];
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
         try {
@@ -51,6 +52,7 @@ export default function ModInstallButton({
           const api = getModAPI(mod, preferences, extractedFiles, showToast);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
+          modsInstalled.push(mod);
         } catch (error) {
           showToast({
             severity: 'error',
@@ -64,7 +66,13 @@ export default function ModInstallButton({
         API.closeStorage();
       }
 
-      showToast({ severity: 'success', title: 'Mods Installed' });
+      if (modsInstalled.length > 0) {
+        showToast({
+          severity:
+            modsInstalled.length < modsToInstall.length ? 'warning' : 'success',
+          title: `${modsInstalled.length}/${modsToInstall.length} Mods Installed`,
+        });
+      }
     } catch (error) {
       showToast({
         severity: 'error',

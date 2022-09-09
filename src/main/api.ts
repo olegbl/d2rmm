@@ -138,6 +138,8 @@ export function createAPI(): void {
     if (!cascStorageIsOpen) {
       if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
         cascStorageIsOpen = true;
+      } else if (CascLib.CascOpenStorage(`${gamePath}:`, 0, cascStoragePtr)) {
+        cascStorageIsOpen = true;
       } else {
         event.returnValue = createError(
           'API.openStorage',

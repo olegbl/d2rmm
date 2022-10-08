@@ -29,17 +29,17 @@ export default function ModInstallButton({
 
   const onInstallMods = useCallback((): void => {
     try {
-      if (!isPreExtractedData) {
-        API.openStorage(gamePath);
-      }
-
       if (!isDirectMode) {
-        API.deleteFile(mergedPath);
+        API.deleteFile(`${mergedPath}\\..`);
         API.createDirectory(mergedPath);
         API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
           name: 'D2RMM',
           savepath: 'D2RMM/',
         });
+      }
+
+      if (!isPreExtractedData) {
+        API.openStorage(gamePath);
       }
 
       const extractedFiles = {};
@@ -66,7 +66,12 @@ export default function ModInstallButton({
         API.closeStorage();
       }
 
-      if (modsInstalled.length > 0) {
+      if (modsToInstall.length === 0) {
+        showToast({
+          severity: 'success',
+          title: 'No Mods Installed',
+        });
+      } else if (modsInstalled.length > 0) {
         showToast({
           severity:
             modsInstalled.length < modsToInstall.length ? 'warning' : 'success',

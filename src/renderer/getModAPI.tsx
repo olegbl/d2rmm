@@ -68,10 +68,22 @@ export default function getModAPI(
     },
     error: (message: string | Error): void => {
       console.error('D2RMM.error', mod.id, message);
+      let trace = '';
+      if (typeof message !== 'string') {
+        const match = (message.stack ?? '').match(
+          /<anonymous>:([0-9]+):([0-9]+)/
+        );
+        if (match != null) {
+          const line = parseInt(match[1], 10) - 2; // we prefix the source with two extra lines
+          const column = parseInt(match[2], 10);
+          trace = ` at ${line}:${column}`;
+        }
+      }
       showToast({
         severity: 'error',
         title: `Mod ${mod.info.name ?? mod.id} encountered an error!`,
-        description: typeof message === 'string' ? message : message.toString(),
+        description:
+          typeof message === 'string' ? message : message.toString() + trace,
       });
     },
     readTsv: (filePath: string): TSVData => {

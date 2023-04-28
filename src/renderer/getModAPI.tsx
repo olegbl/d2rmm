@@ -81,7 +81,7 @@ export default function getModAPI(
       }
       showToast({
         severity: 'error',
-        title: `Mod ${mod.info.name ?? mod.id} encountered an error!`,
+        title: `Mod ${mod.info.name ?? mod.id} encountered a runtime error!`,
         description:
           typeof message === 'string' ? message : message.toString() + trace,
       });

@@ -32,10 +32,6 @@ export default function sandbox(source: string): (context: object) => void {
       const contextProxy = new Proxy(context, { has, get });
       contextProxies.set(context, contextProxy);
     }
-    try {
-      code(contextProxies.get(context));
-    } catch (e) {
-      console.error(e);
-    }
+    code(contextProxies.get(context));
   };
 }

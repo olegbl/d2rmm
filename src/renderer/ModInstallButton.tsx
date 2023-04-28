@@ -56,7 +56,7 @@ export default function ModInstallButton({
         } catch (error) {
           showToast({
             severity: 'error',
-            title: `Error When Installing Mod ${mod.info.name}`,
+            title: `Mod ${mod.info.name} encountered an error!`,
             description: String(error),
           });
         }

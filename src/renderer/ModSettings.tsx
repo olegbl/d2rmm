@@ -1,5 +1,5 @@
 import { Close } from '@mui/icons-material';
-import { Box, FormGroup, IconButton } from '@mui/material';
+import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
 import ModSettingsField from './ModSettingsField';
 
 type Props = {
@@ -18,15 +18,38 @@ export default function ModSettings({
   }
 
   return (
-    <FormGroup sx={{ padding: 2, minWidth: 240 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <FormGroup sx={{ minWidth: 360 }}>
+      <Box
+        sx={{
+          paddingLeft: 2,
+          paddingRight: 2,
+          paddingTop: 1,
+          paddingBottom: 1,
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h6" color="text.secondary">
+          {mod.info.name}
+        </Typography>
+        <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
         <IconButton color="default" onClick={onClose}>
           <Close />
         </IconButton>
       </Box>
-      {mod.info.config.map((field) => (
-        <ModSettingsField key={field.id} field={field} mod={mod} />
-      ))}
+      <Divider />
+      <Box
+        sx={{
+          paddingLeft: 2,
+          paddingRight: 2,
+          paddingTop: 1,
+          paddingBottom: 1,
+        }}
+      >
+        {mod.info.config.map((field) => (
+          <ModSettingsField key={field.id} field={field} mod={mod} />
+        ))}
+      </Box>
     </FormGroup>
   );
 }

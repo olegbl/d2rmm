@@ -10,6 +10,7 @@ export default function getModAPI(
   mod: Mod,
   {
     dataPath,
+    preExtractedDataPath,
     gamePath,
     isDirectMode,
     isDryRun,
@@ -20,7 +21,7 @@ export default function getModAPI(
   showToast: (toast: Toast) => unknown
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
-    return `${dataPath}\\${filePath}`;
+    return `${preExtractedDataPath}\\${filePath}`;
   }
 
   function getModSourceFilePath(filePath: string): string {
@@ -30,7 +31,7 @@ export default function getModAPI(
 
   function getDestinationFilePath(filePath: string): string {
     if (isDirectMode) {
-      return getPreExtractedSourceFilePath(filePath);
+      return `${dataPath}\\${filePath}`;
     }
     return `${mergedPath}\\${filePath}`;
   }

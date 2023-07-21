@@ -130,10 +130,6 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 label="Data Directory"
                 value={preExtractedDataPath}
                 onChange={onChangePreExtractedDataPath}
-                disabled={
-                  true
-                  // TODO: add support for this feature, for now it'll always use /data
-                }
               />
 
               {isDirectMode &&

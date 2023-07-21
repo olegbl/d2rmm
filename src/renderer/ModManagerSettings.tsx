@@ -151,7 +151,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           ) : null}
         </AccordionDetails>
       </Accordion>
-      <Accordion defaultExpanded={false} disableGutters={true} square={true}>
+      <Accordion
+        defaultExpanded={isDirectMode}
+        disableGutters={true}
+        square={true}
+      >
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls="direct-mode-content"

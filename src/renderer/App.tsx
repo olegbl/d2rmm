@@ -7,7 +7,7 @@ import {
   Tab,
   Theme,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import TabContext from '@mui/lab/TabContext';
@@ -19,9 +19,11 @@ import ModSettings from './ModSettings';
 import useOrderedMods from './useOrderedMods';
 import ModList from './ModList';
 import ModManagerSettings from './ModManagerSettings';
+import ModManagerLogs from './ModManagerLogs';
 import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
 import { PreferencesProvider } from './Preferences';
+import { LogsProvider } from './Logs';
 import RunGameButton from './RunGameButton';
 
 function TabPanelBox({
@@ -64,6 +66,8 @@ function D2RMMRootView() {
     [selectedModID, mods]
   );
 
+  const showLogs = useCallback((): void => setTab('logs'), [setTab]);
+
   return (
     <TabContext value={tab}>
       <Box
@@ -77,6 +81,7 @@ function D2RMMRootView() {
         <TabList onChange={(_event, value) => setTab(value)}>
           <Tab label="Mods" value="mods" />
           <Tab label="Settings" value="settings" />
+          <Tab label="Logs" value="logs" />
         </TabList>
         <TabPanelBox value="mods">
           <ModList
@@ -117,12 +122,16 @@ function D2RMMRootView() {
               <ModInstallButton
                 orderedMods={orderedMods}
                 enabledMods={enabledMods}
+                onErrorsEncountered={showLogs}
               />
             </ButtonGroup>
           </Box>
         </TabPanelBox>
         <TabPanelBox value="settings">
           <ModManagerSettings />
+        </TabPanelBox>
+        <TabPanelBox value="logs">
+          <ModManagerLogs />
         </TabPanelBox>
       </Box>
     </TabContext>
@@ -133,11 +142,13 @@ export default function App() {
   return (
     <ToastProvider>
       <PreferencesProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={<D2RMMRootView />} />
-          </Routes>
-        </Router>
+        <LogsProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<D2RMMRootView />} />
+            </Routes>
+          </Router>
+        </LogsProvider>
       </PreferencesProvider>
     </ToastProvider>
   );

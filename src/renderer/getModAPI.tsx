@@ -1,3 +1,4 @@
+import { ILogLevel } from './Logs';
 import { IPreferences } from './Preferences';
 
 const API = window.electron.API;
@@ -17,7 +18,7 @@ export default function getModAPI(
     mergedPath,
   }: IPreferences,
   extractedFiles: Record<string, boolean>,
-  reportError: (error: string) => unknown
+  recordLog: (level: ILogLevel, message: string) => unknown
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
     return `${preExtractedDataPath}\\${filePath}`;
@@ -79,7 +80,8 @@ export default function getModAPI(
           trace = ` at ${line}:${column}`;
         }
       }
-      reportError(
+      recordLog(
+        'error',
         typeof message === 'string' ? message : message.toString() + trace
       );
     },

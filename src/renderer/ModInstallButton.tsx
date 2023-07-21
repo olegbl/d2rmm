@@ -5,20 +5,24 @@ import getModAPI from './getModAPI';
 import useToast from './useToast';
 import { EnabledMods } from './useEnabledMods';
 import { usePreferences } from './Preferences';
+import { ILogLevel, useLogger } from './Logs';
 
 const API = window.electron.API;
 
 type Props = {
   enabledMods: EnabledMods;
   orderedMods: Mod[];
+  onErrorsEncountered: () => unknown;
 };
 
 export default function ModInstallButton({
   enabledMods,
   orderedMods,
+  onErrorsEncountered,
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
+  const logger = useLogger();
   const { gamePath, mergedPath, isPreExtractedData, isDirectMode } =
     preferences;
 
@@ -29,6 +33,8 @@ export default function ModInstallButton({
 
   const onInstallMods = useCallback((): void => {
     try {
+      logger.clear();
+
       if (!isDirectMode) {
         API.deleteFile(`${mergedPath}\\..`);
         API.createDirectory(mergedPath);
@@ -47,29 +53,29 @@ export default function ModInstallButton({
       const modsInstalled = [];
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
-        const reportedErrors = [];
-        const reportError = (error: string): void => {
-          reportedErrors.push(error);
-          showToast({
-            severity: 'error',
-            title: `Mod ${mod.info.name} encountered a runtime error!`,
-            description: error,
-          });
-        };
         try {
+          let errorCount: number = 0;
+          const recordLog = (level: ILogLevel, message: string): void => {
+            logger.add(
+              level,
+              `Mod ${mod.info.name} encountered a runtime error! ${message}`
+            );
+            if (level === 'error') {
+              errorCount++;
+            }
+          };
           const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, preferences, extractedFiles, reportError);
+          const api = getModAPI(mod, preferences, extractedFiles, recordLog);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
-          if (reportedErrors.length === 0) {
+          if (errorCount === 0) {
             modsInstalled.push(mod);
+            logger.log(`Mod ${mod.info.name} installed successfully.`);
           }
         } catch (error) {
-          showToast({
-            severity: 'error',
-            title: `Mod ${mod.info.name} encountered a compile error!`,
-            description: String(error),
-          });
+          logger.error(
+            `Mod ${mod.info.name} encountered a compile error! ${String(error)}`
+          );
         }
       }
 
@@ -89,14 +95,21 @@ export default function ModInstallButton({
           title: `${modsInstalled.length}/${modsToInstall.length} Mods Installed`,
         });
       }
+
+      if (modsInstalled.length < modsToInstall.length) {
+        onErrorsEncountered();
+      }
     } catch (error) {
+      logger.error(String(error));
       showToast({
         severity: 'error',
         title: 'Error When Installing Mods',
         description: String(error),
       });
+      onErrorsEncountered();
     }
   }, [
+    logger,
     gamePath,
     isDirectMode,
     isPreExtractedData,
@@ -104,6 +117,7 @@ export default function ModInstallButton({
     modsToInstall,
     preferences,
     showToast,
+    onErrorsEncountered,
   ]);
 
   return (

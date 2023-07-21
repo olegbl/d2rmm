@@ -3,6 +3,7 @@ import useSavedState from './useSavedState';
 
 export type IPreferences = {
   dataPath: string;
+  preExtractedDataPath: string;
   gamePath: string;
   isDirectMode: boolean;
   isDryRun: boolean;
@@ -13,6 +14,7 @@ export type IPreferences = {
   setIsDryRun: (value: boolean) => void;
   setIsPreExtractedData: (value: boolean) => void;
   setRawGamePath: (value: string) => void;
+  setPreExtractedDataPath: (value: string) => void;
 };
 
 export const Context = React.createContext<IPreferences | null>(null);
@@ -33,6 +35,11 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
   const [rawGamePath, setRawGamePath] = useSavedState(
     'paths',
     'C:\\Battle.net\\Games\\Diablo II Resurrected'
+  );
+
+  const [preExtractedDataPath, setPreExtractedDataPath] = useSavedState(
+    'pre-extracted-data-path',
+    'C:\\Battle.net\\Games\\Diablo II Resurrected\\data'
   );
 
   const [isPreExtractedData, setIsPreExtractedData] = useSavedState(
@@ -63,6 +70,7 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
   const context = useMemo(
     (): IPreferences => ({
       dataPath,
+      preExtractedDataPath,
       gamePath,
       isDirectMode,
       isDryRun,
@@ -73,9 +81,11 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       setIsDryRun,
       setIsPreExtractedData,
       setRawGamePath,
+      setPreExtractedDataPath,
     }),
     [
       dataPath,
+      preExtractedDataPath,
       gamePath,
       isDirectMode,
       isDryRun,
@@ -86,6 +96,7 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       setIsDryRun,
       setIsPreExtractedData,
       setRawGamePath,
+      setPreExtractedDataPath,
     ]
   );
 

@@ -121,7 +121,7 @@ function D2RMMRootView() {
             </ButtonGroup>
           </Box>
         </TabPanelBox>
-        <TabPanelBox value="settings" sx={{ padding: 2 }}>
+        <TabPanelBox value="settings">
           <ModManagerSettings />
         </TabPanelBox>
       </Box>

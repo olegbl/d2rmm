@@ -47,16 +47,27 @@ export default function ModInstallButton({
       const modsInstalled = [];
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
+        const reportedErrors = [];
+        const reportError = (error: string): void => {
+          reportedErrors.push(error);
+          showToast({
+            severity: 'error',
+            title: `Mod ${mod.info.name} encountered a runtime error!`,
+            description: error,
+          });
+        };
         try {
           const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, preferences, extractedFiles, showToast);
+          const api = getModAPI(mod, preferences, extractedFiles, reportError);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
-          modsInstalled.push(mod);
+          if (reportedErrors.length === 0) {
+            modsInstalled.push(mod);
+          }
         } catch (error) {
           showToast({
             severity: 'error',
-            title: `Mod ${mod.info.name} encountered an error!`,
+            title: `Mod ${mod.info.name} encountered a compile error!`,
             description: String(error),
           });
         }

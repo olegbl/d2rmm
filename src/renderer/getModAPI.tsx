@@ -1,5 +1,4 @@
 import { IPreferences } from './Preferences';
-import { Toast } from './ToastContext';
 
 const API = window.electron.API;
 
@@ -18,7 +17,7 @@ export default function getModAPI(
     mergedPath,
   }: IPreferences,
   extractedFiles: Record<string, boolean>,
-  showToast: (toast: Toast) => unknown
+  reportError: (error: string) => unknown
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
     return `${preExtractedDataPath}\\${filePath}`;
@@ -80,12 +79,9 @@ export default function getModAPI(
           trace = ` at ${line}:${column}`;
         }
       }
-      showToast({
-        severity: 'error',
-        title: `Mod ${mod.info.name ?? mod.id} encountered a runtime error!`,
-        description:
-          typeof message === 'string' ? message : message.toString() + trace,
-      });
+      reportError(
+        typeof message === 'string' ? message : message.toString() + trace
+      );
     },
     readTsv: (filePath: string): TSVData => {
       console.log('D2RMM.readTsv', filePath);

@@ -40,6 +40,8 @@ export default function ModSettings({
       <Divider />
       <Box
         sx={{
+          display: 'flex',
+          flexDirection: 'column',
           paddingLeft: 2,
           paddingRight: 2,
           paddingTop: 1,

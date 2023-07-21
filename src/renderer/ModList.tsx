@@ -34,6 +34,7 @@ export default function ModList({
     <List
       sx={{ width: '100%', flex: 1, overflow: 'auto' }}
       disablePadding={true}
+      dense={true}
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable direction="vertical" droppableId="mods">

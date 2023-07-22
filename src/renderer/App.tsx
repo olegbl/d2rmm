@@ -1,31 +1,17 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Divider,
-  Drawer,
-  SxProps,
-  Tab,
-  Theme,
-} from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { Box, Divider, SxProps, Tab, Theme } from '@mui/material';
+import { useCallback, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import useMods from './useMods';
-import ModSettings from './ModSettings';
-import useOrderedMods from './useOrderedMods';
 import ModList from './ModList';
 import ModManagerSettings from './ModManagerSettings';
 import ModManagerLogs from './ModManagerLogs';
-import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
-import { PreferencesProvider, usePreferences } from './Preferences';
+import { PreferencesProvider } from './Preferences';
 import { LogsProvider } from './Logs';
-import RunGameButton from './RunGameButton';
-import { ModsContextProvider, useToggleMod } from './ModsContext';
+import { ModsContextProvider } from './ModsContext';
 
 function TabPanelBox({
   children,
@@ -58,18 +44,7 @@ function TabPanelBox({
 
 function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
-  const [mods, onRefreshMods] = useMods();
-  const [orderedMods, reorderMods] = useOrderedMods(mods);
-  const [selectedModID, setSelectedModID] = useState<string | null>(null);
-  const selectedMod = useMemo(
-    () => mods.filter((mod) => mod.id === selectedModID).shift(),
-    [selectedModID, mods]
-  );
-  const { isDirectMode } = usePreferences();
-
-  const onToggleMod = useToggleMod();
-
-  const showLogs = useCallback((): void => setTab('logs'), [setTab]);
+  const onShowLogsTab = useCallback((): void => setTab('logs'), [setTab]);
 
   return (
     <TabContext value={tab}>
@@ -89,44 +64,7 @@ function D2RMMRootView() {
         </TabList>
         <Divider />
         <TabPanelBox value="mods">
-          <ModList
-            mods={orderedMods}
-            onToggleMod={onToggleMod}
-            onConfigureMod={(mod) => setSelectedModID(mod.id)}
-            onReorderMod={(from, to) => reorderMods(from, to)}
-          />
-          <Drawer
-            anchor="right"
-            open={selectedMod != null}
-            onClose={() => setSelectedModID(null)}
-          >
-            {selectedMod == null ? null : (
-              <ModSettings
-                mod={selectedMod}
-                onClose={() => setSelectedModID(null)}
-              />
-            )}
-          </Drawer>
-          <Divider />
-          <Box sx={{ display: 'flex', p: 1 }}>
-            <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
-            <ButtonGroup variant="outlined">
-              <RunGameButton />
-              <Button onClick={onRefreshMods}>Refresh Mod List</Button>
-              {isDirectMode ? (
-                <ModInstallButton
-                  isUninstall={true}
-                  onErrorsEncountered={showLogs}
-                  orderedMods={orderedMods}
-                  tooltip="Revert any files modified by the enabled mods back to their vanilla state."
-                />
-              ) : null}
-              <ModInstallButton
-                orderedMods={orderedMods}
-                onErrorsEncountered={showLogs}
-              />
-            </ButtonGroup>
-          </Box>
+          <ModList onShowLogsTab={onShowLogsTab} />
         </TabPanelBox>
         <TabPanelBox value="settings">
           <ModManagerSettings />

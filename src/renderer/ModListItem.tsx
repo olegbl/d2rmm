@@ -17,6 +17,7 @@ import HelpIcon from '@mui/icons-material/Help';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useCallback, useMemo } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
+import { useSelectedMod, useToggleMod } from './ModsContext';
 
 const API = window.electron.API;
 
@@ -76,20 +77,15 @@ type Props = {
   index: number;
   isEnabled: boolean;
   mod: Mod;
-  onConfigureMod: (mod: Mod) => unknown;
-  onToggleMod: (mod: Mod) => unknown;
 };
 
-export default function ModListItem({
-  index,
-  isEnabled,
-  mod,
-  onConfigureMod: onConfigureModFromProps,
-  onToggleMod,
-}: Props) {
+export default function ModListItem({ index, isEnabled, mod }: Props) {
+  const onToggleMod = useToggleMod();
+  const [, setSelectedMod] = useSelectedMod();
+
   const onConfigureMod = useCallback((): void => {
-    onConfigureModFromProps(mod);
-  }, [mod, onConfigureModFromProps]);
+    setSelectedMod(mod);
+  }, [mod, setSelectedMod]);
 
   const onOpenWebsite = useCallback((): void => {
     if (mod.info.website != null) {

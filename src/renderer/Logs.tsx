@@ -1,26 +1,29 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 
-export type ILogLevel = 'error' | 'warning' | 'info';
+export type ILogLevel = 'error' | 'warning' | 'info' | 'debug';
 
 export type ILog = {
   id: number;
   level: ILogLevel;
   timestamp: number;
-  message: string;
+  data: unknown[];
 };
 
 export type ILogs = ILog[];
 
 type ILogReaderContext = {
   logs: ILogs;
+  levels: ILogLevel[];
+  setLevels: (levels: ILogLevel[]) => void;
 };
 
 type ILogWriterContext = {
   clear: () => void;
-  add: (level: ILogLevel, message: string) => void;
-  log: (message: string) => void;
-  warn: (message: string) => void;
-  error: (message: string) => void;
+  add: (level: ILogLevel, ...data: unknown[]) => void;
+  error: (...data: unknown[]) => void;
+  warn: (...data: unknown[]) => void;
+  log: (...data: unknown[]) => void;
+  debug: (...data: unknown[]) => void;
 };
 
 let LOG_ID: number = 0;
@@ -34,6 +37,14 @@ export function useLogs(): ILogs {
     throw new Error('No Logs context available.');
   }
   return context.logs;
+}
+
+export function useLogLevels(): [ILogLevel[], (levels: ILogLevel[]) => void] {
+  const context = useContext(ReaderContext);
+  if (context == null) {
+    throw new Error('No Logs context available.');
+  }
+  return [context.levels, context.setLevels];
 }
 
 export function useLogger(): ILogWriterContext {
@@ -50,31 +61,56 @@ type Props = {
 
 export function LogsProvider({ children }: Props): JSX.Element {
   const [logs, setLogs] = useState<ILogs>([]);
+  const [levels, setLevels] = useState<ILogLevel[]>([
+    'error',
+    'warning',
+    'info',
+  ]);
 
   const clear = useCallback((): void => setLogs([]), []);
 
   const add = useCallback(
-    (level: ILogLevel, message: string): void => {
+    (level: ILogLevel, ...data: unknown[]): void => {
       const newLog: ILog = {
         id: LOG_ID++,
         level,
         timestamp: Date.now(),
-        message,
+        data,
       };
+      switch (level) {
+        case 'error':
+          console.error(...data);
+          break;
+        case 'warning':
+          console.warn(...data);
+          break;
+        case 'info':
+          console.info(...data);
+          break;
+        case 'debug':
+          console.debug(...data);
+          break;
+        default:
+          console.log(...data);
+          break;
+      }
       setLogs((oldLogs: ILogs) => [...oldLogs, newLog]);
     },
     [setLogs]
   );
 
-  const error = useCallback((message: string) => add('error', message), [add]);
-  const warn = useCallback((message: string) => add('warning', message), [add]);
-  const log = useCallback((message: string) => add('info', message), [add]);
+  const error = useCallback((...d: unknown[]) => add('error', ...d), [add]);
+  const warn = useCallback((...d: unknown[]) => add('warning', ...d), [add]);
+  const log = useCallback((...d: unknown[]) => add('info', ...d), [add]);
+  const debug = useCallback((...d: unknown[]) => add('debug', ...d), [add]);
 
   const readerContext = useMemo(
     (): ILogReaderContext => ({
       logs,
+      levels,
+      setLevels,
     }),
-    [logs]
+    [logs, levels, setLevels]
   );
 
   const writerContext = useMemo(
@@ -84,8 +120,9 @@ export function LogsProvider({ children }: Props): JSX.Element {
       error,
       warn,
       log,
+      debug,
     }),
-    [clear, add, error, warn, log]
+    [clear, add, error, warn, log, debug]
   );
 
   return (

@@ -62,15 +62,19 @@ export default function ModInstallButton({
         const mod = modsToInstall[i];
         try {
           let errorCount: number = 0;
-          const recordLog = (level: ILogLevel, message: string): void => {
-            logger.add(
-              level,
-              `Mod ${mod.info.name} encountered a runtime error! ${message}`
-            );
+          const recordLog = (level: ILogLevel, ...data: unknown[]): void => {
             if (level === 'error') {
+              logger.add(
+                level,
+                `Mod ${mod.info.name} encountered a runtime error!`,
+                ...data
+              );
               errorCount++;
+            } else {
+              logger.add(level, ...data);
             }
           };
+          recordLog('debug', `Mod ${mod.info.name} parsing code...`);
           const code = API.readModCode(mod.id);
           const api = getModAPI(mod, {
             ...preferences,
@@ -78,6 +82,10 @@ export default function ModInstallButton({
             recordLog,
             isDryRun: isUninstall,
           });
+          recordLog(
+            'debug',
+            `Mod ${mod.info.name} ${label.toLowerCase()}ing...`
+          );
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
           if (errorCount === 0) {
@@ -88,7 +96,8 @@ export default function ModInstallButton({
           }
         } catch (error) {
           logger.error(
-            `Mod ${mod.info.name} encountered a compile error! ${String(error)}`
+            `Mod ${mod.info.name} encountered a compile error!`,
+            error
           );
         }
       }

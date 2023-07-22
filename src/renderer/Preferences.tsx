@@ -6,13 +6,11 @@ export type IPreferences = {
   preExtractedDataPath: string;
   gamePath: string;
   isDirectMode: boolean;
-  isDryRun: boolean;
   isPreExtractedData: boolean;
   extraArgs: string[];
   mergedPath: string;
   rawGamePath: string;
   setIsDirectMode: (value: boolean) => void;
-  setIsDryRun: (value: boolean) => void;
   setIsPreExtractedData: (value: boolean) => void;
   setExtraArgs: (value: string[]) => void;
   setRawGamePath: (value: string) => void;
@@ -58,13 +56,6 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     (str) => str === 'true'
   );
 
-  const [isDryRun, setIsDryRun] = useSavedState(
-    'dry-run',
-    false,
-    (bool) => String(bool),
-    (str) => str === 'true'
-  );
-
   const [extraArgs, setExtraArgs] = useSavedState(
     'extra-args',
     [] as string[],
@@ -82,13 +73,11 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       preExtractedDataPath,
       gamePath,
       isDirectMode,
-      isDryRun,
       isPreExtractedData,
       extraArgs,
       mergedPath,
       rawGamePath,
       setIsDirectMode,
-      setIsDryRun,
       setIsPreExtractedData,
       setExtraArgs,
       setRawGamePath,
@@ -99,13 +88,11 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       preExtractedDataPath,
       gamePath,
       isDirectMode,
-      isDryRun,
       isPreExtractedData,
       extraArgs,
       mergedPath,
       rawGamePath,
       setIsDirectMode,
-      setIsDryRun,
       setIsPreExtractedData,
       setExtraArgs,
       setRawGamePath,

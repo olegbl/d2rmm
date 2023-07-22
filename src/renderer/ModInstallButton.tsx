@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { LoadingButton } from '@mui/lab';
+import { Tooltip } from '@mui/material';
 import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useToast from './useToast';
@@ -11,14 +12,18 @@ const API = window.electron.API;
 
 type Props = {
   enabledMods: EnabledMods;
-  orderedMods: Mod[];
+  isUninstall?: boolean;
   onErrorsEncountered: () => unknown;
+  orderedMods: Mod[];
+  tooltip?: string | null;
 };
 
 export default function ModInstallButton({
   enabledMods,
-  orderedMods,
+  isUninstall = false,
   onErrorsEncountered,
+  orderedMods,
+  tooltip,
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
@@ -30,6 +35,8 @@ export default function ModInstallButton({
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
     [orderedMods, enabledMods]
   );
+
+  const label = isUninstall ? 'Uninstall' : 'Install';
 
   const onInstallMods = useCallback((): void => {
     try {
@@ -65,12 +72,19 @@ export default function ModInstallButton({
             }
           };
           const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, preferences, extractedFiles, recordLog);
+          const api = getModAPI(mod, {
+            ...preferences,
+            extractedFiles,
+            recordLog,
+            isDryRun: isUninstall,
+          });
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
           if (errorCount === 0) {
             modsInstalled.push(mod);
-            logger.log(`Mod ${mod.info.name} installed successfully.`);
+            logger.log(
+              `Mod ${mod.info.name} ${label.toLowerCase()}ed successfully.`
+            );
           }
         } catch (error) {
           logger.error(
@@ -86,13 +100,13 @@ export default function ModInstallButton({
       if (modsToInstall.length === 0) {
         showToast({
           severity: 'success',
-          title: 'No Mods Installed',
+          title: `No Mods ${label}ed`,
         });
       } else if (modsInstalled.length > 0) {
         showToast({
           severity:
             modsInstalled.length < modsToInstall.length ? 'warning' : 'success',
-          title: `${modsInstalled.length}/${modsToInstall.length} Mods Installed`,
+          title: `${modsInstalled.length}/${modsToInstall.length} Mods ${label}ed`,
         });
       }
 
@@ -103,26 +117,34 @@ export default function ModInstallButton({
       logger.error(String(error));
       showToast({
         severity: 'error',
-        title: 'Error When Installing Mods',
+        title: `Error When ${label}ing Mods`,
         description: String(error),
       });
       onErrorsEncountered();
     }
   }, [
-    logger,
     gamePath,
     isDirectMode,
     isPreExtractedData,
+    isUninstall,
+    label,
+    logger,
     mergedPath,
     modsToInstall,
+    onErrorsEncountered,
     preferences,
     showToast,
-    onErrorsEncountered,
   ]);
 
-  return (
+  const button = (
     <LoadingButton onClick={onInstallMods} variant="outlined">
-      Install Mods
+      {label} Mods
     </LoadingButton>
   );
+
+  if (tooltip != null) {
+    return <Tooltip title={tooltip}>{button}</Tooltip>;
+  }
+
+  return button;
 }

@@ -11,7 +11,6 @@ import {
   ListItemText,
   MenuItem,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -32,12 +31,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     gamePath,
     preExtractedDataPath,
     isDirectMode,
-    isDryRun,
     isPreExtractedData,
     extraArgs,
     rawGamePath,
     setIsDirectMode,
-    setIsDryRun,
     setIsPreExtractedData,
     setExtraArgs,
     setRawGamePath,
@@ -214,31 +211,6 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               primary="Enable Direct Mode"
             />
           </ListItemButton>
-          <Tooltip title="Extract game files needed by the enabled mods but don't save the changes made by the mods. This will revert any files used by the enabled mods to their vanilla state, allowing you to uninstall mods without re-extracting the entire game archive.">
-            <ListItemButton
-              disabled={!isDirectMode}
-              onClick={() => {
-                setIsDryRun(!isDryRun);
-              }}
-            >
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={isDryRun}
-                  tabIndex={-1}
-                  disabled={!isDirectMode}
-                  disableRipple={true}
-                  inputProps={{
-                    'aria-labelledby': 'use-dry-run',
-                  }}
-                />
-              </ListItemIcon>
-              <ListItemText
-                id="use-dry-run"
-                primary="Enable Uninstall / Clean Mode"
-              />
-            </ListItemButton>
-          </Tooltip>
           <Alert severity="warning">
             Do <strong>not</strong> turn this on if you do not know what you are
             doing.

@@ -13,12 +13,16 @@ export default function getModAPI(
     preExtractedDataPath,
     gamePath,
     isDirectMode,
-    isDryRun,
     isPreExtractedData,
     mergedPath,
-  }: IPreferences,
-  extractedFiles: Record<string, boolean>,
-  recordLog: (level: ILogLevel, message: string) => unknown
+    extractedFiles,
+    recordLog,
+    isDryRun,
+  }: IPreferences & {
+    extractedFiles: Record<string, boolean>;
+    recordLog: (level: ILogLevel, message: string) => unknown;
+    isDryRun: boolean;
+  }
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
     return `${preExtractedDataPath}\\${filePath}`;
@@ -109,11 +113,13 @@ export default function getModAPI(
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.log('D2RMM.copyFile', src, dst);
-      API.copyFile(
-        getModSourceFilePath(src),
-        getDestinationFilePath(dst),
-        overwrite
-      );
+      if (!isDryRun) {
+        API.copyFile(
+          getModSourceFilePath(src),
+          getDestinationFilePath(dst),
+          overwrite
+        );
+      }
     },
     readTxt: (filePath: string): string => {
       console.log('D2RMM.readTxt', filePath);

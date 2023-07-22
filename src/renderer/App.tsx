@@ -22,7 +22,7 @@ import ModManagerSettings from './ModManagerSettings';
 import ModManagerLogs from './ModManagerLogs';
 import ModInstallButton from './ModInstallButton';
 import ToastProvider from './ToastProvider';
-import { PreferencesProvider } from './Preferences';
+import { PreferencesProvider, usePreferences } from './Preferences';
 import { LogsProvider } from './Logs';
 import RunGameButton from './RunGameButton';
 
@@ -65,6 +65,7 @@ function D2RMMRootView() {
     () => mods.filter((mod) => mod.id === selectedModID).shift(),
     [selectedModID, mods]
   );
+  const { isDirectMode } = usePreferences();
 
   const showLogs = useCallback((): void => setTab('logs'), [setTab]);
 
@@ -119,6 +120,15 @@ function D2RMMRootView() {
             <ButtonGroup variant="outlined">
               <RunGameButton />
               <Button onClick={onRefreshMods}>Refresh Mod List</Button>
+              {isDirectMode ? (
+                <ModInstallButton
+                  enabledMods={enabledMods}
+                  isUninstall={true}
+                  onErrorsEncountered={showLogs}
+                  orderedMods={orderedMods}
+                  tooltip="Revert any files modified by the enabled mods back to their vanilla state."
+                />
+              ) : null}
               <ModInstallButton
                 orderedMods={orderedMods}
                 enabledMods={enabledMods}

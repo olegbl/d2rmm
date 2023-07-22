@@ -34,10 +34,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     isDirectMode,
     isDryRun,
     isPreExtractedData,
+    extraArgs,
     rawGamePath,
     setIsDirectMode,
     setIsDryRun,
     setIsPreExtractedData,
+    setExtraArgs,
     setRawGamePath,
     setPreExtractedDataPath,
   } = usePreferences();
@@ -63,6 +65,31 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       setPreExtractedDataPath(event.target.value);
     },
     [setPreExtractedDataPath]
+  );
+
+  const onChangeExtraArgs = useCallback(
+    (event): void => {
+      setExtraArgs(event.target.value.split(' '));
+    },
+    [setExtraArgs]
+  );
+
+  const isExtraArgIncluded = useCallback(
+    (extraArg: string): boolean => {
+      return extraArgs.map((arg) => arg.trim()).includes(extraArg);
+    },
+    [extraArgs]
+  );
+
+  const onToggleExtraArg = useCallback(
+    (newArg: string): void => {
+      if (extraArgs.map((arg) => arg.trim()).includes(newArg)) {
+        setExtraArgs(extraArgs.filter((arg) => arg.trim() !== newArg));
+      } else {
+        setExtraArgs([...extraArgs, newArg]);
+      }
+    },
+    [extraArgs, setExtraArgs]
   );
 
   const isValidGamePath = useMemo(
@@ -216,6 +243,48 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             Do <strong>not</strong> turn this on if you do not know what you are
             doing.
           </Alert>
+        </AccordionDetails>
+      </Accordion>
+      <Accordion defaultExpanded={false} disableGutters={true} square={true}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="launcher-content"
+          id="launcher-header"
+        >
+          <Typography>Game Launcher</Typography>
+        </AccordionSummary>
+        <AccordionDetails id="launcher-content">
+          <Typography color="text.secondary" variant="subtitle2">
+            Specify the extra arguments you&apos;d like to pass to Diablo II:
+            Resurrected when starting it via D2RMM.
+          </Typography>
+          <TextField
+            fullWidth={true}
+            variant="filled"
+            label="Extra Game Args"
+            value={extraArgs.join(' ')}
+            onChange={onChangeExtraArgs}
+          />
+          {['-enablerespec', '-resetofflinemaps', '-w'].map((arg) => (
+            <ListItemButton
+              onClick={() => {
+                onToggleExtraArg(arg);
+              }}
+            >
+              <ListItemIcon>
+                <Checkbox
+                  edge="start"
+                  checked={isExtraArgIncluded(arg)}
+                  tabIndex={-1}
+                  disableRipple={true}
+                  inputProps={{
+                    'aria-labelledby': 'enable-respec',
+                  }}
+                />
+              </ListItemIcon>
+              <ListItemText id="enable-respec" primary={`Include "${arg}"`} />
+            </ListItemButton>
+          ))}
         </AccordionDetails>
       </Accordion>
     </List>

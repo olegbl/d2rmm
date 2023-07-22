@@ -8,11 +8,13 @@ export type IPreferences = {
   isDirectMode: boolean;
   isDryRun: boolean;
   isPreExtractedData: boolean;
+  extraArgs: string[];
   mergedPath: string;
   rawGamePath: string;
   setIsDirectMode: (value: boolean) => void;
   setIsDryRun: (value: boolean) => void;
   setIsPreExtractedData: (value: boolean) => void;
+  setExtraArgs: (value: string[]) => void;
   setRawGamePath: (value: string) => void;
   setPreExtractedDataPath: (value: string) => void;
 };
@@ -63,6 +65,13 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     (str) => str === 'true'
   );
 
+  const [extraArgs, setExtraArgs] = useSavedState(
+    'extra-args',
+    [] as string[],
+    (strarr) => strarr.join(' '),
+    (str) => str.split(' ')
+  );
+
   const gamePath = rawGamePath.replace(/\\$/, '');
   const mergedPath = `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`;
   const dataPath = `${gamePath}\\data`;
@@ -75,11 +84,13 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       isDirectMode,
       isDryRun,
       isPreExtractedData,
+      extraArgs,
       mergedPath,
       rawGamePath,
       setIsDirectMode,
       setIsDryRun,
       setIsPreExtractedData,
+      setExtraArgs,
       setRawGamePath,
       setPreExtractedDataPath,
     }),
@@ -90,11 +101,13 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       isDirectMode,
       isDryRun,
       isPreExtractedData,
+      extraArgs,
       mergedPath,
       rawGamePath,
       setIsDirectMode,
       setIsDryRun,
       setIsPreExtractedData,
+      setExtraArgs,
       setRawGamePath,
       setPreExtractedDataPath,
     ]

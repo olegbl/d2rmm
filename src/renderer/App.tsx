@@ -111,14 +111,9 @@ function D2RMMRootView() {
               />
             )}
           </Drawer>
-          <Box
-            sx={{
-              alignItems: 'flex-end',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: 1,
-            }}
-          >
+          <Divider />
+          <Box sx={{ display: 'flex', p: 1 }}>
+            <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
             <ButtonGroup variant="outlined">
               <RunGameButton />
               <Button onClick={onRefreshMods}>Refresh Mod List</Button>

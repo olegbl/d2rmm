@@ -96,8 +96,17 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 {log.level === 'debug' && <PendingIcon color="disabled" />}
               </ListItemIcon>
               <ListItemText
-                primary={log.data.map(prettyPrintData).join(' ').slice(0, 256)}
-                primaryTypographyProps={{ noWrap: true }}
+                primary={log.data.map(prettyPrintData).join(' ').slice(0, 512)}
+                primaryTypographyProps={{
+                  sx: {
+                    // clamp messages to a maximum number of lines to avoid some log messages
+                    // with a lot of data in them from taking up too much space
+                    display: '-webkit-box',
+                    overflow: 'hidden',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                  },
+                }}
                 secondary={new Date(log.timestamp).toLocaleTimeString()}
               />
             </ListItem>

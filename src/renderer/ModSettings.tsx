@@ -87,6 +87,7 @@ export default function ModSettings({
         .map((section) => {
           return (
             <Accordion
+              key={section.field?.id ?? 'default'}
               defaultExpanded={section.field?.defaultExpanded ?? true}
               disableGutters={true}
               square={true}

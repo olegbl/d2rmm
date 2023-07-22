@@ -4,14 +4,13 @@ import { Tooltip } from '@mui/material';
 import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useToast from './useToast';
-import { EnabledMods } from './useEnabledMods';
 import { usePreferences } from './Preferences';
 import { ILogLevel, useLogger } from './Logs';
+import { useEnabledMods } from './ModsContext';
 
 const API = window.electron.API;
 
 type Props = {
-  enabledMods: EnabledMods;
   isUninstall?: boolean;
   onErrorsEncountered: () => unknown;
   orderedMods: Mod[];
@@ -19,7 +18,6 @@ type Props = {
 };
 
 export default function ModInstallButton({
-  enabledMods,
   isUninstall = false,
   onErrorsEncountered,
   orderedMods,
@@ -30,6 +28,8 @@ export default function ModInstallButton({
   const logger = useLogger();
   const { gamePath, mergedPath, isPreExtractedData, isDirectMode } =
     preferences;
+
+  const [enabledMods] = useEnabledMods();
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),

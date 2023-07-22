@@ -14,7 +14,6 @@ import './App.css';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import useEnabledMods from './useEnabledMods';
 import useMods from './useMods';
 import ModSettings from './ModSettings';
 import useOrderedMods from './useOrderedMods';
@@ -26,6 +25,7 @@ import ToastProvider from './ToastProvider';
 import { PreferencesProvider, usePreferences } from './Preferences';
 import { LogsProvider } from './Logs';
 import RunGameButton from './RunGameButton';
+import { ModsContextProvider, useToggleMod } from './ModsContext';
 
 function TabPanelBox({
   children,
@@ -60,13 +60,14 @@ function D2RMMRootView() {
   const [tab, setTab] = useState('mods');
   const [mods, onRefreshMods] = useMods();
   const [orderedMods, reorderMods] = useOrderedMods(mods);
-  const [enabledMods, setEnabledMods] = useEnabledMods();
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
   const selectedMod = useMemo(
     () => mods.filter((mod) => mod.id === selectedModID).shift(),
     [selectedModID, mods]
   );
   const { isDirectMode } = usePreferences();
+
+  const onToggleMod = useToggleMod();
 
   const showLogs = useCallback((): void => setTab('logs'), [setTab]);
 
@@ -90,13 +91,7 @@ function D2RMMRootView() {
         <TabPanelBox value="mods">
           <ModList
             mods={orderedMods}
-            enabledMods={enabledMods}
-            onToggleMod={(mod) =>
-              setEnabledMods((prev) => ({
-                ...prev,
-                [mod.id]: !prev[mod.id],
-              }))
-            }
+            onToggleMod={onToggleMod}
             onConfigureMod={(mod) => setSelectedModID(mod.id)}
             onReorderMod={(from, to) => reorderMods(from, to)}
           />
@@ -120,7 +115,6 @@ function D2RMMRootView() {
               <Button onClick={onRefreshMods}>Refresh Mod List</Button>
               {isDirectMode ? (
                 <ModInstallButton
-                  enabledMods={enabledMods}
                   isUninstall={true}
                   onErrorsEncountered={showLogs}
                   orderedMods={orderedMods}
@@ -129,7 +123,6 @@ function D2RMMRootView() {
               ) : null}
               <ModInstallButton
                 orderedMods={orderedMods}
-                enabledMods={enabledMods}
                 onErrorsEncountered={showLogs}
               />
             </ButtonGroup>
@@ -150,13 +143,15 @@ export default function App() {
   return (
     <ToastProvider>
       <PreferencesProvider>
-        <LogsProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<D2RMMRootView />} />
-            </Routes>
-          </Router>
-        </LogsProvider>
+        <ModsContextProvider>
+          <LogsProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<D2RMMRootView />} />
+              </Routes>
+            </Router>
+          </LogsProvider>
+        </ModsContextProvider>
       </PreferencesProvider>
     </ToastProvider>
   );

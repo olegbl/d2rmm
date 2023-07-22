@@ -2,10 +2,9 @@ import { List } from '@mui/material';
 import { useCallback } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import ModListItem from './ModListItem';
-import { EnabledMods } from './useEnabledMods';
+import { useEnabledMods } from './ModsContext';
 
 type Props = {
-  enabledMods: EnabledMods;
   mods: Mod[];
   onConfigureMod: (mod: Mod) => unknown;
   onReorderMod: (from: number, to: number) => unknown;
@@ -13,12 +12,13 @@ type Props = {
 };
 
 export default function ModList({
-  enabledMods,
   mods,
   onConfigureMod,
   onReorderMod,
   onToggleMod,
 }: Props): JSX.Element {
+  const [enabledMods] = useEnabledMods();
+
   const onDragEnd = useCallback(
     ({ source, destination }: DropResult): void => {
       const from = source.index;

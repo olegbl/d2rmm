@@ -13,7 +13,7 @@ export default function useSavedState<T>(
   initialValue: T,
   serialize: (value: T) => string = serializeImplicit,
   deserialize: (value: string) => T = deserializeImplicit
-): [T, (value: T) => void] {
+): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
     const savedValue = localStorage.getItem(key);
     return savedValue != null ? deserialize(savedValue) : initialValue;

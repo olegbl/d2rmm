@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   ButtonGroup,
+  Divider,
   Drawer,
   SxProps,
   Tab,
@@ -84,6 +85,7 @@ function D2RMMRootView() {
           <Tab label="Settings" value="settings" />
           <Tab label="Logs" value="logs" />
         </TabList>
+        <Divider />
         <TabPanelBox value="mods">
           <ModList
             mods={orderedMods}

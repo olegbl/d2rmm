@@ -1,6 +1,22 @@
 import { Close } from '@mui/icons-material';
-import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Divider,
+  FormGroup,
+  IconButton,
+  Typography,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ModSettingsField from './ModSettingsField';
+
+type FieldElement = { field: ModConfigField; element: JSX.Element };
+type SectionElement = {
+  field: ModConfigFieldSection | null;
+  elements: FieldElement[];
+};
 
 type Props = {
   mod: Mod;
@@ -38,20 +54,64 @@ export default function ModSettings({
         </IconButton>
       </Box>
       <Divider />
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          paddingLeft: 2,
-          paddingRight: 2,
-          paddingTop: 1,
-          paddingBottom: 1,
-        }}
-      >
-        {mod.info.config.map((field) => (
-          <ModSettingsField key={field.id} field={field} mod={mod} />
-        ))}
-      </Box>
+      {mod.info.config
+        .reduce(
+          (agg: SectionElement[], field: ModConfigFieldOrSection) => {
+            if (field.type === 'section') {
+              const sectionElement: SectionElement = {
+                field,
+                elements: [],
+              };
+              return [...agg, sectionElement];
+            }
+            const fieldElement: FieldElement = {
+              field,
+              element: (
+                <ModSettingsField key={field.id} field={field} mod={mod} />
+              ),
+            };
+            const section: SectionElement = agg[
+              agg.length - 1
+            ] as SectionElement;
+            return [
+              ...agg.slice(0, -1),
+              {
+                ...section,
+                elements: [...section.elements, fieldElement],
+              },
+            ];
+          },
+          [{ field: null, elements: [] }]
+        )
+        .filter((section) => section.elements.length > 0)
+        .map((section) => {
+          return (
+            <Accordion
+              defaultExpanded={section.field?.defaultExpanded ?? true}
+              disableGutters={true}
+              square={true}
+            >
+              {section.field == null ? null : (
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="general-content"
+                  id="general-header"
+                >
+                  <Typography>{section.field.name}</Typography>
+                </AccordionSummary>
+              )}
+              <AccordionDetails
+                id="general-content"
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {section.elements.map((element) => element.element)}
+              </AccordionDetails>
+            </Accordion>
+          );
+        })}
     </FormGroup>
   );
 }

@@ -116,7 +116,16 @@ declare global {
     author?: string;
     website?: string;
     version?: string;
-    config?: readonly ModConfigField[];
+    config?: readonly ModConfigFieldOrSection[];
+  };
+
+  type ModConfigFieldOrSection = ModConfigFieldSection | ModConfigField;
+
+  type ModConfigFieldSection = {
+    type: 'section';
+    id: string;
+    name: string;
+    defaultExpanded?: boolean;
   };
 
   type ModConfigField =

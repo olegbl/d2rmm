@@ -2,7 +2,7 @@ import { TextField } from '@mui/material';
 import { ChangeEvent, useCallback } from 'react';
 
 type Props = {
-  field: ModConfigFieldNumber;
+  field: ModConfigFieldText;
   mod: Mod;
   onChange: (fieldID: string, value: ModConfigSingleValue) => unknown;
 };

@@ -12,6 +12,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  styled,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useCallback, useMemo } from 'react';
@@ -23,6 +24,24 @@ function getIsValidGamePath(path: string): boolean {
   const files = API.readDirectory(path);
   return files.find(({ name }) => name === 'D2R.exe') != null;
 }
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  '&:before': {
+    display: 'none',
+  },
+}));
+
+const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
+  backgroundColor: theme.palette.action.hover,
+  '&:hover': {
+    backgroundColor: theme.palette.action.focus,
+  },
+}));
+
+const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
+  borderTop: `1px solid ${theme.palette.divider}`,
+}));
 
 type Props = Record<string, never>;
 
@@ -96,18 +115,23 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
 
   return (
     <List
-      sx={{ width: '100%', flex: 1, overflow: 'auto' }}
+      sx={{ width: '100%', flex: 1, overflow: 'auto', border: 'none' }}
       disablePadding={true}
     >
-      <Accordion defaultExpanded={true} disableGutters={true} square={true}>
-        <AccordionSummary
+      <StyledAccordion
+        defaultExpanded={!isValidGamePath}
+        disableGutters={true}
+        square={true}
+        elevation={0}
+      >
+        <StyledAccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls="general-content"
           id="general-header"
         >
           <Typography>General</Typography>
-        </AccordionSummary>
-        <AccordionDetails id="general-content">
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="general-content">
           <Typography color="text.secondary" variant="subtitle2">
             Specify the directory where Diablo II: Resurrected is installed.
             &quot;D2R.exe&quot; should in in this directory.
@@ -169,21 +193,22 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               ) : null}
             </>
           ) : null}
-        </AccordionDetails>
-      </Accordion>
-      <Accordion
+        </StyledAccordionDetails>
+      </StyledAccordion>
+      <StyledAccordion
         defaultExpanded={isDirectMode}
         disableGutters={true}
         square={true}
+        elevation={0}
       >
-        <AccordionSummary
+        <StyledAccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls="direct-mode-content"
           id="direct-mode-header"
         >
           <Typography>Direct Mode</Typography>
-        </AccordionSummary>
-        <AccordionDetails id="direct-mode-content">
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="direct-mode-content">
           <Typography color="text.secondary" variant="subtitle2">
             Instead of extracting files to /mods/D2RMM/, extract them to /data/
             so that you can use -direct -txt when running the game. You will
@@ -215,17 +240,22 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             Do <strong>not</strong> turn this on if you do not know what you are
             doing.
           </Alert>
-        </AccordionDetails>
-      </Accordion>
-      <Accordion defaultExpanded={false} disableGutters={true} square={true}>
-        <AccordionSummary
+        </StyledAccordionDetails>
+      </StyledAccordion>
+      <StyledAccordion
+        defaultExpanded={false}
+        disableGutters={true}
+        square={true}
+        elevation={0}
+      >
+        <StyledAccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls="launcher-content"
           id="launcher-header"
         >
           <Typography>Game Launcher</Typography>
-        </AccordionSummary>
-        <AccordionDetails id="launcher-content">
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="launcher-content">
           <Typography color="text.secondary" variant="subtitle2">
             Specify the extra arguments you&apos;d like to pass to Diablo II:
             Resurrected when starting it via D2RMM.
@@ -257,8 +287,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               <ListItemText id="enable-respec" primary={`Include "${arg}"`} />
             </ListItemButton>
           ))}
-        </AccordionDetails>
-      </Accordion>
+        </StyledAccordionDetails>
+      </StyledAccordion>
     </List>
   );
 }

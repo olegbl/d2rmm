@@ -8,9 +8,28 @@ import {
   FormGroup,
   IconButton,
   Typography,
+  styled,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ModSettingsField from './ModSettingsField';
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  borderBottom: `1px solid ${theme.palette.divider}`,
+  '&:before': {
+    display: 'none',
+  },
+}));
+
+const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
+  backgroundColor: theme.palette.action.hover,
+  '&:hover': {
+    backgroundColor: theme.palette.action.focus,
+  },
+}));
+
+const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
+  borderTop: `1px solid ${theme.palette.divider}`,
+}));
 
 type FieldElement = { field: ModConfigField; element: JSX.Element };
 type SectionElement = {
@@ -53,7 +72,7 @@ export default function ModSettings({
           <Close />
         </IconButton>
       </Box>
-      <Divider />
+      {mod.info.config[0]?.type === 'section' ? <Divider /> : null}
       {mod.info.config
         .reduce(
           (agg: SectionElement[], field: ModConfigFieldOrSection) => {
@@ -86,22 +105,23 @@ export default function ModSettings({
         .filter((section) => section.elements.length > 0)
         .map((section) => {
           return (
-            <Accordion
+            <StyledAccordion
               key={section.field?.id ?? 'default'}
               defaultExpanded={section.field?.defaultExpanded ?? true}
               disableGutters={true}
               square={true}
+              elevation={0}
             >
               {section.field == null ? null : (
-                <AccordionSummary
+                <StyledAccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="general-content"
                   id="general-header"
                 >
                   <Typography>{section.field.name}</Typography>
-                </AccordionSummary>
+                </StyledAccordionSummary>
               )}
-              <AccordionDetails
+              <StyledAccordionDetails
                 id="general-content"
                 sx={{
                   display: 'flex',
@@ -109,8 +129,8 @@ export default function ModSettings({
                 }}
               >
                 {section.elements.map((element) => element.element)}
-              </AccordionDetails>
-            </Accordion>
+              </StyledAccordionDetails>
+            </StyledAccordion>
           );
         })}
     </FormGroup>

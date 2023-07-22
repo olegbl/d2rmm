@@ -7,7 +7,7 @@ export default function useGameArgs(): string[] {
   return useMemo(() => {
     const baseArgs = isDirectMode
       ? ['-direct', '-txt']
-      : ['-mod D2RMM', '-txt'];
+      : ['-mod', 'D2RMM', '-txt'];
     return [
       ...baseArgs,
       ...extraArgs

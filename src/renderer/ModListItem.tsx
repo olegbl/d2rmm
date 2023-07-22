@@ -76,10 +76,16 @@ function ListChip({
 type Props = {
   index: number;
   isEnabled: boolean;
+  isReorderEnabled: boolean;
   mod: Mod;
 };
 
-export default function ModListItem({ index, isEnabled, mod }: Props) {
+export default function ModListItem({
+  index,
+  isEnabled,
+  isReorderEnabled,
+  mod,
+}: Props) {
   const onToggleMod = useToggleMod();
   const [, setSelectedMod] = useSelectedMod();
 
@@ -95,69 +101,74 @@ export default function ModListItem({ index, isEnabled, mod }: Props) {
 
   const labelId = `mod-label-${mod}`;
 
-  return (
-    <Draggable draggableId={mod.id} index={index}>
-      {(providedDraggable) => (
-        <div
-          ref={providedDraggable.innerRef}
-          {...providedDraggable.draggableProps}
-          {...providedDraggable.dragHandleProps}
-        >
-          <ListItem key={mod.id} disablePadding={true}>
-            <ListItemButton
-              onClick={() => onToggleMod(mod)}
-              sx={{ width: 'auto', flexGrow: 1, flexShrink: 1 }}
-            >
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={isEnabled}
-                  tabIndex={-1}
-                  disableRipple={true}
-                  inputProps={{
-                    'aria-labelledby': labelId,
-                  }}
+  const item = (
+    <ListItem key={mod.id} disablePadding={true}>
+      <ListItemButton
+        onClick={() => onToggleMod(mod)}
+        sx={{ width: 'auto', flexGrow: 1, flexShrink: 1 }}
+      >
+        <ListItemIcon>
+          <Checkbox
+            edge="start"
+            checked={isEnabled}
+            tabIndex={-1}
+            disableRipple={true}
+            inputProps={{
+              'aria-labelledby': labelId,
+            }}
+          />
+        </ListItemIcon>
+        <ListItemText
+          id={labelId}
+          primary={
+            <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+              <Typography>{mod.info.name}</Typography>
+              {mod.info.description == null ? null : (
+                <Tooltip title={mod.info.description}>
+                  <HelpIcon color="disabled" sx={{ ml: 1 }} />
+                </Tooltip>
+              )}
+              <Box sx={{ flex: 1 }} />
+              {mod.info.website == null ? null : (
+                <ListChip
+                  icon={<LinkIcon />}
+                  label="site"
+                  onClick={onOpenWebsite}
                 />
-              </ListItemIcon>
-              <ListItemText
-                id={labelId}
-                primary={
-                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Typography>{mod.info.name}</Typography>
-                    {mod.info.description == null ? null : (
-                      <Tooltip title={mod.info.description}>
-                        <HelpIcon color="disabled" sx={{ ml: 1 }} />
-                      </Tooltip>
-                    )}
-                    <Box sx={{ flex: 1 }} />
-                    {mod.info.website == null ? null : (
-                      <ListChip
-                        icon={<LinkIcon />}
-                        label="site"
-                        onClick={onOpenWebsite}
-                      />
-                    )}
-                    <ListChip icon={<FaceIcon />} label={mod.info.author} />
-                    <ListChip
-                      icon={<UpdateIcon />}
-                      label={`v${mod.info.version}`}
-                    />
-                    {mod.info.config == null ? null : (
-                      <ListChip
-                        color={isEnabled ? 'primary' : undefined}
-                        icon={<SettingsIcon />}
-                        label="settings"
-                        onClick={onConfigureMod}
-                      />
-                    )}
-                  </Box>
-                }
-              />
-            </ListItemButton>
-            <DragIndicatorIcon color="disabled" />
-          </ListItem>
-        </div>
-      )}
-    </Draggable>
+              )}
+              <ListChip icon={<FaceIcon />} label={mod.info.author} />
+              <ListChip icon={<UpdateIcon />} label={`v${mod.info.version}`} />
+              {mod.info.config == null ? null : (
+                <ListChip
+                  color={isEnabled ? 'primary' : undefined}
+                  icon={<SettingsIcon />}
+                  label="settings"
+                  onClick={onConfigureMod}
+                />
+              )}
+            </Box>
+          }
+        />
+      </ListItemButton>
+      {isReorderEnabled ? <DragIndicatorIcon color="disabled" /> : null}
+    </ListItem>
   );
+
+  if (isReorderEnabled) {
+    return (
+      <Draggable draggableId={mod.id} index={index}>
+        {(providedDraggable) => (
+          <div
+            ref={providedDraggable.innerRef}
+            {...providedDraggable.draggableProps}
+            {...providedDraggable.dragHandleProps}
+          >
+            {item}
+          </div>
+        )}
+      </Draggable>
+    );
+  }
+
+  return item;
 }

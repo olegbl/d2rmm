@@ -78,6 +78,7 @@ function D2RMMRootView() {
           flexDirection: 'column',
           height: '100%',
           width: '100%',
+          overflow: 'hidden',
         }}
       >
         <TabList onChange={(_event, value) => setTab(value)}>

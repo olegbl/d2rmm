@@ -1,22 +1,76 @@
 import {
-  Menu as MenuIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
-import {
+  Box,
   Checkbox,
-  IconButton,
+  Chip,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Menu,
-  MenuItem,
   Tooltip,
+  Typography,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
+import UpdateIcon from '@mui/icons-material/Update';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import FaceIcon from '@mui/icons-material/Face';
+import LinkIcon from '@mui/icons-material/Link';
+import HelpIcon from '@mui/icons-material/Help';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useCallback, useMemo } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 
 const API = window.electron.API;
+
+function ListChip({
+  color,
+  icon,
+  label,
+  onClick,
+  tooltip,
+}: {
+  color?: React.ComponentProps<typeof Chip>['color'];
+  icon: React.ComponentProps<typeof Chip>['icon'];
+  label: React.ComponentProps<typeof Chip>['label'];
+  onClick?: React.ComponentProps<typeof Chip>['onClick'];
+  tooltip?: string;
+}): JSX.Element {
+  const onClickWithoutPropagation = useMemo(() => {
+    if (onClick == null) {
+      return undefined;
+    }
+    return (event: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+      event.stopPropagation();
+      onClick(event);
+    };
+  }, [onClick]);
+
+  const onMouseDownWithoutPropagation = useMemo(() => {
+    if (onClick == null || tooltip != null) {
+      return undefined;
+    }
+    return (event: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+      event.stopPropagation();
+    };
+  }, [onClick, tooltip]);
+
+  const chip = (
+    <Chip
+      color={color}
+      icon={icon}
+      label={label}
+      size="small"
+      clickable={onClick != null}
+      onClick={onClickWithoutPropagation}
+      onMouseDown={onMouseDownWithoutPropagation}
+      sx={{ ml: 1, cursor: 'pointer' }}
+    />
+  );
+
+  if (tooltip != null) {
+    return <Tooltip title={tooltip}>{chip}</Tooltip>;
+  }
+
+  return chip;
+}
 
 type Props = {
   index: number;
@@ -33,45 +87,17 @@ export default function ModListItem({
   onConfigureMod: onConfigureModFromProps,
   onToggleMod,
 }: Props) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const onCloseMenu = useCallback((): void => {
-    setAnchorEl(null);
-  }, []);
-
-  const onOpenMenu = useCallback(
-    (event: React.MouseEvent<HTMLElement>): void => {
-      setAnchorEl(event.currentTarget);
-    },
-    []
-  );
-
   const onConfigureMod = useCallback((): void => {
-    onCloseMenu();
     onConfigureModFromProps(mod);
-  }, [mod, onCloseMenu, onConfigureModFromProps]);
+  }, [mod, onConfigureModFromProps]);
 
   const onOpenWebsite = useCallback((): void => {
-    onCloseMenu();
     if (mod.info.website != null) {
       API.openURL(mod.info.website);
     }
-  }, [mod, onCloseMenu]);
+  }, [mod]);
 
   const labelId = `mod-label-${mod}`;
-
-  const menuOptions = [
-    mod.info.config == null ? null : (
-      <MenuItem key="settings" onClick={onConfigureMod}>
-        Settings
-      </MenuItem>
-    ),
-    mod.info.website == null ? null : (
-      <MenuItem key="website" onClick={onOpenWebsite}>
-        Website
-      </MenuItem>
-    ),
-  ].filter(Boolean);
 
   return (
     <Draggable draggableId={mod.id} index={index}>
@@ -81,82 +107,59 @@ export default function ModListItem({
           {...providedDraggable.draggableProps}
           {...providedDraggable.dragHandleProps}
         >
-          <ListItem
-            key={mod.id}
-            disablePadding={true}
-            secondaryAction={[
-              mod.info.config == null ? null : (
-                <IconButton
-                  key="settings"
-                  edge="end"
-                  aria-label="Settings"
-                  onClick={onConfigureMod}
-                >
-                  <SettingsIcon />
-                </IconButton>
-              ),
-              menuOptions.length == null ? null : (
-                <IconButton
-                  key="menu"
-                  edge="end"
-                  aria-label="Menu"
-                  onClick={onOpenMenu}
-                >
-                  <MenuIcon />
-                </IconButton>
-              ),
-            ]
-              .filter(Boolean)
-              .reduce(
-                (agg, el) => (
-                  <>
-                    {agg}&nbsp;&nbsp;&nbsp;&nbsp;{el}
-                  </>
-                ),
-                null
-              )}
-          >
-            <Tooltip title={mod.info.description ?? ''} arrow={true}>
-              <ListItemButton onClick={() => onToggleMod(mod)}>
-                <ListItemIcon>
-                  <Checkbox
-                    edge="start"
-                    checked={isEnabled}
-                    tabIndex={-1}
-                    disableRipple={true}
-                    inputProps={{
-                      'aria-labelledby': labelId,
-                    }}
-                  />
-                </ListItemIcon>
-                <ListItemText
-                  id={labelId}
-                  primary={mod.info.name}
-                  secondary={[
-                    mod.info.version == null
-                      ? null
-                      : `Version ${mod.info.version}`,
-                    mod.info.author == null ? null : `by ${mod.info.author}`,
-                  ].join(' ')}
+          <ListItem key={mod.id} disablePadding={true}>
+            <ListItemButton
+              onClick={() => onToggleMod(mod)}
+              sx={{ width: 'auto', flexGrow: 1, flexShrink: 1 }}
+            >
+              <ListItemIcon>
+                <Checkbox
+                  edge="start"
+                  checked={isEnabled}
+                  tabIndex={-1}
+                  disableRipple={true}
+                  inputProps={{
+                    'aria-labelledby': labelId,
+                  }}
                 />
-              </ListItemButton>
-            </Tooltip>
+              </ListItemIcon>
+              <ListItemText
+                id={labelId}
+                primary={
+                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Typography>{mod.info.name}</Typography>
+                    {mod.info.description == null ? null : (
+                      <Tooltip title={mod.info.description}>
+                        <HelpIcon color="disabled" sx={{ ml: 1 }} />
+                      </Tooltip>
+                    )}
+                    <Box sx={{ flex: 1 }} />
+                    {mod.info.website == null ? null : (
+                      <ListChip
+                        icon={<LinkIcon />}
+                        label="site"
+                        onClick={onOpenWebsite}
+                      />
+                    )}
+                    <ListChip icon={<FaceIcon />} label={mod.info.author} />
+                    <ListChip
+                      icon={<UpdateIcon />}
+                      label={`v${mod.info.version}`}
+                    />
+                    {mod.info.config == null ? null : (
+                      <ListChip
+                        color={isEnabled ? 'primary' : undefined}
+                        icon={<SettingsIcon />}
+                        label="settings"
+                        onClick={onConfigureMod}
+                      />
+                    )}
+                  </Box>
+                }
+              />
+            </ListItemButton>
+            <DragIndicatorIcon color="disabled" />
           </ListItem>
-          <Menu
-            anchorEl={anchorEl}
-            open={anchorEl != null}
-            onClose={onCloseMenu}
-            anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'left',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'left',
-            }}
-          >
-            {menuOptions}
-          </Menu>
         </div>
       )}
     </Draggable>

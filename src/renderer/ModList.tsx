@@ -2,12 +2,13 @@ import {
   Box,
   ButtonGroup,
   Divider,
+  InputAdornment,
   List,
   TextField,
-  styled,
 } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import SearchIcon from '@mui/icons-material/Search';
 import ModListItem from './ModListItem';
 import { useEnabledMods, useOrderedMods } from './ModsContext';
 import ModSettingsDrawer from './ModSettingsDrawer';
@@ -15,19 +16,6 @@ import RunGameButton from './RunGameButton';
 import RefreshModsButton from './RefreshModsButton';
 import ModInstallButton from './ModInstallButton';
 import { usePreferences } from './Preferences';
-
-const ExpandingTextField = styled(TextField)(() => ({
-  flex: '0 1 auto',
-  display: 'flex',
-  flexDirection: 'row',
-  '& .MuiInputBase-root': {
-    width: '150px',
-    transition: 'width ease-in-out 0.35s 0s',
-    '&.Mui-focused': {
-      width: '600px',
-    },
-  },
-}));
 
 type Props = {
   onShowLogsTab: () => unknown;
@@ -92,12 +80,32 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
       </List>
       <Divider />
       <Box sx={{ display: 'flex', flexDirection: 'row', p: 1 }}>
-        <ExpandingTextField
+        <TextField
           size="small"
-          variant="filled"
-          label="Search..."
+          variant="outlined"
+          hiddenLabel={true}
+          placeholder="Search..."
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            flex: '0 1 auto',
+            display: 'flex',
+            flexDirection: 'row',
+            '& .MuiInputBase-root': {
+              width: '150px',
+              transition: 'width ease-in-out 0.35s 0s',
+              '&.Mui-focused': {
+                width: '600px',
+              },
+            },
+          }}
         />
         <Box sx={{ flex: '1 1 0', ml: 1 }} />
         <ButtonGroup variant="outlined" sx={{ flex: '0 0 auto' }}>

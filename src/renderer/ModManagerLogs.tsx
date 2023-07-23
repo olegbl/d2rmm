@@ -2,8 +2,7 @@ import {
   Box,
   Button,
   Divider,
-  FormControl,
-  InputLabel,
+  InputAdornment,
   List,
   ListItem,
   ListItemIcon,
@@ -18,6 +17,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import PendingIcon from '@mui/icons-material/Pending';
 import DownloadIcon from '@mui/icons-material/Download';
 import { useCallback, useState } from 'react';
+import FilterAltIcon from '@mui/icons-material/FilterAltOutlined';
 import { useLogLevels, useLogs } from './Logs';
 
 function prettyPrintData(data: unknown): string {
@@ -129,20 +129,22 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           m: 1,
         }}
       >
-        <FormControl variant="filled">
-          <InputLabel id="log-levels-label">Log Levels</InputLabel>
-          <Select
-            labelId="log-levels-label"
-            multiple={true}
-            value={levels}
-            onChange={onChangeLevels}
-          >
-            <MenuItem value="error">Error</MenuItem>
-            <MenuItem value="warning">Warning</MenuItem>
-            <MenuItem value="info">Info</MenuItem>
-            <MenuItem value="debug">Debug</MenuItem>
-          </Select>
-        </FormControl>
+        <Select
+          size="small"
+          multiple={true}
+          value={levels}
+          onChange={onChangeLevels}
+          startAdornment={
+            <InputAdornment position="start">
+              <FilterAltIcon />
+            </InputAdornment>
+          }
+        >
+          <MenuItem value="error">Error</MenuItem>
+          <MenuItem value="warning">Warning</MenuItem>
+          <MenuItem value="info">Info</MenuItem>
+          <MenuItem value="debug">Debug</MenuItem>
+        </Select>
         <Box sx={{ flex: 1 }} />
         <Button
           variant="outlined"

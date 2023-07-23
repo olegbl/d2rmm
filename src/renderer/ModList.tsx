@@ -1,4 +1,11 @@
-import { Box, ButtonGroup, Divider, List, TextField } from '@mui/material';
+import {
+  Box,
+  ButtonGroup,
+  Divider,
+  List,
+  TextField,
+  styled,
+} from '@mui/material';
 import { useCallback, useState } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import ModListItem from './ModListItem';
@@ -8,6 +15,19 @@ import RunGameButton from './RunGameButton';
 import RefreshModsButton from './RefreshModsButton';
 import ModInstallButton from './ModInstallButton';
 import { usePreferences } from './Preferences';
+
+const ExpandingTextField = styled(TextField)(() => ({
+  flex: '0 1 auto',
+  display: 'flex',
+  flexDirection: 'row',
+  '& .MuiInputBase-root': {
+    width: '150px',
+    transition: 'width ease-in-out 0.35s 0s',
+    '&.Mui-focused': {
+      width: '600px',
+    },
+  },
+}));
 
 type Props = {
   onShowLogsTab: () => unknown;
@@ -72,15 +92,15 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
       </List>
       <Divider />
       <Box sx={{ display: 'flex', flexDirection: 'row', p: 1 }}>
-        <TextField
+        <ExpandingTextField
           size="small"
           variant="filled"
           label="Search..."
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         />
-        <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
-        <ButtonGroup variant="outlined">
+        <Box sx={{ flex: '1 1 0', ml: 1 }} />
+        <ButtonGroup variant="outlined" sx={{ flex: '0 0 auto' }}>
           <RunGameButton />
           <RefreshModsButton />
           {isDirectMode ? (

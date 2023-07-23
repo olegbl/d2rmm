@@ -15,8 +15,9 @@ import {
   styled,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { usePreferences } from './Preferences';
+import { useThemeMode } from './ThemeContext';
 
 const API = window.electron.API;
 
@@ -60,53 +61,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     setPreExtractedDataPath,
   } = usePreferences();
 
+  const [themeMode, setThemeMode] = useThemeMode();
+
   const dataSource = isPreExtractedData ? 'directory' : 'casc';
-
-  const onChangeGamePath = useCallback(
-    (event): void => {
-      setRawGamePath(event.target.value);
-    },
-    [setRawGamePath]
-  );
-
-  const onChangeDataSource = useCallback(
-    (event): void => {
-      setIsPreExtractedData(event.target.value === 'directory');
-    },
-    [setIsPreExtractedData]
-  );
-
-  const onChangePreExtractedDataPath = useCallback(
-    (event): void => {
-      setPreExtractedDataPath(event.target.value);
-    },
-    [setPreExtractedDataPath]
-  );
-
-  const onChangeExtraArgs = useCallback(
-    (event): void => {
-      setExtraArgs(event.target.value.split(' '));
-    },
-    [setExtraArgs]
-  );
-
-  const isExtraArgIncluded = useCallback(
-    (extraArg: string): boolean => {
-      return extraArgs.map((arg) => arg.trim()).includes(extraArg);
-    },
-    [extraArgs]
-  );
-
-  const onToggleExtraArg = useCallback(
-    (newArg: string): void => {
-      if (extraArgs.map((arg) => arg.trim()).includes(newArg)) {
-        setExtraArgs(extraArgs.filter((arg) => arg.trim() !== newArg));
-      } else {
-        setExtraArgs([...extraArgs, newArg]);
-      }
-    },
-    [extraArgs, setExtraArgs]
-  );
 
   const isValidGamePath = useMemo(
     () => getIsValidGamePath(gamePath),
@@ -141,7 +98,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             variant="filled"
             label="Game Directory"
             value={rawGamePath}
-            onChange={onChangeGamePath}
+            onChange={(event) => setRawGamePath(event.target.value)}
             error={!isValidGamePath}
             helperText={
               isValidGamePath
@@ -160,7 +117,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             variant="filled"
             label="Game Data Source"
             value={dataSource}
-            onChange={onChangeDataSource}
+            onChange={(event) =>
+              setIsPreExtractedData(event.target.value === 'directory')
+            }
           >
             <MenuItem value="casc">Casc Archive</MenuItem>
             <MenuItem value="directory">Pre-Extracted Data</MenuItem>
@@ -177,7 +136,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 variant="filled"
                 label="Data Directory"
                 value={preExtractedDataPath}
-                onChange={onChangePreExtractedDataPath}
+                onChange={(event) =>
+                  setPreExtractedDataPath(event.target.value)
+                }
               />
 
               {isDirectMode &&
@@ -265,18 +226,23 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             variant="filled"
             label="Extra Game Args"
             value={extraArgs.join(' ')}
-            onChange={onChangeExtraArgs}
+            onChange={(event) => setExtraArgs(event.target.value.split(' '))}
           />
           {['-enablerespec', '-resetofflinemaps', '-w'].map((arg) => (
             <ListItemButton
+              key={arg}
               onClick={() => {
-                onToggleExtraArg(arg);
+                if (extraArgs.map((a) => a.trim()).includes(arg)) {
+                  setExtraArgs(extraArgs.filter((a) => a.trim() !== arg));
+                } else {
+                  setExtraArgs([...extraArgs, arg]);
+                }
               }}
             >
               <ListItemIcon>
                 <Checkbox
                   edge="start"
-                  checked={isExtraArgIncluded(arg)}
+                  checked={extraArgs.map((a) => a.trim()).includes(arg)}
                   tabIndex={-1}
                   disableRipple={true}
                   inputProps={{
@@ -287,6 +253,35 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               <ListItemText id="enable-respec" primary={`Include "${arg}"`} />
             </ListItemButton>
           ))}
+        </StyledAccordionDetails>
+      </StyledAccordion>
+
+      <StyledAccordion
+        defaultExpanded={false}
+        disableGutters={true}
+        square={true}
+        elevation={0}
+      >
+        <StyledAccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls="display-content"
+          id="display-header"
+        >
+          <Typography>Display</Typography>
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="display-content">
+          <TextField
+            select={true}
+            fullWidth={true}
+            variant="filled"
+            label="Theme"
+            value={themeMode}
+            onChange={(event) => setThemeMode(event.target.value)}
+          >
+            <MenuItem value="system">System</MenuItem>
+            <MenuItem value="light">Light</MenuItem>
+            <MenuItem value="dark">Dark</MenuItem>
+          </TextField>
         </StyledAccordionDetails>
       </StyledAccordion>
     </List>

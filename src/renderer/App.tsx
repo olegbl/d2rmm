@@ -1,4 +1,4 @@
-import { Box, Divider, SxProps, Tab, Theme } from '@mui/material';
+import { Box, Divider, Tab } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
@@ -12,14 +12,13 @@ import ToastProvider from './ToastProvider';
 import { PreferencesProvider } from './Preferences';
 import { LogsProvider } from './Logs';
 import { ModsContextProvider } from './ModsContext';
+import ThemeContextProvider from './ThemeContext';
 
 function TabPanelBox({
   children,
-  sx,
   value,
 }: {
   children: React.ReactNode;
-  sx?: SxProps<Theme>;
   value: string;
 }): JSX.Element {
   return (
@@ -33,7 +32,6 @@ function TabPanelBox({
           position: 'absolute',
           right: 0,
           top: 0,
-          ...sx,
         }}
       >
         {children}
@@ -79,18 +77,20 @@ function D2RMMRootView() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <PreferencesProvider>
-        <ModsContextProvider>
-          <LogsProvider>
-            <Router>
-              <Routes>
-                <Route path="/" element={<D2RMMRootView />} />
-              </Routes>
-            </Router>
-          </LogsProvider>
-        </ModsContextProvider>
-      </PreferencesProvider>
-    </ToastProvider>
+    <ThemeContextProvider>
+      <ToastProvider>
+        <PreferencesProvider>
+          <ModsContextProvider>
+            <LogsProvider>
+              <Router>
+                <Routes>
+                  <Route path="/" element={<D2RMMRootView />} />
+                </Routes>
+              </Router>
+            </LogsProvider>
+          </ModsContextProvider>
+        </PreferencesProvider>
+      </ToastProvider>
+    </ThemeContextProvider>
   );
 }

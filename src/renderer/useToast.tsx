@@ -3,7 +3,9 @@ import ToastContext, { Toast } from './ToastContext';
 
 const emptyFunction = () => {};
 
-export default function useToast(): (toast: Toast) => void {
+export type ShowToast = (toast: Toast) => void;
+
+export default function useToast(): ShowToast {
   const context = useContext(ToastContext);
   if (context == null) {
     return emptyFunction;

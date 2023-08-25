@@ -6,36 +6,10 @@ import React, {
   useState,
 } from 'react';
 import useSavedState from './useSavedState';
+import { useLogger } from './Logs';
+import useToast from './useToast';
 
 const API = window.electron.API;
-
-function getMods(): Mod[] {
-  const modIDs = API.readModDirectory();
-  return modIDs
-    .map((modID) => {
-      const info = API.readModInfo(modID);
-
-      if (info == null) {
-        return null;
-      }
-
-      const config = API.readModConfig(modID) as unknown as ModConfigValue;
-
-      const defaultConfig = info.config?.reduce((agg, field) => {
-        if (field.type !== 'section') {
-          agg[field.id] = field.defaultValue as unknown as ModConfigSingleValue;
-        }
-        return agg;
-      }, {} as ModConfigValue);
-
-      return {
-        id: modID,
-        info,
-        config: { ...defaultConfig, ...config },
-      };
-    })
-    .filter((mod): mod is Mod => mod != null);
-}
 
 type IEnabledMods = { [id: string]: boolean };
 
@@ -67,12 +41,55 @@ export function ModsContextProvider({
 }: {
   children: React.ReactNode;
 }): JSX.Element {
+  const logger = useLogger();
+  const showToast = useToast();
+
+  const getMods = useCallback((): Mod[] => {
+    const modIDs = API.readModDirectory();
+    return modIDs
+      .map((modID) => {
+        try {
+          const info = API.readModInfo(modID);
+
+          if (info == null) {
+            // ignore folder as it may not be a mod
+            return null;
+          }
+
+          const config = API.readModConfig(modID) as unknown as ModConfigValue;
+
+          const defaultConfig = info.config?.reduce((agg, field) => {
+            if (field.type !== 'section') {
+              agg[field.id] =
+                field.defaultValue as unknown as ModConfigSingleValue;
+            }
+            return agg;
+          }, {} as ModConfigValue);
+
+          return {
+            id: modID,
+            info,
+            config: { ...defaultConfig, ...config },
+          };
+        } catch (error) {
+          logger.error('Failed to load mod', modID, error);
+          showToast({
+            severity: 'error',
+            title: `Failed to load mod ${modID}`,
+            description: String(error),
+          });
+          return null;
+        }
+      })
+      .filter((mod): mod is Mod => mod != null);
+  }, [logger, showToast]);
+
   const [mods, setMods] = useState<Mod[]>(() => getMods());
 
   const refreshMods = useCallback((): void => {
     // manually refresh mods
     setMods(getMods());
-  }, []);
+  }, [getMods]);
 
   const [enabledMods, setEnabledMods] = useSavedState(
     'enabled-mods',

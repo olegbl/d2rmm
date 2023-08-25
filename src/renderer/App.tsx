@@ -13,6 +13,7 @@ import { PreferencesProvider } from './Preferences';
 import { LogsProvider } from './Logs';
 import { ModsContextProvider } from './ModsContext';
 import ThemeContextProvider from './ThemeContext';
+import ErrorBoundary from './ErrorBoundary';
 
 function TabPanelBox({
   children,
@@ -77,20 +78,22 @@ function D2RMMRootView() {
 
 export default function App() {
   return (
-    <ThemeContextProvider>
-      <ToastProvider>
-        <PreferencesProvider>
-          <ModsContextProvider>
-            <LogsProvider>
-              <Router>
-                <Routes>
-                  <Route path="/" element={<D2RMMRootView />} />
-                </Routes>
-              </Router>
-            </LogsProvider>
-          </ModsContextProvider>
-        </PreferencesProvider>
-      </ToastProvider>
-    </ThemeContextProvider>
+    <ErrorBoundary>
+      <ThemeContextProvider>
+        <ToastProvider>
+          <LogsProvider>
+            <PreferencesProvider>
+              <ModsContextProvider>
+                <Router>
+                  <Routes>
+                    <Route path="/" element={<D2RMMRootView />} />
+                  </Routes>
+                </Router>
+              </ModsContextProvider>
+            </PreferencesProvider>
+          </LogsProvider>
+        </ToastProvider>
+      </ThemeContextProvider>
+    </ErrorBoundary>
   );
 }

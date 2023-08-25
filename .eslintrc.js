@@ -7,6 +7,7 @@ module.exports = {
     'react/jsx-boolean-value': ['error', 'always'],
     'react/jsx-props-no-spreading': 'off',
     'react/require-default-props': 'off',
+    'react/destructuring-assignment': 'off',
     'operator-assignment': ['warn', 'never'],
     'no-plusplus': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',

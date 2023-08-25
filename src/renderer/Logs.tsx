@@ -47,7 +47,9 @@ export function useLogLevels(): [ILogLevel[], (levels: ILogLevel[]) => void] {
   return [context.levels, context.setLevels];
 }
 
-export function useLogger(): ILogWriterContext {
+export type ILogger = ILogWriterContext;
+
+export function useLogger(): ILogger {
   const context = useContext(WriterContext);
   if (context == null) {
     throw new Error('No Logs context available.');

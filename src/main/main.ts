@@ -16,6 +16,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { resolveHtmlPath } from './util';
 import { createAPI } from './api';
+import { initPreferences } from './preferences';
 
 export default class AppUpdater {
   constructor() {
@@ -120,6 +121,8 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+initPreferences();
 
 app
   .whenReady()

@@ -11,9 +11,13 @@ contextBridge.exposeInMainWorld('electron', {
       console.log('API.getAppPath');
       return ipcRenderer.sendSync('getAppPath');
     },
-    execute: (executablePath, args) => {
-      console.log('API.execute', { executablePath, args });
-      const result = ipcRenderer.sendSync('execute', [executablePath, args]);
+    execute: (executablePath, args, sync = false) => {
+      console.log('API.execute', { executablePath, args, sync });
+      const result = ipcRenderer.sendSync('execute', [
+        executablePath,
+        args,
+        sync,
+      ]);
       if (result instanceof Error) {
         console.error('API.execute', result);
         throw result;

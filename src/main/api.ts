@@ -12,7 +12,7 @@ import {
 import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
-import { execFileSync } from 'child_process';
+import { execFile, execFileSync } from 'child_process';
 
 import packageManifest from '../../release/app/package.json';
 
@@ -118,10 +118,14 @@ export function createAPI(): void {
     event.returnValue = getAppPath();
   });
 
-  ipcMain.on('execute', (event, [executablePath, args]) => {
-    console.log('API.execute', [executablePath, args]);
+  ipcMain.on('execute', (event, [executablePath, args, sync]) => {
+    console.log('API.execute', [executablePath, args, sync]);
     try {
-      execFileSync(executablePath, args ?? []);
+      if (sync) {
+        execFileSync(executablePath, args ?? []);
+      } else {
+        execFile(executablePath, args ?? []);
+      }
       event.returnValue = true;
     } catch (error) {
       event.returnValue = createError(

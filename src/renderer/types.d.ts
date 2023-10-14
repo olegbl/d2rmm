@@ -170,7 +170,7 @@ declare global {
   type WindowAPI = {
     getVersion: () => string;
     getAppPath: () => string;
-    execute: (executablePath: string, args?: string[]) => void;
+    execute: (executablePath: string, args?: string[], sync?: boolean) => void;
     copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => number;
     createDirectory: (filePath: string) => void;
     deleteFile: (filePath: string) => void;

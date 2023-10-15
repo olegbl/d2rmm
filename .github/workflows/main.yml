@@ -48,16 +48,15 @@ jobs:
       - name: Delete release
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const releaseName = "D2RMM ${{ steps.check_versions.outputs.current_version }}";
-            const releases = await github.repos.listReleases({
+            const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
             const releaseToDelete = releases.data.find(release => release.name === releaseName);
             if (releaseToDelete) {
-              await github.repos.deleteRelease({
+              await github.rest.repos.deleteRelease({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 release_id: releaseToDelete.id

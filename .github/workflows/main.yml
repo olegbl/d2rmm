@@ -66,6 +66,22 @@ jobs:
               console.log(`Release ${releaseName} not found.`);
             }
 
+      - name: Delete tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tagName = "v${{ steps.check_versions.outputs.current_version }}";
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tagName}`
+              });
+              console.log(`Tag ${tagName} deleted successfully.`);
+            } catch (e) {
+              console.log(`Tag ${tagName} not deleted.`, e);
+            }
+
       - name: Create release
         uses: ncipollo/release-action@v1
         with:

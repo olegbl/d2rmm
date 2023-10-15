@@ -46,9 +46,9 @@ jobs:
         run: npm run package
 
       - name: Delete release
-        uses: cb80/delrel@v0.16.0
+        uses: liudonghua123/delete-release-action@v1
         with:
-          tag: v${{ steps.check_versions.outputs.current_version }}
+          release_name: D2RMM ${{ steps.check_versions.outputs.current_version }}
 
       - name: Create release
         uses: ncipollo/release-action@v1

@@ -48,6 +48,7 @@ jobs:
       - name: Delete release
         uses: liudonghua123/delete-release-action@v1
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           release_name: D2RMM ${{ steps.check_versions.outputs.current_version }}
 
       - name: Create release

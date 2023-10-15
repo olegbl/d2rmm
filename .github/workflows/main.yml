@@ -7,11 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [windows-latest]
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -34,13 +30,14 @@ jobs:
             "version_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
-          "Previous Version = $previous_version, Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Previous Version = $previous_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
       - name: Install Node
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          architecture: 'x86'
+          architecture: 'x64'
 
       - name: Install dependencies
         run: npm install

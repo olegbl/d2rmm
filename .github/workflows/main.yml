@@ -1,56 +1,28 @@
-name: Package and Release
+name: Build/release
 
-on:
-  push:
-    branches:
-      - master
+on: push
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Check out Git repository
+        uses: actions/checkout@v1
 
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Build package
-        run: yarn run package
-
-      - name: Get version number
-        uses: actions/github-script@v4
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
         with:
-          script: |
-            const fs = require('fs');
-            const packageJson = JSON.parse(fs.readFileSync('package.json'));
-            console.log(packageJson.version);
-        id: get_version
+          node-version: 10
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - name: Electron Builder Action
+        uses: samuelmeuli/action-electron-builder@v1.6.0
         with:
-          name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
-          path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
-
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.get_version.outputs.result }}
-          release_name: ${{ format('D2RMM {0}', steps.get_version.outputs.result) }}
-          draft: false
-          prerelease: false
-
-      - name: Attach artifact to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
-          asset_name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
-          asset_content_type: application/zip
+          github_token: ${{ secrets.github_token }}
+          # If the commit is tagged with a version (e.g. "v1.0.0"),
+          # release the app after building
+          release: ${{ startsWith(github.ref, 'refs/tags/v') }}

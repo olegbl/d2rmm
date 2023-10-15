@@ -16,11 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Install Node
-        uses: actions/setup-node@v1
         with:
-          node-version: 16
+          fetch-depth: 0
         
       - name: Get package version
         id: check_versions
@@ -31,17 +28,6 @@ jobs:
           git log -1
           Write-Host "git log -2"
           git log -2
-          Write-Host "git log -3"
-          git log -3
-
-          Write-Host "Fetching package.json from previous commit:"
-          if (git show HEAD~1:$package_json_path >/dev/null 2>&1) {
-            git show HEAD~1:$package_json_path
-            $previous_version = git show HEAD~1:$package_json_path | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
-            Write-Host "Previous version: $previous_version"
-          } else {
-            Write-Host "No previous package.json found."
-          }
 
           $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
           $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
@@ -57,6 +43,11 @@ jobs:
           } else {
             Write-Host "version_changed=false" >> $Env:GITHUB_ENV
           }
+
+      - name: Install Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
 
       - name: Install dependencies
         run: npm install

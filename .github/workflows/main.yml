@@ -1,0 +1,56 @@
+name: Package and Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build package
+        run: yarn run package
+
+      - name: Get version number
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const fs = require('fs');
+            const packageJson = JSON.parse(fs.readFileSync('package.json'));
+            console.log(packageJson.version);
+        id: get_version
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
+          path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.result }}
+          release_name: ${{ format('D2RMM {0}', steps.get_version.outputs.result) }}
+          draft: false
+          prerelease: false
+
+      - name: Attach artifact to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
+          asset_name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
+          asset_content_type: application/zip

@@ -53,6 +53,27 @@ jobs:
           name: D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
           path: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
 
+      - name: Delete release
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: releases } = await github.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const currentVersion = "${{ steps.check_versions.outputs.current_version }}";
+            const releaseToDelete = releases.find(release => release.tag_name === `v${currentVersion}`);
+            if (releaseToDelete) {
+              const response = await github.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseToDelete.id
+              });
+              console.log(response);
+            }
+        continue-on-error: true
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -74,7 +95,7 @@ jobs:
           asset_name: D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
           asset_content_type: application/zip
 
-      - name: Update release to full release
+      - name: Finalize pre-release
         if: steps.check_versions.outputs.version_changed == 'true'
         uses: actions/github-script@v4
         with:

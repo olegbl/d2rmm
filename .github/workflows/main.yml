@@ -24,7 +24,7 @@ jobs:
         
       - name: Get package version
         id: check_versions
-        run: |
+        run: bash |
           previous_version=$(git show HEAD~1:release/app/package.json | jq -r '.version')
           current_version=$(git show HEAD:release/app/package.json | jq -r '.version')
           echo "::set-output name=previous_version::$previous_version"

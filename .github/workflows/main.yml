@@ -25,15 +25,14 @@ jobs:
           $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*?: "(.*)",', '$1' }
           $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*?: "(.*)",', '$1' }
 
-          Write-Host "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
-          Write-Host "current_version=$current_version" >> "$GITHUB_OUTPUT"
+          Write-Host "previous_version=$previous_version" >> $env:GITHUB_OUTPUT
+          Write-Host "current_version=$current_version" >> $env:GITHUB_OUTPUT
 
           if ($previous_version -ne $current_version) {
-            Write-Host "version_changed=true" >> "$GITHUB_OUTPUT"
+            Write-Host "version_changed=true" >> $env:GITHUB_OUTPUT
           } else {
-            Write-Host "version_changed=false" >> "$GITHUB_OUTPUT"
+            Write-Host "version_changed=false" >> $env:GITHUB_OUTPUT
           }
-
       - name: Debug package version via output
         run: echo "current_version = ${{ steps.check_versions.outputs.current_version }}"
 
@@ -44,7 +43,7 @@ jobs:
 
       - name: test1
         id: test1
-        run: echo "foo=bar" >> "$GITHUB_OUTPUT"
+        run: echo "foo=bar" >> $env:GITHUB_OUTPUT
 
       - name: test2
         run: echo "foo=${{ steps.test1.outputs.foo }}"

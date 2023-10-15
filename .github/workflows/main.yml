@@ -91,7 +91,7 @@ jobs:
               await github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `tags/${tagName}`,
+                ref: `refs/tags/${tagName}`,
                 sha: context.sha
               });
               console.log(`Tag ${tagName} created successfully.`);

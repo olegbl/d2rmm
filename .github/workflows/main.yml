@@ -17,16 +17,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install Node.js, NPM and Yarn
+      - name: Install Node
         uses: actions/setup-node@v1
         with:
           node-version: 16
 
       - name: Install dependencies
-        run: yarn install
+        run: npm install
 
       - name: Build package
-        run: yarn run package
+        run: npm run package
 
       - name: Get version number
         uses: actions/github-script@v4

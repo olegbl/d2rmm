@@ -33,13 +33,8 @@ jobs:
           } else {
             "version_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
-      - name: Debug package version via output
-        run: echo "current_version = ${{ steps.check_versions.outputs.current_version }}"
 
-      - name: Debug package version via env
-        env:
-          CURRENT_VERSION: ${{ steps.check_versions.outputs.current_version }}
-        run: echo "current_version = $CURRENT_VERSION"
+          "Previous Version = $previous_version, Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
       - name: Install Node
         uses: actions/setup-node@v1

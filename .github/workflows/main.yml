@@ -79,7 +79,11 @@ jobs:
               });
               console.log(`Tag ${tagName} deleted successfully.`);
             } catch (e) {
-              console.log(`Tag ${tagName} not deleted.`, e);
+              if (e.message.includes('Reference does not exist')) {
+                console.log(`Tag ${tagName} not found.`);
+              } else {
+                console.log(`Tag ${tagName} not deleted.`, e);
+              }
             }
 
       - name: Create tag

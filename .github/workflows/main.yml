@@ -25,6 +25,12 @@ jobs:
       - name: Get package version
         id: check_versions
         run: |
+          Write-Host "Current commit information:"
+          git log -1
+
+          Write-Host "Fetching package.json from previous commit:"
+          git log -1 --pretty=format:"%H" -1 | ForEach-Object { git show $_:release/app/package.json }
+
           $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
           $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
           

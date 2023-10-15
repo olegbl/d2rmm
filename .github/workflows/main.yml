@@ -22,20 +22,32 @@ jobs:
       - name: Get package version
         id: check_versions
         run: |
-          $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
-          $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
+          $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*?: "(.*)",', '$1' }
+          $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*?: "(.*)",', '$1' }
 
-          Write-Host "previous_version=$previous_version" >> $GITHUB_OUTPUT
-          Write-Host "current_version=$current_version" >> $GITHUB_OUTPUT
+          Write-Host "previous_version=$previous_version" >> "$GITHUB_OUTPUT"
+          Write-Host "current_version=$current_version" >> "$GITHUB_OUTPUT"
 
           if ($previous_version -ne $current_version) {
-            Write-Host "version_changed=true" >> $GITHUB_OUTPUT
+            Write-Host "version_changed=true" >> "$GITHUB_OUTPUT"
           } else {
-            Write-Host "version_changed=false" >> $GITHUB_OUTPUT
+            Write-Host "version_changed=false" >> "$GITHUB_OUTPUT"
           }
 
-      - name: Debug package version
+      - name: Debug package version via output
         run: echo "current_version = ${{ steps.check_versions.outputs.current_version }}"
+
+      - name: Debug package version via env
+        env:
+          CURRENT_VERSION: ${{ steps.check_versions.outputs.current_version }}
+        run: echo "current_version = $CURRENT_VERSION"
+
+      - name: test1
+        id: test1
+        run: echo "foo=bar" >> "$GITHUB_OUTPUT"
+
+      - name: test2
+        run: echo "foo=${{ steps.test1.outputs.foo }}"
 
       - name: Install Node
         uses: actions/setup-node@v1

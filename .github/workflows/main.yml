@@ -47,13 +47,7 @@ jobs:
       - name: Build package
         run: npm run package
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
-          path: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
-
-      - name: Create or Update Release
+      - name: Create/update release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

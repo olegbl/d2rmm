@@ -68,22 +68,10 @@ jobs:
 
       - name: Finalize pre-release
         if: steps.check_versions.outputs.version_changed == 'true'
-        uses: actions/github-script@v4
+        uses: ncipollo/release-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: releases } = await github.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            const previousVersion = "${{ steps.check_versions.outputs.previous_version }}";
-            const releaseToUpdate = releases.find(release => release.tag_name === `v${previousVersion}`);
-            if (releaseToUpdate) {
-              await github.repos.updateRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: releaseToUpdate.id,
-                tag_name: releaseToUpdate.tag_name,
-                prerelease: false
-              });
-            }
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: D2RMM ${{ steps.check_versions.outputs.previous_version }}
+          tag: v${{ steps.check_versions.outputs.previous_version }}
+          allowUpdates: true
+          preRelease: false

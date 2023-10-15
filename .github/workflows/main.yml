@@ -23,6 +23,7 @@ jobs:
           node-version: 16
         
       - name: Get package version
+        id: get_version
         run: echo ::set-output name=version::$(jq -r '.version' release/app/package.json)
 
       - name: Install dependencies
@@ -46,7 +47,7 @@ jobs:
           tag_name: v${{ steps.get_version.outputs.version }}
           release_name: ${{ format('D2RMM {0}', steps.get_version.outputs.version) }}
           draft: false
-          prerelease: false
+          prerelease: true
 
       - name: Attach artifact to release
         uses: actions/upload-release-asset@v1
@@ -57,3 +58,41 @@ jobs:
           asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.version) }}
           asset_name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.version) }}
           asset_content_type: application/zip
+          
+      - name: Check if version has changed
+        id: check_version_changed
+        run: |
+          previous_version=$(git show HEAD~1:release/app/package.json | jq -r '.version')
+          current_version=$(git show HEAD:release/app/package.json | jq -r '.version')
+          if [ "$previous_version" != "$current_version" ]; then
+            echo "::set-output name=version_changed::true"
+          else
+            echo "::set-output name=version_changed::false"
+          fi
+
+      - name: Update release to full release
+        if: steps.check_version_changed.outputs.version_changed == 'true'
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: releases } = await github.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const currentVersion = await fs.readFile('release/app/package.json', 'utf8', function(err, data) {
+              if (err) {
+                return console.log(err);
+              }
+              return JSON.parse(data).version;
+            });
+            const releaseToUpdate = releases.find(release => release.tag_name === `v${currentVersion}`);
+            if (releaseToUpdate) {
+              await github.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseToUpdate.id,
+                tag_name: releaseToUpdate.tag_name,
+                prerelease: false
+              });
+            }

@@ -58,6 +58,7 @@ jobs:
           omitPrereleaseDuringUpdate: true
           artifacts: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
           replacesArtifacts: true
+          artifactErrorsFailBuild: true
           generateReleaseNotes: true
 
       - name: Finalize pre-release

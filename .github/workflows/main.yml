@@ -46,11 +46,9 @@ jobs:
         run: npm run package
 
       - name: Delete release
-        uses: dev-drprasad/delete-tag-and-release@v1.0
+        uses: cb80/delrel@v0.16.0
         with:
-          tag_name: v${{ steps.check_versions.outputs.current_version }}
-          delete_release: true
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.check_versions.outputs.current_version }}
 
       - name: Create release
         uses: ncipollo/release-action@v1

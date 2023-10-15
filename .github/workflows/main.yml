@@ -23,7 +23,7 @@ jobs:
           node-version: 16
         
       - name: Get package version
-        run: echo ::set-output name=version::$(jq -r '.version' package.json)
+        run: echo ::set-output name=version::$(jq -r '.version' release/app/package.json)
 
       - name: Install dependencies
         run: npm install

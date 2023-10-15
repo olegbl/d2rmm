@@ -89,7 +89,13 @@
     ],
     "extraFiles": [
       "./tools/**",
-      "./mods/**"
+      {
+        "from": "mods.empty",
+        "to": "mods",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "publish": {
       "provider": "github",

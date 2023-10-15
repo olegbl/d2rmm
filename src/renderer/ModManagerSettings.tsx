@@ -26,6 +26,12 @@ function getIsValidGamePath(path: string): boolean {
   return files.find(({ name }) => name === 'D2R.exe') != null;
 }
 
+function getIsValidPreExtractedDataPath(path: string): boolean {
+  const files = API.readDirectory(path);
+  // search for the "global" folder
+  return files.find(({ name }) => name === 'global') != null;
+}
+
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
   '&:before': {
@@ -70,13 +76,21 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     [gamePath]
   );
 
+  const isValidPreExtractedDataPath = useMemo(
+    () =>
+      dataSource === 'directory'
+        ? getIsValidPreExtractedDataPath(preExtractedDataPath)
+        : true,
+    [dataSource, preExtractedDataPath]
+  );
+
   return (
     <List
       sx={{ width: '100%', flex: 1, overflow: 'auto', border: 'none' }}
       disablePadding={true}
     >
       <StyledAccordion
-        defaultExpanded={!isValidGamePath}
+        defaultExpanded={!isValidGamePath || !isValidPreExtractedDataPath}
         disableGutters={true}
         square={true}
         elevation={0}
@@ -139,8 +153,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 onChange={(event) =>
                   setPreExtractedDataPath(event.target.value)
                 }
+                error={!isValidPreExtractedDataPath}
+                helperText={
+                  isValidPreExtractedDataPath
+                    ? null
+                    : "This doesn't look like a valid D2R game data directory. Could not find the global directory inside. Are you sure you extracted the game data to this directory using CascView?"
+                }
               />
-
               {isDirectMode &&
               preExtractedDataPath === `${rawGamePath}\\data` ? (
                 <Alert severity="warning">

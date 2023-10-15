@@ -82,6 +82,24 @@ jobs:
               console.log(`Tag ${tagName} not deleted.`, e);
             }
 
+      - name: Create tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tagName = "v${{ steps.check_versions.outputs.current_version }}";
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${tagName}`,
+                sha: context.sha
+              });
+              console.log(`Tag ${tagName} created successfully.`);
+            } catch (error) {
+              console.log(`Tag ${tagName} not created.`, e);
+              core.setFailed(error.message);
+            }
+
       - name: Create release
         uses: ncipollo/release-action@v1
         with:

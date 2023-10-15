@@ -95,9 +95,9 @@ jobs:
                 sha: context.sha
               });
               console.log(`Tag ${tagName} created successfully.`);
-            } catch (error) {
+            } catch (e) {
               console.log(`Tag ${tagName} not created.`, e);
-              core.setFailed(error.message);
+              core.setFailed(e.message);
             }
 
       - name: Create release

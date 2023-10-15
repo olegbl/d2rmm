@@ -17,23 +17,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 2 # we need the last two commits to check if the version changed
         
       - name: Get package version
         id: check_versions
         run: |
-          $package_json_path = "release/app/package.json"
-
-          Write-Host "git log -1"
-          git log -1
-          Write-Host "git log -2"
-          git log -2
-
           $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
           $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
-          
-          Write-Host "Previous version: $previous_version"
-          Write-Host "Current version: $current_version"
 
           Write-Host "previous_version=$previous_version" >> $Env:GITHUB_ENV
           Write-Host "current_version=$current_version" >> $Env:GITHUB_ENV
@@ -58,8 +48,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ format('D2RMM {0}.zip', steps.check_versions.outputs.current_version) }}
-          path: ${{ format('release/build/D2RMM {0}.zip',  steps.check_versions.outputs.current_version) }}
+          name: ${{ format('D2RMM {0}.zip', env.current_version) }}
+          path: ${{ format('release/build/D2RMM {0}.zip',  env.current_version) }}
 
       - name: Create release
         id: create_release
@@ -67,8 +57,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.check_versions.outputs.current_version }}
-          release_name: ${{ format('D2RMM {0}', steps.check_versions.outputs.current_version) }}
+          tag_name: v${{ env.current_version }}
+          release_name: ${{ format('D2RMM {0}', env.current_version) }}
           draft: false
           prerelease: true
 
@@ -78,12 +68,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.check_versions.outputs.current_version) }}
-          asset_name: ${{ format('D2RMM {0}.zip', steps.check_versions.outputs.current_version) }}
+          asset_path: ${{ format('release/build/D2RMM {0}.zip',  env.current_version) }}
+          asset_name: ${{ format('D2RMM {0}.zip', env.current_version) }}
           asset_content_type: application/zip
 
       - name: Update release to full release
-        if: steps.check_versions.outputs.version_changed == 'true'
+        if: env.version_changed == 'true'
         uses: actions/github-script@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -92,7 +82,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo
             });
-            const previousVersion = "${{ steps.check_versions.outputs.previous_version }}";
+            const previousVersion = "${{ env.previous_version }}";
             const releaseToUpdate = releases.find(release => release.tag_name === `v${previousVersion}`);
             if (releaseToUpdate) {
               await github.repos.updateRelease({

@@ -27,22 +27,18 @@ jobs:
         run: |
           $previous_version = git show HEAD~1:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
           $current_version = git show HEAD:release/app/package.json | Select-String -Pattern '"version":' | ForEach-Object { $_ -replace '.*: "(.*)"', '$1' }
-          echo "::set-output name=previous_version::$previous_version"
-          echo "::set-output name=current_version::$current_version"
+          
+          Write-Host "Previous version: $previous_version"
+          Write-Host "Current version: $current_version"
+
+          Write-Host "previous_version=$previous_version" >> $Env:GITHUB_ENV
+          Write-Host "current_version=$current_version" >> $Env:GITHUB_ENV
+
           if ($previous_version -ne $current_version) {
-            echo "::set-output name=version_changed::true"
+            Write-Host "version_changed=true" >> $Env:GITHUB_ENV
           } else {
-            echo "::set-output name=version_changed::false"
+            Write-Host "version_changed=false" >> $Env:GITHUB_ENV
           }
-
-      - name: DEBUG - current_version
-        run: echo ${{ steps.check_versions.outputs.current_version }}
-
-      - name: DEBUG - previous_version
-        run: echo ${{ steps.check_versions.outputs.previous_version }}
-
-      - name: DEBUG - version_changed
-        run: echo ${{ steps.check_versions.outputs.version_changed }}
 
       - name: Install dependencies
         run: npm install

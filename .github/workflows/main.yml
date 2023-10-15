@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2 # we need the last two commits to check if the version changed
         
@@ -37,7 +37,7 @@ jobs:
           "Previous Version = $previous_version, Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
       - name: Install Node
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           architecture: 'x86'
@@ -61,10 +61,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: D2RMM ${{ steps.check_versions.outputs.current_version }}
           tag: v${{ steps.check_versions.outputs.current_version }}
+          draft: false
           prerelease: true
           artifacts: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
           artifactErrorsFailBuild: true
-          generateReleaseNotes: true
+          generateReleaseNotes: false
 
       - name: Finalize pre-release
         if: steps.check_versions.outputs.version_changed == 'true'

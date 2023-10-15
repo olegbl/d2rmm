@@ -74,26 +74,18 @@ jobs:
             }
         continue-on-error: true
 
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create or Update Release
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: v${{ steps.check_versions.outputs.current_version }}
-          release_name: D2RMM ${{ steps.check_versions.outputs.current_version }}
-          draft: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: D2RMM ${{ steps.check_versions.outputs.current_version }}
+          tag: v${{ steps.check_versions.outputs.current_version }}
+          allowUpdates: true
           prerelease: true
-
-      - name: Attach artifact to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
-          asset_name: D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
-          asset_content_type: application/zip
+          omitPrereleaseDuringUpdate: true
+          artifacts: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
+          replacesArtifacts: true
+          generateReleaseNotes: true
 
       - name: Finalize pre-release
         if: steps.check_versions.outputs.version_changed == 'true'

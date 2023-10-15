@@ -21,6 +21,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16
+        
+      - name: Get package version
+        run: echo ::set-output name=version::$(jq -r '.version' package.json)
 
       - name: Install dependencies
         run: npm install
@@ -28,20 +31,11 @@ jobs:
       - name: Build package
         run: npm run package
 
-      - name: Get version number
-        uses: actions/github-script@v4
-        with:
-          script: |
-            const fs = require('fs');
-            const packageJson = JSON.parse(fs.readFileSync('package.json'));
-            console.log(packageJson.version);
-        id: get_version
-
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
-          path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
+          name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.version) }}
+          path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.version) }}
 
       - name: Create release
         id: create_release
@@ -49,8 +43,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.get_version.outputs.result }}
-          release_name: ${{ format('D2RMM {0}', steps.get_version.outputs.result) }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: ${{ format('D2RMM {0}', steps.get_version.outputs.version) }}
           draft: false
           prerelease: false
 
@@ -60,6 +54,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.result) }}
-          asset_name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.result) }}
+          asset_path: ${{ format('release/build/D2RMM {0}.zip',  steps.get_version.outputs.version) }}
+          asset_name: ${{ format('D2RMM {0}.zip', steps.get_version.outputs.version) }}
           asset_content_type: application/zip

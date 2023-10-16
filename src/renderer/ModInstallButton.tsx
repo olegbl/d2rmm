@@ -42,6 +42,8 @@ export default function ModInstallButton({
     try {
       logger.clear();
 
+      logger.debug(`Installing mods...`, preferences);
+
       if (!isDirectMode) {
         API.deleteFile(`${mergedPath}\\..`);
         API.createDirectory(mergedPath);

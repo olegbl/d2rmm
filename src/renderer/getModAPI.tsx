@@ -1,4 +1,3 @@
-import { ILogLevel } from './Logs';
 import { IPreferences } from './Preferences';
 
 const API = window.electron.API;
@@ -16,11 +15,9 @@ export default function getModAPI(
     isPreExtractedData,
     mergedPath,
     extractedFiles,
-    recordLog,
     isDryRun,
   }: IPreferences & {
     extractedFiles: Record<string, boolean>;
-    recordLog: (level: ILogLevel, ...data: unknown[]) => unknown;
     isDryRun: boolean;
   }
 ): ModAPI {
@@ -68,7 +65,7 @@ export default function getModAPI(
 
   return {
     getVersion: (): number => {
-      recordLog('debug', 'API call: D2RMM.getVersion');
+      console.debug('D2RMM.getVersion');
       return parseFloat(API.getVersion());
     },
     error: (message: string | Error): void => {
@@ -83,35 +80,34 @@ export default function getModAPI(
           trace = ` at ${line}:${column}`;
         }
       }
-      recordLog(
-        'error',
+      throw new Error(
         typeof message === 'string' ? message : message.toString() + trace
       );
     },
     readTsv: (filePath: string): TSVData => {
-      recordLog('debug', 'API call: D2RMM.readTsv', filePath);
+      console.debug('D2RMM.readTsv', filePath);
       extractFile(filePath);
       return API.readTsv(getDestinationFilePath(filePath));
     },
     writeTsv: (filePath: string, data: TSVData): void => {
-      recordLog('debug', 'API call: D2RMM.writeTsv', filePath, data);
+      console.debug('D2RMM.writeTsv', filePath, data);
       if (!isDryRun) {
         API.writeTsv(getDestinationFilePath(filePath), data);
       }
     },
     readJson: (filePath: string): JSONData => {
-      recordLog('debug', 'API call: D2RMM.readJson', filePath);
+      console.debug('D2RMM.readJson', filePath);
       extractFile(filePath);
       return API.readJson(getDestinationFilePath(filePath));
     },
     writeJson: (filePath: string, data: JSONData): void => {
-      recordLog('debug', 'API call: D2RMM.writeJson', filePath, data);
+      console.debug('D2RMM.writeJson', filePath, data);
       if (!isDryRun) {
         API.writeJson(getDestinationFilePath(filePath), data);
       }
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
-      recordLog('debug', 'API call: D2RMM.copyFile', src, dst);
+      console.debug('D2RMM.copyFile', src, dst);
       if (!isDryRun) {
         API.copyFile(
           getModSourceFilePath(src),
@@ -121,18 +117,18 @@ export default function getModAPI(
       }
     },
     readTxt: (filePath: string): string => {
-      recordLog('debug', 'API call: D2RMM.readTxt', filePath);
+      console.debug('D2RMM.readTxt', filePath);
       extractFile(filePath);
       return API.readTxt(getDestinationFilePath(filePath));
     },
     writeTxt: (filePath: string, data: string): void => {
-      recordLog('debug', 'API call: D2RMM.writeTxt', filePath, data);
+      console.debug('D2RMM.writeTxt', filePath, data);
       if (!isDryRun) {
         API.writeTxt(getDestinationFilePath(filePath), data);
       }
     },
     getNextStringID: (): number => {
-      recordLog('debug', 'API call: D2RMM.getNextStringID');
+      console.debug('D2RMM.getNextStringID');
 
       const filePath = 'local\\lng\\next_string_id.txt';
 

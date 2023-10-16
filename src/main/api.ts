@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { BrowserWindow, app, ipcMain } from 'electron';
 import {
   copyFileSync,
   existsSync,
@@ -15,6 +15,13 @@ import ref from 'ref-napi';
 import { execFile, execFileSync } from 'child_process';
 
 import packageManifest from '../../release/app/package.json';
+
+const rendererConsole = {
+  debug: (..._args: unknown[]): void => {},
+  log: (..._args: unknown[]): void => {},
+  warn: (..._args: unknown[]): void => {},
+  error: (..._args: unknown[]): void => {},
+};
 
 export function getAppPath(): string {
   return app.isPackaged
@@ -87,7 +94,7 @@ function createError(
   message: string,
   errorCodeArg?: unknown
 ): Error {
-  console.error('API.execute', method, message, errorCodeArg);
+  rendererConsole.error('API.execute', method, message, errorCodeArg);
 
   const prefix = `${method}: ${message}`;
   let errorCode = errorCodeArg;
@@ -107,37 +114,33 @@ function createError(
 const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
 
-export function createAPI(): void {
-  ipcMain.on('getVersion', (event) => {
-    console.log('API.getVersion');
-    event.returnValue = packageManifest.version;
-  });
+export const BridgeAPI = {
+  getVersion: () => {
+    rendererConsole.debug('BridgeAPI.getVersion');
+    return packageManifest.version;
+  },
 
-  ipcMain.on('getAppPath', (event) => {
-    console.log('API.getAppPath');
-    event.returnValue = getAppPath();
-  });
+  getAppPath: () => {
+    rendererConsole.debug('BridgeAPI.getAppPath');
+    return getAppPath();
+  },
 
-  ipcMain.on('execute', (event, [executablePath, args, sync]) => {
-    console.log('API.execute', [executablePath, args, sync]);
+  execute: (executablePath: string, args: string[], sync: boolean) => {
+    rendererConsole.debug('BridgeAPI.execute', { executablePath, args, sync });
     try {
       if (sync) {
         execFileSync(executablePath, args ?? []);
       } else {
         execFile(executablePath, args ?? []);
       }
-      event.returnValue = true;
+      return true;
     } catch (error) {
-      event.returnValue = createError(
-        'API.execute',
-        'Failed to execute file',
-        error
-      );
+      return createError('BridgeAPI.execute', 'Failed to execute file', error);
     }
-  });
+  },
 
-  ipcMain.on('openStorage', (event, gamePath) => {
-    console.log('API.openStorage', gamePath);
+  openStorage: (gamePath: string) => {
+    rendererConsole.debug('BridgeAPI.openStorage', { gamePath });
 
     if (!cascStorageIsOpen) {
       if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
@@ -145,177 +148,172 @@ export function createAPI(): void {
       } else if (CascLib.CascOpenStorage(`${gamePath}:`, 0, cascStoragePtr)) {
         cascStorageIsOpen = true;
       } else {
-        event.returnValue = createError(
+        return createError(
           'API.openStorage',
           'Failed to open CASC storage',
           CascLib.GetLastError()
         );
-        return;
       }
     }
 
-    event.returnValue = cascStorageIsOpen;
-  });
+    return cascStorageIsOpen;
+  },
 
-  ipcMain.on('closeStorage', (event) => {
-    console.log('API.closeStorage');
+  closeStorage: () => {
+    rendererConsole.debug('BridgeAPI.closeStorage');
 
     if (cascStorageIsOpen) {
       const storage = cascStoragePtr.deref();
       if (CascLib.CascCloseStorage(storage)) {
         cascStorageIsOpen = false;
       } else {
-        event.returnValue = createError(
+        return createError(
           'API.closeStorage',
           'Failed to close CASC storage',
           CascLib.GetLastError()
         );
-        return;
       }
     }
 
-    event.returnValue = !cascStorageIsOpen;
-  });
+    return !cascStorageIsOpen;
+  },
 
-  ipcMain.on('extractFile', (event, [gamePath, filePath, targetPath]) => {
-    console.log('API.extractFile', [gamePath, filePath, targetPath]);
+  extractFile: (gamePath: string, filePath: string, targetPath: string) => {
+    rendererConsole.debug('BridgeAPI.extractFile', {
+      gamePath,
+      filePath,
+      targetPath,
+    });
 
     try {
       // if file is already extracted, don't need to extract it again
       if (existsSync(targetPath)) {
-        event.returnValue = true;
-        return;
+        return true;
       }
 
       if (!cascStorageIsOpen) {
-        event.returnValue = createError(
-          'API.extractFile',
-          'CASC storage is not open'
-        );
-        return;
+        return createError('BridgeAPI.extractFile', 'CASC storage is not open');
       }
 
       const storage = cascStoragePtr.deref();
 
       const filePtr = ref.alloc(voidPtrPtr);
       if (
-        CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+        !CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
       ) {
-        const file = filePtr.deref();
-        const bytesReadPtr = ref.alloc(dwordPtr);
-
-        // if the file is larger than 10 MB... I got bad news for you.
-        const size = 10 * 1024 * 1024;
-        const buffer = Buffer.alloc(size) as ref.Pointer<void>;
-        buffer.type = ref.types.void;
-
-        if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
-          const data = buffer.readCString();
-          mkdirSync(path.dirname(targetPath), { recursive: true });
-          writeFileSync(targetPath, data, {
-            encoding: 'utf-8',
-            flag: 'w',
-          });
-          event.returnValue = true;
-        } else {
-          event.returnValue = createError(
-            'API.extractFile',
-            'Failed to read CASC file',
-            CascLib.GetLastError()
-          );
-          return;
-        }
-
-        if (!CascLib.CascCloseFile(file)) {
-          event.returnValue = createError(
-            'API.extractFile',
-            'Failed to close CASC file',
-            CascLib.GetLastError()
-          );
-          return;
-        }
-      } else {
-        event.returnValue = createError(
+        return createError(
           'API.extractFile',
           'Failed to open CASC file',
           CascLib.GetLastError()
         );
-        return;
+      }
+
+      const file = filePtr.deref();
+      const bytesReadPtr = ref.alloc(dwordPtr);
+
+      // if the file is larger than 10 MB... I got bad news for you.
+      const size = 10 * 1024 * 1024;
+      const buffer = Buffer.alloc(size) as ref.Pointer<void>;
+      buffer.type = ref.types.void;
+
+      if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
+        const data = buffer.readCString();
+        mkdirSync(path.dirname(targetPath), { recursive: true });
+        writeFileSync(targetPath, data, {
+          encoding: 'utf-8',
+          flag: 'w',
+        });
+      } else {
+        return createError(
+          'API.extractFile',
+          'Failed to read CASC file',
+          CascLib.GetLastError()
+        );
+      }
+
+      if (!CascLib.CascCloseFile(file)) {
+        return createError(
+          'API.extractFile',
+          'Failed to close CASC file',
+          CascLib.GetLastError()
+        );
       }
     } catch (e) {
-      event.returnValue = createError(
+      return createError(
         'API.extractFile',
         'Failed to extract file',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('createDirectory', (event, filePath) => {
-    console.log('API.createDirectory', filePath);
+    return true;
+  },
+
+  createDirectory: (filePath: string) => {
+    rendererConsole.debug('BridgeAPI.createDirectory', { filePath });
 
     try {
       if (!existsSync(filePath)) {
         mkdirSync(filePath, { recursive: true });
-        event.returnValue = true;
-      } else {
-        event.returnValue = false;
+        return true;
       }
     } catch (e) {
-      event.returnValue = createError(
+      return createError(
         'API.createDirectory',
         'Failed to create directory',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('readDirectory', (event, filePath) => {
-    console.log('API.readDirectory', filePath);
+    return false;
+  },
+
+  readDirectory: (filePath: string) => {
+    rendererConsole.debug('BridgeAPI.readDirectory', { filePath });
 
     try {
       if (existsSync(filePath)) {
         const entries = readdirSync(filePath, { withFileTypes: true });
-        event.returnValue = entries.map((entry) => ({
+        return entries.map((entry) => ({
           name: entry.name,
           isDirectory: entry.isDirectory(),
         }));
-      } else {
-        event.returnValue = null;
       }
     } catch (e) {
-      event.returnValue = createError(
+      return createError(
         'API.readDirectory',
         'Failed to read directory',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('readModDirectory', (event) => {
-    console.log('API.readModDirectory');
+    return null;
+  },
+
+  readModDirectory: () => {
+    rendererConsole.debug('BridgeAPI.readModDirectory');
 
     try {
       const filePath = path.join(getAppPath(), 'mods');
       if (existsSync(filePath)) {
         const entries = readdirSync(filePath, { withFileTypes: true });
-        event.returnValue = entries
+        return entries
           .filter((entry) => entry.isDirectory())
           .map((entry) => entry.name);
-      } else {
-        event.returnValue = null;
       }
     } catch (e) {
-      event.returnValue = createError(
+      return createError(
         'API.readModDirectory',
         'Failed to read directory',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('readFile', (event, [inputPath, isRelative]) => {
-    console.log('API.readFile', [inputPath, isRelative]);
+    return null;
+  },
+
+  readFile: (inputPath: string, isRelative: boolean) => {
+    rendererConsole.debug('BridgeAPI.readFile', { inputPath, isRelative });
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -326,21 +324,21 @@ export function createAPI(): void {
           encoding: 'utf-8',
           flag: 'r',
         });
-        event.returnValue = result;
-      } else {
-        event.returnValue = null;
+        return result;
       }
     } catch (e) {
-      event.returnValue = createError(
-        'API.readFile',
+      return createError(
+        'BridgeAPI.readFile',
         'Failed to read file',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('writeFile', (event, [inputPath, isRelative, data]) => {
-    console.log('API.writeFile', [inputPath, isRelative]);
+    return null;
+  },
+
+  writeFile: (inputPath: string, isRelative: boolean, data: string) => {
+    rendererConsole.debug('BridgeAPI.writeFile', { inputPath, isRelative });
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -350,18 +348,19 @@ export function createAPI(): void {
         encoding: 'utf-8',
         flag: 'w',
       });
-      event.returnValue = true;
     } catch (e) {
-      event.returnValue = createError(
-        'API.writeFile',
+      return createError(
+        'BridgeAPI.writeFile',
         'Failed to write file',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('deleteFile', (event, [inputPath, isRelative]) => {
-    console.log('API.deleteFile', [inputPath, isRelative]);
+    return true;
+  },
+
+  deleteFile: (inputPath: string, isRelative: boolean) => {
+    rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, isRelative });
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -374,48 +373,72 @@ export function createAPI(): void {
         } else {
           rmSync(filePath, { force: true });
         }
-        event.returnValue = true;
-      } else {
-        event.returnValue = false;
+        return true;
       }
     } catch (e) {
-      event.returnValue = createError(
-        'API.deleteFile',
+      return createError(
+        'BridgeAPI.deleteFile',
         'Failed to delete file',
         String(e)
       );
     }
-  });
 
-  ipcMain.on('copyFile', (event, [fromPath, toPath, overwrite]) => {
-    console.log('API.copyFile', [fromPath, toPath, overwrite]);
+    return false;
+  },
+
+  copyFile: (fromPath: string, toPath: string, overwrite: boolean) => {
+    rendererConsole.debug('BridgeAPI.copyFile', {
+      fromPath,
+      toPath,
+      overwrite,
+    });
 
     try {
-      if (existsSync(fromPath)) {
-        if (overwrite || !existsSync(toPath)) {
-          const stat = statSync(fromPath);
-          if (stat.isDirectory()) {
-            copyDirSync(fromPath, toPath);
-          } else {
-            mkdirSync(path.dirname(toPath), { recursive: true });
-            copyFileSync(fromPath, toPath);
-          }
-          // file copied successfully
-          event.returnValue = 0;
-        } else {
-          // destination file already exists
-          event.returnValue = 1;
-        }
-      } else {
+      if (!existsSync(fromPath)) {
         // source file doesn't exist
-        event.returnValue = 2;
+        return 2;
+      }
+
+      if (existsSync(toPath) && !overwrite) {
+        // destination file already exists
+        return 1;
+      }
+
+      const stat = statSync(fromPath);
+      if (stat.isDirectory()) {
+        copyDirSync(fromPath, toPath);
+      } else {
+        mkdirSync(path.dirname(toPath), { recursive: true });
+        copyFileSync(fromPath, toPath);
       }
     } catch (e) {
-      event.returnValue = createError(
-        'API.copyFile',
+      return createError(
+        'BridgeAPI.copyFile',
         'Failed to copy file',
         String(e)
       );
     }
+
+    // file copied successfully
+    return 0;
+  },
+};
+
+export function initBridgeAPI(mainWindow: BrowserWindow): void {
+  // hook up bridge API calls
+  Object.keys(BridgeAPI).forEach((apiName) => {
+    const apiCall = BridgeAPI[apiName as keyof typeof BridgeAPI];
+    ipcMain.on(apiName, (event, args: unknown[] | void) => {
+      // @ts-ignore[2556] - can't enforce strict typing for data coming across the bridge
+      event.returnValue = apiCall(...(args ?? []));
+    });
+  });
+
+  // forward console messages to the renderer process
+  const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
+  consoleMethods.forEach((level: typeof consoleMethods[number]) => {
+    rendererConsole[level] = (...args) => {
+      mainWindow.webContents.send('console', [level, args]);
+    };
   });
 }

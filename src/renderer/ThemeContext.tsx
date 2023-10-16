@@ -2,8 +2,8 @@ import { CssBaseline, Theme, ThemeProvider, createTheme } from '@mui/material';
 import React, { useContext, useMemo } from 'react';
 import useSavedState from './useSavedState';
 
-type IExactThemeMode = 'light' | 'dark';
-type IThemeMode = IExactThemeMode | 'system';
+export type IExactThemeMode = 'light' | 'dark';
+export type IThemeMode = IExactThemeMode | 'system';
 
 const LIGHT_THEME = createTheme({
   palette: {

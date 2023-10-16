@@ -91,8 +91,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             <ListItem key={log.id}>
               <ListItemIcon>
                 {log.level === 'error' && <ErrorIcon color="error" />}
-                {log.level === 'warning' && <WarningIcon color="warning" />}
-                {log.level === 'info' && <InfoIcon color="primary" />}
+                {log.level === 'warn' && <WarningIcon color="warning" />}
+                {log.level === 'log' && <InfoIcon color="primary" />}
                 {log.level === 'debug' && <PendingIcon color="disabled" />}
               </ListItemIcon>
               <ListItemText
@@ -114,7 +114,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           .reduce(
             (items: JSX.Element[], item: JSX.Element) => [
               ...items,
-              <Divider />,
+              <Divider key={`${item.key}-divider`} />,
               item,
             ],
             []
@@ -141,8 +141,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           }
         >
           <MenuItem value="error">Error</MenuItem>
-          <MenuItem value="warning">Warning</MenuItem>
-          <MenuItem value="info">Info</MenuItem>
+          <MenuItem value="warn">Warning</MenuItem>
+          <MenuItem value="log">Info</MenuItem>
           <MenuItem value="debug">Debug</MenuItem>
         </Select>
         <Box sx={{ flex: 1 }} />

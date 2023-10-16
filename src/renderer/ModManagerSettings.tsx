@@ -17,7 +17,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useMemo } from 'react';
 import { usePreferences } from './Preferences';
-import { useThemeMode } from './ThemeContext';
+import { IThemeMode, useThemeMode } from './ThemeContext';
 
 const API = window.electron.API;
 
@@ -295,7 +295,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             variant="filled"
             label="Theme"
             value={themeMode}
-            onChange={(event) => setThemeMode(event.target.value)}
+            onChange={(event) => setThemeMode(event.target.value as IThemeMode)}
           >
             <MenuItem value="system">System</MenuItem>
             <MenuItem value="light">Light</MenuItem>

@@ -1,4 +1,6 @@
 declare global {
+  type ILogLevel = 'error' | 'warn' | 'log' | 'debug';
+
   type TSVDataHeader = string;
 
   type TSVDataRow = {
@@ -168,6 +170,12 @@ declare global {
   };
 
   type WindowAPI = {
+    addConsoleListener: (
+      listener: (level: ILogLevel, args: unknown[]) => void
+    ) => void;
+    removeConsoleListener: (
+      listener: (level: ILogLevel, args: unknown[]) => void
+    ) => void;
     getVersion: () => string;
     getAppPath: () => string;
     execute: (executablePath: string, args?: string[], sync?: boolean) => void;
@@ -201,6 +209,7 @@ declare global {
 
   interface Window {
     electron: {
+      console: Console;
       API: WindowAPI;
     };
   }

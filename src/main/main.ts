@@ -15,7 +15,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import { resolveHtmlPath } from './util';
-import { createAPI } from './api';
+import { initBridgeAPI } from './api';
 import { initPreferences } from './preferences';
 
 export default class AppUpdater {
@@ -65,6 +65,9 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
+  const packageManifest = require('../../release/app/package.json');
+  const { version } = packageManifest;
+
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -75,12 +78,10 @@ const createWindow = async () => {
       contextIsolation: true,
     },
   });
-
-  const packageManifest = require('../../release/app/package.json');
-  const { version } = packageManifest;
   mainWindow.setTitle(`[D2RMM] Diablo II: Resurrected Mod Manager ${version}`);
-
   mainWindow.removeMenu();
+
+  initBridgeAPI(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
@@ -110,10 +111,6 @@ const createWindow = async () => {
   new AppUpdater();
 };
 
-/**
- * Add event listeners...
- */
-
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
@@ -127,7 +124,7 @@ initPreferences();
 app
   .whenReady()
   .then(() => {
-    createAPI();
+    app.commandLine.appendSwitch('enable-logging', 'true');
     createWindow();
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the

@@ -5,7 +5,7 @@ import sandbox from './sandbox';
 import getModAPI from './getModAPI';
 import useToast from './useToast';
 import { usePreferences } from './Preferences';
-import { ILogLevel, useLogger } from './Logs';
+import { useLogger } from './Logs';
 import { useEnabledMods } from './ModsContext';
 
 const API = window.electron.API;
@@ -42,7 +42,7 @@ export default function ModInstallButton({
     try {
       logger.clear();
 
-      logger.debug(`Installing mods...`, preferences);
+      console.debug(`Installing mods...`, preferences);
 
       if (!isDirectMode) {
         API.deleteFile(`${mergedPath}\\..`);
@@ -63,41 +63,22 @@ export default function ModInstallButton({
       for (let i = 0; i < modsToInstall.length; i = i + 1) {
         const mod = modsToInstall[i];
         try {
-          let errorCount: number = 0;
-          const recordLog = (level: ILogLevel, ...data: unknown[]): void => {
-            if (level === 'error') {
-              logger.add(
-                level,
-                `Mod ${mod.info.name} encountered a runtime error!`,
-                ...data
-              );
-              errorCount++;
-            } else {
-              logger.add(level, ...data);
-            }
-          };
-          recordLog('debug', `Mod ${mod.info.name} parsing code...`);
+          console.debug(`Mod ${mod.info.name} parsing code...`);
           const code = API.readModCode(mod.id);
           const api = getModAPI(mod, {
             ...preferences,
             extractedFiles,
-            recordLog,
             isDryRun: isUninstall,
           });
-          recordLog(
-            'debug',
-            `Mod ${mod.info.name} ${label.toLowerCase()}ing...`
-          );
+          console.debug(`Mod ${mod.info.name} ${label.toLowerCase()}ing...`);
           const installMod = sandbox(code);
           installMod({ D2RMM: api, config: mod.config, Math });
-          if (errorCount === 0) {
-            modsInstalled.push(mod);
-            logger.log(
-              `Mod ${mod.info.name} ${label.toLowerCase()}ed successfully.`
-            );
-          }
+          modsInstalled.push(mod);
+          console.log(
+            `Mod ${mod.info.name} ${label.toLowerCase()}ed successfully.`
+          );
         } catch (error) {
-          logger.error(
+          console.error(
             `Mod ${mod.info.name} encountered a compile error!`,
             error
           );
@@ -125,7 +106,7 @@ export default function ModInstallButton({
         onErrorsEncountered();
       }
     } catch (error) {
-      logger.error(String(error));
+      console.error(String(error));
       showToast({
         severity: 'error',
         title: `Error When ${label}ing Mods`,

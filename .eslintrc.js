@@ -3,6 +3,7 @@ module.exports = {
   rules: {
     'import/no-extraneous-dependencies': 'off',
     'import/no-unresolved': 'error',
+    'import/prefer-default-export': 'off',
     'react/react-in-jsx-scope': 'off',
     'react/jsx-boolean-value': ['error', 'always'],
     'react/jsx-props-no-spreading': 'off',
@@ -10,6 +11,7 @@ module.exports = {
     'react/destructuring-assignment': 'off',
     'operator-assignment': ['warn', 'never'],
     'no-plusplus': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-unused-vars': [
       'warn',

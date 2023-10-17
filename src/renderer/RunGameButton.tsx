@@ -3,7 +3,7 @@ import { Button, Tooltip } from '@mui/material';
 import { usePreferences } from './Preferences';
 import useGameArgs from './useGameArgs';
 
-const API = window.electron.API;
+const BridgeAPI = window.electron.BridgeAPI;
 
 type Props = Record<string, never>;
 
@@ -14,7 +14,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
   const command = useMemo(() => ['D2R.exe'].concat(args).join(' '), [args]);
 
   const onRunGame = useCallback(() => {
-    API.execute(`${gamePath}\\D2R.exe`, args);
+    BridgeAPI.execute(`${gamePath}\\D2R.exe`, args);
   }, [args, gamePath]);
 
   return (

@@ -1,6 +1,27 @@
 declare global {
   type ILogLevel = 'error' | 'warn' | 'log' | 'debug';
 
+  type IReadOnlyPreferences = {
+    dataPath: string;
+    preExtractedDataPath: string;
+    gamePath: string;
+    isDirectMode: boolean;
+    isPreExtractedData: boolean;
+    extraArgs: string[];
+    mergedPath: string;
+    rawGamePath: string;
+  };
+
+  type IPreferences = IReadOnlyPreferences & {
+    setIsDirectMode: (value: boolean) => void;
+    setIsPreExtractedData: (value: boolean) => void;
+    setExtraArgs: (value: string[]) => void;
+    setRawGamePath: (value: string) => void;
+    setPreExtractedDataPath: (value: string) => void;
+  };
+
+  type IInstallModsOptions = IReadOnlyPreferences & { isDryRun: boolean };
+
   type TSVDataHeader = string;
 
   type TSVDataRow = {
@@ -169,48 +190,77 @@ declare global {
     description: string;
   };
 
-  type WindowAPI = {
+  type RendererAPI = {
     addConsoleListener: (
       listener: (level: ILogLevel, args: unknown[]) => void
     ) => void;
+    openURL: (url: string) => void;
     removeConsoleListener: (
       listener: (level: ILogLevel, args: unknown[]) => void
     ) => void;
-    getVersion: () => string;
-    getAppPath: () => string;
-    execute: (executablePath: string, args?: string[], sync?: boolean) => void;
-    copyFile: (fromPath: string, toPath: string, overwrite?: boolean) => number;
-    createDirectory: (filePath: string) => void;
-    deleteFile: (filePath: string) => void;
-    openStorage: (gamePath: string) => void;
+  };
+
+  type BridgeAPIImplementation = {
     closeStorage: () => void;
+    copyFile: (
+      fromPath: string,
+      toPath: string,
+      overwrite?: boolean
+    ) => number | Error;
+    createDirectory: (filePath: string) => void;
+    deleteFile: (filePath: string, isRelative: boolean) => number | Error;
+    execute: (
+      executablePath: string,
+      args?: string[],
+      sync?: boolean
+    ) => number | Error;
     extractFile: (
       gamePath: string,
       filePath: string,
       targetPath: string
     ) => void;
-    openURL: (url: string) => void;
+    getAppPath: () => string;
+    getVersion: () => string;
+    installMods: (
+      modsToInstall: Mod[],
+      options: IInstallModsOptions
+    ) => string[];
+    openStorage: (gamePath: string) => void;
     readDirectory: (
       filePath: string
-    ) => { name: string; isDirectory: boolean }[];
-    readModDirectory: () => string[];
-    readJson: (filePath: string) => JSONData;
-    readModCode: (id: string) => string;
+    ) => { name: string; isDirectory: boolean }[] | Error;
+    readFile: (filePath: string, isRelative: boolean) => string | null | Error;
+    readJson: (filePath: string) => JSONData | Error;
+    readModCode: (id: string) => string | null | Error;
     readModConfig: (id: string) => JSON;
+    readModDirectory: () => string[] | Error;
     readModInfo: (id: string) => ModInfo;
-    readTsv: (filePath: string) => TSVData;
-    readTxt: (filePath: string) => string;
-    runTool: (tool: string, params?: string[]) => void;
+    readTsv: (filePath: string) => TSVData | Error;
+    readTxt: (filePath: string) => string | Error;
+    writeFile: (
+      inputPath: string,
+      isRelative: boolean,
+      data: string
+    ) => number | Error;
     writeJson: (filePath: string, data: JSONData) => void;
-    writeModConfig: (id: string, value: ModConfigValue) => JSON;
+    writeModConfig: (id: string, value: ModConfigValue) => number | Error;
     writeTsv: (filePath: string, data: TSVData) => void;
     writeTxt: (filePath: string, data: string) => void;
   };
 
+  type APIWithThrownErrors<T> = {
+    [K in keyof T]: T[K] extends (...args: infer A) => infer R
+      ? (...args: A) => Exclude<R, Error>
+      : never;
+  };
+
+  type BridgeAPI = APIWithThrownErrors<BridgeAPIImplementation>;
+
   interface Window {
     electron: {
+      BridgeAPI: BridgeAPI;
       console: Console;
-      API: WindowAPI;
+      RendererAPI: RendererAPI;
     };
   }
 }

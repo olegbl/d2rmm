@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const API = window.electron.API;
+const RendererAPI = window.electron.RendererAPI;
 
 const consoleMethods = ['debug', 'log', 'warn', 'error'];
 consoleMethods.forEach((level) => {
@@ -11,7 +11,7 @@ type IConsoleListener = (level: ILogLevel, args: unknown[]) => void;
 
 export function useConsoleListener(callback: IConsoleListener): void {
   useEffect(() => {
-    API.addConsoleListener(callback);
-    return () => API.removeConsoleListener(callback);
+    RendererAPI.addConsoleListener(callback);
+    return () => RendererAPI.removeConsoleListener(callback);
   }, [callback]);
 }

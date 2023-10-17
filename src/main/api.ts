@@ -13,8 +13,14 @@ import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
 import { execFile, execFileSync } from 'child_process';
-
+import { VM } from 'vm2';
+import json5 from 'json5';
 import packageManifest from '../../release/app/package.json';
+import { getModAPI } from './ModAPI';
+
+function notNull<TValue>(value: TValue | null | undefined): value is TValue {
+  return value !== null && value !== undefined;
+}
 
 const rendererConsole = {
   debug: (..._args: unknown[]): void => {},
@@ -43,6 +49,13 @@ function copyDirSync(src: string, dest: string) {
     }
   });
 }
+
+const vm = new VM({
+  sandbox: {},
+  timeout: 30000,
+  wasm: false, // Disable WebAssembly support if not required
+  eval: false, // Disable eval function if not required
+});
 
 const voidPtr = ref.refType(ref.types.void);
 const voidPtrPtr = ref.refType(voidPtr);
@@ -94,7 +107,7 @@ function createError(
   message: string,
   errorCodeArg?: unknown
 ): Error {
-  rendererConsole.error('API.execute', method, message, errorCodeArg);
+  rendererConsole.error('BridgeAPI', method, message, errorCodeArg);
 
   const prefix = `${method}: ${message}`;
   let errorCode = errorCodeArg;
@@ -114,26 +127,33 @@ function createError(
 const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
 
-export const BridgeAPI = {
+export const BridgeAPI: BridgeAPIImplementation = {
   getVersion: () => {
     rendererConsole.debug('BridgeAPI.getVersion');
+
     return packageManifest.version;
   },
 
   getAppPath: () => {
     rendererConsole.debug('BridgeAPI.getAppPath');
+
     return getAppPath();
   },
 
-  execute: (executablePath: string, args: string[], sync: boolean) => {
+  execute: (
+    executablePath: string,
+    args: string[] = [],
+    sync: boolean = false
+  ) => {
     rendererConsole.debug('BridgeAPI.execute', { executablePath, args, sync });
+
     try {
       if (sync) {
         execFileSync(executablePath, args ?? []);
       } else {
         execFile(executablePath, args ?? []);
       }
-      return true;
+      return 0;
     } catch (error) {
       return createError('BridgeAPI.execute', 'Failed to execute file', error);
     }
@@ -279,6 +299,7 @@ export const BridgeAPI = {
           isDirectory: entry.isDirectory(),
         }));
       }
+      return [];
     } catch (e) {
       return createError(
         'API.readDirectory',
@@ -286,8 +307,6 @@ export const BridgeAPI = {
         String(e)
       );
     }
-
-    return null;
   },
 
   readModDirectory: () => {
@@ -301,6 +320,7 @@ export const BridgeAPI = {
           .filter((entry) => entry.isDirectory())
           .map((entry) => entry.name);
       }
+      return [];
     } catch (e) {
       return createError(
         'API.readModDirectory',
@@ -308,12 +328,11 @@ export const BridgeAPI = {
         String(e)
       );
     }
-
-    return null;
   },
 
   readFile: (inputPath: string, isRelative: boolean) => {
     rendererConsole.debug('BridgeAPI.readFile', { inputPath, isRelative });
+
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -339,6 +358,7 @@ export const BridgeAPI = {
 
   writeFile: (inputPath: string, isRelative: boolean, data: string) => {
     rendererConsole.debug('BridgeAPI.writeFile', { inputPath, isRelative });
+
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -356,11 +376,12 @@ export const BridgeAPI = {
       );
     }
 
-    return true;
+    return 0;
   },
 
   deleteFile: (inputPath: string, isRelative: boolean) => {
     rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, isRelative });
+
     const filePath = isRelative
       ? path.join(getAppPath(), inputPath)
       : inputPath;
@@ -373,7 +394,8 @@ export const BridgeAPI = {
         } else {
           rmSync(filePath, { force: true });
         }
-        return true;
+        // file deleted successfully
+        return 0;
       }
     } catch (e) {
       return createError(
@@ -383,10 +405,11 @@ export const BridgeAPI = {
       );
     }
 
-    return false;
+    // file doesn't exist
+    return 1;
   },
 
-  copyFile: (fromPath: string, toPath: string, overwrite: boolean) => {
+  copyFile: (fromPath: string, toPath: string, overwrite: boolean = false) => {
     rendererConsole.debug('BridgeAPI.copyFile', {
       fromPath,
       toPath,
@@ -421,6 +444,252 @@ export const BridgeAPI = {
 
     // file copied successfully
     return 0;
+  },
+
+  readModInfo: (id: string) => {
+    rendererConsole.debug('BridgeAPI.readModInfo', {
+      id,
+    });
+
+    const filePath = `mods\\${id}\\mod.json`;
+    const result = BridgeAPI.readFile(filePath, true);
+
+    if (result instanceof Error) {
+      return result;
+    }
+
+    if (result != null) {
+      return {
+        name: id,
+        ...JSON.parse(result),
+      };
+    }
+
+    return null;
+  },
+
+  readModConfig: (id: string) => {
+    rendererConsole.debug('BridgeAPI.readModConfig', {
+      id,
+    });
+
+    const filePath = `mods\\${id}\\config.json`;
+    const result = BridgeAPI.readFile(filePath, true);
+
+    if (result instanceof Error) {
+      return result;
+    }
+
+    if (result != null) {
+      return JSON.parse(result);
+    }
+
+    return null;
+  },
+
+  writeModConfig: (id: string, value: ModConfigValue) => {
+    rendererConsole.debug('BridgeAPI.writeModConfig', {
+      id,
+      value,
+    });
+
+    const filePath = `mods\\${id}\\config.json`;
+    return BridgeAPI.writeFile(filePath, true, JSON.stringify(value));
+  },
+
+  readModCode: (id: string) => {
+    rendererConsole.debug('BridgeAPI.readModCode', {
+      id,
+    });
+
+    const filePath = `mods\\${id}\\mod.js`;
+    return BridgeAPI.readFile(filePath, true);
+  },
+
+  readTsv: (filePath: string) => {
+    rendererConsole.debug('BridgeAPI.readTsv', {
+      filePath,
+    });
+
+    const result = BridgeAPI.readFile(filePath, false);
+
+    if (result instanceof Error) {
+      return result;
+    }
+
+    if (result == null) {
+      return { headers: [], rows: [] };
+    }
+
+    const [headersRaw, ...rowsRaw] = result.split('\n');
+    const headers = headersRaw.split('\t');
+    const rows: TSVDataRow[] = rowsRaw
+      .map((row) => {
+        if (row === '') {
+          return null;
+        }
+        const rowRaw = row.split('\t');
+        return rowRaw.reduce((agg, value, index) => {
+          agg[headers[index]] = value;
+          return agg;
+        }, {} as TSVDataRow);
+      })
+      .filter(notNull);
+    return { headers, rows };
+  },
+
+  writeTsv: (filePath, data) => {
+    rendererConsole.debug('BridgeAPI.writeTsv', {
+      filePath,
+      data,
+    });
+
+    const { headers, rows } = data;
+    const headersRaw = headers.join('\t');
+    const rowsRaw = rows.map((row) =>
+      headers.map((header) => row[header] ?? '').join('\t')
+    );
+    const content = [headersRaw, ...rowsRaw, ''].join('\n');
+    return BridgeAPI.writeFile(filePath, false, content);
+  },
+
+  readJson: (filePath) => {
+    rendererConsole.debug('BridgeAPI.readJson', { filePath });
+
+    const result = BridgeAPI.readFile(filePath, false);
+
+    if (result instanceof Error) {
+      return result;
+    }
+
+    if (result == null) {
+      rendererConsole.warn('BridgeAPI.readJson', 'file not found');
+      return {};
+    }
+
+    const cleanContent = result
+      // remove byte order mark
+      .replace(/^\uFEFF/, '');
+    try {
+      return json5.parse(cleanContent);
+    } catch (e) {
+      return e instanceof Error ? e : new Error(String(e));
+    }
+  },
+
+  writeJson: (filePath, data) => {
+    rendererConsole.debug('BridgeAPI.writeJson', { filePath, data });
+
+    const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
+    const result = BridgeAPI.writeFile(
+      filePath,
+      false,
+      // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
+      `\uFEFF${content}`
+    );
+
+    if (result instanceof Error) {
+      rendererConsole.error('BridgeAPI.writeJson', result);
+      return result;
+    }
+
+    return result;
+  },
+
+  readTxt: (filePath) => {
+    rendererConsole.debug('BridgeAPI.readTxt', { filePath });
+
+    const result = BridgeAPI.readFile(filePath, false);
+
+    if (result instanceof Error) {
+      rendererConsole.error('BridgeAPI.readTxt', result);
+      return result;
+    }
+
+    if (result == null) {
+      rendererConsole.warn('BridgeAPI.readTxt', 'file not found');
+      return '';
+    }
+
+    return result;
+  },
+
+  writeTxt: (filePath, data) => {
+    rendererConsole.debug('BridgeAPI.writeTxt', { filePath, data });
+
+    const result = BridgeAPI.writeFile(filePath, false, data);
+
+    if (result instanceof Error) {
+      rendererConsole.error('BridgeAPI.writeTxt', result);
+      return result;
+    }
+
+    return result;
+  },
+
+  installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
+    const { gamePath, mergedPath, isPreExtractedData, isDirectMode, isDryRun } =
+      options;
+    const action = isDryRun ? 'Uninstall' : 'Install';
+
+    if (!isDirectMode) {
+      BridgeAPI.deleteFile(`${mergedPath}\\..`, false);
+      BridgeAPI.createDirectory(mergedPath);
+      BridgeAPI.writeJson(`${mergedPath}\\..\\modinfo.json`, {
+        name: 'D2RMM',
+        savepath: 'D2RMM/',
+      });
+    }
+
+    if (!isPreExtractedData) {
+      BridgeAPI.openStorage(gamePath);
+    }
+
+    const extractedFiles: Record<string, boolean> = {};
+
+    const modsInstalled = [];
+    for (let i = 0; i < modsToInstall.length; i = i + 1) {
+      const mod = modsToInstall[i];
+      try {
+        rendererConsole.debug(`Mod ${mod.info.name} parsing code...`);
+        const result = BridgeAPI.readModCode(mod.id);
+        if (result instanceof Error) {
+          throw result;
+        }
+        if (result == null) {
+          throw new Error('Could not read code from mod.js.');
+        }
+        const code: string = result;
+        const api = getModAPI(BridgeAPI, mod, {
+          ...options,
+          extractedFiles,
+        });
+        rendererConsole.debug(
+          `Mod ${mod.info.name} ${action.toLowerCase()}ing...`
+        );
+        vm.setGlobals({
+          // TODO: redirect console output
+          D2RMM: api,
+          config: mod.config,
+        });
+        vm.run(`(function(){\n${code}\n})()`);
+        modsInstalled.push(mod.id);
+        rendererConsole.log(
+          `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`
+        );
+      } catch (error) {
+        rendererConsole.error(
+          `Mod ${mod.info.name} encountered a compile error!`,
+          error
+        );
+      }
+    }
+
+    if (!isPreExtractedData) {
+      BridgeAPI.closeStorage();
+    }
+
+    return modsInstalled;
   },
 };
 

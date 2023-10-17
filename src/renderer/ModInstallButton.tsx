@@ -1,14 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
-import sandbox from './sandbox';
-import getModAPI from './getModAPI';
 import useToast from './useToast';
 import { usePreferences } from './Preferences';
 import { useLogger } from './Logs';
 import { useEnabledMods } from './ModsContext';
 
-const API = window.electron.API;
+const BridgeAPI = window.electron.BridgeAPI;
 
 type Props = {
   isUninstall?: boolean;
@@ -26,9 +24,6 @@ export default function ModInstallButton({
   const showToast = useToast();
   const preferences = usePreferences();
   const logger = useLogger();
-  const { gamePath, mergedPath, isPreExtractedData, isDirectMode } =
-    preferences;
-
   const [enabledMods] = useEnabledMods();
 
   const modsToInstall = useMemo(
@@ -42,52 +37,20 @@ export default function ModInstallButton({
     try {
       logger.clear();
 
-      console.debug(`Installing mods...`, preferences);
+      const options = {
+        dataPath: preferences.dataPath,
+        extraArgs: preferences.extraArgs,
+        gamePath: preferences.gamePath,
+        isDirectMode: preferences.isDirectMode,
+        isDryRun: isUninstall,
+        isPreExtractedData: preferences.isPreExtractedData,
+        mergedPath: preferences.mergedPath,
+        preExtractedDataPath: preferences.preExtractedDataPath,
+        rawGamePath: preferences.rawGamePath,
+      };
 
-      if (!isDirectMode) {
-        API.deleteFile(`${mergedPath}\\..`);
-        API.createDirectory(mergedPath);
-        API.writeJson(`${mergedPath}\\..\\modinfo.json`, {
-          name: 'D2RMM',
-          savepath: 'D2RMM/',
-        });
-      }
-
-      if (!isPreExtractedData) {
-        API.openStorage(gamePath);
-      }
-
-      const extractedFiles = {};
-
-      const modsInstalled = [];
-      for (let i = 0; i < modsToInstall.length; i = i + 1) {
-        const mod = modsToInstall[i];
-        try {
-          console.debug(`Mod ${mod.info.name} parsing code...`);
-          const code = API.readModCode(mod.id);
-          const api = getModAPI(mod, {
-            ...preferences,
-            extractedFiles,
-            isDryRun: isUninstall,
-          });
-          console.debug(`Mod ${mod.info.name} ${label.toLowerCase()}ing...`);
-          const installMod = sandbox(code);
-          installMod({ D2RMM: api, config: mod.config, Math });
-          modsInstalled.push(mod);
-          console.log(
-            `Mod ${mod.info.name} ${label.toLowerCase()}ed successfully.`
-          );
-        } catch (error) {
-          console.error(
-            `Mod ${mod.info.name} encountered a compile error!`,
-            error
-          );
-        }
-      }
-
-      if (!isPreExtractedData) {
-        API.closeStorage();
-      }
+      console.debug(`Installing mods...`, options);
+      const modsInstalled = BridgeAPI.installMods(modsToInstall, options);
 
       if (modsToInstall.length === 0) {
         showToast({
@@ -115,13 +78,9 @@ export default function ModInstallButton({
       onErrorsEncountered();
     }
   }, [
-    gamePath,
-    isDirectMode,
-    isPreExtractedData,
     isUninstall,
     label,
     logger,
-    mergedPath,
     modsToInstall,
     onErrorsEncountered,
     preferences,

@@ -9,7 +9,7 @@ import useSavedState from './useSavedState';
 import { useLogger } from './Logs';
 import useToast from './useToast';
 
-const API = window.electron.API;
+const BridgeAPI = window.electron.BridgeAPI;
 
 type IEnabledMods = { [id: string]: boolean };
 
@@ -45,18 +45,20 @@ export function ModsContextProvider({
   const showToast = useToast();
 
   const getMods = useCallback((): Mod[] => {
-    const modIDs = API.readModDirectory();
+    const modIDs = BridgeAPI.readModDirectory();
     return modIDs
       .map((modID) => {
         try {
-          const info = API.readModInfo(modID);
+          const info = BridgeAPI.readModInfo(modID);
 
           if (info == null) {
             // ignore folder as it may not be a mod
             return null;
           }
 
-          const config = API.readModConfig(modID) as unknown as ModConfigValue;
+          const config = BridgeAPI.readModConfig(
+            modID
+          ) as unknown as ModConfigValue;
 
           const defaultConfig = info.config?.reduce((agg, field) => {
             if (field.type !== 'section') {

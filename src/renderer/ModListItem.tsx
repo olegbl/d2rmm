@@ -19,7 +19,7 @@ import { useCallback, useMemo } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { useSelectedMod, useToggleMod } from './ModsContext';
 
-const API = window.electron.API;
+const RendererAPI = window.electron.RendererAPI;
 
 function ListChip({
   color,
@@ -95,7 +95,7 @@ export default function ModListItem({
 
   const onOpenWebsite = useCallback((): void => {
     if (mod.info.website != null) {
-      API.openURL(mod.info.website);
+      RendererAPI.openURL(mod.info.website);
     }
   }, [mod]);
 

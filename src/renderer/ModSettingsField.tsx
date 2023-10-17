@@ -6,11 +6,11 @@ import ModSettingsTextField from './ModSettingsTextField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 
-const API = window.electron.API;
+const BridgeAPI = window.electron.BridgeAPI;
 
 function setConfig(mod: Mod, field: string, value: ModConfigSingleValue): void {
   mod.config[field] = value;
-  API.writeModConfig(mod.id, mod.config);
+  BridgeAPI.writeModConfig(mod.id, mod.config);
 }
 
 type Props = {

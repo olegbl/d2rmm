@@ -19,15 +19,15 @@ import { useMemo } from 'react';
 import { usePreferences } from './Preferences';
 import { IThemeMode, useThemeMode } from './ThemeContext';
 
-const API = window.electron.API;
+const BridgeAPI = window.electron.BridgeAPI;
 
 function getIsValidGamePath(path: string): boolean {
-  const files = API.readDirectory(path);
+  const files = BridgeAPI.readDirectory(path);
   return files.find(({ name }) => name === 'D2R.exe') != null;
 }
 
 function getIsValidPreExtractedDataPath(path: string): boolean {
-  const files = API.readDirectory(path);
+  const files = BridgeAPI.readDirectory(path);
   // search for the "global" folder
   return files.find(({ name }) => name === 'global') != null;
 }

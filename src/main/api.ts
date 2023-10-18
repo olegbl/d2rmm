@@ -15,6 +15,7 @@ import ref from 'ref-napi';
 import { execFile, execFileSync } from 'child_process';
 // vm2 isn't secure, but isolated-vm refuses to build for this version of electron
 // going to table updating to isolated-vm for later as I've wasted too much time already
+// @ts-ignore[2307] - no @types/vm2 exists
 import { VM } from 'vm2';
 import json5 from 'json5';
 import packageManifest from '../../release/app/package.json';

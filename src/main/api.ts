@@ -166,7 +166,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.openStorage',
           'Failed to open CASC storage',
-          CascLib.GetLastError()
+          `(CascLib Error Code: ${CascLib.GetLastError()})`
         );
       }
     }
@@ -185,7 +185,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.closeStorage',
           'Failed to close CASC storage',
-          CascLib.GetLastError()
+          `(CascLib Error Code: ${CascLib.GetLastError()})`
         );
       }
     }
@@ -218,8 +218,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
       ) {
         return createError(
           'API.extractFile',
-          'Failed to open CASC file',
-          CascLib.GetLastError()
+          `Failed to open file in CASC storage (${filePath})`,
+          `(CascLib Error Code: ${CascLib.GetLastError()})`
         );
       }
 
@@ -241,16 +241,16 @@ export const BridgeAPI: BridgeAPIImplementation = {
       } else {
         return createError(
           'API.extractFile',
-          'Failed to read CASC file',
-          CascLib.GetLastError()
+          `Failed to read file in CASC storage (${filePath})`,
+          `(CascLib Error Code: ${CascLib.GetLastError()})`
         );
       }
 
       if (!CascLib.CascCloseFile(file)) {
         return createError(
           'API.extractFile',
-          'Failed to close CASC file',
-          CascLib.GetLastError()
+          `Failed to close file in CASC storage (${filePath})`,
+          `(CascLib Error Code: ${CascLib.GetLastError()})`
         );
       }
     } catch (e) {
@@ -678,10 +678,24 @@ export const BridgeAPI: BridgeAPIImplementation = {
           `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`
         );
       } catch (error) {
-        rendererConsole.error(
-          `Mod ${mod.info.name} encountered a compile error!`,
-          error
-        );
+        if (error instanceof Error) {
+          const stack = (error.stack ?? '')
+            .replace(
+              /:([0-9]+):([0-9]+)/g,
+              // decrement all line numbers by 1 to account for the wrapper function
+              (_match, line, column) => `:${Number(line) - 1}:${column}`
+            )
+            // include stack until the second line for "vm.js" since the rest
+            // of the stack trace will be pointing at the vm internals and is irrelevant
+            .split('\n');
+          const message = stack
+            .slice(0, stack.findIndex((line) => line.includes('at vm.js:')) + 1)
+            .join('\n')
+            .replace(/ at vm.js:/, ' at mod.js');
+          rendererConsole.error(
+            `Mod ${mod.info.name} encountered an error!\n${message}`
+          );
+        }
       }
     }
 

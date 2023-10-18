@@ -76,20 +76,10 @@ export function getModAPI(
       return parseFloat(BridgeAPI.getVersion());
     },
     error: (message: string | Error): void => {
-      let trace = '';
-      if (typeof message !== 'string') {
-        const match = (message.stack ?? '').match(
-          /<anonymous>:([0-9]+):([0-9]+)/
-        );
-        if (match != null) {
-          const line = parseInt(match[1], 10) - 2; // we prefix the source with two extra lines
-          const column = parseInt(match[2], 10);
-          trace = ` at ${line}:${column}`;
-        }
+      if (message instanceof Error) {
+        throw message;
       }
-      throw new Error(
-        typeof message === 'string' ? message : message.toString() + trace
-      );
+      throw new Error(message);
     },
     readTsv: (filePath: string): TSVData => {
       console.debug('D2RMM.readTsv', filePath);

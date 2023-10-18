@@ -22,7 +22,7 @@ import { useLogLevels, useLogs } from './Logs';
 
 function prettyPrintData(data: unknown): string {
   if (Array.isArray(data)) {
-    return data.map(prettyPrintData).join(',');
+    return data.map(prettyPrintData).join(' ');
   }
   if (typeof data === 'object') {
     try {

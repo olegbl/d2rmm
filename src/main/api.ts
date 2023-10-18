@@ -13,6 +13,8 @@ import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
 import { execFile, execFileSync } from 'child_process';
+// vm2 isn't secure, but isolated-vm refuses to build for this version of electron
+// going to table updating to isolated-vm for later as I've wasted too much time already
 import { VM } from 'vm2';
 import json5 from 'json5';
 import packageManifest from '../../release/app/package.json';
@@ -49,13 +51,6 @@ function copyDirSync(src: string, dest: string) {
     }
   });
 }
-
-const vm = new VM({
-  sandbox: {},
-  timeout: 30000,
-  wasm: false, // Disable WebAssembly support if not required
-  eval: false, // Disable eval function if not required
-});
 
 const voidPtr = ref.refType(ref.types.void);
 const voidPtrPtr = ref.refType(voidPtr);
@@ -659,7 +654,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         if (result == null) {
           throw new Error('Could not read code from mod.js.');
         }
-        const code: string = result;
+        const code: string = `(function(){\n${result}\n})()`;
         const api = getModAPI(BridgeAPI, mod, {
           ...options,
           extractedFiles,
@@ -667,12 +662,17 @@ export const BridgeAPI: BridgeAPIImplementation = {
         rendererConsole.debug(
           `Mod ${mod.info.name} ${action.toLowerCase()}ing...`
         );
-        vm.setGlobals({
-          // TODO: redirect console output
-          D2RMM: api,
-          config: mod.config,
+        const vm = new VM({
+          sandbox: {
+            config: mod.config,
+            console: rendererConsole,
+            D2RMM: api,
+          },
+          timeout: 30000,
+          wasm: false, // Disable WebAssembly support if not required
+          eval: false, // Disable eval function if not required
         });
-        vm.run(`(function(){\n${code}\n})()`);
+        vm.run(code);
         modsInstalled.push(mod.id);
         rendererConsole.log(
           `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`

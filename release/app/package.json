@@ -16,7 +16,8 @@
   "dependencies": {
     "ffi-napi": "^4.0.3",
     "json5": "^2.2.0",
-    "ref-napi": "^3.0.3"
+    "ref-napi": "^3.0.3",
+    "vm2": "^3.9.19"
   },
   "license": "MIT"
 }

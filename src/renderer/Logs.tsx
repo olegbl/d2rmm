@@ -84,7 +84,7 @@ export function LogsProvider({ children }: Props): JSX.Element {
     // we don't necessarily want to re-render every time a log comes in
     // it could get laggy, and it could break if the log is from a React render error
     // so we put them all in a ref and update the state every second
-    logsRef.current.push(newLog);
+    logsRef.current = [...logsRef.current, newLog];
   }, []);
 
   const error = useCallback((...d: unknown[]) => add('error', ...d), [add]);

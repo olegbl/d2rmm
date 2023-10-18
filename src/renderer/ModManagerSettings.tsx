@@ -54,17 +54,20 @@ type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const {
+    extraArgs,
     gamePath,
-    preExtractedDataPath,
     isDirectMode,
     isPreExtractedData,
-    extraArgs,
+    mergedPath,
+    outputModName,
+    preExtractedDataPath,
     rawGamePath,
+    setExtraArgs,
     setIsDirectMode,
     setIsPreExtractedData,
-    setExtraArgs,
-    setRawGamePath,
+    setOutputModName,
     setPreExtractedDataPath,
+    setRawGamePath,
   } = usePreferences();
 
   const [themeMode, setThemeMode] = useThemeMode();
@@ -173,6 +176,29 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               ) : null}
             </>
           ) : null}
+          {!isDirectMode ? (
+            <>
+              <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
+              <Typography color="text.secondary" variant="subtitle2">
+                Specify the name of the D2R MPQ mod that D2RMM will generate
+                when mods are installed.
+              </Typography>
+              <TextField
+                fullWidth={true}
+                variant="filled"
+                label="Output Mod Name"
+                value={outputModName}
+                onChange={(event) =>
+                  setOutputModName(
+                    event.target.value.replace(/[^a-zA-Z0-9-_]/g, '')
+                  )
+                }
+              />
+              <Typography color="text.secondary" variant="subtitle2">
+                Generated files will be located in &ldquo;{mergedPath}\&rdquo;.
+              </Typography>
+            </>
+          ) : null}
         </StyledAccordionDetails>
       </StyledAccordion>
       <StyledAccordion
@@ -190,10 +216,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         </StyledAccordionSummary>
         <StyledAccordionDetails id="direct-mode-content">
           <Typography color="text.secondary" variant="subtitle2">
-            Instead of extracting files to /mods/D2RMM/, extract them to /data/
-            so that you can use -direct -txt when running the game. You will
-            still need to manually extract game data to /data/ using CascView in
-            order to use &quot;-direct&quot; in Diablo II: Resurrected.
+            Instead of generating files in /mods/, generating them in /data/ so
+            that you can use -direct -txt when running the game. You will still
+            need to manually extract game data to /data/ using CascView in order
+            to use &quot;-direct&quot; in Diablo II: Resurrected.
           </Typography>
           <ListItemButton
             onClick={() => {

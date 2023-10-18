@@ -3,21 +3,23 @@ declare global {
 
   type IReadOnlyPreferences = {
     dataPath: string;
-    preExtractedDataPath: string;
+    extraArgs: string[];
     gamePath: string;
     isDirectMode: boolean;
     isPreExtractedData: boolean;
-    extraArgs: string[];
     mergedPath: string;
+    outputModName: string;
+    preExtractedDataPath: string;
     rawGamePath: string;
   };
 
   type IPreferences = IReadOnlyPreferences & {
+    setExtraArgs: (value: string[]) => void;
     setIsDirectMode: (value: boolean) => void;
     setIsPreExtractedData: (value: boolean) => void;
-    setExtraArgs: (value: string[]) => void;
-    setRawGamePath: (value: string) => void;
+    setOutputModName: (value: string) => void;
     setPreExtractedDataPath: (value: string) => void;
+    setRawGamePath: (value: string) => void;
   };
 
   type IInstallModsOptions = IReadOnlyPreferences & { isDryRun: boolean };

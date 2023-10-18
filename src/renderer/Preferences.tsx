@@ -26,6 +26,11 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     'C:\\Battle.net\\Games\\Diablo II Resurrected\\data'
   );
 
+  const [outputModName, setOutputModName] = useSavedState(
+    'output-mod-name',
+    'D2RMM'
+  );
+
   const [isPreExtractedData, setIsPreExtractedData] = useSavedState(
     'pre-extracted-data',
     false,
@@ -48,39 +53,43 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
   );
 
   const gamePath = rawGamePath.replace(/\\$/, '');
-  const mergedPath = `${gamePath}\\mods\\D2RMM\\D2RMM.mpq\\data`;
+  const mergedPath = `${gamePath}\\mods\\${outputModName}\\${outputModName}.mpq\\data`;
   const dataPath = `${gamePath}\\data`;
 
   const context = useMemo(
     (): IPreferences => ({
       dataPath,
-      preExtractedDataPath,
+      extraArgs,
       gamePath,
       isDirectMode,
       isPreExtractedData,
-      extraArgs,
       mergedPath,
+      outputModName,
+      preExtractedDataPath,
       rawGamePath,
+      setExtraArgs,
       setIsDirectMode,
       setIsPreExtractedData,
-      setExtraArgs,
-      setRawGamePath,
+      setOutputModName,
       setPreExtractedDataPath,
+      setRawGamePath,
     }),
     [
       dataPath,
-      preExtractedDataPath,
+      extraArgs,
       gamePath,
       isDirectMode,
       isPreExtractedData,
-      extraArgs,
       mergedPath,
+      outputModName,
+      preExtractedDataPath,
       rawGamePath,
+      setExtraArgs,
       setIsDirectMode,
       setIsPreExtractedData,
-      setExtraArgs,
-      setRawGamePath,
+      setOutputModName,
       setPreExtractedDataPath,
+      setRawGamePath,
     ]
   );
 

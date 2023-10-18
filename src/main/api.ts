@@ -102,8 +102,6 @@ function createError(
   message: string,
   errorCodeArg?: unknown
 ): Error {
-  rendererConsole.error('BridgeAPI', method, message, errorCodeArg);
-
   const prefix = `${method}: ${message}`;
   let errorCode = errorCodeArg;
   if (errorCode != null) {
@@ -679,19 +677,17 @@ export const BridgeAPI: BridgeAPIImplementation = {
         );
       } catch (error) {
         if (error instanceof Error) {
-          const stack = (error.stack ?? '')
+          const message = (error.stack ?? '')
             .replace(
               /:([0-9]+):([0-9]+)/g,
               // decrement all line numbers by 1 to account for the wrapper function
               (_match, line, column) => `:${Number(line) - 1}:${column}`
             )
-            // include stack until the second line for "vm.js" since the rest
-            // of the stack trace will be pointing at the vm internals and is irrelevant
-            .split('\n');
-          const message = stack
-            .slice(0, stack.findIndex((line) => line.includes('at vm.js:')) + 1)
+            .split('\n')
+            .filter((line, index) => index === 0 || line.includes('vm.js:'))
             .join('\n')
-            .replace(/ at vm.js:/, ' at mod.js');
+            .replace(/vm.js:/g, 'mod.js:')
+            .slice(0, -1);
           rendererConsole.error(
             `Mod ${mod.info.name} encountered an error!\n${message}`
           );

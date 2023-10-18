@@ -46,15 +46,19 @@ export function getModAPI(
     // always applying to clean vanilla data rather than the output of a
     // previous installation
     if (isDirectMode && !extractedFiles[filePath]) {
-      BridgeAPI.deleteFile(getDestinationFilePath(filePath), false);
+      throwIfError(
+        BridgeAPI.deleteFile(getDestinationFilePath(filePath), false)
+      );
     }
     extractedFiles[filePath] = true;
 
     if (isPreExtractedData) {
-      const success = BridgeAPI.copyFile(
-        getPreExtractedSourceFilePath(filePath),
-        getDestinationFilePath(filePath),
-        false // don't overwrite if it already exists
+      const success = throwIfError(
+        BridgeAPI.copyFile(
+          getPreExtractedSourceFilePath(filePath),
+          getDestinationFilePath(filePath),
+          false // don't overwrite if it already exists
+        )
       );
       if (success === 2) {
         throw new Error(
@@ -62,10 +66,12 @@ export function getModAPI(
         );
       }
     } else {
-      BridgeAPI.extractFile(
-        gamePath,
-        filePath,
-        getDestinationFilePath(filePath)
+      throwIfError(
+        BridgeAPI.extractFile(
+          gamePath,
+          filePath,
+          getDestinationFilePath(filePath)
+        )
       );
     }
   }
@@ -73,7 +79,7 @@ export function getModAPI(
   return {
     getVersion: (): number => {
       console.debug('D2RMM.getVersion');
-      return parseFloat(BridgeAPI.getVersion());
+      return parseFloat(throwIfError(BridgeAPI.getVersion()));
     },
     error: (message: string | Error): void => {
       if (message instanceof Error) {
@@ -89,7 +95,9 @@ export function getModAPI(
     writeTsv: (filePath: string, data: TSVData): void => {
       console.debug('D2RMM.writeTsv', filePath, data);
       if (!isDryRun) {
-        BridgeAPI.writeTsv(getDestinationFilePath(filePath), data);
+        throwIfError(
+          BridgeAPI.writeTsv(getDestinationFilePath(filePath), data)
+        );
       }
     },
     readJson: (filePath: string): JSONData => {
@@ -100,16 +108,20 @@ export function getModAPI(
     writeJson: (filePath: string, data: JSONData): void => {
       console.debug('D2RMM.writeJson', filePath, data);
       if (!isDryRun) {
-        BridgeAPI.writeJson(getDestinationFilePath(filePath), data);
+        throwIfError(
+          BridgeAPI.writeJson(getDestinationFilePath(filePath), data)
+        );
       }
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.debug('D2RMM.copyFile', src, dst);
       if (!isDryRun) {
-        BridgeAPI.copyFile(
-          getModSourceFilePath(src),
-          getDestinationFilePath(dst),
-          overwrite
+        throwIfError(
+          BridgeAPI.copyFile(
+            getModSourceFilePath(src),
+            getDestinationFilePath(dst),
+            overwrite
+          )
         );
       }
     },
@@ -121,7 +133,9 @@ export function getModAPI(
     writeTxt: (filePath: string, data: string): void => {
       console.debug('D2RMM.writeTxt', filePath, data);
       if (!isDryRun) {
-        BridgeAPI.writeTxt(getDestinationFilePath(filePath), data);
+        throwIfError(
+          BridgeAPI.writeTxt(getDestinationFilePath(filePath), data)
+        );
       }
     },
     getNextStringID: (): number => {
@@ -145,9 +159,11 @@ export function getModAPI(
 
       if (nextStringIDRaw != null) {
         if (!isDryRun) {
-          BridgeAPI.writeTxt(
-            getDestinationFilePath(filePath),
-            nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
+          throwIfError(
+            BridgeAPI.writeTxt(
+              getDestinationFilePath(filePath),
+              nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
+            )
           );
         }
       }

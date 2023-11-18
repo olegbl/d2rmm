@@ -9,6 +9,7 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
+import regedit from 'regedit';
 import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
@@ -132,6 +133,26 @@ export const BridgeAPI: BridgeAPIImplementation = {
     rendererConsole.debug('BridgeAPI.getAppPath');
 
     return getAppPath();
+  },
+
+  getGamePath: async () => {
+    rendererConsole.debug('BridgeAPI.getGamePath');
+
+    try {
+      regedit.setExternalVBSLocation(path.join(getAppPath(), './tools'));
+      const regKey =
+        'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
+      const result = await regedit.promisified.list([regKey]);
+      return result[regKey].values.InstallLocation.value.toString();
+    } catch (error) {
+      // useful for debugging, but not useful to expose to user
+      rendererConsole.debug(
+        'BridgeAPI.getGamePath',
+        'Failed to fetch game path from the registry',
+        String(error)
+      );
+      return null;
+    }
   },
 
   execute: (
@@ -565,7 +586,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       // remove byte order mark
       .replace(/^\uFEFF/, '');
     try {
-      return json5.parse(cleanContent);
+      return json5.parse<JSONData>(cleanContent);
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }
@@ -708,9 +729,13 @@ export function initBridgeAPI(mainWindow: BrowserWindow): void {
   // hook up bridge API calls
   Object.keys(BridgeAPI).forEach((apiName) => {
     const apiCall = BridgeAPI[apiName as keyof typeof BridgeAPI];
-    ipcMain.on(apiName, (event, args: unknown[] | void) => {
+    ipcMain.on(apiName, async (event, args: unknown[] | void) => {
       // @ts-ignore[2556] - can't enforce strict typing for data coming across the bridge
-      event.returnValue = apiCall(...(args ?? []));
+      let result = apiCall(...(args ?? []));
+      if (result instanceof Promise) {
+        result = await result;
+      }
+      event.returnValue = result;
     });
   });
 

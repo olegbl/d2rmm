@@ -50,6 +50,7 @@ const BridgeAPINames = [
   'execute',
   'extractFile',
   'getAppPath',
+  'getGamePath',
   'getVersion',
   'installMods',
   'openStorage',

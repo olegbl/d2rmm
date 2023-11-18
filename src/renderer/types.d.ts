@@ -203,13 +203,13 @@ declare global {
   };
 
   type BridgeAPIImplementation = {
-    closeStorage: () => void;
+    closeStorage: () => boolean | Error;
     copyFile: (
       fromPath: string,
       toPath: string,
       overwrite?: boolean
     ) => number | Error;
-    createDirectory: (filePath: string) => void;
+    createDirectory: (filePath: string) => boolean | Error;
     deleteFile: (filePath: string, isRelative: boolean) => number | Error;
     execute: (
       executablePath: string,
@@ -220,14 +220,15 @@ declare global {
       gamePath: string,
       filePath: string,
       targetPath: string
-    ) => void;
+    ) => boolean | Error;
     getAppPath: () => string;
+    getGamePath: () => Promise<string | null>;
     getVersion: () => string;
     installMods: (
       modsToInstall: Mod[],
       options: IInstallModsOptions
     ) => string[];
-    openStorage: (gamePath: string) => void;
+    openStorage: (gamePath: string) => boolean | Error;
     readDirectory: (
       filePath: string
     ) => { name: string; isDirectory: boolean }[] | Error;
@@ -244,19 +245,21 @@ declare global {
       isRelative: boolean,
       data: string
     ) => number | Error;
-    writeJson: (filePath: string, data: JSONData) => void;
+    writeJson: (filePath: string, data: JSONData) => number | Error;
     writeModConfig: (id: string, value: ModConfigValue) => number | Error;
-    writeTsv: (filePath: string, data: TSVData) => void;
-    writeTxt: (filePath: string, data: string) => void;
+    writeTsv: (filePath: string, data: TSVData) => number | Error;
+    writeTxt: (filePath: string, data: string) => number | Error;
   };
 
-  type APIWithThrownErrors<T> = {
+  // errors get thrown
+  // async methods are made synchronous
+  type BridgeAPIDeriver<T> = {
     [K in keyof T]: T[K] extends (...args: infer A) => infer R
-      ? (...args: A) => Exclude<R, Error>
+      ? (...args: A) => Exclude<R extends Promise<infer PR> ? PR : R, Error>
       : never;
   };
 
-  type BridgeAPI = APIWithThrownErrors<BridgeAPIImplementation>;
+  type BridgeAPI = BridgeAPIDeriver<BridgeAPIImplementation>;
 
   interface Window {
     electron: {

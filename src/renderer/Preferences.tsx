@@ -1,6 +1,8 @@
 import React, { useContext, useMemo } from 'react';
 import useSavedState from './useSavedState';
 
+const BridgeAPI = window.electron.BridgeAPI;
+
 export const Context = React.createContext<IPreferences | null>(null);
 
 export function usePreferences(): IPreferences {
@@ -16,14 +18,15 @@ type Props = {
 };
 
 export function PreferencesProvider({ children }: Props): JSX.Element {
-  const [rawGamePath, setRawGamePath] = useSavedState(
-    'paths',
-    'C:\\Battle.net\\Games\\Diablo II Resurrected'
-  );
+  const defaultGamePath =
+    BridgeAPI.getGamePath() ??
+    'C:\\Program Files\\Battle.net\\Games\\Diablo II Resurrected';
+
+  const [rawGamePath, setRawGamePath] = useSavedState('paths', defaultGamePath);
 
   const [preExtractedDataPath, setPreExtractedDataPath] = useSavedState(
     'pre-extracted-data-path',
-    'C:\\Battle.net\\Games\\Diablo II Resurrected\\data'
+    `${rawGamePath}\\data`
   );
 
   const [outputModName, setOutputModName] = useSavedState(

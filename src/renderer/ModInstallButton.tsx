@@ -45,6 +45,7 @@ export default function ModInstallButton({
         isDryRun: isUninstall,
         isPreExtractedData: preferences.isPreExtractedData,
         mergedPath: preferences.mergedPath,
+        outputModName: preferences.outputModName,
         preExtractedDataPath: preferences.preExtractedDataPath,
         rawGamePath: preferences.rawGamePath,
       };

@@ -1,6 +1,6 @@
 {
   "name": "d2rmm",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "description": "A mod manager for Diablo II: Resurrected.",
   "main": "./dist/main/main.js",
   "author": {

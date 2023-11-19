@@ -1,3 +1,5 @@
+import { JSONData, ModAPI, TSVData } from 'renderer/ModAPITypes';
+
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;
 

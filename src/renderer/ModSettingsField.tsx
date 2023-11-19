@@ -5,6 +5,7 @@ import ModSettingsNumberField from './ModSettingsNumberField';
 import ModSettingsTextField from './ModSettingsTextField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
+import { ModConfigField, ModConfigSingleValue } from './ModConfigTypes';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

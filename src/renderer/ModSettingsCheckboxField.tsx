@@ -1,5 +1,6 @@
 import { FormControlLabel, Switch } from '@mui/material';
 import { useCallback } from 'react';
+import { ModConfigFieldCheckbox, ModConfigSingleValue } from './ModConfigTypes';
 
 type Props = {
   field: ModConfigFieldCheckbox;

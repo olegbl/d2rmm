@@ -11,7 +11,10 @@ module.exports = {
     'react/destructuring-assignment': 'off',
     'operator-assignment': ['warn', 'never'],
     'no-await-in-loop': 'off',
+    'no-continue': 'off',
+    'no-inner-declarations': 'off',
     'no-plusplus': 'off',
+    'no-restricted-syntax': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-unused-vars': [

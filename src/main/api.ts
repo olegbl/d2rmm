@@ -19,6 +19,10 @@ import { execFile, execFileSync } from 'child_process';
 // @ts-ignore[2307] - no @types/vm2 exists
 import { VM } from 'vm2';
 import json5 from 'json5';
+import ts from 'typescript';
+import { JSONData, TSVDataRow } from 'renderer/ModAPITypes';
+import { ConsoleAPI } from 'renderer/ConsoleAPITypes';
+import { ModConfigValue } from 'renderer/ModConfigTypes';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 
@@ -26,7 +30,7 @@ function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
-const rendererConsole = {
+const rendererConsole: ConsoleAPI = {
   debug: (..._args: unknown[]): void => {},
   log: (..._args: unknown[]): void => {},
   warn: (..._args: unknown[]): void => {},
@@ -139,7 +143,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     rendererConsole.debug('BridgeAPI.getGamePath');
 
     try {
-      regedit.setExternalVBSLocation(path.join(getAppPath(), './tools'));
+      regedit.setExternalVBSLocation(path.join(getAppPath(), 'tools'));
       const regKey =
         'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
       const result = await regedit.promisified.list([regKey]);
@@ -517,8 +521,177 @@ export const BridgeAPI: BridgeAPIImplementation = {
       id,
     });
 
-    const filePath = `mods\\${id}\\mod.js`;
-    return BridgeAPI.readFile(filePath, true);
+    // javascript support
+    {
+      const relativeFilePath = `mods\\${id}\\mod.js`;
+      const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
+      if (existsSync(absoluteFilePath)) {
+        const result = BridgeAPI.readFile(relativeFilePath, true);
+        if (typeof result === 'string') {
+          return `(function(){\n${result}\n})()`;
+        }
+        return createError(
+          'BridgeAPI.readModCode',
+          'Failed to read source code.',
+          result
+        );
+      }
+    }
+
+    // typescript support
+    if (existsSync(path.join(getAppPath(), `mods\\${id}\\mod.ts`))) {
+      try {
+        type Module = {
+          id: string;
+        };
+
+        type ModuleWithSourceCode = Module & {
+          sourceCode: string;
+        };
+
+        type ModuleWithTranspiledCode = ModuleWithSourceCode & {
+          transpiledCode: string;
+        };
+
+        function getDependencies(
+          module: ModuleWithSourceCode,
+          absoluteFilePath: string
+        ): Module[] {
+          const sourceFile = ts.createSourceFile(
+            absoluteFilePath,
+            module.sourceCode,
+            ts.ScriptTarget.ESNext,
+            true,
+            ts.ScriptKind.TS
+          );
+          const dependencies: Module[] = [];
+          ts.forEachChild(sourceFile, (node) => {
+            if (ts.isImportDeclaration(node)) {
+              const moduleID = node.moduleSpecifier
+                .getText()
+                .replace(/^['"]\.\/(.*)['"]$/, '$1');
+              dependencies.push({
+                id: moduleID,
+              });
+            }
+          });
+          return dependencies;
+        }
+
+        const modulesWithSourceCode: ModuleWithSourceCode[] = [];
+        const modulesWithTranspiledCode: ModuleWithTranspiledCode[] = [];
+
+        const modulesProcessed: string[] = [];
+        function processModule(module: Module): void {
+          // TODO: detect circular dependencies and throw an error
+          if (modulesProcessed.includes(module.id)) {
+            return;
+          }
+          modulesProcessed.push(module.id);
+
+          const relativeFilePath = `mods\\${id}\\${module.id}.ts`;
+          const sourceCode = BridgeAPI.readFile(relativeFilePath, true);
+          if (typeof sourceCode !== 'string') {
+            throw createError(
+              'BridgeAPI.readModCode',
+              `Failed to read ${relativeFilePath}`,
+              sourceCode
+            );
+          }
+
+          const moduleWithSourceCode = {
+            ...module,
+            sourceCode,
+          };
+
+          const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
+          getDependencies(moduleWithSourceCode, absoluteFilePath).forEach((m) =>
+            processModule(m)
+          );
+
+          modulesWithSourceCode.push(moduleWithSourceCode);
+        }
+
+        try {
+          processModule({ id: 'mod' });
+        } catch (error) {
+          if (error instanceof Error) {
+            return error;
+          }
+        }
+
+        for (let i = 0; i < modulesWithSourceCode.length; i++) {
+          const module = modulesWithSourceCode[i];
+
+          const transpilationResult = ts.transpileModule(module.sourceCode, {
+            compilerOptions: {
+              lib: [
+                // I dunno why this is all necessary...
+                // I just don't want to include DOM since we don't support it here
+                'lib.es2015.d.ts',
+                'lib.es2016.d.ts',
+                'lib.es2017.d.ts',
+                'lib.es2018.d.ts',
+                'lib.es2019.d.ts',
+                'lib.es2020.d.ts',
+                'lib.es2021.d.ts',
+                'lib.es2022.d.ts',
+              ],
+              // running webpack inside of electron is a pita and very slow
+              // so we're just going to roll our own module import/export system
+              // because that's a reaaaallly good idea and
+              // definitely won't cause any headaches later
+              module: ts.ModuleKind.CommonJS,
+              target: ts.ScriptTarget.ES5,
+            },
+            moduleName: module.id,
+            // errors? what errors! runtime errors!
+            // basically, the mod author is responsible for taking care of their
+            // own type checking and type errors using their preferred editor
+            // D2RMM will just transpile as best it can and run the code
+            reportDiagnostics: false,
+          });
+
+          const transpiledCode = transpilationResult.outputText;
+
+          modulesWithTranspiledCode.push({
+            ...module,
+            transpiledCode,
+          });
+        }
+
+        const modules = modulesWithTranspiledCode.reduce(
+          (agg, module) =>
+            `${agg}require.register('./${module.id}', function ${module.id}(exports) {${module.transpiledCode}});`,
+          ''
+        );
+
+        return `
+        function require(id) {
+          return require.modules[id];
+        }
+        require.modules = {};
+        require.register = function(id, getModule) {
+          const exports = {};
+          getModule(exports);
+          require.modules[id] = exports;
+        }
+        ${modules}
+        require('./mod');
+      `;
+      } catch (error) {
+        return createError(
+          'BridgeAPI.readModCode',
+          'Failed to compile mod',
+          error
+        );
+      }
+    }
+
+    return createError(
+      'BridgeAPI.readModCode',
+      'Could not find source code (mod.ts or mod.js).'
+    );
   },
 
   readTsv: (filePath: string) => {
@@ -645,10 +818,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
   installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
     const {
       gamePath,
-      mergedPath,
-      isPreExtractedData,
       isDirectMode,
       isDryRun,
+      isPreExtractedData,
+      mergedPath,
       outputModName,
     } = options;
     const action = isDryRun ? 'Uninstall' : 'Install';
@@ -678,46 +851,66 @@ export const BridgeAPI: BridgeAPIImplementation = {
           throw result;
         }
         if (result == null) {
-          throw new Error('Could not read code from mod.js.');
+          throw new Error('Could not read code from mod.js or mod.ts.');
         }
-        const code: string = `(function(){\n${result}\n})()`;
+        rendererConsole.log('code', result);
         const api = getModAPI(BridgeAPI, mod, {
           ...options,
           extractedFiles,
         });
-        rendererConsole.debug(
-          `Mod ${mod.info.name} ${action.toLowerCase()}ing...`
-        );
-        const vm = new VM({
-          sandbox: {
-            config: mod.config,
-            console: rendererConsole,
-            D2RMM: api,
-          },
-          timeout: 30000,
-          wasm: false, // Disable WebAssembly support if not required
-          eval: false, // Disable eval function if not required
-        });
-        vm.run(code);
-        modsInstalled.push(mod.id);
-        rendererConsole.log(
-          `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`
-        );
+        try {
+          rendererConsole.debug(
+            `Mod ${mod.info.name} ${action.toLowerCase()}ing...`
+          );
+          const vm = new VM({
+            sandbox: {
+              config: mod.config,
+              console: rendererConsole,
+              D2RMM: api,
+            },
+            timeout: 30000,
+            wasm: false, // Disable WebAssembly support if not required
+            eval: false, // Disable eval function if not required
+          });
+          try {
+            vm.run(result);
+          } catch (error) {
+            if (error instanceof Error) {
+              const message = (error.stack ?? '')
+                .replace(
+                  /:([0-9]+):([0-9]+)/g,
+                  // decrement all line numbers by 1 to account for the wrapper function
+                  (_match, line, column) => `:${Number(line) - 1}:${column}`
+                )
+                .split('\n')
+                .filter((line, index) => index === 0 || line.includes('vm.js:'))
+                .join('\n')
+                .replace(/vm.js:/g, 'mod.js:')
+                .slice(0, -1);
+              throw new Error(message);
+            } else {
+              throw error;
+            }
+          }
+          modsInstalled.push(mod.id);
+          rendererConsole.log(
+            `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`
+          );
+        } catch (error) {
+          if (error instanceof Error) {
+            rendererConsole.error(
+              `Mod ${
+                mod.info.name
+              } encountered a runtime error!\n${error.toString()}`
+            );
+          }
+        }
       } catch (error) {
         if (error instanceof Error) {
-          const message = (error.stack ?? '')
-            .replace(
-              /:([0-9]+):([0-9]+)/g,
-              // decrement all line numbers by 1 to account for the wrapper function
-              (_match, line, column) => `:${Number(line) - 1}:${column}`
-            )
-            .split('\n')
-            .filter((line, index) => index === 0 || line.includes('vm.js:'))
-            .join('\n')
-            .replace(/vm.js:/g, 'mod.js:')
-            .slice(0, -1);
           rendererConsole.error(
-            `Mod ${mod.info.name} encountered an error!\n${message}`
+            `Mod ${
+              mod.info.name
+            } encountered a compile error!\n${error.toString()}`
           );
         }
       }

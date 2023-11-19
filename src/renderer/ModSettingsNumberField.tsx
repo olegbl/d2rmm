@@ -1,5 +1,6 @@
 import { TextField } from '@mui/material';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { ModConfigFieldNumber } from './ModConfigTypes';
 
 function useIsFocused(): [
   isFocused: boolean,
@@ -12,7 +13,7 @@ function useIsFocused(): [
   return [isFocused, onFocus, onBlur];
 }
 
-const PATTERN = '^[0-9]*(\.[0-9]*)?$';
+const PATTERN = '^[0-9]*(.[0-9]*)?$';
 
 type Props = {
   field: ModConfigFieldNumber;

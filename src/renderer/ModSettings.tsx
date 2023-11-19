@@ -12,6 +12,11 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ModSettingsField from './ModSettingsField';
+import {
+  ModConfigField,
+  ModConfigFieldOrSection,
+  ModConfigFieldSection,
+} from './ModConfigTypes';
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,

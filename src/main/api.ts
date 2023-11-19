@@ -643,16 +643,22 @@ export const BridgeAPI: BridgeAPIImplementation = {
   },
 
   installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
-    const { gamePath, mergedPath, isPreExtractedData, isDirectMode, isDryRun } =
-      options;
+    const {
+      gamePath,
+      mergedPath,
+      isPreExtractedData,
+      isDirectMode,
+      isDryRun,
+      outputModName,
+    } = options;
     const action = isDryRun ? 'Uninstall' : 'Install';
 
     if (!isDirectMode) {
       BridgeAPI.deleteFile(`${mergedPath}\\..`, false);
       BridgeAPI.createDirectory(mergedPath);
       BridgeAPI.writeJson(`${mergedPath}\\..\\modinfo.json`, {
-        name: 'D2RMM',
-        savepath: 'D2RMM/',
+        name: outputModName,
+        savepath: `${outputModName}/`,
       });
     }
 

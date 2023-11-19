@@ -1,6 +1,6 @@
-import { JSONData, TSVData } from './ModAPITypes.d';
-import { ModConfig, ModConfigValue } from './ModConfigTypes.d';
-import { IReadOnlyPreferences } from './PreferenceTypes.d';
+import { JSONData, TSVData } from './ModAPITypes';
+import { ModConfig, ModConfigValue } from './ModConfigTypes';
+import { IReadOnlyPreferences } from './PreferenceTypes';
 
 declare global {
   type ILogLevel = 'error' | 'warn' | 'log' | 'debug';

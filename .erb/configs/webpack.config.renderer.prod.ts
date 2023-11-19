@@ -2,6 +2,7 @@
  * Build config for electron renderer process
  */
 
+import DtsBundleWebpack from 'dts-bundle-webpack';
 import path from 'path';
 import webpack from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
@@ -126,6 +127,14 @@ const configuration: webpack.Configuration = {
       },
       isBrowser: false,
       isDevelopment: process.env.NODE_ENV !== 'production',
+    }),
+
+    new DtsBundleWebpack({
+      name: 'types',
+      main: path.join(webpackPaths.srcPath, 'mods/types.d.ts'),
+      baseDir: path.join(webpackPaths.releasePath, 'build'),
+      verbose: false,
+      externals: true,
     }),
   ],
 };

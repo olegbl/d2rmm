@@ -26,6 +26,14 @@ import { ModConfigValue } from 'renderer/ModConfigTypes';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 
+// keep in sync with ModAPI.tsx
+enum Relative {
+  // files in the game folder will be accessed via fully resolved paths
+  None = 'None',
+  App = 'App',
+  Saves = 'Saves',
+}
+
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
@@ -41,6 +49,24 @@ export function getAppPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, '../')
     : path.join(__dirname, '../../');
+}
+
+export function getSavesPath(): string {
+  return path.join(
+    process.env.USERPROFILE ?? path.join(app.getPath('home'), '../'),
+    'Saved Games/Diablo II Resurrected/mods/D2RMM/'
+  );
+}
+
+function getRelativePath(inputPath: string, relative: Relative): string {
+  switch (relative) {
+    case Relative.App:
+      return path.join(getAppPath(), inputPath);
+    case Relative.Saves:
+      return path.join(getSavesPath(), inputPath);
+    default:
+      return inputPath;
+  }
 }
 
 function copyDirSync(src: string, dest: string) {
@@ -349,12 +375,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
     }
   },
 
-  readFile: (inputPath: string, isRelative: boolean) => {
-    rendererConsole.debug('BridgeAPI.readFile', { inputPath, isRelative });
+  readFile: (inputPath: string, relative: Relative) => {
+    rendererConsole.debug('BridgeAPI.readFile', { inputPath, relative });
 
-    const filePath = isRelative
-      ? path.join(getAppPath(), inputPath)
-      : inputPath;
+    const filePath = getRelativePath(inputPath, relative);
 
     try {
       if (existsSync(filePath)) {
@@ -375,12 +399,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return null;
   },
 
-  writeFile: (inputPath: string, isRelative: boolean, data: string) => {
-    rendererConsole.debug('BridgeAPI.writeFile', { inputPath, isRelative });
+  writeFile: (inputPath: string, relative: Relative, data: string) => {
+    rendererConsole.debug('BridgeAPI.writeFile', { inputPath, relative });
 
-    const filePath = isRelative
-      ? path.join(getAppPath(), inputPath)
-      : inputPath;
+    const filePath = getRelativePath(inputPath, relative);
 
     try {
       writeFileSync(filePath, data, {
@@ -398,12 +420,60 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return 0;
   },
 
-  deleteFile: (inputPath: string, isRelative: boolean) => {
-    rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, isRelative });
+  readBinaryFile: (inputPath: string, relative: Relative) => {
+    rendererConsole.debug('BridgeAPI.readBinaryFile', {
+      inputPath,
+      relative,
+    });
 
-    const filePath = isRelative
-      ? path.join(getAppPath(), inputPath)
-      : inputPath;
+    const filePath = getRelativePath(inputPath, relative);
+
+    try {
+      if (existsSync(filePath)) {
+        return readFileSync(filePath, {
+          encoding: null, // binary
+          flag: 'r',
+        });
+      }
+    } catch (e) {
+      return createError(
+        'BridgeAPI.readBinaryFile',
+        'Failed to read file',
+        String(e)
+      );
+    }
+
+    return null;
+  },
+
+  writeBinaryFile: (inputPath: string, relative: Relative, data: Buffer) => {
+    rendererConsole.debug('BridgeAPI.writeBinaryFile', {
+      inputPath,
+      relative,
+    });
+
+    const filePath = getRelativePath(inputPath, relative);
+
+    try {
+      writeFileSync(filePath, data, {
+        encoding: null,
+        flag: 'w',
+      });
+    } catch (e) {
+      return createError(
+        'BridgeAPI.writeBinaryFile',
+        'Failed to write file',
+        String(e)
+      );
+    }
+
+    return 0;
+  },
+
+  deleteFile: (inputPath: string, relative: Relative) => {
+    rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, relative });
+
+    const filePath = getRelativePath(inputPath, relative);
 
     try {
       if (existsSync(filePath)) {
@@ -471,7 +541,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     const filePath = `mods\\${id}\\mod.json`;
-    const result = BridgeAPI.readFile(filePath, true);
+    const result = BridgeAPI.readFile(filePath, Relative.App);
 
     if (result instanceof Error) {
       return result;
@@ -493,7 +563,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    const result = BridgeAPI.readFile(filePath, true);
+    const result = BridgeAPI.readFile(filePath, Relative.App);
 
     if (result instanceof Error) {
       return result;
@@ -513,7 +583,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    return BridgeAPI.writeFile(filePath, true, JSON.stringify(value));
+    return BridgeAPI.writeFile(filePath, Relative.App, JSON.stringify(value));
   },
 
   readModCode: (id: string) => {
@@ -526,7 +596,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const relativeFilePath = `mods\\${id}\\mod.js`;
       const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
-        const result = BridgeAPI.readFile(relativeFilePath, true);
+        const result = BridgeAPI.readFile(relativeFilePath, Relative.App);
         if (typeof result === 'string') {
           return `(function(){\n${result}\n})()`;
         }
@@ -590,7 +660,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
           modulesProcessed.push(module.id);
 
           const relativeFilePath = `mods\\${id}\\${module.id}.ts`;
-          const sourceCode = BridgeAPI.readFile(relativeFilePath, true);
+          const sourceCode = BridgeAPI.readFile(relativeFilePath, Relative.App);
           if (typeof sourceCode !== 'string') {
             throw createError(
               'BridgeAPI.readModCode',
@@ -699,7 +769,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       filePath,
     });
 
-    const result = BridgeAPI.readFile(filePath, false);
+    const result = BridgeAPI.readFile(filePath, Relative.None);
 
     if (result instanceof Error) {
       return result;
@@ -729,7 +799,6 @@ export const BridgeAPI: BridgeAPIImplementation = {
   writeTsv: (filePath, data) => {
     rendererConsole.debug('BridgeAPI.writeTsv', {
       filePath,
-      data,
     });
 
     const { headers, rows } = data;
@@ -738,13 +807,13 @@ export const BridgeAPI: BridgeAPIImplementation = {
       headers.map((header) => row[header] ?? '').join('\t')
     );
     const content = [headersRaw, ...rowsRaw, ''].join('\n');
-    return BridgeAPI.writeFile(filePath, false, content);
+    return BridgeAPI.writeFile(filePath, Relative.None, content);
   },
 
   readJson: (filePath) => {
     rendererConsole.debug('BridgeAPI.readJson', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, false);
+    const result = BridgeAPI.readFile(filePath, Relative.None);
 
     if (result instanceof Error) {
       return result;
@@ -766,12 +835,12 @@ export const BridgeAPI: BridgeAPIImplementation = {
   },
 
   writeJson: (filePath, data) => {
-    rendererConsole.debug('BridgeAPI.writeJson', { filePath, data });
+    rendererConsole.debug('BridgeAPI.writeJson', { filePath });
 
     const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
     const result = BridgeAPI.writeFile(
       filePath,
-      false,
+      Relative.None,
       // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
       `\uFEFF${content}`
     );
@@ -787,7 +856,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
   readTxt: (filePath) => {
     rendererConsole.debug('BridgeAPI.readTxt', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, false);
+    const result = BridgeAPI.readFile(filePath, Relative.None);
 
     if (result instanceof Error) {
       rendererConsole.error('BridgeAPI.readTxt', result);
@@ -803,9 +872,9 @@ export const BridgeAPI: BridgeAPIImplementation = {
   },
 
   writeTxt: (filePath, data) => {
-    rendererConsole.debug('BridgeAPI.writeTxt', { filePath, data });
+    rendererConsole.debug('BridgeAPI.writeTxt', { filePath });
 
-    const result = BridgeAPI.writeFile(filePath, false, data);
+    const result = BridgeAPI.writeFile(filePath, Relative.None, data);
 
     if (result instanceof Error) {
       rendererConsole.error('BridgeAPI.writeTxt', result);
@@ -827,7 +896,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     const action = isDryRun ? 'Uninstall' : 'Install';
 
     if (!isDirectMode) {
-      BridgeAPI.deleteFile(`${mergedPath}\\..`, false);
+      BridgeAPI.deleteFile(`${mergedPath}\\..`, Relative.None);
       BridgeAPI.createDirectory(mergedPath);
       BridgeAPI.writeJson(`${mergedPath}\\..\\modinfo.json`, {
         name: outputModName,
@@ -853,7 +922,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
         if (result == null) {
           throw new Error('Could not read code from mod.js or mod.ts.');
         }
-        rendererConsole.log('code', result);
+        // [WIP] TS support
+        // rendererConsole.log('code', result);
         const api = getModAPI(BridgeAPI, mod, {
           ...options,
           extractedFiles,

@@ -1,4 +1,4 @@
-import { JSONData, TSVData } from './ModAPITypes';
+import { JSONData, TSVData, Relative } from './ModAPITypes';
 import { ModConfig, ModConfigValue } from './ModConfigTypes';
 import { IReadOnlyPreferences } from './PreferenceTypes';
 
@@ -31,7 +31,7 @@ declare global {
       overwrite?: boolean
     ) => number | Error;
     createDirectory: (filePath: string) => boolean | Error;
-    deleteFile: (filePath: string, isRelative: boolean) => number | Error;
+    deleteFile: (filePath: string, relative: Relative) => number | Error;
     execute: (
       executablePath: string,
       args?: string[],
@@ -53,7 +53,11 @@ declare global {
     readDirectory: (
       filePath: string
     ) => { name: string; isDirectory: boolean }[] | Error;
-    readFile: (filePath: string, isRelative: boolean) => string | null | Error;
+    readFile: (filePath: string, relative: Relative) => string | null | Error;
+    readBinaryFile: (
+      filePath: string,
+      relative: Relative
+    ) => Buffer | null | Error;
     readJson: (filePath: string) => JSONData | Error;
     readModCode: (id: string) => string | Error;
     readModConfig: (id: string) => JSON;
@@ -63,8 +67,13 @@ declare global {
     readTxt: (filePath: string) => string | Error;
     writeFile: (
       inputPath: string,
-      isRelative: boolean,
+      relative: Relative,
       data: string
+    ) => number | Error;
+    writeBinaryFile: (
+      inputPath: string,
+      relative: Relative,
+      data: Buffer
     ) => number | Error;
     writeJson: (filePath: string, data: JSONData) => number | Error;
     writeModConfig: (id: string, value: ModConfigValue) => number | Error;

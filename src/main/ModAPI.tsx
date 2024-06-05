@@ -1,5 +1,13 @@
 import { JSONData, ModAPI, TSVData } from 'renderer/ModAPITypes';
 
+// keep in sync with api.ts
+enum Relative {
+  // files in the game folder will be accessed via fully resolved paths
+  None = 'None',
+  App = 'App',
+  Saves = 'Saves',
+}
+
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;
 
@@ -49,7 +57,7 @@ export function getModAPI(
     // previous installation
     if (isDirectMode && !extractedFiles[filePath]) {
       throwIfError(
-        BridgeAPI.deleteFile(getDestinationFilePath(filePath), false)
+        BridgeAPI.deleteFile(getDestinationFilePath(filePath), Relative.None)
       );
     }
     extractedFiles[filePath] = true;
@@ -138,6 +146,16 @@ export function getModAPI(
         throwIfError(
           BridgeAPI.writeTxt(getDestinationFilePath(filePath), data)
         );
+      }
+    },
+    readSaveFile: (filePath: string): Buffer | null => {
+      console.debug('D2RMM.readSaveFile', filePath);
+      return throwIfError(BridgeAPI.readBinaryFile(filePath, Relative.Saves));
+    },
+    writeSaveFile: (filePath: string, data: Buffer): void => {
+      console.debug('D2RMM.writeSaveFile', filePath, data);
+      if (!isDryRun) {
+        throwIfError(BridgeAPI.writeBinaryFile(filePath, Relative.Saves, data));
       }
     },
     getNextStringID: (): number => {

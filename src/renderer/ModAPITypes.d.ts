@@ -95,6 +95,16 @@ export type ModAPI = {
   writeTxt: (filePath: string, data: string) => void;
 
   /**
+   *
+   */
+  readSaveFile: (filePath: string) => Buffer | null;
+
+  /**
+   *
+   */
+  writeSaveFile: (filePath: string, data: Buffer) => void;
+
+  /**
    * Copies a file or directory from the mod directory to the data directory. This
    * is primarily used for including non-mergeable assets like sprites in your mod.
    * @note While you can use this API to provide whole new versions of TSV/JSON game
@@ -148,3 +158,10 @@ type JSONDataValue = string | number | boolean;
 type JSONDataValues = JSONDataValue | JSONDataValue[];
 
 type JSONData = { [key: string]: JSONDataValues | JSONData };
+
+export enum Relative {
+  // files in the game folder will be accessed via fully resolved paths
+  None = 'None',
+  App = 'App',
+  Saves = 'Saves',
+}

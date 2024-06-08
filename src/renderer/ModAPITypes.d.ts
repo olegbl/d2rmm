@@ -158,10 +158,3 @@ type JSONDataValue = string | number | boolean;
 type JSONDataValues = JSONDataValue | JSONDataValue[];
 
 type JSONData = { [key: string]: JSONDataValues | JSONData };
-
-export enum Relative {
-  // files in the game folder will be accessed via fully resolved paths
-  None = 'None',
-  App = 'App',
-  Saves = 'Saves',
-}

@@ -1,18 +1,12 @@
 import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Help, Refresh } from '@mui/icons-material';
 import ModSettingsNumberField from './ModSettingsNumberField';
 import ModSettingsTextField from './ModSettingsTextField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 import { ModConfigField, ModConfigSingleValue } from './ModConfigTypes';
-
-const BridgeAPI = window.electron.BridgeAPI;
-
-function setConfig(mod: Mod, field: string, value: ModConfigSingleValue): void {
-  mod.config[field] = value;
-  BridgeAPI.writeModConfig(mod.id, mod.config);
-}
+import { useSetModConfig } from './ModsContext';
 
 type Props = {
   field: ModConfigField;
@@ -23,16 +17,13 @@ export default function ModSettingsField({
   field,
   mod,
 }: Props): JSX.Element | null {
-  // this should technically run some sort of "updateMod" that modifies the original "mods" variable in useMod instead
-  const [, setCacheBreaker] = useState(0);
-  const refresh = useCallback(() => setCacheBreaker((value) => value + 1), []);
+  const setModConfig = useSetModConfig();
 
   const onChangeConfig = useCallback(
     (fieldID: string, value: ModConfigSingleValue): void => {
-      setConfig(mod, fieldID, value);
-      refresh();
+      setModConfig(mod.id, { ...mod.config, [fieldID]: value });
     },
-    [mod, refresh]
+    [mod, setModConfig]
   );
 
   const onReset = useCallback((): void => {

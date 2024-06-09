@@ -12,6 +12,11 @@ import { ModConfigSingleValue, ModConfigValue } from './ModConfigTypes';
 
 const BridgeAPI = window.electron.BridgeAPI;
 
+// inversse of Readonly<T>
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
+
 type IEnabledMods = { [id: string]: boolean };
 
 type IEnabledModsMutator = React.Dispatch<React.SetStateAction<IEnabledMods>>;
@@ -32,6 +37,10 @@ export type IModsContext = {
   reorderMod: IReorderMod;
   selectedMod: ISelectedMod;
   setEnabledMods: IEnabledModsMutator;
+  setModConfig: (
+    id: string,
+    value: React.SetStateAction<ModConfigValue>
+  ) => void;
   setSelectedMod: ISelectedModMutator;
 };
 
@@ -67,7 +76,7 @@ export function ModsContextProvider({
                 field.defaultValue as unknown as ModConfigSingleValue;
             }
             return agg;
-          }, {} as ModConfigValue);
+          }, {} as Mutable<ModConfigValue>);
 
           return {
             id: modID,
@@ -88,6 +97,23 @@ export function ModsContextProvider({
   }, [logger, showToast]);
 
   const [mods, setMods] = useState<Mod[]>(() => getMods());
+
+  const setModConfig = useCallback(
+    (id: string, value: React.SetStateAction<ModConfigValue>): void => {
+      const getConfig = typeof value !== 'function' ? () => value : value;
+      setMods((prevMods) =>
+        prevMods.map((mod) => {
+          if (mod.id === id) {
+            const config = getConfig(mod.config);
+            BridgeAPI.writeModConfig(id, config);
+            return { ...mod, config };
+          }
+          return mod;
+        })
+      );
+    },
+    []
+  );
 
   const refreshMods = useCallback((): void => {
     // manually refresh mods
@@ -181,6 +207,7 @@ export function ModsContextProvider({
       reorderMod,
       selectedMod,
       setEnabledMods,
+      setModConfig,
       setSelectedMod,
     }),
     [
@@ -191,6 +218,7 @@ export function ModsContextProvider({
       reorderMod,
       selectedMod,
       setEnabledMods,
+      setModConfig,
       setSelectedMod,
     ]
   );
@@ -240,4 +268,12 @@ export function useSelectedMod(): [ISelectedMod, ISelectedModMutator] {
     throw new Error('No preferences context available.');
   }
   return [context.selectedMod, context.setSelectedMod];
+}
+
+export function useSetModConfig(): IModsContext['setModConfig'] {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return context.setModConfig;
 }

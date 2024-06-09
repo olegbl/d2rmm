@@ -1,8 +1,16 @@
-import { JSONData, TSVData, Relative } from './ModAPITypes';
+import { JSONData, TSVData } from './ModAPITypes';
 import { ModConfig, ModConfigValue } from './ModConfigTypes';
 import { IReadOnlyPreferences } from './PreferenceTypes';
 
 declare global {
+  // keep in sync with api.ts
+  enum Relative {
+    // files in the game folder will be accessed via fully resolved paths
+    None = 'None',
+    App = 'App',
+    Saves = 'Saves',
+  }
+
   type ILogLevel = 'error' | 'warn' | 'log' | 'debug';
 
   type IInstallModsOptions = IReadOnlyPreferences & { isDryRun: boolean };

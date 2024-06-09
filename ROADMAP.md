@@ -6,6 +6,7 @@
 - Conflict detection
   - When a file is being written without being read first, show a warning
 - Improve mod settings UX
+  - Consider supporting https://jsonforms.io/ based UI that outputs React material
 - Add D2RMM.getModList() API
   - Return list of mods already installed during this installation
   - Return list of mods yet to be installed during this installation

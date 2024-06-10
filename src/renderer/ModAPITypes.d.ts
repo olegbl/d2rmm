@@ -95,12 +95,22 @@ export type ModAPI = {
   writeTxt: (filePath: string, data: string) => void;
 
   /**
-   *
+   * Reads a save file from the saves directory as a binary Buffer.
+   * @example
+   * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
+   * console.log('Save file size: ' + stashData.length);
+   * @param filePath - The path of the save file to read, relative to the saves directory.
+   * @returns The binary data of the save file.
    */
   readSaveFile: (filePath: string) => Buffer | null;
 
   /**
-   *
+   * Writes a save file to the saves directory as a binary Buffer.
+   * @example
+   * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
+   * D2RMM.writeSaveFile('SharedStashSoftCoreV2.d2i', Buffer.concat([stashData, EXTRA_STASH_TAB]));
+   * @param filePath - The path of the save file to write, relative to the saves directory.
+   * @param data - The binary data of the save file to write.
    */
   writeSaveFile: (filePath: string, data: Buffer) => void;
 
@@ -142,19 +152,43 @@ export type ModAPI = {
   error: (message: string | Error) => void;
 };
 
+/**
+ * The name of a column in a TSV file.
+ */
 type TSVDataHeader = string;
 
+/**
+ * A single row in a TSV file.
+ */
 type TSVDataRow = {
   [header: TSVDataHeader]: string;
 };
 
+/**
+ * The parsed data of a TSV file.
+ */
 type TSVData = {
+  /**
+   * List of headers in the TSV file.
+   */
   headers: TSVDataHeader[];
+  /**
+   * List of rows in the TSV file.
+   */
   rows: TSVDataRow[];
 };
 
+/**
+ * A single value in a JSON data structure.
+ */
 type JSONDataValue = string | number | boolean;
 
+/**
+ * One or more value in a JSON data structure.
+ */
 type JSONDataValues = JSONDataValue | JSONDataValue[];
 
+/**
+ * The parsed data of a JSON file.
+ */
 type JSONData = { [key: string]: JSONDataValues | JSONData };

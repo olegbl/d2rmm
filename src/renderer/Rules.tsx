@@ -6,7 +6,7 @@ import {
   RuleValue,
 } from './ModConfigTypes';
 
-export function parseValue<T extends ModConfigSingleValue>(
+export function parseRuleValue<T extends ModConfigSingleValue>(
   value: RuleValue<T>,
   config: ModConfigValue
 ): T {
@@ -20,28 +20,28 @@ export function parseValue<T extends ModConfigSingleValue>(
       return config[value[1]] as T; // no way to validate correct type of JSON parsed data
     }
     if (op === 'not' && value.length === 2) {
-      const arg1 = parseValue(value[1], config);
+      const arg1 = parseRuleValue(value[1], config);
       if (typeof arg1 === 'boolean') {
         return !arg1 as T;
       }
     }
     if (op === 'and' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'boolean' && typeof arg2 === 'boolean') {
         return (arg1 && arg2) as T;
       }
     }
     if (op === 'or' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'boolean' && typeof arg2 === 'boolean') {
         return (arg1 || arg2) as T;
       }
     }
     if (op === 'eq' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'string' && typeof arg2 === 'string') {
         return (arg1 === arg2) as T;
       }
@@ -53,8 +53,8 @@ export function parseValue<T extends ModConfigSingleValue>(
       }
     }
     if (op === 'neq' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'string' && typeof arg2 === 'string') {
         return (arg1 !== arg2) as T;
       }
@@ -66,36 +66,36 @@ export function parseValue<T extends ModConfigSingleValue>(
       }
     }
     if (op === 'lt' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 < arg2) as T;
       }
     }
     if (op === 'lte' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 <= arg2) as T;
       }
     }
     if (op === 'gt' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 > arg2) as T;
       }
     }
     if (op === 'gte' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 >= arg2) as T;
       }
     }
     if (op === 'in' && value.length === 3) {
-      const arg1 = parseValue(value[1], config);
-      const arg2 = parseValue(value[2], config);
+      const arg1 = parseRuleValue(value[1], config);
+      const arg2 = parseRuleValue(value[2], config);
       if (
         typeof arg1 === 'string' &&
         Array.isArray(arg2) &&

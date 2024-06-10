@@ -71,8 +71,6 @@ export type ModConfigValue = Readonly<{
  * fields based on the value of another field.
  */
 
-export type Rule = ShowRule | HideRule;
-
 export type RuleConfigValue = ['value', id: string];
 
 export type RuleValue<T extends ModConfigSingleValue> =
@@ -114,3 +112,5 @@ export type RuleValue<T extends ModConfigSingleValue> =
 export type ShowRule = ['show', RuleValue<boolean>];
 
 export type HideRule = ['hide', RuleValue<boolean>];
+
+export type Rule = ShowRule | HideRule;

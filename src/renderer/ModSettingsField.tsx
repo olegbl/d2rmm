@@ -7,7 +7,7 @@ import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 import { ModConfigField, ModConfigSingleValue } from './ModConfigTypes';
 import { useSetModConfig } from './ModsContext';
-import { parseValue } from './Rules';
+import { parseRuleValue } from './Rules';
 
 type Props = {
   field: ModConfigField;
@@ -36,10 +36,10 @@ export default function ModSettingsField({
   field.rules?.forEach((rule) => {
     const [op] = rule;
     if (op === 'show') {
-      isShown = parseValue<boolean>(rule[1], mod.config);
+      isShown = parseRuleValue<boolean>(rule[1], mod.config);
     }
     if (op === 'hide') {
-      isShown = !parseValue<boolean>(rule[1], mod.config);
+      isShown = !parseRuleValue<boolean>(rule[1], mod.config);
     }
   });
 

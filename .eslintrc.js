@@ -16,6 +16,7 @@ module.exports = {
     'no-plusplus': 'off',
     'no-restricted-syntax': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',
+    '@typescript-eslint/naming-convention': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/no-unused-vars': [
       'warn',

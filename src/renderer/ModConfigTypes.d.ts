@@ -71,40 +71,113 @@ export type ModConfigValue = Readonly<{
  * fields based on the value of another field.
  */
 
-export type BindingConfigValue = ['value', id: string];
+type BindingLiteralValue<T> = T;
 
-export type Binding<T extends ModConfigSingleValue> =
+type BindingConfigValue<_T extends ModConfigSingleValue> = [
+  'value',
+  id: string
+];
+
+type BindingConditional<T> = [
+  'if',
+  condition: Binding<boolean>,
+  thenBinding: Binding<T>,
+  elseBinding: Binding<T>
+];
+
+type BindingNot = ['not', binding: Binding<boolean>];
+
+type BindingAnd = [
+  'and',
+  binding1: Binding<boolean>,
+  binding2: Binding<boolean>
+];
+
+type BindingOr = ['or', binding1: Binding<boolean>, binding2: Binding<boolean>];
+
+type BindingEquals<T> = ['eq', binding1: Binding<T>, binding2: Binding<T>];
+
+type BindingNotEquals<T> = ['neq', binding1: Binding<T>, binding2: Binding<T>];
+
+type BindingLessThan = [
+  'lt',
+  binding1: Binding<number>,
+  binding2: Binding<number>
+];
+
+type BindingLessThanOrEqual = [
+  'lte',
+  binding1: Binding<number>,
+  binding2: Binding<number>
+];
+
+type BindingGreaterThan = [
+  'gt',
+  binding1: Binding<number>,
+  binding2: Binding<number>
+];
+
+type BindingGreaterThanOrEqual = [
+  'gte',
+  binding1: Binding<number>,
+  binding2: Binding<number>
+];
+
+type BindingIncludes<T> = [
+  'in',
+  binding1: Binding<T>,
+  binding2: T extends string
+    ? Binding<string[]>
+    : T extends number
+    ? Binding<number[]>
+    : never
+];
+
+export type Binding<T> =
   // string
   T extends string
-    ? string | BindingConfigValue
+    ?
+        | BindingLiteralValue<string>
+        | BindingConfigValue<string>
+        | BindingConditional<boolean>
     : // number
     T extends number
-    ? number | BindingConfigValue
+    ?
+        | BindingLiteralValue<number>
+        | BindingConfigValue<number>
+        | BindingConditional<boolean>
     : // boolean
     T extends boolean
     ?
-        | boolean
-        | BindingConfigValue
-        | ['not', Binding<boolean>]
-        | ['and', Binding<boolean>, Binding<boolean>]
-        | ['or', Binding<boolean>, Binding<boolean>]
-        | ['eq', Binding<string>, Binding<string>]
-        | ['eq', Binding<boolean>, Binding<boolean>]
-        | ['eq', Binding<number>, Binding<number>]
-        | ['neq', Binding<string>, Binding<string>]
-        | ['neq', Binding<boolean>, Binding<boolean>]
-        | ['neq', Binding<number>, Binding<number>]
-        | ['lt', Binding<number>, Binding<number>]
-        | ['lte', Binding<number>, Binding<number>]
-        | ['gt', Binding<number>, Binding<number>]
-        | ['gte', Binding<number>, Binding<number>]
-        | ['in', Binding<string>, Binding<string[]>]
-        | ['in', Binding<number>, Binding<number[]>]
+        | BindingLiteralValue<boolean>
+        | BindingConfigValue<boolean>
+        | BindingConditional<boolean>
+        | BindingNot
+        | BindingAnd
+        | BindingOr
+        | BindingEquals<string>
+        | BindingEquals<boolean>
+        | BindingEquals<number>
+        | BindingNotEquals<string>
+        | BindingNotEquals<boolean>
+        | BindingNotEquals<number>
+        | BindingLessThan
+        | BindingLessThanOrEqual
+        | BindingGreaterThan
+        | BindingGreaterThanOrEqual
+        | BindingIncludes<string>
+        | BindingIncludes<number>
     : // string[]
     T extends string[]
-    ? Exclude<string[], BindingConfigValue> | BindingConfigValue
+    ?
+        | BindingLiteralValue<string[]>
+        | BindingConfigValue<string[]>
+        | BindingConditional<boolean>
     : // number[]
     T extends number[]
-    ? number[] | BindingConfigValue
+    ?
+        | BindingLiteralValue<number[]>
+        | BindingConfigValue<number[]>
+        | BindingConditional<boolean>
     : // fallthrough
-      never;
+      BindingLiteralValue<T>;

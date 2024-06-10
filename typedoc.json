@@ -1,9 +1,12 @@
 {
+  "name": "D2RMM Mod API",
+  "readme": "DOCS.md",
   "entryPoints": [
     "src/renderer/ConsoleAPITypes.d.ts",
     "src/renderer/ModAPITypes.d.ts",
     "src/renderer/ModConfigTypes.d.ts"
   ],
   "out": "docs",
-  "plugin": ["typedoc-plugin-markdown"]
+  "plugin": ["typedoc-plugin-markdown"],
+  "githubPages": false
 }

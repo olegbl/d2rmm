@@ -1,5 +1,6 @@
 # Releases
 release/*.zip
+CHANGELOG.md
 
 # Logs
 logs

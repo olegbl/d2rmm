@@ -1,46 +1,10 @@
 import { Close } from '@mui/icons-material';
+import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  Divider,
-  FormGroup,
-  IconButton,
-  Typography,
-  styled,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ModSettingsField from './ModSettingsField';
-import {
-  ModConfigField,
   ModConfigFieldOrSection,
   ModConfigFieldSection,
 } from './ModConfigTypes';
-
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  '&:before': {
-    display: 'none',
-  },
-}));
-
-const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
-  backgroundColor: theme.palette.action.hover,
-  '&:hover': {
-    backgroundColor: theme.palette.action.focus,
-  },
-}));
-
-const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
-  borderTop: `1px solid ${theme.palette.divider}`,
-}));
-
-type FieldElement = { field: ModConfigField; element: JSX.Element };
-type SectionElement = {
-  field: ModConfigFieldSection | null;
-  elements: FieldElement[];
-};
+import ModSettingsSection from './ModSettingsSection';
 
 type Props = {
   mod: Mod;
@@ -78,66 +42,43 @@ export default function ModSettings({
         </IconButton>
       </Box>
       {mod.info.config[0]?.type === 'section' ? <Divider /> : null}
-      {mod.info.config
-        .reduce(
-          (agg: SectionElement[], field: ModConfigFieldOrSection) => {
-            if (field.type === 'section') {
-              const sectionElement: SectionElement = {
-                field,
-                elements: [],
-              };
-              return [...agg, sectionElement];
-            }
-            const fieldElement: FieldElement = {
-              field,
-              element: (
-                <ModSettingsField key={field.id} field={field} mod={mod} />
-              ),
-            };
-            const section: SectionElement = agg[
-              agg.length - 1
-            ] as SectionElement;
-            return [
-              ...agg.slice(0, -1),
-              {
-                ...section,
-                elements: [...section.elements, fieldElement],
-              },
-            ];
-          },
-          [{ field: null, elements: [] }]
-        )
-        .filter((section) => section.elements.length > 0)
-        .map((section) => {
-          return (
-            <StyledAccordion
-              key={section.field?.id ?? 'default'}
-              defaultExpanded={section.field?.defaultExpanded ?? true}
-              disableGutters={true}
-              square={true}
-              elevation={0}
-            >
-              {section.field == null ? null : (
-                <StyledAccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="general-content"
-                  id="general-header"
-                >
-                  <Typography>{section.field.name}</Typography>
-                </StyledAccordionSummary>
-              )}
-              <StyledAccordionDetails
-                id="general-content"
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                {section.elements.map((element) => element.element)}
-              </StyledAccordionDetails>
-            </StyledAccordion>
-          );
-        })}
+      {
+        // convert legacy "flat" sections into modern nested sections
+        mod.info.config
+          .reduce(
+            (agg: ModConfigFieldSection[], field: ModConfigFieldOrSection) => {
+              // handle top level fields outside and above of any section
+              // by appending them to a generic default section
+              if (agg.length === 0 && field.type !== 'section') {
+                return [
+                  {
+                    id: 'default-section',
+                    type: 'section',
+                    name: '',
+                    children: [field],
+                  } as ModConfigFieldSection,
+                ];
+              }
+              // handle top level fields outside of any section
+              // by appending them to the preceding section
+              if (field.type !== 'section') {
+                return [
+                  ...agg.slice(0, -1),
+                  {
+                    ...agg[agg.length - 1],
+                    children: [...(agg[agg.length - 1].children ?? []), field],
+                  },
+                ];
+              }
+              // the rest should be sections
+              return [...agg, field];
+            },
+            []
+          )
+          .map((section) => (
+            <ModSettingsSection key={section.id} section={section} mod={mod} />
+          ))
+      }
     </FormGroup>
   );
 }

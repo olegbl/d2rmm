@@ -15,6 +15,7 @@ export type ModConfigFieldSection = {
   id: string;
   name: string;
   defaultExpanded?: boolean;
+  children?: readonly ModConfigFieldOrSection[];
 };
 
 export type ModConfigField =

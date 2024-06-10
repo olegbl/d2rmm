@@ -46,7 +46,7 @@
 
 #### Defined in
 
-[ModConfigTypes.d.ts:148](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L148)
+[ModConfigTypes.d.ts:148](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L148)
 
 ___
 
@@ -56,7 +56,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:90](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L90)
+[ModConfigTypes.d.ts:90](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L90)
 
 ___
 
@@ -72,7 +72,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:81](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L81)
+[ModConfigTypes.d.ts:81](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L81)
 
 ___
 
@@ -88,7 +88,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:76](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L76)
+[ModConfigTypes.d.ts:76](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L76)
 
 ___
 
@@ -104,7 +104,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:102](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L102)
+[ModConfigTypes.d.ts:102](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L102)
 
 ___
 
@@ -114,7 +114,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:126](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L126)
+[ModConfigTypes.d.ts:126](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L126)
 
 ___
 
@@ -124,7 +124,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:132](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L132)
+[ModConfigTypes.d.ts:132](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L132)
 
 ___
 
@@ -140,7 +140,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:138](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L138)
+[ModConfigTypes.d.ts:138](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L138)
 
 ___
 
@@ -150,7 +150,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:114](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L114)
+[ModConfigTypes.d.ts:114](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L114)
 
 ___
 
@@ -160,7 +160,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:120](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L120)
+[ModConfigTypes.d.ts:120](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L120)
 
 ___
 
@@ -180,7 +180,7 @@ fields based on the value of another field.
 
 #### Defined in
 
-[ModConfigTypes.d.ts:74](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L74)
+[ModConfigTypes.d.ts:74](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L74)
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:88](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L88)
+[ModConfigTypes.d.ts:88](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L88)
 
 ___
 
@@ -206,7 +206,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:108](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L108)
+[ModConfigTypes.d.ts:108](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L108)
 
 ___
 
@@ -216,7 +216,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:96](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L96)
+[ModConfigTypes.d.ts:96](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L96)
 
 ___
 
@@ -237,7 +237,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:2](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L2)
+[ModConfigTypes.d.ts:2](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L2)
 
 ___
 
@@ -247,7 +247,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:21](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L21)
+[ModConfigTypes.d.ts:21](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L21)
 
 ___
 
@@ -266,7 +266,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:54](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L54)
+[ModConfigTypes.d.ts:54](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L54)
 
 ___
 
@@ -276,7 +276,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:27](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L27)
+[ModConfigTypes.d.ts:27](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L27)
 
 ___
 
@@ -286,7 +286,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:32](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L32)
+[ModConfigTypes.d.ts:32](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L32)
 
 ___
 
@@ -296,7 +296,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:11](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L11)
+[ModConfigTypes.d.ts:11](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L11)
 
 ___
 
@@ -316,7 +316,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:13](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L13)
+[ModConfigTypes.d.ts:13](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L13)
 
 ___
 
@@ -326,7 +326,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:44](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L44)
+[ModConfigTypes.d.ts:44](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L44)
 
 ___
 
@@ -336,7 +336,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:39](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L39)
+[ModConfigTypes.d.ts:39](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L39)
 
 ___
 
@@ -346,7 +346,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:61](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L61)
+[ModConfigTypes.d.ts:61](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L61)
 
 ___
 
@@ -356,4 +356,4 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:64](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModConfigTypes.d.ts#L64)
+[ModConfigTypes.d.ts:64](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L64)

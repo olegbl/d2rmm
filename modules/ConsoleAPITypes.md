@@ -25,4 +25,4 @@
 
 #### Defined in
 
-[ConsoleAPITypes.d.ts:1](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ConsoleAPITypes.d.ts#L1)
+[ConsoleAPITypes.d.ts:1](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ConsoleAPITypes.d.ts#L1)

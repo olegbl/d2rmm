@@ -26,7 +26,7 @@
 
 #### Defined in
 
-[ModAPITypes.d.ts:160](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L160)
+[ModAPITypes.d.ts:160](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L160)
 
 ___
 
@@ -36,7 +36,7 @@ ___
 
 #### Defined in
 
-[ModAPITypes.d.ts:156](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L156)
+[ModAPITypes.d.ts:156](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L156)
 
 ___
 
@@ -46,7 +46,7 @@ ___
 
 #### Defined in
 
-[ModAPITypes.d.ts:158](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L158)
+[ModAPITypes.d.ts:158](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L158)
 
 ___
 
@@ -75,7 +75,7 @@ This is the interface of the global "D2RMM" variable provided to mods at runtime
 
 #### Defined in
 
-[ModAPITypes.d.ts:4](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L4)
+[ModAPITypes.d.ts:4](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L4)
 
 ___
 
@@ -92,7 +92,7 @@ ___
 
 #### Defined in
 
-[ModAPITypes.d.ts:151](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L151)
+[ModAPITypes.d.ts:151](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L151)
 
 ___
 
@@ -102,7 +102,7 @@ ___
 
 #### Defined in
 
-[ModAPITypes.d.ts:145](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L145)
+[ModAPITypes.d.ts:145](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L145)
 
 ___
 
@@ -116,4 +116,4 @@ ___
 
 #### Defined in
 
-[ModAPITypes.d.ts:147](https://github.com/olegbl/d2rmm/blob/5c09ea6/src/renderer/ModAPITypes.d.ts#L147)
+[ModAPITypes.d.ts:147](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModAPITypes.d.ts#L147)

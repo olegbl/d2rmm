@@ -55,7 +55,7 @@ export type ModConfigFieldBase = {
   id: string;
   name: string;
   description: string;
-  rules?: Rule[];
+  visible?: Binding<boolean>;
 };
 
 type ModConfigSingleValue = string | number | boolean | string[] | number[];
@@ -71,46 +71,40 @@ export type ModConfigValue = Readonly<{
  * fields based on the value of another field.
  */
 
-export type RuleConfigValue = ['value', id: string];
+export type BindingConfigValue = ['value', id: string];
 
-export type RuleValue<T extends ModConfigSingleValue> =
+export type Binding<T extends ModConfigSingleValue> =
   // string
   T extends string
-    ? string | RuleConfigValue
+    ? string | BindingConfigValue
     : // number
     T extends number
-    ? number | RuleConfigValue
+    ? number | BindingConfigValue
     : // boolean
     T extends boolean
     ?
         | boolean
-        | RuleConfigValue
-        | ['not', RuleValue<boolean>]
-        | ['and', RuleValue<boolean>, RuleValue<boolean>]
-        | ['or', RuleValue<boolean>, RuleValue<boolean>]
-        | ['eq', RuleValue<string>, RuleValue<string>]
-        | ['eq', RuleValue<boolean>, RuleValue<boolean>]
-        | ['eq', RuleValue<number>, RuleValue<number>]
-        | ['neq', RuleValue<string>, RuleValue<string>]
-        | ['neq', RuleValue<boolean>, RuleValue<boolean>]
-        | ['neq', RuleValue<number>, RuleValue<number>]
-        | ['lt', RuleValue<number>, RuleValue<number>]
-        | ['lte', RuleValue<number>, RuleValue<number>]
-        | ['gt', RuleValue<number>, RuleValue<number>]
-        | ['gte', RuleValue<number>, RuleValue<number>]
-        | ['in', RuleValue<string>, RuleValue<string[]>]
-        | ['in', RuleValue<number>, RuleValue<number[]>]
+        | BindingConfigValue
+        | ['not', Binding<boolean>]
+        | ['and', Binding<boolean>, Binding<boolean>]
+        | ['or', Binding<boolean>, Binding<boolean>]
+        | ['eq', Binding<string>, Binding<string>]
+        | ['eq', Binding<boolean>, Binding<boolean>]
+        | ['eq', Binding<number>, Binding<number>]
+        | ['neq', Binding<string>, Binding<string>]
+        | ['neq', Binding<boolean>, Binding<boolean>]
+        | ['neq', Binding<number>, Binding<number>]
+        | ['lt', Binding<number>, Binding<number>]
+        | ['lte', Binding<number>, Binding<number>]
+        | ['gt', Binding<number>, Binding<number>]
+        | ['gte', Binding<number>, Binding<number>]
+        | ['in', Binding<string>, Binding<string[]>]
+        | ['in', Binding<number>, Binding<number[]>]
     : // string[]
     T extends string[]
-    ? Exclude<string[], RuleConfigValue> | RuleConfigValue
+    ? Exclude<string[], BindingConfigValue> | BindingConfigValue
     : // number[]
     T extends number[]
-    ? number[] | RuleConfigValue
+    ? number[] | BindingConfigValue
     : // fallthrough
       never;
-
-export type ShowRule = ['show', RuleValue<boolean>];
-
-export type HideRule = ['hide', RuleValue<boolean>];
-
-export type Rule = ShowRule | HideRule;

@@ -1,4 +1,4 @@
-[d2rmm](../README.md) / [Modules](../modules.md) / ModConfigTypes
+[D2RMM Mod API](../README.md) / [Modules](../modules.md) / ModConfigTypes
 
 # Module: ModConfigTypes
 
@@ -46,7 +46,7 @@
 
 #### Defined in
 
-[ModConfigTypes.d.ts:148](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L148)
+[ModConfigTypes.d.ts:203](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L203)
 
 ___
 
@@ -56,7 +56,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:90](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L90)
+[ModConfigTypes.d.ts:145](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L145)
 
 ___
 
@@ -72,7 +72,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:81](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L81)
+[ModConfigTypes.d.ts:136](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L136)
 
 ___
 
@@ -88,7 +88,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:76](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L76)
+[ModConfigTypes.d.ts:131](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L131)
 
 ___
 
@@ -104,7 +104,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:102](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L102)
+[ModConfigTypes.d.ts:157](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L157)
 
 ___
 
@@ -114,7 +114,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:126](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L126)
+[ModConfigTypes.d.ts:181](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L181)
 
 ___
 
@@ -124,7 +124,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:132](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L132)
+[ModConfigTypes.d.ts:187](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L187)
 
 ___
 
@@ -140,7 +140,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:138](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L138)
+[ModConfigTypes.d.ts:193](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L193)
 
 ___
 
@@ -150,7 +150,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:114](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L114)
+[ModConfigTypes.d.ts:169](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L169)
 
 ___
 
@@ -160,7 +160,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:120](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L120)
+[ModConfigTypes.d.ts:175](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L175)
 
 ___
 
@@ -180,7 +180,7 @@ fields based on the value of another field.
 
 #### Defined in
 
-[ModConfigTypes.d.ts:74](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L74)
+[ModConfigTypes.d.ts:129](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L129)
 
 ___
 
@@ -190,7 +190,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:88](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L88)
+[ModConfigTypes.d.ts:143](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L143)
 
 ___
 
@@ -206,7 +206,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:108](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L108)
+[ModConfigTypes.d.ts:163](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L163)
 
 ___
 
@@ -216,7 +216,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:96](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L96)
+[ModConfigTypes.d.ts:151](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L151)
 
 ___
 
@@ -224,20 +224,22 @@ ___
 
 Ƭ **ModConfig**: `Object`
 
+This is the structure of the "mod.json" file that D2RMM mods should provide.
+
 #### Type declaration
 
-| Name | Type |
-| :------ | :------ |
-| `author?` | `string` |
-| `config?` | readonly [`ModConfigFieldOrSection`](ModConfigTypes.md#modconfigfieldorsection)[] |
-| `description?` | `string` |
-| `name` | `string` |
-| `version?` | `string` |
-| `website?` | `string` |
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `author?` | `string` | The author of the mod. |
+| `config?` | readonly [`ModConfigFieldOrSection`](ModConfigTypes.md#modconfigfieldorsection)[] | The configuration for the mod. This allows the mod to set up a custom configuration UI that the user can interact with to customize the behavior of the mod. |
+| `description?` | `string` | A short description of the mod. |
+| `name` | `string` | The name of the mod. |
+| `version?` | `string` | The version of the mod. |
+| `website?` | `string` | The website of the mod. Ideally, this should link to the Nexus Mods page for the mod. |
 
 #### Defined in
 
-[ModConfigTypes.d.ts:2](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L2)
+[ModConfigTypes.d.ts:4](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L4)
 
 ___
 
@@ -245,15 +247,19 @@ ___
 
 Ƭ **ModConfigField**: [`ModConfigFieldCheckbox`](ModConfigTypes.md#modconfigfieldcheckbox) \| [`ModConfigFieldNumber`](ModConfigTypes.md#modconfigfieldnumber) \| [`ModConfigFieldText`](ModConfigTypes.md#modconfigfieldtext) \| [`ModConfigFieldSelect`](ModConfigTypes.md#modconfigfieldselect)
 
+Represents a single configuration field.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:21](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L21)
+[ModConfigTypes.d.ts:51](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L51)
 
 ___
 
 ### ModConfigFieldBase
 
 Ƭ **ModConfigFieldBase**: `Object`
+
+Represents the base structure of any configuration field.
 
 #### Type declaration
 
@@ -266,7 +272,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:54](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L54)
+[ModConfigTypes.d.ts:103](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L103)
 
 ___
 
@@ -274,9 +280,12 @@ ___
 
 Ƭ **ModConfigFieldCheckbox**: [`ModConfigFieldBase`](ModConfigTypes.md#modconfigfieldbase) & { `defaultValue`: `boolean` ; `type`: ``"checkbox"``  }
 
+Represents a boolean (true/false) configuration field that will be represented
+as a checkbox or toggle element in the configuration UI.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:27](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L27)
+[ModConfigTypes.d.ts:61](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L61)
 
 ___
 
@@ -284,9 +293,12 @@ ___
 
 Ƭ **ModConfigFieldNumber**: [`ModConfigFieldBase`](ModConfigTypes.md#modconfigfieldbase) & { `defaultValue`: `number` ; `maxValue?`: `number` ; `minValue?`: `number` ; `type`: ``"number"``  }
 
+Represents a number configuration field that will be represented as a number
+input in the configuration UI.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:32](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L32)
+[ModConfigTypes.d.ts:70](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L70)
 
 ___
 
@@ -294,15 +306,19 @@ ___
 
 Ƭ **ModConfigFieldOrSection**: [`ModConfigFieldSection`](ModConfigTypes.md#modconfigfieldsection) \| [`ModConfigField`](ModConfigTypes.md#modconfigfield)
 
+Represents a single configuration field or section.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:11](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L11)
+[ModConfigTypes.d.ts:35](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L35)
 
 ___
 
 ### ModConfigFieldSection
 
 Ƭ **ModConfigFieldSection**: `Object`
+
+Represents a section in the configuration UI that can contain other fields or sections.
 
 #### Type declaration
 
@@ -316,7 +332,7 @@ ___
 
 #### Defined in
 
-[ModConfigTypes.d.ts:13](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L13)
+[ModConfigTypes.d.ts:40](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L40)
 
 ___
 
@@ -324,9 +340,12 @@ ___
 
 Ƭ **ModConfigFieldSelect**: [`ModConfigFieldBase`](ModConfigTypes.md#modconfigfieldbase) & { `defaultValue`: `string` ; `options`: { `description?`: `string` ; `label`: `string` ; `value`: [`ModConfigSingleValue`](ModConfigTypes.md#modconfigsinglevalue)  }[] ; `type`: ``"select"``  }
 
+Represents a select configuration field that will be represented as a dropdown
+select element in the configuration UI.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:44](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L44)
+[ModConfigTypes.d.ts:90](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L90)
 
 ___
 
@@ -334,9 +353,12 @@ ___
 
 Ƭ **ModConfigFieldText**: [`ModConfigFieldBase`](ModConfigTypes.md#modconfigfieldbase) & { `defaultValue`: `number` ; `type`: ``"text"``  }
 
+Represents a text configuration field that will be represented as a text input
+in the configuration UI.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:39](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L39)
+[ModConfigTypes.d.ts:81](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L81)
 
 ___
 
@@ -344,9 +366,11 @@ ___
 
 Ƭ **ModConfigSingleValue**: `string` \| `number` \| `boolean` \| `string`[] \| `number`[]
 
+Represents the valid value of any single configuration field.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:61](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L61)
+[ModConfigTypes.d.ts:113](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L113)
 
 ___
 
@@ -354,6 +378,9 @@ ___
 
 Ƭ **ModConfigValue**: `Readonly`<{ `[key: string]`: [`ModConfigSingleValue`](ModConfigTypes.md#modconfigsinglevalue);  }\>
 
+This is the structure of the mod config as it is passed to the
+mod's implementation.
+
 #### Defined in
 
-[ModConfigTypes.d.ts:64](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ModConfigTypes.d.ts#L64)
+[ModConfigTypes.d.ts:119](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ModConfigTypes.d.ts#L119)

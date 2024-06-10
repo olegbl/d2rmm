@@ -1,4 +1,4 @@
-[d2rmm](../README.md) / [Modules](../modules.md) / ConsoleAPITypes
+[D2RMM Mod API](../README.md) / [Modules](../modules.md) / ConsoleAPITypes
 
 # Module: ConsoleAPITypes
 
@@ -14,6 +14,11 @@
 
 Ƭ **ConsoleAPI**: `Object`
 
+A console interface similar to that provided by the DOM or Node.
+It will print to D2RMM's logs tab.
+
+**`see`** https://developer.mozilla.org/en-US/docs/Web/API/Console
+
 #### Type declaration
 
 | Name | Type |
@@ -25,4 +30,4 @@
 
 #### Defined in
 
-[ConsoleAPITypes.d.ts:1](https://github.com/olegbl/d2rmm/blob/2c14c11/src/renderer/ConsoleAPITypes.d.ts#L1)
+[ConsoleAPITypes.d.ts:6](https://github.com/olegbl/d2rmm/blob/5f125c1/src/renderer/ConsoleAPITypes.d.ts#L6)

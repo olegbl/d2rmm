@@ -1,6 +1,6 @@
-[d2rmm](README.md) / Modules
+[D2RMM Mod API](README.md) / Modules
 
-# d2rmm
+# D2RMM Mod API
 
 ## Table of contents
 

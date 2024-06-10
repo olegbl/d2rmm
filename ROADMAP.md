@@ -1,7 +1,7 @@
 # Mod Manager
 
 - Improved mod UI
-  - Subsections
+  - Toggle all for subsections of checkboxes
   - Rules
   - Auto-complete
   - Color picker

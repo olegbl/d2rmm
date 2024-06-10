@@ -74,57 +74,69 @@ export type ModConfigValue = Readonly<{
 type BindingLiteralValue<T> = T;
 
 type BindingConfigValue<_T extends ModConfigSingleValue> = [
-  'value',
+  operator: 'value',
   id: string
 ];
 
 type BindingConditional<T> = [
-  'if',
+  operator: 'if',
   condition: Binding<boolean>,
   thenBinding: Binding<T>,
   elseBinding: Binding<T>
 ];
 
-type BindingNot = ['not', binding: Binding<boolean>];
+type BindingNot = [operator: 'not', binding: Binding<boolean>];
 
 type BindingAnd = [
-  'and',
+  operator: 'and',
   binding1: Binding<boolean>,
   binding2: Binding<boolean>
 ];
 
-type BindingOr = ['or', binding1: Binding<boolean>, binding2: Binding<boolean>];
+type BindingOr = [
+  operator: 'or',
+  binding1: Binding<boolean>,
+  binding2: Binding<boolean>
+];
 
-type BindingEquals<T> = ['eq', binding1: Binding<T>, binding2: Binding<T>];
+type BindingEquals<T> = [
+  operator: 'eq',
+  binding1: Binding<T>,
+  binding2: Binding<T>
+];
 
-type BindingNotEquals<T> = ['neq', binding1: Binding<T>, binding2: Binding<T>];
+type BindingNotEquals<T> = [
+  operator: 'neq',
+  binding1: Binding<T>,
+  binding2: Binding<T>
+];
 
 type BindingLessThan = [
-  'lt',
+  operator: 'lt',
   binding1: Binding<number>,
   binding2: Binding<number>
 ];
 
 type BindingLessThanOrEqual = [
-  'lte',
+  operator: 'lte',
   binding1: Binding<number>,
   binding2: Binding<number>
 ];
 
 type BindingGreaterThan = [
-  'gt',
+  operator: 'gt',
   binding1: Binding<number>,
   binding2: Binding<number>
 ];
 
 type BindingGreaterThanOrEqual = [
-  'gte',
+  operator: 'gte',
   binding1: Binding<number>,
   binding2: Binding<number>
 ];
 
 type BindingIncludes<T> = [
-  'in',
+  operator: 'in',
   binding1: Binding<T>,
   binding2: T extends string
     ? Binding<string[]>

@@ -55,7 +55,7 @@ export type ModConfigFieldBase = {
   id: string;
   name: string;
   description: string;
-  rules: Rule[];
+  rules?: Rule[];
 };
 
 type ModConfigSingleValue = string | number | boolean | string[] | number[];

@@ -194,8 +194,8 @@
     "react-dom": "^17.0.2",
     "react-router-dom": "^6.2.1",
     "regenerator-runtime": "^0.13.9",
-    "typedoc": "^0.25.13",
-    "typedoc-plugin-markdown": "^4.0.3"
+    "typedoc": "^0.22.18",
+    "typedoc-plugin-markdown": "3.12.0"
   },
   "devEngines": {
     "node": ">=14.x",

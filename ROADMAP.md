@@ -2,7 +2,6 @@
 
 - Improved mod UI
   - Toggle all for subsections of checkboxes
-  - Rules
   - Auto-complete
   - Color picker
 - File management

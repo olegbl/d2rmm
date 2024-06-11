@@ -1,9 +1,6 @@
 import { Close } from '@mui/icons-material';
 import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
-import {
-  ModConfigFieldOrSection,
-  ModConfigFieldSection,
-} from './ModConfigTypes';
+import { ModConfigFieldOrSection, ModConfigFieldSection } from './ModConfig';
 import ModSettingsSection from './ModSettingsSection';
 
 type Props = {

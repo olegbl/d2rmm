@@ -1,6 +1,6 @@
-import { ConsoleAPI } from '../renderer/ConsoleAPITypes';
-import { ModAPI } from '../renderer/ModAPITypes';
-import { ModConfigValue } from '../renderer/ModConfigTypes';
+import { ConsoleAPI } from '../renderer/ConsoleAPI';
+import { ModAPI } from '../renderer/ModAPI';
+import { ModConfigValue } from '../renderer/ModConfigValue';
 
 declare global {
   /**

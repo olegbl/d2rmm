@@ -1,6 +1,8 @@
-import { JSONData, TSVData } from './ModAPITypes';
-import { ModConfig, ModConfigValue } from './ModConfigTypes';
+import { JSONData } from './JSON';
+import { ModConfig } from './ModConfig';
+import { ModConfigValue } from './ModConfigValue';
 import { IReadOnlyPreferences } from './PreferenceTypes';
+import { TSVData } from './TSV';
 
 declare global {
   // keep in sync with api.ts

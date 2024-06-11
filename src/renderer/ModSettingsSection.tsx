@@ -7,10 +7,7 @@ import {
   styled,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import {
-  ModConfigFieldOrSection,
-  ModConfigFieldSection,
-} from './ModConfigTypes';
+import { ModConfigFieldOrSection, ModConfigFieldSection } from './ModConfig';
 import ModSettingsField from './ModSettingsField';
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({

@@ -5,9 +5,10 @@ import ModSettingsNumberField from './ModSettingsNumberField';
 import ModSettingsTextField from './ModSettingsTextField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
-import { ModConfigField, ModConfigSingleValue } from './ModConfigTypes';
+import { ModConfigField } from './ModConfig';
+import { ModConfigSingleValue } from './ModConfigValue';
 import { useSetModConfig } from './ModsContext';
-import { parseBinding } from './Bindings';
+import { parseBinding } from './BindingsParser';
 
 type Props = {
   field: ModConfigField;

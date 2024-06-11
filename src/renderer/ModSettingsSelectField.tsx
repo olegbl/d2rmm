@@ -1,6 +1,7 @@
 import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { useCallback } from 'react';
-import { ModConfigFieldSelect, ModConfigSingleValue } from './ModConfigTypes';
+import { ModConfigFieldSelect } from './ModConfig';
+import { ModConfigSingleValue } from './ModConfigValue';
 
 type Props = {
   field: ModConfigFieldSelect;

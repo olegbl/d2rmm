@@ -1,3 +1,6 @@
+import { JSONData } from './JSON';
+import { TSVData } from './TSV';
+
 /**
  * This is the interface of the global "D2RMM" variable provided to mods at runtime.
  */
@@ -151,44 +154,3 @@ export type ModAPI = {
    */
   error: (message: string | Error) => void;
 };
-
-/**
- * The name of a column in a TSV file.
- */
-type TSVDataHeader = string;
-
-/**
- * A single row in a TSV file.
- */
-type TSVDataRow = {
-  [header: TSVDataHeader]: string;
-};
-
-/**
- * The parsed data of a TSV file.
- */
-type TSVData = {
-  /**
-   * List of headers in the TSV file.
-   */
-  headers: TSVDataHeader[];
-  /**
-   * List of rows in the TSV file.
-   */
-  rows: TSVDataRow[];
-};
-
-/**
- * A single value in a JSON data structure.
- */
-type JSONDataValue = string | number | boolean;
-
-/**
- * One or more value in a JSON data structure.
- */
-type JSONDataValues = JSONDataValue | JSONDataValue[];
-
-/**
- * The parsed data of a JSON file.
- */
-type JSONData = { [key: string]: JSONDataValues | JSONData };

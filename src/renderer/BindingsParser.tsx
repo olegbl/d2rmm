@@ -1,8 +1,5 @@
-import {
-  ModConfigSingleValue,
-  ModConfigValue,
-  Binding,
-} from './ModConfigTypes';
+import { Binding } from './Bindings';
+import { ModConfigSingleValue, ModConfigValue } from './ModConfigValue';
 
 export function parseBinding<T extends ModConfigSingleValue>(
   value: Binding<T>,

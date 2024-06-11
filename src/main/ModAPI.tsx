@@ -1,4 +1,6 @@
-import { JSONData, ModAPI, TSVData } from 'renderer/ModAPITypes';
+import { JSONData } from 'renderer/JSON';
+import { ModAPI } from 'renderer/ModAPI';
+import { TSVData } from 'renderer/TSV';
 
 // keep in sync with api.ts
 enum Relative {

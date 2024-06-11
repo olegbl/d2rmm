@@ -20,9 +20,10 @@ import { execFile, execFileSync } from 'child_process';
 import { VM } from 'vm2';
 import json5 from 'json5';
 import ts from 'typescript';
-import { JSONData, TSVDataRow } from 'renderer/ModAPITypes';
-import { ConsoleAPI } from 'renderer/ConsoleAPITypes';
-import { ModConfigValue } from 'renderer/ModConfigTypes';
+import { ConsoleAPI } from 'renderer/ConsoleAPI';
+import { ModConfigValue } from 'renderer/ModConfigValue';
+import { TSVDataRow } from 'renderer/TSV';
+import { JSONData } from 'renderer/JSON';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 

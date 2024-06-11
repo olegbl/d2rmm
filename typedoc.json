@@ -2,9 +2,13 @@
   "name": "D2RMM Mod API",
   "readme": "DOCS.md",
   "entryPoints": [
-    "src/renderer/ConsoleAPITypes.d.ts",
-    "src/renderer/ModAPITypes.d.ts",
-    "src/renderer/ModConfigTypes.d.ts"
+    "src/renderer/Bindings.d.ts",
+    "src/renderer/ConsoleAPI.d.ts",
+    "src/renderer/JSON.d.ts",
+    "src/renderer/ModAPI.d.ts",
+    "src/renderer/ModConfig.d.ts",
+    "src/renderer/ModConfigValue.d.ts",
+    "src/renderer/TSV.d.ts"
   ],
   "out": "docs",
   "githubPages": false

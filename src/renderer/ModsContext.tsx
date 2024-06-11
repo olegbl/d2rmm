@@ -8,7 +8,7 @@ import React, {
 import useSavedState from './useSavedState';
 import { useLogger } from './Logs';
 import useToast from './useToast';
-import { ModConfigSingleValue, ModConfigValue } from './ModConfigTypes';
+import { ModConfigSingleValue, ModConfigValue } from './ModConfigValue';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

@@ -7,7 +7,5 @@
     "src/renderer/ModConfigTypes.d.ts"
   ],
   "out": "docs",
-  "githubPages": false,
-  "plugin": ["typedoc-material-theme"],
-  "themeColor": "#33CCFF"
+  "githubPages": false
 }

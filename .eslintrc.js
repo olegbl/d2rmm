@@ -7,6 +7,7 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'react/jsx-boolean-value': ['error', 'always'],
     'react/jsx-props-no-spreading': 'off',
+    'react/jsx-filename-extension': 'off',
     'react/require-default-props': 'off',
     'react/destructuring-assignment': 'off',
     'operator-assignment': ['warn', 'never'],

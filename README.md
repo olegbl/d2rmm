@@ -6,7 +6,7 @@ See the [Nexus page](https://www.nexusmods.com/diablo2resurrected/mods/169) for 
 
 ## Example Mods
 
-You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](https://github.com/olegbl/d2rmm.mods).
+You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](https://github.com/olegbl/d2rmm.mods). There are also [API Docs](https://olegbl.github.io/d2rmm/) available.
 
 ## Building
 

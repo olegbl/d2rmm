@@ -14,7 +14,7 @@ export default function ModSettingsTextField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
-  const value = mod.config[field.id] as number;
+  const value = mod.config[field.id] as string;
 
   const onChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>): void => {

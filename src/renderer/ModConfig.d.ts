@@ -55,7 +55,8 @@ export type ModConfigField =
   | ModConfigFieldCheckbox
   | ModConfigFieldNumber
   | ModConfigFieldText
-  | ModConfigFieldSelect;
+  | ModConfigFieldSelect
+  | ModConfigFieldColor;
 
 /**
  * Represents a boolean (true/false) configuration field that will be represented
@@ -98,6 +99,15 @@ export type ModConfigFieldSelect = ModConfigFieldBase & {
     label: string;
     value: ModConfigSingleValue;
   }[];
+};
+
+/**
+ * Represents a color configuration field that will be represented as a color picker
+ * element in the configuration UI.
+ */
+export type ModConfigFieldColor = ModConfigFieldBase & {
+  type: 'color';
+  defaultValue: [number, number, number, number];
 };
 
 /**

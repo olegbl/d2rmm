@@ -9,6 +9,7 @@ import { ModConfigField } from './ModConfig';
 import { ModConfigSingleValue } from './ModConfigValue';
 import { useSetModConfig } from './ModsContext';
 import { parseBinding } from './BindingsParser';
+import ModSettingsColorSelectorField from './ModSettingsColorSelectorField';
 
 type Props = {
   field: ModConfigField;
@@ -60,6 +61,14 @@ export default function ModSettingsField({
   } else if (field.type === 'select') {
     result = (
       <ModSettingsSelectField
+        field={field}
+        mod={mod}
+        onChange={onChangeConfig}
+      />
+    );
+  } else if (field.type === 'color') {
+    result = (
+      <ModSettingsColorSelectorField
         field={field}
         mod={mod}
         onChange={onChangeConfig}

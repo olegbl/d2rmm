@@ -7,8 +7,6 @@
     "src/renderer/ModConfigTypes.d.ts"
   ],
   "out": "docs",
-  "entryFileName": "index",
-  "outputFileStrategy": "members",
-  "plugin": ["typedoc-plugin-markdown"],
+  "plugin": [],
   "githubPages": false
 }

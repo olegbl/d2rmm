@@ -1,11 +1,11 @@
-[D2RMM Mod API](README.md) / Modules
+[**D2RMM Mod API**](index.md) • **Docs**
+
+***
 
 # D2RMM Mod API
 
-## Table of contents
+## Modules
 
-### Modules
-
-- [ConsoleAPITypes](modules/ConsoleAPITypes.md)
-- [ModAPITypes](modules/ModAPITypes.md)
-- [ModConfigTypes](modules/ModConfigTypes.md)
+- [ConsoleAPITypes](ConsoleAPITypes/index.md)
+- [ModAPITypes](ModAPITypes/index.md)
+- [ModConfigTypes](ModConfigTypes/index.md)

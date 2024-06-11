@@ -2,6 +2,6 @@
 
 The runtime of any D2RMM mod is provided with these additional global variables:
 
-- [`D2RMM: ModAPI`](modules/ModAPITypes.md)
-- [`config: ModConfigValue`](modules/ModConfigTypes.md)
-- [`console: ConsoleAPI`](modules/ConsoleAPITypes.md)
+- [`D2RMM: ModAPI`](ModAPITypes/interfaces/ModAPI.md)
+- [`config: ModConfigValue`](ModConfigTypes/interfaces/ModConfigValue.md)
+- [`console: ConsoleAPI`](ConsoleAPITypes/interfaces/ConsoleAPI.md)

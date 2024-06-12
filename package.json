@@ -181,7 +181,7 @@
     "@emotion/react": "^11.7.1",
     "@emotion/styled": "^11.6.0",
     "@mui/icons-material": "^5.10.3",
-    "@mui/lab": "^5.0.0-alpha.66",
+    "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "^5.15.19",
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.4",

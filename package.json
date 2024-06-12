@@ -191,7 +191,7 @@
     "mui-color-input": "^2.0.3",
     "node-addon-api": "^4.3.0",
     "react": "^18.0.0",
-    "react-beautiful-dnd": "^13.1.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.2.1",
     "regenerator-runtime": "^0.13.9",

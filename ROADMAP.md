@@ -1,9 +1,11 @@
 # Mod Manager
 
+- Documentation
+  - Write a simple tutorial
+  - Add more examples to TSDocs
 - Improved mod UI
   - Toggle all for subsections of checkboxes
   - Auto-complete
-  - Color picker
 - File management
   - Treat file as exported when it is being written manually or copied
   - When a file is being written without being read first, show a warning

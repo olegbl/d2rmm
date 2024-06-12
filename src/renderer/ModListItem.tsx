@@ -156,6 +156,7 @@ export default function ModListItem({
 
   if (isReorderEnabled) {
     return (
+      // @ts-ignore: react-beautiful-dnd typing is messed up
       <Draggable draggableId={mod.id} index={index}>
         {(providedDraggable) => (
           <div

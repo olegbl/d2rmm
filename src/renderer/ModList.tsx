@@ -61,7 +61,9 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
         dense={true}
       >
         {isReorderEnabled ? (
+          // @ts-ignore: react-beautiful-dnd typing is messed up
           <DragDropContext onDragEnd={onDragEnd}>
+            {/* @ts-ignore: react-beautiful-dnd typing is messed up */}
             <Droppable direction="vertical" droppableId="mods">
               {(providedDroppable) => (
                 <div
@@ -69,7 +71,7 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
                   ref={providedDroppable.innerRef}
                 >
                   {items}
-                  {providedDroppable.placeholder}
+                  {providedDroppable.placeholder as React.ReactNode}
                 </div>
               )}
             </Droppable>

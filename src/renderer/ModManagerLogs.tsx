@@ -10,13 +10,14 @@ import {
   Menu,
   MenuItem,
   Select,
+  SelectChangeEvent,
 } from '@mui/material';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import PendingIcon from '@mui/icons-material/Pending';
 import DownloadIcon from '@mui/icons-material/Download';
-import { useCallback, useState } from 'react';
+import { MouseEvent, useCallback, useState } from 'react';
 import FilterAltIcon from '@mui/icons-material/FilterAltOutlined';
 import { useLogLevels, useLogs } from './Logs';
 
@@ -39,10 +40,12 @@ type Props = Record<string, never>;
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const logs = useLogs();
   const [levels, setLevels] = useLogLevels();
-  const [exportAnchorEl, setExportAnchorEl] = useState(null);
+  const [exportAnchorEl, setExportAnchorEl] =
+    useState<HTMLButtonElement | null>(null);
 
   const onOpenExportMenu = useCallback(
-    (event): void => setExportAnchorEl(event.currentTarget),
+    (event: MouseEvent<HTMLButtonElement>): void =>
+      setExportAnchorEl(event.currentTarget),
     []
   );
 
@@ -52,11 +55,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   );
 
   const onChangeLevels = useCallback(
-    (event) => {
+    (event: SelectChangeEvent<ILogLevel[]>) => {
       setLevels(
-        typeof event.target.value === 'string'
+        (typeof event.target.value === 'string'
           ? event.target.value.split(',')
-          : event.target.value
+          : event.target.value) as ILogLevel[]
       );
     },
     [setLevels]

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MuiColorInput } from 'mui-color-input';
+import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
 import { debounce } from '@mui/material';
 import { ModConfigFieldColor } from './ModConfig';
 import { ModConfigSingleValue } from './ModConfigValue';
@@ -38,7 +38,7 @@ export default function ModSettingsColorSelectorField({
   );
 
   const onChange = useCallback(
-    (_value, colors): void => {
+    (_value: string, colors: MuiColorInputColors): void => {
       const match = colors.rgb.match(
         /rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/
       );

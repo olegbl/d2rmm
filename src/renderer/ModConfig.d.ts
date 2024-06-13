@@ -108,6 +108,7 @@ export type ModConfigFieldSelect = ModConfigFieldBase & {
 export type ModConfigFieldColor = ModConfigFieldBase & {
   type: 'color';
   defaultValue: [number, number, number, number];
+  isAlphaHidden?: boolean;
 };
 
 /**

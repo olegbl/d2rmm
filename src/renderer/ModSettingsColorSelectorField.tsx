@@ -1,8 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
-import { debounce } from '@mui/material';
 import { ModConfigFieldColor } from './ModConfig';
 import { ModConfigSingleValue } from './ModConfigValue';
+
+function debounce<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => void,
+  timeoutMs: number
+): (...args: TArgs) => void {
+  // TODO: figure out why we're using NodeJS types instead of DOM types in here
+  let timeoutID: NodeJS.Timeout | null = null;
+  return (...args) => {
+    if (timeoutID != null) {
+      clearTimeout(timeoutID);
+    }
+    timeoutID = setTimeout(() => {
+      timeoutID = null;
+      fn(...args);
+    }, timeoutMs);
+  };
+}
 
 type Props = {
   field: ModConfigFieldColor;
@@ -15,22 +31,17 @@ export default function ModSettingsColorSelectorField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
-  const [r, g, b, a] = mod.config[field.id] as [number, number, number, number];
-  const [value, setValue] = useState({ r, g, b, a });
+  const [_isTransitioning, startTransition] = useTransition();
 
-  useEffect(() => {
-    setValue((oldValue) => {
-      if (
-        oldValue.r === r &&
-        oldValue.g === g &&
-        oldValue.b === b &&
-        oldValue.a === a
-      ) {
-        return oldValue;
-      }
-      return { r, g, b, a };
-    });
-  }, [r, g, b, a]);
+  const [value, setValue] = useState(() => {
+    const [r, g, b, a] = mod.config[field.id] as [
+      number,
+      number,
+      number,
+      number
+    ];
+    return { r, g, b, a };
+  });
 
   const onChangeFromPropsDebounced = useMemo(
     () => debounce(onChangeFromProps, 1000),
@@ -40,20 +51,39 @@ export default function ModSettingsColorSelectorField({
   const onChange = useCallback(
     (_value: string, colors: MuiColorInputColors): void => {
       const match = colors.rgb.match(
-        /rgba\((\d+), (\d+), (\d+), (\d+(\.\d+)?)\)/
+        /rgba?\((\d+), (\d+), (\d+)(?:, (\d+(?:\.\d+)?))?\)/
       );
       if (match != null) {
-        const r1 = parseInt(match[1], 10);
-        const g1 = parseInt(match[2], 10);
-        const b1 = parseInt(match[3], 10);
-        const a1 = parseFloat(match[4]);
-        setValue({ r: r1, g: g1, b: b1, a: a1 });
-        onChangeFromPropsDebounced(field.id, [r1, g1, b1, a1]);
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        const a = parseFloat(match[4] ?? '1.0');
+        setValue({ r, g, b, a });
+        startTransition(() => {
+          onChangeFromPropsDebounced(field.id, [r, g, b, a]);
+        });
       }
     },
     [field, onChangeFromPropsDebounced]
   );
 
-  // TODO: use hex8 format, and figure out why it keeps using rgb anyway
-  return <MuiColorInput format="rgb" value={value} onChange={onChange} />;
+  const hexR = value.r.toString(16).padStart(2, '0');
+  const hexG = value.g.toString(16).padStart(2, '0');
+  const hexB = value.b.toString(16).padStart(2, '0');
+  const hexA = Math.round(value.a * 255)
+    .toString(16)
+    .padStart(2, '0');
+
+  return (
+    <MuiColorInput
+      format={field.isAlphaHidden ? 'hex' : 'hex8'}
+      isAlphaHidden={field.isAlphaHidden ?? false}
+      value={
+        field.isAlphaHidden
+          ? `#${hexR}${hexG}${hexB}`
+          : `#${hexR}${hexG}${hexB}${hexA}`
+      }
+      onChange={onChange}
+    />
+  );
 }

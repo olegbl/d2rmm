@@ -34,7 +34,7 @@ export function getModAPI(
     isPreExtractedData,
     mergedPath,
     preExtractedDataPath,
-    rendererConsole,
+    rendererConsole: _rendererConsole,
   }: IInstallModsOptions & {
     fileManager: FileManager;
     rendererConsole: ConsoleAPI;

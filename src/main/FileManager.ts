@@ -83,14 +83,7 @@ export class FileManager {
         );
       }
       // otherwise, this mod could be overwriting game updates
-      else if (
-        falseIfError(
-          this.runtime.BridgeAPI.isGameFile(
-            filePath,
-            this.runtime.options.gamePath
-          )
-        )
-      ) {
+      else if (falseIfError(this.runtime.BridgeAPI.isGameFile(filePath))) {
         this.runtime.console.warn(
           `Mod "${mod}" is modifying file "${filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`
         );

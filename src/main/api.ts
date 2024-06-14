@@ -26,7 +26,6 @@ import { TSVDataRow } from 'renderer/TSV';
 import { JSONData } from 'renderer/JSON';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
-import { FileManager } from './FileManager';
 import { InstallationRuntime } from './InstallationRuntime';
 
 // keep in sync with ModAPI.tsx
@@ -246,9 +245,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return !cascStorageIsOpen;
   },
 
-  isGameFile: (gamePath: string, filePath: string) => {
+  isGameFile: (filePath: string) => {
     rendererConsole.debug('BridgeAPI.isGameFile', {
-      gamePath,
       filePath,
     });
 
@@ -276,9 +274,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return true;
   },
 
-  extractFile: (gamePath: string, filePath: string, targetPath: string) => {
+  extractFile: (filePath: string, targetPath: string) => {
     rendererConsole.debug('BridgeAPI.extractFile', {
-      gamePath,
       filePath,
       targetPath,
     });

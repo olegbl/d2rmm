@@ -59,7 +59,6 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
     } else {
       throwIfError(
         runtime.BridgeAPI.extractFile(
-          runtime.options.gamePath,
           filePath,
           runtime.getDestinationFilePath(filePath)
         )

@@ -53,12 +53,8 @@ declare global {
       args?: string[],
       sync?: boolean
     ) => number | Error;
-    isGameFile: (gamePath: string, filePath: string) => boolean | Error;
-    extractFile: (
-      gamePath: string,
-      filePath: string,
-      targetPath: string
-    ) => boolean | Error;
+    isGameFile: (filePath: string) => boolean | Error;
+    extractFile: (filePath: string, targetPath: string) => boolean | Error;
     getAppPath: () => string;
     getGamePath: () => Promise<string | null>;
     getVersion: () => string;

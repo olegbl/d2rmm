@@ -26,6 +26,7 @@ import { TSVDataRow } from 'renderer/TSV';
 import { JSONData } from 'renderer/JSON';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
+import { FileManager } from './FileManager';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -244,6 +245,36 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return !cascStorageIsOpen;
   },
 
+  isGameFile: (gamePath: string, filePath: string) => {
+    rendererConsole.debug('BridgeAPI.isGameFile', {
+      gamePath,
+      filePath,
+    });
+
+    try {
+      if (!cascStorageIsOpen) {
+        return createError('BridgeAPI.isGameFile', 'CASC storage is not open');
+      }
+
+      const storage = cascStoragePtr.deref();
+
+      const filePtr = ref.alloc(voidPtrPtr);
+      if (
+        !CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+      ) {
+        return false;
+      }
+    } catch (e) {
+      return createError(
+        'API.isGameFile',
+        'Failed to check if a file exists in CASC storage',
+        String(e)
+      );
+    }
+
+    return true;
+  },
+
   extractFile: (gamePath: string, filePath: string, targetPath: string) => {
     rendererConsole.debug('BridgeAPI.extractFile', {
       gamePath,
@@ -252,11 +283,6 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     try {
-      // if file is already extracted, don't need to extract it again
-      if (existsSync(targetPath)) {
-        return true;
-      }
-
       if (!cascStorageIsOpen) {
         return createError('BridgeAPI.extractFile', 'CASC storage is not open');
       }
@@ -406,6 +432,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     const filePath = getRelativePath(inputPath, relative);
 
     try {
+      mkdirSync(path.dirname(filePath), { recursive: true });
       writeFileSync(filePath, data, {
         encoding: 'utf-8',
         flag: 'w',
@@ -456,6 +483,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     const filePath = getRelativePath(inputPath, relative);
 
     try {
+      mkdirSync(path.dirname(filePath), { recursive: true });
       writeFileSync(filePath, data, {
         encoding: null,
         flag: 'w',
@@ -499,7 +527,12 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return 1;
   },
 
-  copyFile: (fromPath: string, toPath: string, overwrite: boolean = false) => {
+  copyFile: (
+    fromPath: string,
+    toPath: string,
+    overwrite: boolean = false,
+    outCopiedFiles?: CopiedFile[]
+  ) => {
     rendererConsole.debug('BridgeAPI.copyFile', {
       fromPath,
       toPath,
@@ -520,9 +553,25 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const stat = statSync(fromPath);
       if (stat.isDirectory()) {
         copyDirSync(fromPath, toPath);
+        const directories: string[] = [fromPath];
+        while (directories.length > 0) {
+          readdirSync(directories[0], { encoding: null }).forEach((file) => {
+            const filePath = path.join(directories[0], file);
+            if (statSync(filePath).isDirectory()) {
+              directories.push(filePath);
+              return;
+            }
+            outCopiedFiles?.push({
+              fromPath: filePath,
+              toPath: filePath.replace(path.join(fromPath), toPath),
+            });
+          });
+          directories.shift();
+        }
       } else {
         mkdirSync(path.dirname(toPath), { recursive: true });
         copyFileSync(fromPath, toPath);
+        outCopiedFiles?.push({ fromPath, toPath });
       }
     } catch (e) {
       return createError(
@@ -909,7 +958,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       BridgeAPI.openStorage(gamePath);
     }
 
-    const extractedFiles: Record<string, boolean> = {};
+    const fileManager = new FileManager(BridgeAPI, rendererConsole, options);
 
     const modsInstalled = [];
     for (let i = 0; i < modsToInstall.length; i = i + 1) {
@@ -923,11 +972,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
         if (result == null) {
           throw new Error('Could not read code from mod.js or mod.ts.');
         }
-        // [WIP] TS support
-        // rendererConsole.log('code', result);
         const api = getModAPI(BridgeAPI, mod, {
           ...options,
-          extractedFiles,
+          fileManager,
+          rendererConsole,
         });
         try {
           rendererConsole.debug(

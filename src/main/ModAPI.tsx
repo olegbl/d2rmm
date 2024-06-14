@@ -1,6 +1,8 @@
 import { JSONData } from 'renderer/JSON';
 import { ModAPI } from 'renderer/ModAPI';
 import { TSVData } from 'renderer/TSV';
+import { FileManager } from './FileManager';
+import { ConsoleAPI } from 'renderer/ConsoleAPI';
 
 // keep in sync with api.ts
 enum Relative {
@@ -25,15 +27,17 @@ export function getModAPI(
   mod: Mod,
   {
     dataPath,
-    preExtractedDataPath,
+    fileManager,
     gamePath,
     isDirectMode,
+    isDryRun,
     isPreExtractedData,
     mergedPath,
-    extractedFiles,
-    isDryRun,
+    preExtractedDataPath,
+    rendererConsole,
   }: IInstallModsOptions & {
-    extractedFiles: Record<string, boolean>;
+    fileManager: FileManager;
+    rendererConsole: ConsoleAPI;
   }
 ): ModAPI {
   function getPreExtractedSourceFilePath(filePath: string): string {
@@ -52,17 +56,30 @@ export function getModAPI(
     return `${mergedPath}\\${filePath}`;
   }
 
+  function getRelativeFilePathFromDestinationFilePath(
+    filePath: string
+  ): string {
+    if (isDirectMode) {
+      return filePath.substring(dataPath.length + 1);
+    }
+    return filePath.substring(mergedPath.length + 1);
+  }
+
   function extractFile(filePath: string): void {
+    // if file is already exists (was creating during this installation), don't need to extract it again
+    if (fileManager.exists(filePath)) {
+      return;
+    }
+
     // if we're using direct mode, then we want to delete any existing file
     // and extract it during the very first time we use it so that we're
     // always applying to clean vanilla data rather than the output of a
     // previous installation
-    if (isDirectMode && !extractedFiles[filePath]) {
+    if (isDirectMode && !fileManager.exists(filePath)) {
       throwIfError(
         BridgeAPI.deleteFile(getDestinationFilePath(filePath), Relative.None)
       );
     }
-    extractedFiles[filePath] = true;
 
     if (isPreExtractedData) {
       const success = throwIfError(
@@ -86,6 +103,7 @@ export function getModAPI(
         )
       );
     }
+    fileManager.extract(filePath, mod.id);
   }
 
   return {
@@ -102,7 +120,11 @@ export function getModAPI(
     readTsv: (filePath: string): TSVData => {
       console.debug('D2RMM.readTsv', filePath);
       extractFile(filePath);
-      return throwIfError(BridgeAPI.readTsv(getDestinationFilePath(filePath)));
+      const result = throwIfError(
+        BridgeAPI.readTsv(getDestinationFilePath(filePath))
+      );
+      fileManager.read(filePath, mod.id);
+      return result;
     },
     writeTsv: (filePath: string, data: TSVData): void => {
       console.debug('D2RMM.writeTsv', filePath, data);
@@ -110,12 +132,17 @@ export function getModAPI(
         throwIfError(
           BridgeAPI.writeTsv(getDestinationFilePath(filePath), data)
         );
+        fileManager.write(filePath, mod.id);
       }
     },
     readJson: (filePath: string): JSONData => {
       console.debug('D2RMM.readJson', filePath);
       extractFile(filePath);
-      return throwIfError(BridgeAPI.readJson(getDestinationFilePath(filePath)));
+      const result = throwIfError(
+        BridgeAPI.readJson(getDestinationFilePath(filePath))
+      );
+      fileManager.read(filePath, mod.id);
+      return result;
     },
     writeJson: (filePath: string, data: JSONData): void => {
       console.debug('D2RMM.writeJson', filePath, data);
@@ -123,24 +150,37 @@ export function getModAPI(
         throwIfError(
           BridgeAPI.writeJson(getDestinationFilePath(filePath), data)
         );
+        fileManager.write(filePath, mod.id);
       }
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.debug('D2RMM.copyFile', src, dst);
       if (!isDryRun) {
+        const copiedFiles: CopiedFile[] = [];
         throwIfError(
           BridgeAPI.copyFile(
             getModSourceFilePath(src),
             getDestinationFilePath(dst),
-            overwrite
+            overwrite,
+            copiedFiles
           )
         );
+        copiedFiles.forEach(({ toPath }) => {
+          fileManager.write(
+            getRelativeFilePathFromDestinationFilePath(toPath),
+            mod.id
+          );
+        });
       }
     },
     readTxt: (filePath: string): string => {
       console.debug('D2RMM.readTxt', filePath);
       extractFile(filePath);
-      return throwIfError(BridgeAPI.readTxt(getDestinationFilePath(filePath)));
+      const result = throwIfError(
+        BridgeAPI.readTxt(getDestinationFilePath(filePath))
+      );
+      fileManager.read(filePath, mod.id);
+      return result;
     },
     writeTxt: (filePath: string, data: string): void => {
       console.debug('D2RMM.writeTxt', filePath, data);
@@ -148,16 +188,22 @@ export function getModAPI(
         throwIfError(
           BridgeAPI.writeTxt(getDestinationFilePath(filePath), data)
         );
+        fileManager.write(filePath, mod.id);
       }
     },
     readSaveFile: (filePath: string): Buffer | null => {
       console.debug('D2RMM.readSaveFile', filePath);
-      return throwIfError(BridgeAPI.readBinaryFile(filePath, Relative.Saves));
+      const result = throwIfError(
+        BridgeAPI.readBinaryFile(filePath, Relative.Saves)
+      );
+      fileManager.read(filePath, mod.id);
+      return result;
     },
     writeSaveFile: (filePath: string, data: Buffer): void => {
       console.debug('D2RMM.writeSaveFile', filePath, data);
       if (!isDryRun) {
         throwIfError(BridgeAPI.writeBinaryFile(filePath, Relative.Saves, data));
+        fileManager.write(filePath, mod.id);
       }
     },
     getNextStringID: (): number => {

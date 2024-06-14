@@ -33,12 +33,18 @@ declare global {
     ) => void;
   };
 
+  type CopiedFile = {
+    fromPath: string;
+    toPath: string;
+  };
+
   type BridgeAPIImplementation = {
     closeStorage: () => boolean | Error;
     copyFile: (
       fromPath: string,
       toPath: string,
-      overwrite?: boolean
+      overwrite?: boolean,
+      outCopiedFiles?: CopiedFile[]
     ) => number | Error;
     createDirectory: (filePath: string) => boolean | Error;
     deleteFile: (filePath: string, relative: Relative) => number | Error;
@@ -47,6 +53,7 @@ declare global {
       args?: string[],
       sync?: boolean
     ) => number | Error;
+    isGameFile: (gamePath: string, filePath: string) => boolean | Error;
     extractFile: (
       gamePath: string,
       filePath: string,

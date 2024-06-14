@@ -27,6 +27,7 @@ import { JSONData } from 'renderer/JSON';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 import { FileManager } from './FileManager';
+import { InstallationRuntime } from './InstallationRuntime';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -958,32 +959,32 @@ export const BridgeAPI: BridgeAPIImplementation = {
       BridgeAPI.openStorage(gamePath);
     }
 
-    const fileManager = new FileManager(BridgeAPI, rendererConsole, options);
+    const runtime = new InstallationRuntime(
+      BridgeAPI,
+      rendererConsole,
+      options
+    );
 
     const modsInstalled = [];
     for (let i = 0; i < modsToInstall.length; i = i + 1) {
-      const mod = modsToInstall[i];
+      runtime.mod = modsToInstall[i];
       try {
-        rendererConsole.debug(`Mod ${mod.info.name} parsing code...`);
-        const result = BridgeAPI.readModCode(mod.id);
+        rendererConsole.debug(`Mod ${runtime.mod.info.name} parsing code...`);
+        const result = BridgeAPI.readModCode(runtime.mod.id);
         if (result instanceof Error) {
           throw result;
         }
         if (result == null) {
           throw new Error('Could not read code from mod.js or mod.ts.');
         }
-        const api = getModAPI(BridgeAPI, mod, {
-          ...options,
-          fileManager,
-          rendererConsole,
-        });
+        const api = getModAPI(runtime);
         try {
           rendererConsole.debug(
-            `Mod ${mod.info.name} ${action.toLowerCase()}ing...`
+            `Mod ${runtime.mod.info.name} ${action.toLowerCase()}ing...`
           );
           const vm = new VM({
             sandbox: {
-              config: mod.config,
+              config: runtime.mod.config,
               console: rendererConsole,
               D2RMM: api,
             },
@@ -1011,15 +1012,17 @@ export const BridgeAPI: BridgeAPIImplementation = {
               throw error;
             }
           }
-          modsInstalled.push(mod.id);
+          modsInstalled.push(runtime.mod.id);
           rendererConsole.log(
-            `Mod ${mod.info.name} ${action.toLowerCase()}ed successfully.`
+            `Mod ${
+              runtime.mod.info.name
+            } ${action.toLowerCase()}ed successfully.`
           );
         } catch (error) {
           if (error instanceof Error) {
             rendererConsole.error(
               `Mod ${
-                mod.info.name
+                runtime.mod.info.name
               } encountered a runtime error!\n${error.toString()}`
             );
           }
@@ -1028,16 +1031,23 @@ export const BridgeAPI: BridgeAPIImplementation = {
         if (error instanceof Error) {
           rendererConsole.error(
             `Mod ${
-              mod.info.name
+              runtime.mod.info.name
             } encountered a compile error!\n${error.toString()}`
           );
         }
       }
     }
+    runtime.mod = null;
 
     if (!isPreExtractedData) {
       BridgeAPI.closeStorage();
     }
+
+    // delete any files that were extracted but then unmodified
+    // since they should be the same as the vanilla files in CASC
+    runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
+      BridgeAPI.deleteFile(runtime.getDestinationFilePath(file), Relative.None);
+    });
 
     return modsInstalled;
   },

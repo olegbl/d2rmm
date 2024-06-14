@@ -1,8 +1,7 @@
 import { JSONData } from 'renderer/JSON';
 import { ModAPI } from 'renderer/ModAPI';
 import { TSVData } from 'renderer/TSV';
-import { FileManager } from './FileManager';
-import { ConsoleAPI } from 'renderer/ConsoleAPI';
+import { InstallationRuntime } from './InstallationRuntime';
 
 // keep in sync with api.ts
 enum Relative {
@@ -22,52 +21,10 @@ function throwIfError<T>(value: T | Error): T {
   return value;
 }
 
-export function getModAPI(
-  BridgeAPI: BridgeAPIImplementation,
-  mod: Mod,
-  {
-    dataPath,
-    fileManager,
-    gamePath,
-    isDirectMode,
-    isDryRun,
-    isPreExtractedData,
-    mergedPath,
-    preExtractedDataPath,
-    rendererConsole: _rendererConsole,
-  }: IInstallModsOptions & {
-    fileManager: FileManager;
-    rendererConsole: ConsoleAPI;
-  }
-): ModAPI {
-  function getPreExtractedSourceFilePath(filePath: string): string {
-    return `${preExtractedDataPath}\\${filePath}`;
-  }
-
-  function getModSourceFilePath(filePath: string): string {
-    const appPath = BridgeAPI.getAppPath();
-    return `${appPath}\\mods\\${mod.id}\\${filePath}`;
-  }
-
-  function getDestinationFilePath(filePath: string): string {
-    if (isDirectMode) {
-      return `${dataPath}\\${filePath}`;
-    }
-    return `${mergedPath}\\${filePath}`;
-  }
-
-  function getRelativeFilePathFromDestinationFilePath(
-    filePath: string
-  ): string {
-    if (isDirectMode) {
-      return filePath.substring(dataPath.length + 1);
-    }
-    return filePath.substring(mergedPath.length + 1);
-  }
-
+export function getModAPI(runtime: InstallationRuntime): ModAPI {
   function extractFile(filePath: string): void {
     // if file is already exists (was creating during this installation), don't need to extract it again
-    if (fileManager.exists(filePath)) {
+    if (runtime.fileManager.exists(filePath)) {
       return;
     }
 
@@ -75,41 +32,46 @@ export function getModAPI(
     // and extract it during the very first time we use it so that we're
     // always applying to clean vanilla data rather than the output of a
     // previous installation
-    if (isDirectMode && !fileManager.exists(filePath)) {
+    if (runtime.options.isDirectMode && !runtime.fileManager.exists(filePath)) {
       throwIfError(
-        BridgeAPI.deleteFile(getDestinationFilePath(filePath), Relative.None)
+        runtime.BridgeAPI.deleteFile(
+          runtime.getDestinationFilePath(filePath),
+          Relative.None
+        )
       );
     }
 
-    if (isPreExtractedData) {
+    if (runtime.options.isPreExtractedData) {
       const success = throwIfError(
-        BridgeAPI.copyFile(
-          getPreExtractedSourceFilePath(filePath),
-          getDestinationFilePath(filePath),
+        runtime.BridgeAPI.copyFile(
+          runtime.getPreExtractedSourceFilePath(filePath),
+          runtime.getDestinationFilePath(filePath),
           false // don't overwrite if it already exists
         )
       );
       if (success === 2) {
         throw new Error(
-          `file "${getPreExtractedSourceFilePath(filePath)}" was not found`
+          `file "${runtime.getPreExtractedSourceFilePath(
+            filePath
+          )}" was not found`
         );
       }
     } else {
       throwIfError(
-        BridgeAPI.extractFile(
-          gamePath,
+        runtime.BridgeAPI.extractFile(
+          runtime.options.gamePath,
           filePath,
-          getDestinationFilePath(filePath)
+          runtime.getDestinationFilePath(filePath)
         )
       );
     }
-    fileManager.extract(filePath, mod.id);
+    runtime.fileManager.extract(filePath, runtime.mod.id);
   }
 
   return {
     getVersion: (): number => {
       console.debug('D2RMM.getVersion');
-      return parseFloat(throwIfError(BridgeAPI.getVersion()));
+      return parseFloat(throwIfError(runtime.BridgeAPI.getVersion()));
     },
     error: (message: string | Error): void => {
       if (message instanceof Error) {
@@ -121,54 +83,60 @@ export function getModAPI(
       console.debug('D2RMM.readTsv', filePath);
       extractFile(filePath);
       const result = throwIfError(
-        BridgeAPI.readTsv(getDestinationFilePath(filePath))
+        runtime.BridgeAPI.readTsv(runtime.getDestinationFilePath(filePath))
       );
-      fileManager.read(filePath, mod.id);
+      runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
     writeTsv: (filePath: string, data: TSVData): void => {
       console.debug('D2RMM.writeTsv', filePath, data);
-      if (!isDryRun) {
+      if (!runtime.options.isDryRun) {
         throwIfError(
-          BridgeAPI.writeTsv(getDestinationFilePath(filePath), data)
+          runtime.BridgeAPI.writeTsv(
+            runtime.getDestinationFilePath(filePath),
+            data
+          )
         );
-        fileManager.write(filePath, mod.id);
+        runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
     readJson: (filePath: string): JSONData => {
       console.debug('D2RMM.readJson', filePath);
       extractFile(filePath);
       const result = throwIfError(
-        BridgeAPI.readJson(getDestinationFilePath(filePath))
+        runtime.BridgeAPI.readJson(runtime.getDestinationFilePath(filePath))
       );
-      fileManager.read(filePath, mod.id);
+      runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
     writeJson: (filePath: string, data: JSONData): void => {
       console.debug('D2RMM.writeJson', filePath, data);
-      if (!isDryRun) {
+      if (!runtime.options.isDryRun) {
         throwIfError(
-          BridgeAPI.writeJson(getDestinationFilePath(filePath), data)
+          runtime.BridgeAPI.writeJson(
+            runtime.getDestinationFilePath(filePath),
+            data
+          )
         );
-        fileManager.write(filePath, mod.id);
+        runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
     copyFile: (src: string, dst: string, overwrite = false): void => {
       console.debug('D2RMM.copyFile', src, dst);
-      if (!isDryRun) {
+      if (!runtime.options.isDryRun) {
         const copiedFiles: CopiedFile[] = [];
         throwIfError(
-          BridgeAPI.copyFile(
-            getModSourceFilePath(src),
-            getDestinationFilePath(dst),
+          runtime.BridgeAPI.copyFile(
+            runtime.getModSourceFilePath(src),
+            runtime.getDestinationFilePath(dst),
             overwrite,
             copiedFiles
           )
         );
         copiedFiles.forEach(({ toPath }) => {
-          fileManager.write(
-            getRelativeFilePathFromDestinationFilePath(toPath),
-            mod.id
+          runtime.fileManager.write(
+            runtime.getRelativeFilePathFromDestinationFilePath(toPath),
+            runtime.mod.id
           );
         });
       }
@@ -177,33 +145,38 @@ export function getModAPI(
       console.debug('D2RMM.readTxt', filePath);
       extractFile(filePath);
       const result = throwIfError(
-        BridgeAPI.readTxt(getDestinationFilePath(filePath))
+        runtime.BridgeAPI.readTxt(runtime.getDestinationFilePath(filePath))
       );
-      fileManager.read(filePath, mod.id);
+      runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
     writeTxt: (filePath: string, data: string): void => {
       console.debug('D2RMM.writeTxt', filePath, data);
-      if (!isDryRun) {
+      if (!runtime.options.isDryRun) {
         throwIfError(
-          BridgeAPI.writeTxt(getDestinationFilePath(filePath), data)
+          runtime.BridgeAPI.writeTxt(
+            runtime.getDestinationFilePath(filePath),
+            data
+          )
         );
-        fileManager.write(filePath, mod.id);
+        runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
     readSaveFile: (filePath: string): Buffer | null => {
       console.debug('D2RMM.readSaveFile', filePath);
       const result = throwIfError(
-        BridgeAPI.readBinaryFile(filePath, Relative.Saves)
+        runtime.BridgeAPI.readBinaryFile(filePath, Relative.Saves)
       );
-      fileManager.read(filePath, mod.id);
+      runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
     writeSaveFile: (filePath: string, data: Buffer): void => {
       console.debug('D2RMM.writeSaveFile', filePath, data);
-      if (!isDryRun) {
-        throwIfError(BridgeAPI.writeBinaryFile(filePath, Relative.Saves, data));
-        fileManager.write(filePath, mod.id);
+      if (!runtime.options.isDryRun) {
+        throwIfError(
+          runtime.BridgeAPI.writeBinaryFile(filePath, Relative.Saves, data)
+        );
+        runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
     getNextStringID: (): number => {
@@ -214,7 +187,7 @@ export function getModAPI(
       if (nextStringIDRaw == null) {
         extractFile(filePath);
         nextStringIDRaw = throwIfError(
-          BridgeAPI.readTxt(getDestinationFilePath(filePath))
+          runtime.BridgeAPI.readTxt(runtime.getDestinationFilePath(filePath))
         );
         nextStringID = parseInt(
           nextStringIDRaw?.match(/[0-9]+/)?.[0] ?? '0',
@@ -226,10 +199,10 @@ export function getModAPI(
       nextStringID = nextStringID + 1;
 
       if (nextStringIDRaw != null) {
-        if (!isDryRun) {
+        if (!runtime.options.isDryRun) {
           throwIfError(
-            BridgeAPI.writeTxt(
-              getDestinationFilePath(filePath),
+            runtime.BridgeAPI.writeTxt(
+              runtime.getDestinationFilePath(filePath),
               nextStringIDRaw.replace(/[0-9]+/, String(nextStringID))
             )
           );

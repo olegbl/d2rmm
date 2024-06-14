@@ -1,4 +1,4 @@
-import { ConsoleAPI } from 'renderer/ConsoleAPI';
+import { InstallationRuntime } from './InstallationRuntime';
 
 export type FileOperationType = 'extract' | 'read' | 'write';
 
@@ -23,19 +23,7 @@ function falseIfError(value: boolean | Error): boolean {
 
 export class FileManager {
   private files: Record<string, FileStatus> = {};
-  private BridgeAPI: BridgeAPIImplementation;
-  private console: ConsoleAPI;
-  private options: IInstallModsOptions;
-
-  constructor(
-    BridgeAPI: BridgeAPIImplementation,
-    console: ConsoleAPI,
-    options: IInstallModsOptions
-  ) {
-    this.BridgeAPI = BridgeAPI;
-    this.console = console;
-    this.options = options;
-  }
+  constructor(private runtime: InstallationRuntime) {}
 
   private get(filePath: string): FileStatus {
     if (this.files[filePath] == undefined) {
@@ -88,7 +76,7 @@ export class FileManager {
       // if some other mod wrote to this file first
       // then this mod could be overwriting changes
       if (modsThatWroteThisFile.length > 0) {
-        this.console.warn(
+        this.runtime.console.warn(
           `Mod "${mod}" is modifying file "${filePath}" without reading it first. This file was previously modified by ${joinListInEnglish(
             modsThatWroteThisFile.map((mod) => `"${mod}"`)
           )} and these changes will be lost. Consider moving "${mod}" higher in the load order.`
@@ -96,9 +84,14 @@ export class FileManager {
       }
       // otherwise, this mod could be overwriting game updates
       else if (
-        falseIfError(this.BridgeAPI.isGameFile(filePath, this.options.gamePath))
+        falseIfError(
+          this.runtime.BridgeAPI.isGameFile(
+            filePath,
+            this.runtime.options.gamePath
+          )
+        )
       ) {
-        this.console.warn(
+        this.runtime.console.warn(
           `Mod "${mod}" is modifying file "${filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`
         );
       }
@@ -107,6 +100,12 @@ export class FileManager {
     fileStatus.operations.push({ mod, type: 'write' });
     fileStatus.exists = true;
     fileStatus.modified = true;
+  }
+
+  public getUnmodifiedExtractedFiles(): string[] {
+    return Object.entries(this.files)
+      .filter(([, fileStatus]) => fileStatus.extracted && !fileStatus.modified)
+      .map(([filePath]) => filePath);
   }
 }
 

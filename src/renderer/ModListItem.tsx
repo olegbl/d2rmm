@@ -13,6 +13,7 @@ import UpdateIcon from '@mui/icons-material/Update';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import FaceIcon from '@mui/icons-material/Face';
 import LinkIcon from '@mui/icons-material/Link';
+import WarningIcon from '@mui/icons-material/Warning';
 import HelpIcon from '@mui/icons-material/Help';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { useCallback, useMemo } from 'react';
@@ -136,8 +137,23 @@ export default function ModListItem({
                   onClick={onOpenWebsite}
                 />
               )}
-              <ListChip icon={<FaceIcon />} label={mod.info.author} />
-              <ListChip icon={<UpdateIcon />} label={`v${mod.info.version}`} />
+              {mod.info.type !== 'data' ? null : (
+                <ListChip
+                  color="warning"
+                  icon={<WarningIcon />}
+                  label="Data Mod"
+                  tooltip="This mod is a non-D2RMM data mod and may conflict with other mods or game updates."
+                />
+              )}
+              {mod.info.author == null ? null : (
+                <ListChip icon={<FaceIcon />} label={mod.info.author} />
+              )}
+              {mod.info.version == null ? null : (
+                <ListChip
+                  icon={<UpdateIcon />}
+                  label={`v${mod.info.version}`}
+                />
+              )}
               {mod.info.config == null ? null : (
                 <ListChip
                   color={isEnabled ? 'primary' : undefined}

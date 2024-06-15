@@ -6,6 +6,10 @@ import { ModConfigSingleValue } from './ModConfigValue';
  */
 export type ModConfig = {
   /**
+   * Type of the mod.
+   */
+  type: 'd2rmm' | 'data';
+  /**
    * The name of the mod.
    */
   name: string;

@@ -34,10 +34,11 @@ export class InstallationRuntime {
   }
 
   public getDestinationFilePath(filePath: string): string {
+    const suffix = filePath === '' ? '' : `\\${filePath}`;
     if (this.options.isDirectMode) {
-      return `${this.options.dataPath}\\${filePath}`;
+      return `${this.options.dataPath}${suffix}`;
     }
-    return `${this.options.mergedPath}\\${filePath}`;
+    return `${this.options.mergedPath}${suffix}`;
   }
 
   public getRelativeFilePathFromDestinationFilePath(filePath: string): string {

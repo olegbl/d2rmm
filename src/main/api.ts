@@ -27,6 +27,7 @@ import { JSONData } from 'renderer/JSON';
 import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 import { InstallationRuntime } from './InstallationRuntime';
+import { datamod } from './datamod';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -588,21 +589,38 @@ export const BridgeAPI: BridgeAPIImplementation = {
       id,
     });
 
-    const filePath = `mods\\${id}\\mod.json`;
-    const result = BridgeAPI.readFile(filePath, Relative.App);
+    const result = BridgeAPI.readFile(`mods\\${id}\\mod.json`, Relative.App);
 
-    if (result instanceof Error) {
+    if (result instanceof Error || result == null) {
+      // check if this is a data mod
+      try {
+        if (
+          statSync(
+            getRelativePath(`mods\\${id}\\data`, Relative.App)
+          ).isDirectory()
+        ) {
+          return {
+            type: 'data',
+            name: id,
+          };
+        }
+      } catch {}
+
       return result;
     }
-
-    if (result != null) {
+    try {
       return {
+        type: 'd2rmm',
         name: id,
         ...JSON.parse(result),
       };
+    } catch (e) {
+      return createError(
+        'BridgeAPI.readModInfo',
+        'Failed to parse mod config',
+        String(e)
+      );
     }
-
-    return null;
   },
 
   readModConfig: (id: string) => {
@@ -967,12 +985,18 @@ export const BridgeAPI: BridgeAPIImplementation = {
       runtime.mod = modsToInstall[i];
       try {
         rendererConsole.debug(`Mod ${runtime.mod.info.name} parsing code...`);
-        const result = BridgeAPI.readModCode(runtime.mod.id);
-        if (result instanceof Error) {
-          throw result;
-        }
-        if (result == null) {
-          throw new Error('Could not read code from mod.js or mod.ts.');
+        let code: string = '';
+        if (runtime.mod.info.type === 'data') {
+          code = datamod;
+        } else {
+          const result = BridgeAPI.readModCode(runtime.mod.id);
+          if (result instanceof Error) {
+            throw result;
+          }
+          if (result == null) {
+            throw new Error('Could not read code from mod.js or mod.ts.');
+          }
+          code = result;
         }
         const api = getModAPI(runtime);
         try {
@@ -990,7 +1014,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
             eval: false, // Disable eval function if not required
           });
           try {
-            vm.run(result);
+            vm.run(code);
           } catch (error) {
             if (error instanceof Error) {
               const message = (error.stack ?? '')

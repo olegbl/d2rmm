@@ -1,5 +1,6 @@
 # Mod Manager
 
+- Mod config actions
 - Documentation
   - Write a simple tutorial
   - Add more examples to TSDocs

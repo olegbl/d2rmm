@@ -188,12 +188,12 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
         nextStringIDRaw = throwIfError(
           runtime.BridgeAPI.readTxt(runtime.getDestinationFilePath(filePath))
         );
-        runtime.fileManager.read(filePath, runtime.mod.id);
         nextStringID = parseInt(
           nextStringIDRaw?.match(/[0-9]+/)?.[0] ?? '0',
           10
         );
       }
+      runtime.fileManager.read(filePath, runtime.mod.id);
 
       const stringID = nextStringID;
       nextStringID = nextStringID + 1;

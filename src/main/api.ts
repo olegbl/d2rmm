@@ -48,20 +48,21 @@ const rendererConsole: ConsoleAPI = {
   error: (..._args: unknown[]): void => {},
 };
 
-export function getAppPath(): string {
+function getAppPath(): string {
   return app.isPackaged
     ? path.join(process.resourcesPath, '../')
     : path.join(__dirname, '../../');
 }
 
-export function getSavesPath(): string {
+let currentOutputModName: string = 'D2RMM';
+function getSavesPath(): string {
   return path.join(
     process.env.USERPROFILE ?? path.join(app.getPath('home'), '../'),
-    'Saved Games/Diablo II Resurrected/mods/D2RMM/'
+    `Saved Games/Diablo II Resurrected/mods/${currentOutputModName}/`
   );
 }
 
-function getRelativePath(inputPath: string, relative: Relative): string {
+function resolvePath(inputPath: string, relative: Relative): string {
   switch (relative) {
     case Relative.App:
       return path.join(getAppPath(), inputPath);
@@ -404,7 +405,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
   readFile: (inputPath: string, relative: Relative) => {
     rendererConsole.debug('BridgeAPI.readFile', { inputPath, relative });
 
-    const filePath = getRelativePath(inputPath, relative);
+    const filePath = resolvePath(inputPath, relative);
 
     try {
       if (existsSync(filePath)) {
@@ -428,7 +429,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
   writeFile: (inputPath: string, relative: Relative, data: string) => {
     rendererConsole.debug('BridgeAPI.writeFile', { inputPath, relative });
 
-    const filePath = getRelativePath(inputPath, relative);
+    const filePath = resolvePath(inputPath, relative);
 
     try {
       mkdirSync(path.dirname(filePath), { recursive: true });
@@ -453,7 +454,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       relative,
     });
 
-    const filePath = getRelativePath(inputPath, relative);
+    const filePath = resolvePath(inputPath, relative);
 
     try {
       if (existsSync(filePath)) {
@@ -479,7 +480,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       relative,
     });
 
-    const filePath = getRelativePath(inputPath, relative);
+    const filePath = resolvePath(inputPath, relative);
 
     try {
       mkdirSync(path.dirname(filePath), { recursive: true });
@@ -501,7 +502,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
   deleteFile: (inputPath: string, relative: Relative) => {
     rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, relative });
 
-    const filePath = getRelativePath(inputPath, relative);
+    const filePath = resolvePath(inputPath, relative);
 
     try {
       if (existsSync(filePath)) {
@@ -595,9 +596,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       // check if this is a data mod
       try {
         if (
-          statSync(
-            getRelativePath(`mods\\${id}\\data`, Relative.App)
-          ).isDirectory()
+          statSync(resolvePath(`mods\\${id}\\data`, Relative.App)).isDirectory()
         ) {
           return {
             type: 'data',
@@ -960,6 +959,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       outputModName,
     } = options;
     const action = isDryRun ? 'Uninstall' : 'Install';
+    currentOutputModName = outputModName;
 
     if (!isDirectMode) {
       BridgeAPI.deleteFile(`${mergedPath}\\..`, Relative.None);

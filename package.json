@@ -118,6 +118,8 @@
     "@types/react-beautiful-dnd": "^13.1.2",
     "@types/react-dom": "^18.0.0",
     "@types/react-test-renderer": "^18.0.0",
+    "@types/react-virtualized-auto-sizer": "^1.0.4",
+    "@types/react-window": "^1.8.8",
     "@types/ref-napi": "^3.0.4",
     "@types/terser-webpack-plugin": "^5.0.4",
     "@types/webpack-env": "^1.16.3",
@@ -193,6 +195,8 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.2.1",
+    "react-virtualized-auto-sizer": "^1.0.24",
+    "react-window": "^1.8.10",
     "regenerator-runtime": "^0.13.9",
     "typedoc": "^0.25.13"
   },

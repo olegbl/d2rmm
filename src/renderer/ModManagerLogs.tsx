@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';

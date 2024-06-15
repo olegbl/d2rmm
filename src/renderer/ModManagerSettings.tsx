@@ -180,8 +180,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             <>
               <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
               <Typography color="text.secondary" variant="subtitle2">
-                Specify the name of the D2R MPQ mod that D2RMM will generate
-                when mods are installed.
+                Specify the name of the Diablo II: Resurrected MPQ data mod that
+                D2RMM will generate when mods are installed.
               </Typography>
               <TextField
                 fullWidth={true}
@@ -196,6 +196,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               />
               <Typography color="text.secondary" variant="subtitle2">
                 Generated files will be located in &ldquo;{mergedPath}\&rdquo;.
+              </Typography>
+              <Typography color="text.secondary" variant="subtitle2">
+                Save game files will be located in &ldquo;%UserProfile%\Saved
+                Games\Diablo II Resurrected\mods\{outputModName}\&rdquo;.
               </Typography>
             </>
           ) : null}
@@ -216,10 +220,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         </StyledAccordionSummary>
         <StyledAccordionDetails id="direct-mode-content">
           <Typography color="text.secondary" variant="subtitle2">
-            Instead of generating files in /mods/, generating them in /data/ so
-            that you can use -direct -txt when running the game. You will still
-            need to manually extract game data to /data/ using CascView in order
-            to use &quot;-direct&quot; in Diablo II: Resurrected.
+            Instead of generating files in &lt;D2R&gt;/mods/, generate them in
+            &lt;D2R&gt;/data/ so that you can use -direct -txt when running the
+            game. You will still need to manually extract game data to
+            &lt;D2R&gt;/data/ using CascView in order to use &quot;-direct&quot;
+            with Diablo II: Resurrected.
           </Typography>
           <ListItemButton
             onClick={() => {
@@ -242,6 +247,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               primary="Enable Direct Mode"
             />
           </ListItemButton>
+          {!isDirectMode ? null : (
+            <Typography color="text.secondary" variant="subtitle2">
+              Generated files will be located in &ldquo;{gamePath}\data\&rdquo;.
+            </Typography>
+          )}
           <Alert severity="warning">
             Do <strong>not</strong> turn this on if you do not know what you are
             doing.

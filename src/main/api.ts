@@ -1042,9 +1042,14 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
     // delete any files that were extracted but then unmodified
     // since they should be the same as the vanilla files in CASC
-    runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
-      BridgeAPI.deleteFile(runtime.getDestinationFilePath(file), Relative.None);
-    });
+    if (!isDryRun) {
+      runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
+        BridgeAPI.deleteFile(
+          runtime.getDestinationFilePath(file),
+          Relative.None
+        );
+      });
+    }
 
     return modsInstalled;
   },

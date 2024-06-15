@@ -32,7 +32,7 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
     // and extract it during the very first time we use it so that we're
     // always applying to clean vanilla data rather than the output of a
     // previous installation
-    if (runtime.options.isDirectMode && !runtime.fileManager.exists(filePath)) {
+    if (runtime.options.isDirectMode) {
       throwIfError(
         runtime.BridgeAPI.deleteFile(
           runtime.getDestinationFilePath(filePath),
@@ -207,6 +207,8 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
           );
         }
       }
+
+      runtime.fileManager.write(filePath, runtime.mod.id);
 
       return stringID;
     },

@@ -28,7 +28,7 @@ export class FileManager {
 
   private get(filePath: string): FileStatus {
     const normalizedFilePath = filePath.toLowerCase();
-    if (this.files[filePath] == undefined) {
+    if (this.files[normalizedFilePath] == undefined) {
       return (this.files[normalizedFilePath] = {
         exists: false,
         extracted: false,

@@ -11,9 +11,9 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  Select,
-  SelectChangeEvent,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Toolbar,
   Typography,
 } from '@mui/material';
@@ -25,7 +25,6 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PendingOutlinedIcon from '@mui/icons-material/PendingOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import { MouseEvent, useCallback, useMemo, useState } from 'react';
-import FilterAltIcon from '@mui/icons-material/FilterAltOutlined';
 import { useLogLevels, useLogs } from './Logs';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
@@ -67,12 +66,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   );
 
   const onChangeLevels = useCallback(
-    (event: SelectChangeEvent<ILogLevel[]>) => {
-      setLevels(
-        (typeof event.target.value === 'string'
-          ? event.target.value.split(',')
-          : event.target.value) as ILogLevel[]
-      );
+    (_event: React.MouseEvent<HTMLElement>, newValue: ILogLevel[]) => {
+      setLevels(newValue);
     },
     [setLevels]
   );
@@ -180,22 +175,6 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           m: 1,
         }}
       >
-        <Select
-          size="small"
-          multiple={true}
-          value={levels}
-          onChange={onChangeLevels}
-          startAdornment={
-            <InputAdornment position="start">
-              <FilterAltIcon />
-            </InputAdornment>
-          }
-        >
-          <MenuItem value="error">Error</MenuItem>
-          <MenuItem value="warn">Warning</MenuItem>
-          <MenuItem value="log">Info</MenuItem>
-          <MenuItem value="debug">Debug</MenuItem>
-        </Select>
         <TextField
           size="small"
           variant="outlined"
@@ -221,10 +200,36 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 width: '400px',
               },
             },
-            marginLeft: 1,
           }}
         />
         <Box sx={{ flex: 1 }} />
+        <ToggleButtonGroup
+          size="small"
+          value={levels}
+          onChange={onChangeLevels}
+          aria-label="text alignment"
+          sx={{ marginRight: 2 }}
+        >
+          <ToggleButton value="error" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+            <ErrorOutlineIcon color="error" sx={{ marginRight: 1 }} />
+            Error
+          </ToggleButton>
+          <ToggleButton value="warn" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+            <ReportProblemOutlinedIcon
+              color="warning"
+              sx={{ marginRight: 1 }}
+            />
+            Warning
+          </ToggleButton>
+          <ToggleButton value="log" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+            <InfoOutlinedIcon color="primary" sx={{ marginRight: 1 }} />
+            Info
+          </ToggleButton>
+          <ToggleButton value="debug" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+            <PendingOutlinedIcon color="disabled" sx={{ marginRight: 1 }} />
+            Debug
+          </ToggleButton>
+        </ToggleButtonGroup>
         <Button
           variant="outlined"
           startIcon={<DownloadIcon />}

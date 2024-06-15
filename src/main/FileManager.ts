@@ -11,6 +11,7 @@ export type FileStatus = {
   exists: boolean;
   extracted: boolean;
   filePath: string;
+  gameFile: boolean | null;
   modified: boolean;
   operations: FileOperation[];
 };
@@ -33,6 +34,7 @@ export class FileManager {
         exists: false,
         extracted: false,
         filePath: normalizedFilePath,
+        gameFile: null,
         modified: false,
         operations: [],
       });
@@ -50,6 +52,14 @@ export class FileManager {
 
   public modified(filePath: string): boolean {
     return this.get(filePath).modified;
+  }
+
+  public gameFile(filePath: string): boolean {
+    const fileStatus = this.get(filePath);
+    return (
+      fileStatus.gameFile ??
+      falseIfError(this.runtime.BridgeAPI.isGameFile(fileStatus.filePath))
+    );
   }
 
   public extract(filePath: string, mod: string): void {
@@ -93,7 +103,7 @@ export class FileManager {
         (fileStatus.filePath.endsWith('.txt') ||
           fileStatus.filePath.endsWith('.json')) &&
         // and it's part of the game
-        falseIfError(this.runtime.BridgeAPI.isGameFile(fileStatus.filePath))
+        this.gameFile(filePath)
       ) {
         this.runtime.console.warn(
           `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`

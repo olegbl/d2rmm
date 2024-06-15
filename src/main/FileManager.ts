@@ -10,6 +10,7 @@ export type FileOperation = {
 export type FileStatus = {
   exists: boolean;
   extracted: boolean;
+  filePath: string;
   modified: boolean;
   operations: FileOperation[];
 };
@@ -26,15 +27,17 @@ export class FileManager {
   constructor(private runtime: InstallationRuntime) {}
 
   private get(filePath: string): FileStatus {
+    const normalizedFilePath = filePath.toLowerCase();
     if (this.files[filePath] == undefined) {
-      return (this.files[filePath] = {
+      return (this.files[normalizedFilePath] = {
         exists: false,
         extracted: false,
+        filePath: normalizedFilePath,
         modified: false,
         operations: [],
       });
     }
-    return this.files[filePath];
+    return this.files[normalizedFilePath];
   }
 
   public extracted(filePath: string): boolean {
@@ -77,7 +80,9 @@ export class FileManager {
       // then this mod could be overwriting changes
       if (modsThatWroteThisFile.length > 0) {
         this.runtime.console.warn(
-          `Mod "${mod}" is modifying file "${filePath}" without reading it first. This file was previously modified by ${joinListInEnglish(
+          `Mod "${mod}" is modifying file "${
+            fileStatus.filePath
+          }" without reading it first. This file was previously modified by ${joinListInEnglish(
             modsThatWroteThisFile.map((mod) => `"${mod}"`)
           )} and these changes will be lost. Consider moving "${mod}" higher in the load order.`
         );
@@ -85,12 +90,13 @@ export class FileManager {
       // otherwise, this mod could be overwriting game updates
       else if (
         // if the file is a text file
-        (filePath.endsWith('.txt') || filePath.endsWith('.json')) &&
+        (fileStatus.filePath.endsWith('.txt') ||
+          fileStatus.filePath.endsWith('.json')) &&
         // and it's part of the game
-        falseIfError(this.runtime.BridgeAPI.isGameFile(filePath))
+        falseIfError(this.runtime.BridgeAPI.isGameFile(fileStatus.filePath))
       ) {
         this.runtime.console.warn(
-          `Mod "${mod}" is modifying file "${filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`
+          `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`
         );
       }
     }

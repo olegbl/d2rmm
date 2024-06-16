@@ -41,6 +41,8 @@ function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
+let runtime: InstallationRuntime | null = null;
+
 const rendererConsole: ConsoleAPI = {
   debug: (..._args: unknown[]): void => {},
   log: (..._args: unknown[]): void => {},
@@ -54,11 +56,12 @@ function getAppPath(): string {
     : path.join(__dirname, '../../');
 }
 
-let currentOutputModName: string = 'D2RMM';
 function getSavesPath(): string {
   return path.join(
     process.env.USERPROFILE ?? path.join(app.getPath('home'), '../'),
-    `Saved Games/Diablo II Resurrected/mods/${currentOutputModName}/`
+    `Saved Games/Diablo II Resurrected/mods/${
+      runtime?.options.outputModName ?? 'D2RMM'
+    }/`
   );
 }
 
@@ -950,41 +953,27 @@ export const BridgeAPI: BridgeAPIImplementation = {
   },
 
   installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
-    const {
-      gamePath,
-      isDirectMode,
-      isDryRun,
-      isPreExtractedData,
-      mergedPath,
-      outputModName,
-    } = options;
-    const action = isDryRun ? 'Uninstall' : 'Install';
-    currentOutputModName = outputModName;
+    runtime = new InstallationRuntime(BridgeAPI, rendererConsole, options);
+    const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
-    if (!isDirectMode) {
-      BridgeAPI.deleteFile(`${mergedPath}\\..`, Relative.None);
-      BridgeAPI.createDirectory(mergedPath);
-      BridgeAPI.writeJson(`${mergedPath}\\..\\modinfo.json`, {
-        name: outputModName,
-        savepath: `${outputModName}/`,
+    if (!runtime.options.isDirectMode) {
+      BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, Relative.None);
+      BridgeAPI.createDirectory(runtime.options.mergedPath);
+      BridgeAPI.writeJson(`${runtime.options.mergedPath}\\..\\modinfo.json`, {
+        name: runtime.options.outputModName,
+        savepath: `${runtime.options.outputModName}/`,
       });
     }
 
-    if (!isPreExtractedData) {
-      BridgeAPI.openStorage(gamePath);
+    if (!runtime.options.isPreExtractedData) {
+      BridgeAPI.openStorage(runtime.options.gamePath);
     }
-
-    const runtime = new InstallationRuntime(
-      BridgeAPI,
-      rendererConsole,
-      options
-    );
 
     const modsInstalled = [];
     for (let i = 0; i < modsToInstall.length; i = i + 1) {
       runtime.mod = modsToInstall[i];
       try {
-        rendererConsole.debug(`Mod ${runtime.mod.info.name} parsing code...`);
+        rendererConsole.debug(`Mod parsing code...`);
         let code: string = '';
         if (runtime.mod.info.type === 'data') {
           code = datamod;
@@ -1000,9 +989,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         }
         const api = getModAPI(runtime);
         try {
-          rendererConsole.debug(
-            `Mod ${runtime.mod.info.name} ${action.toLowerCase()}ing...`
-          );
+          rendererConsole.debug(`Mod ${action.toLowerCase()}ing...`);
           const vm = new VM({
             sandbox: {
               config: runtime.mod.config,
@@ -1034,47 +1021,40 @@ export const BridgeAPI: BridgeAPIImplementation = {
             }
           }
           modsInstalled.push(runtime.mod.id);
-          rendererConsole.log(
-            `Mod ${
-              runtime.mod.info.name
-            } ${action.toLowerCase()}ed successfully.`
-          );
+          rendererConsole.log(`Mod ${action.toLowerCase()}ed successfully.`);
         } catch (error) {
           if (error instanceof Error) {
             rendererConsole.error(
-              `Mod ${
-                runtime.mod.info.name
-              } encountered a runtime error!\n${error.toString()}`
+              `Mod encountered a runtime error!\n${error.toString()}`
             );
           }
         }
       } catch (error) {
         if (error instanceof Error) {
           rendererConsole.error(
-            `Mod ${
-              runtime.mod.info.name
-            } encountered a compile error!\n${error.toString()}`
+            `Mod encountered a compile error!\n${error.toString()}`
           );
         }
       }
     }
     runtime.mod = null;
 
-    if (!isPreExtractedData) {
+    if (!runtime.options.isPreExtractedData) {
       BridgeAPI.closeStorage();
     }
 
     // delete any files that were extracted but then unmodified
     // since they should be the same as the vanilla files in CASC
-    if (!isDryRun) {
+    if (!runtime.options.isDryRun) {
       runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
         BridgeAPI.deleteFile(
-          runtime.getDestinationFilePath(file),
+          runtime!.getDestinationFilePath(file),
           Relative.None
         );
       });
     }
 
+    runtime = null;
     return modsInstalled;
   },
 };
@@ -1097,7 +1077,14 @@ export function initBridgeAPI(mainWindow: BrowserWindow): void {
   const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
   consoleMethods.forEach((level: typeof consoleMethods[number]) => {
     rendererConsole[level] = (...args) => {
-      mainWindow.webContents.send('console', [level, args]);
+      if (runtime?.isModInstalling() ?? false) {
+        mainWindow.webContents.send('console', [
+          level,
+          [`[${runtime!.mod!.info.name}]`, ...args],
+        ]);
+      } else {
+        mainWindow.webContents.send('console', [level, args]);
+      }
     };
   });
 }

@@ -13,6 +13,10 @@ export class InstallationRuntime {
     this.fileManager = new FileManager(this);
   }
 
+  isModInstalling(): boolean {
+    return this.mod_ != null;
+  }
+
   public set mod(mod: Mod | null) {
     this.mod_ = mod;
   }

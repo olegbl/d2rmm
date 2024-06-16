@@ -4,13 +4,13 @@ import { TSVData } from './TSV';
 /**
  * This is the interface of the global "D2RMM" variable provided to mods at runtime.
  */
-export type ModAPI = {
+export interface ModAPI {
   /**
    * Returns the version of D2RMM.
    * @note You can use this API to check if the installed version of D2RMM is compatible
    *       with the APIs that your mod is using.
    * @example
-   * const version = D2RMM.geteVersion(); // 1.5
+   * const version = D2RMM.getVersion(); // 1.5
    * @returns The version including the major and the minor number.
    */
   getVersion: () => number;
@@ -153,4 +153,4 @@ export type ModAPI = {
    * D2RMM.error(new Error('Something went wrong!'));
    */
   error: (message: string | Error) => void;
-};
+}

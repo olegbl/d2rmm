@@ -1,6 +1,6 @@
 import { Close } from '@mui/icons-material';
 import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
-import { ModConfigFieldOrSection, ModConfigFieldSection } from './ModConfig';
+import { ModConfigFieldOrSection, ModConfigSection } from './ModConfig';
 import ModSettingsSection from './ModSettingsSection';
 
 type Props = {
@@ -42,36 +42,33 @@ export default function ModSettings({
       {
         // convert legacy "flat" sections into modern nested sections
         mod.info.config
-          .reduce(
-            (agg: ModConfigFieldSection[], field: ModConfigFieldOrSection) => {
-              // handle top level fields outside and above of any section
-              // by appending them to a generic default section
-              if (agg.length === 0 && field.type !== 'section') {
-                return [
-                  {
-                    id: 'default-section',
-                    type: 'section',
-                    name: '',
-                    children: [field],
-                  } as ModConfigFieldSection,
-                ];
-              }
-              // handle top level fields outside of any section
-              // by appending them to the preceding section
-              if (field.type !== 'section') {
-                return [
-                  ...agg.slice(0, -1),
-                  {
-                    ...agg[agg.length - 1],
-                    children: [...(agg[agg.length - 1].children ?? []), field],
-                  },
-                ];
-              }
-              // the rest should be sections
-              return [...agg, field];
-            },
-            []
-          )
+          .reduce((agg: ModConfigSection[], field: ModConfigFieldOrSection) => {
+            // handle top level fields outside and above of any section
+            // by appending them to a generic default section
+            if (agg.length === 0 && field.type !== 'section') {
+              return [
+                {
+                  id: 'default-section',
+                  type: 'section',
+                  name: '',
+                  children: [field],
+                } as ModConfigSection,
+              ];
+            }
+            // handle top level fields outside of any section
+            // by appending them to the preceding section
+            if (field.type !== 'section') {
+              return [
+                ...agg.slice(0, -1),
+                {
+                  ...agg[agg.length - 1],
+                  children: [...(agg[agg.length - 1].children ?? []), field],
+                },
+              ];
+            }
+            // the rest should be sections
+            return [...agg, field];
+          }, [])
           .map((section) => (
             <ModSettingsSection key={section.id} section={section} mod={mod} />
           ))

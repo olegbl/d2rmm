@@ -3,6 +3,11 @@ import { TSVData } from './TSV';
 
 /**
  * This is the interface of the global "D2RMM" variable provided to mods at runtime.
+ *
+ * @example
+ * ```
+ * const version = D2RMM.getVersion();
+ * ```
  */
 export interface ModAPI {
   /**
@@ -10,7 +15,9 @@ export interface ModAPI {
    * @note You can use this API to check if the installed version of D2RMM is compatible
    *       with the APIs that your mod is using.
    * @example
+   * ```
    * const version = D2RMM.getVersion(); // 1.5
+   * ```
    * @returns The version including the major and the minor number.
    */
   getVersion: () => number;
@@ -23,8 +30,10 @@ export interface ModAPI {
    * @note The file is either read from D2R game files as specified in D2RMM's config,
    *       or is the result of previously installed mods already operating on this file.
    * @example
+   * ```
    * const profileHD = D2RMM.readJson('global\\ui\\layouts\\_profilehd.json');
    * profileHD.FontColorRed.r; // 252
+   * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The parsed JSON data.
    */
@@ -33,10 +42,12 @@ export interface ModAPI {
   /**
    * Writes a JSON D2R file.
    * @example
+   * ```
    * // change red colored text to bright green!
    * const profileHD = D2RMM.readJson('global\\ui\\layouts\\_profilehd.json');
    * profileHD.FontColorRed = {r: 0, b: 0, g: 255, a: 255};
    * D2RMM.writeJson('global\\ui\\layouts\\_profilehd.json', profileHD);
+   * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The JSON data to write.
    */
@@ -48,9 +59,11 @@ export interface ModAPI {
    * @note The file is either read from D2R game files as specified in D2RMM's config,
    *       or is the result of previously installed mods already operating on this file.
    * @example
+   * ```
    * const treasureclassex = D2RMM.readTsv('global\\excel\\treasureclassex.txt');
    * console.log('There are ' + treasureclassex.rows.length + ' treasure classes!');
    * console.log('Each treasure class has ' + treasureclassex.headers.length + ' properties!');
+   * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The parsed TSV data.
    */
@@ -59,6 +72,7 @@ export interface ModAPI {
   /**
    * Writes a TSV (tab separated values in a .txt) D2R file. This is a classic data format used by D2.
    * @example
+   * ```
    * const treasureclassex = D2RMM.readTsv('global\\excel\\treasureclassex.txt');
    * treasureclassex.rows.forEach(row => {
    *   // D2R TSV files sometimes have blank rows
@@ -67,6 +81,7 @@ export interface ModAPI {
    *   }
    * });
    * D2RMM.writeTsv('global\\excel\\treasureclassex.txt', treasureclassex);
+   * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The TSV data to write.
    */
@@ -77,8 +92,10 @@ export interface ModAPI {
    * @note The file is either read from D2R game files as specified in D2RMM's config,
    *       or is the result of previously installed mods already operating on this file.
    * @example
+   * ```
    * const nextStringIDRaw = D2RMM.readJson('local\\next_string_id.txt');
    * let nextStringID = nextStringIDRaw.match(/[0-9]+/)[0]; // next valid string id
+   * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The raw text data.
    */
@@ -87,11 +104,13 @@ export interface ModAPI {
   /**
    * Writes a plain text D2R file.
    * @example
+   * ```
    * const nextStringIDRaw = D2RMM.readTxt('local\\next_string_id.txt');
    * let nextStringID = nextStringIDRaw.match(/[0-9]+/)[0]; // next valid string id
    * nextStringID ++;
    * nextStringIDRaw.replace(/[0-9]+/, nextStringID);
    * D2RMM.writeTxt('local\\next_string_id.txt', nextStringIDRaw);
+   * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The raw text data to write.
    */
@@ -100,8 +119,10 @@ export interface ModAPI {
   /**
    * Reads a save file from the saves directory as a binary Buffer.
    * @example
+   * ```
    * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
    * console.log('Save file size: ' + stashData.length);
+   * ```
    * @param filePath - The path of the save file to read, relative to the saves directory.
    * @returns The binary data of the save file.
    */
@@ -109,9 +130,13 @@ export interface ModAPI {
 
   /**
    * Writes a save file to the saves directory as a binary Buffer.
+   * @note It's highly recommended to write a backup of any save file you are modifying
+   *       because save files can be corrupted if written incorrectly.
    * @example
+   * ```
    * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
    * D2RMM.writeSaveFile('SharedStashSoftCoreV2.d2i', Buffer.concat([stashData, EXTRA_STASH_TAB]));
+   * ```
    * @param filePath - The path of the save file to write, relative to the saves directory.
    * @param data - The binary data of the save file to write.
    */
@@ -128,12 +153,14 @@ export interface ModAPI {
    * @param dst - The path of the file or directory to copy to, relative to the data directory.
    * @param overwrite - Whether to overwrite any conflicts.
    * @example
+   * ```
    * // copy new sprites to the output directory
    * D2RMM.copyFile(
    *   'hd', // <mod folder>\hd
    *   'hd', // <diablo 2 folder>\mods\D2RMM\D2RMM.mpq\data\hd
    *   true // overwrite any conflicts
    * );
+   * ```
    */
   copyFile: (src: string, dst: string, overwrite?: boolean) => void;
 
@@ -146,11 +173,13 @@ export interface ModAPI {
 
   /**
    * Shows an error message to the user.
-   * @deprecated Use `console.error` or `throw new Error` instead.
+   * @deprecated Use `console.error()` or `throw new Error()` instead.
    * @param message - The message to show.
    * @example
+   * ```
    * D2RMM.error('Something went wrong!');
    * D2RMM.error(new Error('Something went wrong!'));
+   * ```
    */
   error: (message: string | Error) => void;
 }

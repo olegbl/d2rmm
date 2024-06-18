@@ -1,5 +1,5 @@
 {
-  "name": "D2RMM Mod API",
+  "name": "D2RMM",
   "readme": "DOCS.md",
   "entryPoints": [
     "src/renderer/Bindings.d.ts",

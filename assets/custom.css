@@ -1,0 +1,25 @@
+.container.container-main {
+  margin: 0px auto;
+  min-height: calc(100vh - 41px);
+}
+
+.col-content {
+  padding-top: 2rem;
+}
+
+footer {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .site-menu,
+  .page-menu {
+    top: calc(42px + 1rem);
+  }
+}
+
+@media (min-width: 770px) and (max-width: 1399px) {
+  .col-sidebar {
+    top: calc(42px + 0.5rem);
+  }
+}

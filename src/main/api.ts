@@ -691,10 +691,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
           transpiledCode: string;
         };
 
-        function getDependencies(
+        function processDependencies(
           module: ModuleWithSourceCode,
           absoluteFilePath: string
-        ): Module[] {
+        ): [ModuleWithSourceCode, Module[]] {
           const sourceFile = ts.createSourceFile(
             absoluteFilePath,
             module.sourceCode,
@@ -702,18 +702,43 @@ export const BridgeAPI: BridgeAPIImplementation = {
             true,
             ts.ScriptKind.TS
           );
+          const rootPath = path.dirname(module.id + '.ts');
           const dependencies: Module[] = [];
-          ts.forEachChild(sourceFile, (node) => {
+          const statements = ts.visitNodes(sourceFile.statements, (node) => {
             if (ts.isImportDeclaration(node)) {
-              const moduleID = node.moduleSpecifier
+              const importPath = node.moduleSpecifier
                 .getText()
-                .replace(/^['"]\.\/(.*)['"]$/, '$1');
-              dependencies.push({
-                id: moduleID,
-              });
+                .replace(/^['"](.*)['"]$/, '$1');
+              const dependencyPath = path
+                // resolve relative paths
+                .normalize(`${rootPath}/${importPath}`)
+                // keep TS stype paths
+                .replace(/\\/g, '/');
+              dependencies.push({ id: dependencyPath });
+              return ts.factory.updateImportDeclaration(
+                node,
+                node.modifiers,
+                node.importClause,
+                ts.factory.createStringLiteral(`./${dependencyPath}`, true),
+                node.assertClause
+              );
             }
+            return node;
           });
-          return dependencies;
+          return [
+            {
+              ...module,
+              sourceCode: ts
+                .createPrinter()
+                .printFile(
+                  ts.factory.updateSourceFile(
+                    sourceFile,
+                    statements as unknown as ts.Statement[]
+                  )
+                ),
+            },
+            dependencies,
+          ];
         }
 
         const modulesWithSourceCode: ModuleWithSourceCode[] = [];
@@ -737,15 +762,15 @@ export const BridgeAPI: BridgeAPIImplementation = {
             );
           }
 
-          const moduleWithSourceCode = {
-            ...module,
-            sourceCode,
-          };
-
           const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
-          getDependencies(moduleWithSourceCode, absoluteFilePath).forEach((m) =>
-            processModule(m)
+          const [moduleWithSourceCode, dependencies] = processDependencies(
+            {
+              ...module,
+              sourceCode,
+            },
+            absoluteFilePath
           );
+          dependencies.forEach((m) => processModule(m));
 
           modulesWithSourceCode.push(moduleWithSourceCode);
         }
@@ -800,23 +825,36 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
         const modules = modulesWithTranspiledCode.reduce(
           (agg, module) =>
-            `${agg}require.register('./${module.id}', function ${module.id}(exports) {${module.transpiledCode}});`,
+            `${agg}\n\nrequire.register('./${
+              module.id
+            }', function ${path.basename(module.id)}(exports) {${
+              module.transpiledCode
+            }});`,
           ''
         );
 
         return `
-        function require(id) {
-          return require.modules[id];
-        }
-        require.modules = {};
-        require.register = function(id, getModule) {
-          const exports = {};
-          getModule(exports);
-          require.modules[id] = exports;
-        }
-        ${modules}
-        require('./mod');
-      `;
+function require(id) {
+  if (require.loadedModules[id] == null) {
+    require.load(id);
+  }
+  return require.loadedModules[id];
+}
+require.loadedModules = {};
+require.load = function(id) {
+  const exports = {};
+  require.registeredModules[id](exports);
+  require.loadedModules[id] = exports;
+};
+require.registeredModules = {};
+require.register = function(id, getModule) {
+  require.registeredModules[id] = getModule;
+}
+
+${modules}
+
+require('./mod');
+        `;
       } catch (error) {
         return createError(
           'BridgeAPI.readModCode',

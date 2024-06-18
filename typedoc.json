@@ -11,5 +11,7 @@
     "src/renderer/TSV.d.ts"
   ],
   "out": "docs",
-  "githubPages": false
+  "githubPages": false,
+  "sitemapBaseUrl": "https://olegbl.github.io/d2rmm/",
+  "customCss": "./docs.css",
 }

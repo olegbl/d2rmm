@@ -2,178 +2,178 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/index.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/Bindings.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.Binding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingAnd.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingConditional.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingConfigValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingEquals.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingGreaterThan.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingGreaterThanOrEqual.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingIncludes.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingLessThan.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingLessThanOrEqual.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingLiteralValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingNot.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingNotEquals.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BindingOr.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.BooleanBinding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.NumberArrayBinding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.NumberBinding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.StringArrayBinding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/Bindings.StringBinding.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/ConsoleAPI.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ConsoleAPI.ConsoleAPI.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/JSON.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/JSON.JSONData.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/JSON.JSONDataValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/JSON.JSONDataValues.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/ModAPI.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModAPI.ModAPI.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/ModConfig.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfig.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigFieldCheckbox.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigFieldColor.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigFieldNumber.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigFieldSelect.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigFieldText.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/interfaces/ModConfig.ModConfigSection.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/ModConfigValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/ModConfigValue.ModConfigSingleValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/ModConfigValue.ModConfigValue.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/modules/TSV.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/TSV.TSVData.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/TSV.TSVDataHeader.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 	<url>
 		<loc>https://olegbl.github.io/d2rmm/types/TSV.TSVDataRow.html</loc>
-		<lastmod>2024-06-19T14:52:01.765Z</lastmod>
+		<lastmod>2024-06-19T15:05:39.531Z</lastmod>
 	</url>
 </urlset>

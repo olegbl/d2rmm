@@ -2,13 +2,16 @@ import { ConsoleAPI } from 'renderer/ConsoleAPI';
 import { FileManager } from './FileManager';
 
 export class InstallationRuntime {
-  public fileManager: FileManager;
   private mod_: Mod | null = null;
+
+  public fileManager: FileManager;
+  public modsInstalled: string[] = [];
 
   constructor(
     public BridgeAPI: BridgeAPIImplementation,
     public console: ConsoleAPI,
-    public options: IInstallModsOptions
+    public options: IInstallModsOptions,
+    public modsToInstall: Mod[]
   ) {
     this.fileManager = new FileManager(this);
   }

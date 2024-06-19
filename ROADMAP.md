@@ -1,17 +1,10 @@
 # Mod Manager
 
+- Source maps for TS
+- Track last install state
 - Mod config actions
-- Documentation
-  - Write a simple tutorial
-  - Add more examples to TSDocs
-- Improved mod UI
-  - Toggle all for subsections of checkboxes
-  - Auto-complete
-- Add D2RMM.getModList() API
-  - Return list of mods already installed during this installation
-  - Return list of mods yet to be installed during this installation
-  - Include version number of each mod
-  - Include config of each mod
+- Toggle all for subsections of only checkboxes
+- Typeahead config
 
 # Mods
 

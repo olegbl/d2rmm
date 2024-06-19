@@ -1,4 +1,6 @@
 import { JSONData } from './JSON';
+import { ModConfig } from './ModConfig';
+import { ModConfigValue } from './ModConfigValue';
 import { TSVData } from './TSV';
 
 /**
@@ -32,6 +34,30 @@ export interface ModAPI {
    * @returns The version including the major, minor, and patch numbers.
    */
   getFullVersion: () => [number, number, number];
+
+  /**
+   * Returns the list of mods being installed.
+   * @example
+   * ```
+   * const modList = D2RMM.getModList();
+   * modList.forEach(mod => {
+   *   console.log(
+   *     `mod ${mod.name} (${mod.id})`,
+   *     `v${mod.version}`,
+   *     `is ${mod.installed ? 'already installed' : 'not yet installed'}`,
+   *     `with config ${JSON.stringify(mod.config)}`,
+   *   );
+   * });
+   * ```
+   * @returns The list of installed mods.
+   */
+  getModList: () => {
+    id: Mod['id'];
+    name: ModConfig['name'];
+    version: ModConfig['version'];
+    installed: boolean;
+    config: ModConfigValue;
+  }[];
 
   /**
    * Reads a JSON D2R file.

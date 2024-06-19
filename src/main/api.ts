@@ -994,7 +994,12 @@ require('./mod');
   },
 
   installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
-    runtime = new InstallationRuntime(BridgeAPI, rendererConsole, options);
+    runtime = new InstallationRuntime(
+      BridgeAPI,
+      rendererConsole,
+      options,
+      modsToInstall
+    );
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     if (!runtime.options.isDirectMode) {
@@ -1010,9 +1015,8 @@ require('./mod');
       BridgeAPI.openStorage(runtime.options.gamePath);
     }
 
-    const modsInstalled = [];
-    for (let i = 0; i < modsToInstall.length; i = i + 1) {
-      runtime.mod = modsToInstall[i];
+    for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
+      runtime.mod = runtime.modsToInstall[i];
       try {
         rendererConsole.debug(`Mod parsing code...`);
         let code: string = '';
@@ -1061,7 +1065,7 @@ require('./mod');
               throw error;
             }
           }
-          modsInstalled.push(runtime.mod.id);
+          runtime.modsInstalled.push(runtime.mod.id);
           rendererConsole.log(`Mod ${action.toLowerCase()}ed successfully.`);
         } catch (error) {
           if (error instanceof Error) {
@@ -1095,6 +1099,7 @@ require('./mod');
       });
     }
 
+    const modsInstalled = runtime.modsInstalled;
     runtime = null;
     return modsInstalled;
   },

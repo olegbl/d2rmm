@@ -77,6 +77,17 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
       console.debug('D2RMM.getFullVersion');
       return throwIfError(runtime.BridgeAPI.getVersion());
     },
+    getModList: () => {
+      console.debug('D2RMM.getModList');
+
+      return runtime.modsToInstall.map((mod) => ({
+        id: mod.id,
+        name: mod.info.name,
+        version: mod.info.version,
+        installed: runtime.modsInstalled.includes(mod.id),
+        config: mod.config,
+      }));
+    },
     error: (message: string | Error): void => {
       if (message instanceof Error) {
         throw message;

@@ -1,7 +1,6 @@
 # Mod Manager
 
 - Source maps for TS
-- Track last install state
 - Mod config actions
 - Toggle all for subsections of only checkboxes
 - Typeahead config

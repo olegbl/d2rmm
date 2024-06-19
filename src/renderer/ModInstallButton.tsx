@@ -1,35 +1,34 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useTransition } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
 import useToast from './useToast';
 import { usePreferences } from './Preferences';
 import { useLogger } from './Logs';
-import { useEnabledMods } from './ModsContext';
+import {
+  useInstalledMods,
+  useIsInstallConfigChanged,
+  useModsToInstall,
+} from './ModsContext';
 
 const BridgeAPI = window.electron.BridgeAPI;
 
 type Props = {
   isUninstall?: boolean;
   onErrorsEncountered: () => unknown;
-  orderedMods: Mod[];
   tooltip?: string | null;
 };
 
 export default function ModInstallButton({
   isUninstall = false,
   onErrorsEncountered,
-  orderedMods,
   tooltip,
 }: Props): JSX.Element {
   const showToast = useToast();
   const preferences = usePreferences();
   const logger = useLogger();
-  const [enabledMods] = useEnabledMods();
-
-  const modsToInstall = useMemo(
-    () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
-    [orderedMods, enabledMods]
-  );
+  const modsToInstall = useModsToInstall();
+  const [, setInstalledMods] = useInstalledMods();
+  const isInstallConfigChanged = useIsInstallConfigChanged();
 
   const label = isUninstall ? 'Uninstall' : 'Install';
 
@@ -51,7 +50,11 @@ export default function ModInstallButton({
       };
 
       console.debug(`Installing mods...`, options);
-      const modsInstalled = BridgeAPI.installMods(modsToInstall, options);
+      let modsInstalled = [];
+      modsInstalled = BridgeAPI.installMods(modsToInstall, options);
+      setInstalledMods(
+        modsToInstall.map((mod) => ({ id: mod.id, config: mod.config }))
+      );
 
       if (modsToInstall.length === 0) {
         showToast({
@@ -89,7 +92,10 @@ export default function ModInstallButton({
   ]);
 
   const button = (
-    <LoadingButton onClick={onInstallMods} variant="outlined">
+    <LoadingButton
+      onClick={onInstallMods}
+      variant={isInstallConfigChanged ? 'contained' : 'outlined'}
+    >
       {label} Mods
     </LoadingButton>
   );

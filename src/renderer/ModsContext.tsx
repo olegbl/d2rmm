@@ -17,30 +17,48 @@ type Mutable<T> = {
   -readonly [P in keyof T]: T[P];
 };
 
+type IMods = Mod[];
+
+type IModsRefresher = () => void;
+
 type IEnabledMods = { [id: string]: boolean };
 
 type IEnabledModsMutator = React.Dispatch<React.SetStateAction<IEnabledMods>>;
+
+type IInstalledMods = { id: Mod['id']; config: Mod['config'] }[];
+
+type IInstalledModsMutator = React.Dispatch<
+  React.SetStateAction<IInstalledMods>
+>;
 
 type ISelectedMod = Mod | null;
 
 type ISelectedModMutator = React.Dispatch<React.SetStateAction<ISelectedMod>>;
 
+type IOrderedMods = Mod[];
+
 type IModOrder = string[];
 
-type IReorderMod = (from: number, to: number) => unknown;
+type IModOrderMutator = (from: number, to: number) => unknown;
+
+type IModConfigMutator = (
+  id: string,
+  value: React.SetStateAction<ModConfigValue>
+) => void;
 
 export type IModsContext = {
   enabledMods: IEnabledMods;
-  mods: Mod[];
-  orderedMods: Mod[];
-  refreshMods: () => void;
-  reorderMod: IReorderMod;
+  installedMods: IInstalledMods;
+  isInstallConfigChanged: boolean;
+  mods: IMods;
+  modsToInstall: IOrderedMods;
+  orderedMods: IOrderedMods;
+  refreshMods: IModsRefresher;
+  reorderMod: IModOrderMutator;
   selectedMod: ISelectedMod;
   setEnabledMods: IEnabledModsMutator;
-  setModConfig: (
-    id: string,
-    value: React.SetStateAction<ModConfigValue>
-  ) => void;
+  setInstalledMods: IInstalledModsMutator;
+  setModConfig: IModConfigMutator;
   setSelectedMod: ISelectedModMutator;
 };
 
@@ -120,6 +138,13 @@ export function ModsContextProvider({
     setMods(getMods());
   }, [getMods]);
 
+  const [installedMods, setInstalledMods] = useSavedState(
+    'installed-mods',
+    {} as IInstalledMods,
+    (map) => JSON.stringify(map),
+    (str) => JSON.parse(str)
+  );
+
   const [enabledMods, setEnabledMods] = useSavedState(
     'enabled-mods',
     {} as IEnabledMods,
@@ -198,26 +223,48 @@ export function ModsContextProvider({
     [getModByID]
   );
 
+  const modsToInstall = useMemo(
+    () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
+    [orderedMods, enabledMods]
+  );
+
+  const isInstallConfigChanged = useMemo(() => {
+    const installedModsNew: IInstalledMods = modsToInstall.map((mod) => ({
+      id: mod.id,
+      config: mod.config,
+    }));
+    console.log('isInstallConfigChanged', installedMods, installedModsNew);
+    return JSON.stringify(installedMods) != JSON.stringify(installedModsNew);
+  }, [modsToInstall, installedMods]);
+
   const context = useMemo(
     (): IModsContext => ({
       enabledMods,
+      installedMods,
+      isInstallConfigChanged,
       mods,
+      modsToInstall,
       orderedMods,
       refreshMods,
       reorderMod,
       selectedMod,
       setEnabledMods,
+      setInstalledMods,
       setModConfig,
       setSelectedMod,
     }),
     [
       enabledMods,
+      installedMods,
+      isInstallConfigChanged,
       mods,
+      modsToInstall,
       orderedMods,
       refreshMods,
       reorderMod,
       selectedMod,
       setEnabledMods,
+      setInstalledMods,
       setModConfig,
       setSelectedMod,
     ]
@@ -234,6 +281,14 @@ export function useEnabledMods(): [IEnabledMods, IEnabledModsMutator] {
   return [context.enabledMods, context.setEnabledMods];
 }
 
+export function useInstalledMods(): [IInstalledMods, IInstalledModsMutator] {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return [context.installedMods, context.setInstalledMods];
+}
+
 export function useToggleMod(): (mod: Mod) => void {
   const [, setEnabledMods] = useEnabledMods();
   return useCallback(
@@ -246,7 +301,7 @@ export function useToggleMod(): (mod: Mod) => void {
   );
 }
 
-export function useMods(): [Mod[], () => unknown] {
+export function useMods(): [IMods, IModsRefresher] {
   const context = useContext(Context);
   if (context == null) {
     throw new Error('No preferences context available.');
@@ -254,12 +309,20 @@ export function useMods(): [Mod[], () => unknown] {
   return [context.mods, context.refreshMods];
 }
 
-export function useOrderedMods(): [Mod[], IReorderMod] {
+export function useOrderedMods(): [IOrderedMods, IModOrderMutator] {
   const context = useContext(Context);
   if (context == null) {
     throw new Error('No preferences context available.');
   }
   return [context.orderedMods, context.reorderMod];
+}
+
+export function useModsToInstall(): IOrderedMods {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return context.modsToInstall;
 }
 
 export function useSelectedMod(): [ISelectedMod, ISelectedModMutator] {
@@ -276,4 +339,12 @@ export function useSetModConfig(): IModsContext['setModConfig'] {
     throw new Error('No preferences context available.');
   }
   return context.setModConfig;
+}
+
+export function useIsInstallConfigChanged(): boolean {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return context.isInstallConfigChanged;
 }

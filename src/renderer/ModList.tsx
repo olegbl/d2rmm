@@ -115,14 +115,10 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
             <ModInstallButton
               isUninstall={true}
               onErrorsEncountered={onShowLogsTab}
-              orderedMods={orderedMods}
               tooltip="Revert any files modified by the enabled mods back to their vanilla state."
             />
           ) : null}
-          <ModInstallButton
-            orderedMods={orderedMods}
-            onErrorsEncountered={onShowLogsTab}
-          />
+          <ModInstallButton onErrorsEncountered={onShowLogsTab} />
         </ButtonGroup>
       </Box>
       <ModSettingsDrawer />

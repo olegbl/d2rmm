@@ -70,7 +70,12 @@ export function getModAPI(runtime: InstallationRuntime): ModAPI {
   return {
     getVersion: (): number => {
       console.debug('D2RMM.getVersion');
-      return parseFloat(throwIfError(runtime.BridgeAPI.getVersion()));
+      const [major, minor] = throwIfError(runtime.BridgeAPI.getVersion());
+      return parseFloat(`${major}.${minor}`);
+    },
+    getFullVersion: (): [number, number, number] => {
+      console.debug('D2RMM.getFullVersion');
+      return throwIfError(runtime.BridgeAPI.getVersion());
     },
     error: (message: string | Error): void => {
       if (message instanceof Error) {

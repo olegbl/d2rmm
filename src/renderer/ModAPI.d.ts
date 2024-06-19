@@ -11,7 +11,7 @@ import { TSVData } from './TSV';
  */
 export interface ModAPI {
   /**
-   * Returns the version of D2RMM.
+   * Returns the version of D2RMM composed of the major and minor versions as a float.
    * @note You can use this API to check if the installed version of D2RMM is compatible
    *       with the APIs that your mod is using.
    * @example
@@ -21,6 +21,17 @@ export interface ModAPI {
    * @returns The version including the major and the minor number.
    */
   getVersion: () => number;
+
+  /**
+   * Returns the full version of D2RMM composed of the major, minor, and patch versions as an array of integers.
+   * @note Mods should not need to rely on the patch version.
+   * @example
+   * ```
+   * const [major, minor, patch] = D2RMM.getFullVersion();
+   * ```
+   * @returns The version including the major, minor, and patch numbers.
+   */
+  getFullVersion: () => [number, number, number];
 
   /**
    * Reads a JSON D2R file.

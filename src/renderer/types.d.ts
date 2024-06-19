@@ -57,7 +57,7 @@ declare global {
     extractFile: (filePath: string, targetPath: string) => boolean | Error;
     getAppPath: () => string;
     getGamePath: () => Promise<string | null>;
-    getVersion: () => string;
+    getVersion: () => [number, number, number];
     installMods: (
       modsToInstall: Mod[],
       options: IInstallModsOptions

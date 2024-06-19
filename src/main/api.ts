@@ -163,7 +163,10 @@ export const BridgeAPI: BridgeAPIImplementation = {
   getVersion: () => {
     rendererConsole.debug('BridgeAPI.getVersion');
 
-    return packageManifest.version;
+    const [major, minor, patch] = packageManifest.version
+      .split('.')
+      .map(Number);
+    return [major ?? 0, minor ?? 0, patch ?? 0];
   },
 
   getAppPath: () => {

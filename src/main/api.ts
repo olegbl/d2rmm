@@ -14,10 +14,6 @@ import path from 'path';
 import ffi from 'ffi-napi';
 import ref from 'ref-napi';
 import { execFile, execFileSync } from 'child_process';
-// vm2 isn't secure, but isolated-vm refuses to build for this version of electron
-// going to table updating to isolated-vm for later as I've wasted too much time already
-// @ts-ignore[2307] - no @types/vm2 exists
-import { VM } from 'vm2';
 import json5 from 'json5';
 import ts from 'typescript';
 import { ConsoleAPI } from 'renderer/ConsoleAPI';
@@ -28,6 +24,8 @@ import packageManifest from '../../release/app/package.json';
 import { getModAPI } from './ModAPI';
 import { InstallationRuntime } from './InstallationRuntime';
 import { datamod } from './datamod';
+import { Scope, getQuickJSSync } from 'quickjs-emscripten';
+import { getConsoleAPI } from './ConsoleAPI';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -1032,52 +1030,43 @@ require('./mod');
           }
           code = result;
         }
-        const api = getModAPI(runtime);
+        // this lambda runs synchronously
+        const scope = new Scope();
         try {
           rendererConsole.debug(`Mod ${action.toLowerCase()}ing...`);
-          const vm = new VM({
-            sandbox: {
-              config: runtime.mod.config,
-              console: rendererConsole,
-              D2RMM: api,
-            },
-            timeout: 30000,
-            wasm: false, // Disable WebAssembly support if not required
-            eval: false, // Disable eval function if not required
-          });
-          try {
-            vm.run(code);
-          } catch (error) {
-            if (error instanceof Error) {
-              const message = (error.stack ?? '')
-                .replace(
-                  /:([0-9]+):([0-9]+)/g,
-                  // decrement all line numbers by 1 to account for the wrapper function
-                  (_match, line, column) => `:${Number(line) - 1}:${column}`
-                )
-                .split('\n')
-                .filter((line, index) => index === 0 || line.includes('vm.js:'))
-                .join('\n')
-                .replace(/vm.js:/g, 'mod.js:')
-                .slice(0, -1);
-              throw new Error(message);
-            } else {
-              throw error;
-            }
-          }
-          runtime.modsInstalled.push(runtime.mod.id);
+          const vm = scope.manage(getQuickJSSync().newContext());
+          vm.setProp(
+            vm.global,
+            'console',
+            getConsoleAPI(vm, scope, rendererConsole)
+          );
+          vm.setProp(vm.global, 'D2RMM', getModAPI(vm, scope, runtime));
+          scope.manage(
+            vm.unwrapResult(
+              vm.evalCode(
+                `const config = JSON.parse(D2RMM.getConfigJSON());\n${code}`
+              )
+            )
+          );
+          runtime!.modsInstalled.push(runtime.mod.id);
           rendererConsole.log(`Mod ${action.toLowerCase()}ed successfully.`);
         } catch (error) {
           if (error instanceof Error) {
             rendererConsole.error(
-              `Mod encountered a runtime error!\n${error.toString()}`
+              `Mod encountered a runtime error!\n${
+                error.stack
+                  ?.replace(/\s*at <eval>[\s\S]*/m, '')
+                  ?.replace(/eval.js/g, `/mods/${runtime.mod.id}/mod.js`) ??
+                error.message
+              }`
             );
           }
         }
+        scope.dispose();
       } catch (error) {
         if (error instanceof Error) {
           rendererConsole.error(
-            `Mod encountered a compile error!\n${error.toString()}`
+            `Mod encountered a compile error!\n${error.stack}`
           );
         }
       }

@@ -16,10 +16,10 @@
   "dependencies": {
     "ffi-napi": "^4.0.3",
     "json5": "^2.2.0",
+    "quickjs-emscripten": "^0.29.2",
     "ref-napi": "^3.0.3",
     "regedit": "^5.1.2",
-    "typescript": "^5.2.2",
-    "vm2": "^3.9.19"
+    "typescript": "^5.2.2"
   },
   "license": "MIT"
 }

@@ -15,6 +15,7 @@ import { app, BrowserWindow, shell } from 'electron';
 import { resolveHtmlPath } from './util';
 import { initBridgeAPI } from './api';
 import { initPreferences } from './preferences';
+import { getQuickJS } from 'quickjs-emscripten';
 
 let mainWindow: BrowserWindow | null = null;
 if (process.env.NODE_ENV === 'production') {
@@ -71,6 +72,7 @@ const createWindow = async () => {
   mainWindow.setTitle(`[D2RMM] Diablo II: Resurrected Mod Manager ${version}`);
   mainWindow.removeMenu();
 
+  await getQuickJS();
   initBridgeAPI(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));

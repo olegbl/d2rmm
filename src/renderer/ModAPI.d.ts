@@ -13,6 +13,19 @@ import { TSVData } from './TSV';
  */
 export interface ModAPI {
   /**
+   * Returns the configuration of the mod as a JSON string.
+   * @note This is an internal API. You should reference the JSON parsed version of this value using the global `config` object instead.
+   * @example
+   * ```
+   * const config = D2RMM.getConfigJSON();
+   * console.log('isFooEnabled = ' + JSON.parse(config).isFooEnabled);
+   * ```
+   * @returns The configuration of the mod.
+   * @internal
+   */
+  getConfigJSON: () => string;
+
+  /**
    * Returns the version of D2RMM composed of the major and minor versions as a float.
    * @note You can use this API to check if the installed version of D2RMM is compatible
    *       with the APIs that your mod is using.

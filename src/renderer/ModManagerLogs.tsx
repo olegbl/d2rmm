@@ -295,6 +295,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 flex: 1,
                 overflow: 'auto',
                 wordBreak: 'break-all',
+                whiteSpace: 'pre-wrap',
               }}
             >
               {filteredLogs[selectedRowIndex].text}

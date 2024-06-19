@@ -233,7 +233,6 @@ export function ModsContextProvider({
       id: mod.id,
       config: mod.config,
     }));
-    console.log('isInstallConfigChanged', installedMods, installedModsNew);
     return JSON.stringify(installedMods) != JSON.stringify(installedModsNew);
   }, [modsToInstall, installedMods]);
 

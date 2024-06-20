@@ -242,51 +242,65 @@ export function getModAPI(
 
   const apiHandle = scope.manage(vm.newObject());
 
-  function getHandleForValue<T>(value: T): QuickJSHandle {
-    if (value instanceof Error) {
-      return scope.manage(vm.newError(value.message));
-    } else if (typeof value === 'boolean') {
-      // vm.newBoolean doesn't exist - but numbers can be used as booleans in JS
-      return scope.manage(vm.newNumber(value ? 1 : 0));
-    } else if (typeof value === 'number') {
-      return scope.manage(vm.newNumber(value));
-    } else if (typeof value === 'string') {
-      return scope.manage(vm.newString(value));
-    } else if (value instanceof Buffer) {
-      return scope.manage(vm.newArrayBuffer(value));
-    } else if (Array.isArray(value)) {
-      const arrayHandle = scope.manage(vm.newArray());
-      for (let i = 0; i < value.length; i++) {
-        vm.setProp(arrayHandle, i, getHandleForValue(value[i]));
-      }
-      return arrayHandle;
-    } else if (typeof value === 'object' && value !== null) {
-      const objectHandle = scope.manage(vm.newObject());
-      for (const key in value) {
-        vm.setProp(objectHandle, key, getHandleForValue(value[key]));
-      }
-      return objectHandle;
-    } else {
-      return vm.undefined;
-    }
-  }
-
-  function wrapAPI(name: keyof ModAPI, fn: Function): void {
-    vm.setProp(
-      apiHandle,
-      name,
-      scope.manage(
-        vm.newFunction(name, (...args) =>
-          getHandleForValue(fn(...args.map(vm.dump)))
-        )
-      )
-    );
-  }
-
   for (const key in api) {
-    const apiName = key as keyof ModAPI;
-    wrapAPI(apiName, api[apiName]);
+    const name = key as keyof ModAPI;
+    addAPIProxy(vm, scope, apiHandle, api, name);
   }
 
   return apiHandle;
+}
+
+function addAPIProxy<T extends keyof ModAPI>(
+  vm: QuickJSContext,
+  scope: Scope,
+  handle: QuickJSHandle,
+  api: ModAPI,
+  name: T
+): void {
+  vm.setProp(
+    handle,
+    name,
+    scope.manage(
+      vm.newFunction(name, (...args) =>
+        getHandleForValue(
+          vm,
+          scope,
+          (api[name] as Function)(...args.map(vm.dump))
+        )
+      )
+    )
+  );
+}
+
+function getHandleForValue<T>(
+  vm: QuickJSContext,
+  scope: Scope,
+  value: T
+): QuickJSHandle {
+  if (value instanceof Error) {
+    return scope.manage(vm.newError(value.message));
+  } else if (typeof value === 'boolean') {
+    // vm.newBoolean doesn't exist - but numbers can be used as booleans in JS
+    return scope.manage(vm.newNumber(value ? 1 : 0));
+  } else if (typeof value === 'number') {
+    return scope.manage(vm.newNumber(value));
+  } else if (typeof value === 'string') {
+    return scope.manage(vm.newString(value));
+  } else if (value instanceof Buffer) {
+    return scope.manage(vm.newArrayBuffer(value));
+  } else if (Array.isArray(value)) {
+    const arrayHandle = scope.manage(vm.newArray());
+    for (let i = 0; i < value.length; i++) {
+      vm.setProp(arrayHandle, i, getHandleForValue(vm, scope, value[i]));
+    }
+    return arrayHandle;
+  } else if (typeof value === 'object' && value !== null) {
+    const objectHandle = scope.manage(vm.newObject());
+    for (const key in value) {
+      vm.setProp(objectHandle, key, getHandleForValue(vm, scope, value[key]));
+    }
+    return objectHandle;
+  } else {
+    return vm.undefined;
+  }
 }

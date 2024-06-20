@@ -1110,7 +1110,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
 
     // delete any files that were extracted but then unmodified
     // since they should be the same as the vanilla files in CASC
-    if (!runtime.options.isDryRun) {
+    if (!runtime.options.isDryRun && !runtime.options.isDirectMode) {
       runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
         BridgeAPI.deleteFile(
           runtime!.getDestinationFilePath(file),

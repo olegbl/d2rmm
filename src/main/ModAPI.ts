@@ -3,7 +3,6 @@ import { ModAPI } from 'renderer/ModAPI';
 import { TSVData } from 'renderer/TSV';
 import { InstallationRuntime } from './InstallationRuntime';
 import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
-import { ModConfigValue } from 'renderer/ModConfigValue';
 
 // keep in sync with api.ts
 enum Relative {

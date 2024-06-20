@@ -73,7 +73,7 @@ declare global {
       relative: Relative
     ) => Buffer | null | Error;
     readJson: (filePath: string) => JSONData | Error;
-    readModCode: (id: string) => [string, string] | Error;
+    readModCode: (id: string) => Promise<[string, string] | Error>;
     readModConfig: (id: string) => JSON;
     readModDirectory: () => string[] | Error;
     readModInfo: (id: string) => ModConfig;

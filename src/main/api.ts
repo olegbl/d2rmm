@@ -26,7 +26,12 @@ import { InstallationRuntime } from './InstallationRuntime';
 import { datamod } from './datamod';
 import { Scope, getQuickJSSync } from 'quickjs-emscripten';
 import { getConsoleAPI } from './ConsoleAPI';
-import { SourceMapConsumer, SourceMapGenerator } from 'source-map';
+import {
+  MappingItem,
+  NullableMappedPosition,
+  SourceMapConsumer,
+  SourceMapGenerator,
+} from 'source-map';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -656,7 +661,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return BridgeAPI.writeFile(filePath, Relative.App, JSON.stringify(value));
   },
 
-  readModCode: (id: string) => {
+  readModCode: async (id: string) => {
     rendererConsole.debug('BridgeAPI.readModCode', {
       id,
     });
@@ -677,20 +682,20 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
         const code = `(function(){\nconst config = JSON.parse(D2RMM.getConfigJSON());\n${result}\n})()`;
 
-        const generator = new SourceMapGenerator({
+        const sourceMapGenerator = new SourceMapGenerator({
           file: `mods\\${id}\\mod.gen.js`,
           sourceRoot: '',
         });
 
         code.split('\n').forEach((_line, index) => {
-          generator.addMapping({
-            generated: { line: index + 3, column: 0 },
-            original: { line: index + 1, column: 0 },
+          sourceMapGenerator.addMapping({
+            generated: { line: index + 3, column: 1 },
+            original: { line: index + 1, column: 1 },
             source: relativeFilePath,
           });
         });
 
-        return [code, generator.toString()];
+        return [code, sourceMapGenerator.toString()];
       }
     }
 
@@ -707,12 +712,13 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
         type ModuleWithTranspiledCode = ModuleWithSourceCode & {
           transpiledCode: string;
+          sourceMapConsumer: SourceMapConsumer | null;
         };
 
         function processDependencies(
           module: ModuleWithSourceCode,
           absoluteFilePath: string
-        ): [ModuleWithSourceCode, Module[]] {
+        ): Module[] {
           const sourceFile = ts.createSourceFile(
             absoluteFilePath,
             module.sourceCode,
@@ -722,9 +728,9 @@ export const BridgeAPI: BridgeAPIImplementation = {
           );
           const rootPath = path.dirname(module.id + '.ts');
           const dependencies: Module[] = [];
-          const statements = ts.visitNodes(sourceFile.statements, (node) => {
-            if (ts.isImportDeclaration(node)) {
-              const importPath = node.moduleSpecifier
+          sourceFile.statements.forEach((statement) => {
+            if (ts.isImportDeclaration(statement)) {
+              const importPath = statement.moduleSpecifier
                 .getText()
                 .replace(/^['"](.*)['"]$/, '$1');
               const dependencyPath = path
@@ -733,30 +739,15 @@ export const BridgeAPI: BridgeAPIImplementation = {
                 // keep TS stype paths
                 .replace(/\\/g, '/');
               dependencies.push({ id: dependencyPath });
-              return ts.factory.updateImportDeclaration(
-                node,
-                node.modifiers,
-                node.importClause,
-                ts.factory.createStringLiteral(`./${dependencyPath}`, true),
-                node.assertClause
+              module.sourceCode = module.sourceCode.replace(
+                statement.getFullText(),
+                statement
+                  .getFullText()
+                  .replace(importPath, `./${dependencyPath}`)
               );
             }
-            return node;
           });
-          return [
-            {
-              ...module,
-              sourceCode: ts
-                .createPrinter()
-                .printFile(
-                  ts.factory.updateSourceFile(
-                    sourceFile,
-                    statements as unknown as ts.Statement[]
-                  )
-                ),
-            },
-            dependencies,
-          ];
+          return dependencies;
         }
 
         const modulesWithSourceCode: ModuleWithSourceCode[] = [];
@@ -780,16 +771,12 @@ export const BridgeAPI: BridgeAPIImplementation = {
             );
           }
 
-          const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
-          const [moduleWithSourceCode, dependencies] = processDependencies(
-            {
-              ...module,
-              sourceCode,
-            },
-            absoluteFilePath
+          const moduleWithSourceCode = { ...module, sourceCode };
+          const dependencies = processDependencies(
+            moduleWithSourceCode,
+            path.join(getAppPath(), relativeFilePath)
           );
           dependencies.forEach((m) => processModule(m));
-
           modulesWithSourceCode.push(moduleWithSourceCode);
         }
 
@@ -800,6 +787,11 @@ export const BridgeAPI: BridgeAPIImplementation = {
             return error;
           }
         }
+
+        const sourceMapGenerator = new SourceMapGenerator({
+          file: `mods\\${id}\\mod.gen.js`,
+          sourceRoot: '',
+        });
 
         for (let i = 0; i < modulesWithSourceCode.length; i++) {
           const module = modulesWithSourceCode[i];
@@ -824,6 +816,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
               // definitely won't cause any headaches later
               module: ts.ModuleKind.CommonJS,
               target: ts.ScriptTarget.ES5,
+              sourceMap: true,
             },
             moduleName: module.id,
             // errors? what errors! runtime errors!
@@ -834,24 +827,18 @@ export const BridgeAPI: BridgeAPIImplementation = {
           });
 
           const transpiledCode = transpilationResult.outputText;
+          const sourceMap = transpilationResult.sourceMapText;
+          const sourceMapConsumer =
+            sourceMap == null ? null : await new SourceMapConsumer(sourceMap);
 
           modulesWithTranspiledCode.push({
             ...module,
             transpiledCode,
+            sourceMapConsumer,
           });
         }
 
-        const modules = modulesWithTranspiledCode.reduce(
-          (agg, module) =>
-            `${agg}\n\nrequire.register('./${
-              module.id
-            }', function ${path.basename(module.id)}(exports) {${
-              module.transpiledCode
-            }});`,
-          ''
-        );
-
-        const code = `
+        const header = `
 function require(id) {
   if (require.loadedModules[id] == null) {
     require.load(id);
@@ -869,13 +856,38 @@ require.register = function(id, getModule) {
   require.registeredModules[id] = getModule;
 }
 const config = JSON.parse(D2RMM.getConfigJSON());
-
-${modules}
-
-require('./mod');
-        `;
-        // TODO: TypeScript sourcemaps
-        return [code, ''];
+`;
+        const code = modulesWithTranspiledCode
+          .reduce((agg, module) => {
+            const basename = path.basename(module.id);
+            const prefix = `require.register('./${module.id}', function ${basename}(exports) {`;
+            const suffix = '});';
+            const sourceMapConsumer = module.sourceMapConsumer;
+            if (sourceMapConsumer != null) {
+              const modulePath = `${module.id.replace(/\//g, '\\')}.ts`;
+              const source = `mods\\${id}\\${modulePath}`;
+              const offset = agg.split('\n').length + prefix.split('\n').length;
+              sourceMapConsumer.eachMapping((mapping) => {
+                sourceMapGenerator.addMapping({
+                  generated: {
+                    line: mapping.generatedLine + offset,
+                    column: mapping.generatedColumn,
+                  },
+                  original: {
+                    line: mapping.originalLine,
+                    column: mapping.originalLine,
+                  },
+                  name: mapping.name,
+                  source,
+                });
+              });
+              sourceMapConsumer.destroy();
+              module.sourceMapConsumer = null;
+            }
+            return [agg, prefix, module.transpiledCode, suffix].join('\n');
+          }, header)
+          .concat("\nrequire.load('./mod');");
+        return [code, sourceMapGenerator.toString()];
       } catch (error) {
         return createError(
           'BridgeAPI.readModCode',
@@ -1042,7 +1054,7 @@ require('./mod');
         if (runtime.mod.info.type === 'data') {
           code = datamod;
         } else {
-          const result = BridgeAPI.readModCode(runtime.mod.id);
+          const result = await BridgeAPI.readModCode(runtime.mod.id);
           if (result instanceof Error) {
             throw result;
           }
@@ -1143,9 +1155,32 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
   });
 }
 
+function findBestMappingForLine(
+  lineNumber: number,
+  sourceMapConsumer: SourceMapConsumer
+): NullableMappedPosition {
+  let bestMapping: MappingItem | null = null;
+  sourceMapConsumer.eachMapping((mapping) => {
+    if (
+      mapping.generatedLine == lineNumber &&
+      (bestMapping == null ||
+        mapping.originalColumn < bestMapping.originalColumn)
+    ) {
+      bestMapping = mapping;
+    }
+  });
+  bestMapping = bestMapping as MappingItem | null; // wtf TS?
+  return {
+    name: bestMapping?.name ?? null,
+    source: bestMapping?.source ?? null,
+    line: bestMapping?.originalLine ?? null,
+    column: bestMapping?.originalColumn ?? null,
+  };
+}
+
 function applySourceMapToStackTrace(
   stackTrace: string,
-  sourceMap: SourceMapConsumer
+  sourceMapConsumer: SourceMapConsumer
 ): string {
   return stackTrace
     .split('\n')
@@ -1155,26 +1190,34 @@ function applySourceMapToStackTrace(
         return stackFrame;
       }
 
-      const position = {
+      const generatedPosition = {
         source: match[1],
         line: parseInt(match[2], 10),
-        column: parseInt(match[3] ?? '0', 10),
+        column: parseInt(match[3] ?? '1', 10),
       };
 
-      const originalPosition = sourceMap.originalPositionFor(position);
+      let originalPosition =
+        sourceMapConsumer.originalPositionFor(generatedPosition);
+      if (originalPosition.source == null) {
+        originalPosition = findBestMappingForLine(
+          generatedPosition.line,
+          sourceMapConsumer
+        );
+      }
       if (originalPosition.source == null) {
         return stackFrame;
       }
 
       return stackFrame
         .replace(
-          `(${position.source}:${position.line})`,
+          `(${generatedPosition.source}:${generatedPosition.line})`,
           `(${originalPosition.source}:${originalPosition.line})`
         )
         .replace(
-          `(${position.source}:${position.line}:${position.column})`,
+          `(${generatedPosition.source}:${generatedPosition.line}:${generatedPosition.column})`,
           `(${originalPosition.source}:${originalPosition.line}:${originalPosition.column})`
         );
     })
+    .filter((stackFrame) => !stackFrame.includes('.gen.js:'))
     .join('\n');
 }

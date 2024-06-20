@@ -73,7 +73,7 @@ const createWindow = async () => {
   mainWindow.removeMenu();
 
   await getQuickJS();
-  initBridgeAPI(mainWindow);
+  await initBridgeAPI(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 

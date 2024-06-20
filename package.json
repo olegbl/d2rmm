@@ -199,6 +199,7 @@
     "react-virtualized-auto-sizer": "^1.0.24",
     "react-window": "^1.8.10",
     "regenerator-runtime": "^0.13.9",
+    "source-map": "^0.7.4",
     "typedoc": "^0.25.13"
   },
   "devEngines": {

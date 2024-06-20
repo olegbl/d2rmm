@@ -26,6 +26,7 @@ import { InstallationRuntime } from './InstallationRuntime';
 import { datamod } from './datamod';
 import { Scope, getQuickJSSync } from 'quickjs-emscripten';
 import { getConsoleAPI } from './ConsoleAPI';
+import { SourceMapConsumer, SourceMapGenerator } from 'source-map';
 
 // keep in sync with ModAPI.tsx
 enum Relative {
@@ -666,14 +667,30 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
         const result = BridgeAPI.readFile(relativeFilePath, Relative.App);
-        if (typeof result === 'string') {
-          return `(function(){\n${result}\n})()`;
+        if (typeof result !== 'string') {
+          return createError(
+            'BridgeAPI.readModCode',
+            'Failed to read source code.',
+            result
+          );
         }
-        return createError(
-          'BridgeAPI.readModCode',
-          'Failed to read source code.',
-          result
-        );
+
+        const code = `(function(){\nconst config = JSON.parse(D2RMM.getConfigJSON());\n${result}\n})()`;
+
+        const generator = new SourceMapGenerator({
+          file: `mods\\${id}\\mod.gen.js`,
+          sourceRoot: '',
+        });
+
+        code.split('\n').forEach((_line, index) => {
+          generator.addMapping({
+            generated: { line: index + 3, column: 0 },
+            original: { line: index + 1, column: 0 },
+            source: relativeFilePath,
+          });
+        });
+
+        return [code, generator.toString()];
       }
     }
 
@@ -834,7 +851,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
           ''
         );
 
-        return `
+        const code = `
 function require(id) {
   if (require.loadedModules[id] == null) {
     require.load(id);
@@ -851,11 +868,14 @@ require.registeredModules = {};
 require.register = function(id, getModule) {
   require.registeredModules[id] = getModule;
 }
+const config = JSON.parse(D2RMM.getConfigJSON());
 
 ${modules}
 
 require('./mod');
         `;
+        // TODO: TypeScript sourcemaps
+        return [code, ''];
       } catch (error) {
         return createError(
           'BridgeAPI.readModCode',
@@ -991,7 +1011,7 @@ require('./mod');
     return result;
   },
 
-  installMods: (modsToInstall: Mod[], options: IInstallModsOptions) => {
+  installMods: async (modsToInstall: Mod[], options: IInstallModsOptions) => {
     runtime = new InstallationRuntime(
       BridgeAPI,
       rendererConsole,
@@ -1015,9 +1035,10 @@ require('./mod');
 
     for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
       runtime.mod = runtime.modsToInstall[i];
+      let code: string = '';
+      let sourceMap: string = '';
       try {
         rendererConsole.debug(`Mod parsing code...`);
-        let code: string = '';
         if (runtime.mod.info.type === 'data') {
           code = datamod;
         } else {
@@ -1028,41 +1049,8 @@ require('./mod');
           if (result == null) {
             throw new Error('Could not read code from mod.js or mod.ts.');
           }
-          code = result;
+          [code, sourceMap] = result;
         }
-        // this lambda runs synchronously
-        const scope = new Scope();
-        try {
-          rendererConsole.debug(`Mod ${action.toLowerCase()}ing...`);
-          const vm = scope.manage(getQuickJSSync().newContext());
-          vm.setProp(
-            vm.global,
-            'console',
-            getConsoleAPI(vm, scope, rendererConsole)
-          );
-          vm.setProp(vm.global, 'D2RMM', getModAPI(vm, scope, runtime));
-          scope.manage(
-            vm.unwrapResult(
-              vm.evalCode(
-                `const config = JSON.parse(D2RMM.getConfigJSON());\n${code}`
-              )
-            )
-          );
-          runtime!.modsInstalled.push(runtime.mod.id);
-          rendererConsole.log(`Mod ${action.toLowerCase()}ed successfully.`);
-        } catch (error) {
-          if (error instanceof Error) {
-            rendererConsole.error(
-              `Mod encountered a runtime error!\n${
-                error.stack
-                  ?.replace(/\s*at <eval>[\s\S]*/m, '')
-                  ?.replace(/eval.js/g, `/mods/${runtime.mod.id}/mod.js`) ??
-                error.message
-              }`
-            );
-          }
-        }
-        scope.dispose();
       } catch (error) {
         if (error instanceof Error) {
           rendererConsole.error(
@@ -1070,6 +1058,37 @@ require('./mod');
           );
         }
       }
+      const scope = new Scope();
+      try {
+        rendererConsole.debug(`Mod ${action.toLowerCase()}ing...`);
+        const vm = scope.manage(getQuickJSSync().newContext());
+        vm.setProp(
+          vm.global,
+          'console',
+          getConsoleAPI(vm, scope, rendererConsole)
+        );
+        vm.setProp(vm.global, 'D2RMM', getModAPI(vm, scope, runtime));
+        scope.manage(vm.unwrapResult(vm.evalCode(code)));
+        runtime!.modsInstalled.push(runtime.mod.id);
+        rendererConsole.log(`Mod ${action.toLowerCase()}ed successfully.`);
+      } catch (error) {
+        if (error instanceof Error) {
+          let message = error.message;
+          if (error.stack != null && sourceMap !== '') {
+            // a constructor that returns a Promise smh
+            const sourceMapConsumer = await new SourceMapConsumer(sourceMap);
+            message = applySourceMapToStackTrace(
+              error.stack
+                ?.replace(/\s*at <eval>[\s\S]*/m, '')
+                ?.replace(/eval.js/g, `mods\\${runtime.mod.id}\\mod.gen.js`),
+              sourceMapConsumer
+            );
+            sourceMapConsumer.destroy();
+          }
+          rendererConsole.error(`Mod encountered a runtime error!\n${message}`);
+        }
+      }
+      scope.dispose();
     }
     runtime.mod = null;
 
@@ -1094,7 +1113,7 @@ require('./mod');
   },
 };
 
-export function initBridgeAPI(mainWindow: BrowserWindow): void {
+export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
   // hook up bridge API calls
   Object.keys(BridgeAPI).forEach((apiName) => {
     const apiCall = BridgeAPI[apiName as keyof typeof BridgeAPI];
@@ -1122,4 +1141,40 @@ export function initBridgeAPI(mainWindow: BrowserWindow): void {
       }
     };
   });
+}
+
+function applySourceMapToStackTrace(
+  stackTrace: string,
+  sourceMap: SourceMapConsumer
+): string {
+  return stackTrace
+    .split('\n')
+    .map((stackFrame) => {
+      const match = stackFrame.match(/at\s+(?:.*)\s+\((.*):(\d+)(?::(\d+))?\)/);
+      if (match == null) {
+        return stackFrame;
+      }
+
+      const position = {
+        source: match[1],
+        line: parseInt(match[2], 10),
+        column: parseInt(match[3] ?? '0', 10),
+      };
+
+      const originalPosition = sourceMap.originalPositionFor(position);
+      if (originalPosition.source == null) {
+        return stackFrame;
+      }
+
+      return stackFrame
+        .replace(
+          `(${position.source}:${position.line})`,
+          `(${originalPosition.source}:${originalPosition.line})`
+        )
+        .replace(
+          `(${position.source}:${position.line}:${position.column})`,
+          `(${originalPosition.source}:${originalPosition.line}:${originalPosition.column})`
+        );
+    })
+    .join('\n');
 }

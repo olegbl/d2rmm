@@ -1,3 +1,4 @@
+import { SourceMapConsumer } from 'source-map';
 import { JSONData } from './JSON';
 import { ModConfig } from './ModConfig';
 import { ModConfigValue } from './ModConfigValue';
@@ -61,7 +62,7 @@ declare global {
     installMods: (
       modsToInstall: Mod[],
       options: IInstallModsOptions
-    ) => string[];
+    ) => Promise<string[]>;
     openStorage: (gamePath: string) => boolean | Error;
     readDirectory: (
       filePath: string
@@ -72,7 +73,7 @@ declare global {
       relative: Relative
     ) => Buffer | null | Error;
     readJson: (filePath: string) => JSONData | Error;
-    readModCode: (id: string) => string | Error;
+    readModCode: (id: string) => [string, string] | Error;
     readModConfig: (id: string) => JSON;
     readModDirectory: () => string[] | Error;
     readModInfo: (id: string) => ModConfig;

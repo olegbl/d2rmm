@@ -1,5 +1,5 @@
-import { CssBaseline, Theme, ThemeProvider, createTheme } from '@mui/material';
 import React, { useContext, useMemo } from 'react';
+import { CssBaseline, Theme, ThemeProvider, createTheme } from '@mui/material';
 import useSavedState from './useSavedState';
 
 export type IExactThemeMode = 'light' | 'dark';

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
   AccordionDetails,
@@ -14,8 +16,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useMemo } from 'react';
 import { usePreferences } from './Preferences';
 import { IThemeMode, useThemeMode } from './ThemeContext';
 

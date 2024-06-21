@@ -1,8 +1,8 @@
+import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
 import type { JSONData } from 'bridge/JSON';
 import type { ModAPI } from 'bridge/ModAPI';
 import type { TSVData } from 'bridge/TSV';
 import { InstallationRuntime } from './InstallationRuntime';
-import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
 
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;

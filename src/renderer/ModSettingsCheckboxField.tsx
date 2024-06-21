@@ -1,5 +1,5 @@
-import { FormControlLabel, Switch } from '@mui/material';
 import { useCallback } from 'react';
+import { FormControlLabel, Switch } from '@mui/material';
 import { ModConfigFieldCheckbox } from 'bridge/ModConfig';
 import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 

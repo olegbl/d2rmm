@@ -1,3 +1,14 @@
+import { MouseEvent, useCallback, useMemo, useState } from 'react';
+import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import DownloadIcon from '@mui/icons-material/Download';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PendingOutlinedIcon from '@mui/icons-material/PendingOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   AppBar,
   Box,
@@ -17,18 +28,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
-import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import PendingOutlinedIcon from '@mui/icons-material/PendingOutlined';
-import DownloadIcon from '@mui/icons-material/Download';
-import { MouseEvent, useCallback, useMemo, useState } from 'react';
 import { useLogLevels, useLogs } from './Logs';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
-import SearchIcon from '@mui/icons-material/Search';
 
 function prettyPrintData(data: unknown): string {
   if (Array.isArray(data)) {

@@ -1,15 +1,15 @@
-import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import { useCallback } from 'react';
 import { Help, Refresh } from '@mui/icons-material';
-import ModSettingsNumberField from './ModSettingsNumberField';
-import ModSettingsTextField from './ModSettingsTextField';
-import ModSettingsSelectField from './ModSettingsSelectField';
-import ModSettingsCheckboxField from './ModSettingsCheckboxField';
+import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import { ModConfigField } from 'bridge/ModConfig';
 import { ModConfigSingleValue } from 'bridge/ModConfigValue';
-import { useSetModConfig } from './ModsContext';
 import { parseBinding } from './BindingsParser';
+import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 import ModSettingsColorSelectorField from './ModSettingsColorSelectorField';
+import ModSettingsNumberField from './ModSettingsNumberField';
+import ModSettingsSelectField from './ModSettingsSelectField';
+import ModSettingsTextField from './ModSettingsTextField';
+import { useSetModConfig } from './ModsContext';
 
 type Props = {
   field: ModConfigField;

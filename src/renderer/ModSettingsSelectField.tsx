@@ -1,5 +1,5 @@
-import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { useCallback } from 'react';
+import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { ModConfigFieldSelect } from 'bridge/ModConfig';
 import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 

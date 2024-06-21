@@ -5,10 +5,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import useSavedState from './useSavedState';
-import { useLogger } from './Logs';
-import useToast from './useToast';
 import { ModConfigSingleValue, ModConfigValue } from 'bridge/ModConfigValue';
+import { useLogger } from './Logs';
+import useSavedState from './useSavedState';
+import useToast from './useToast';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

@@ -1,3 +1,12 @@
+import { useCallback, useMemo } from 'react';
+import { Draggable } from 'react-beautiful-dnd';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import FaceIcon from '@mui/icons-material/Face';
+import HelpIcon from '@mui/icons-material/Help';
+import LinkIcon from '@mui/icons-material/Link';
+import SettingsIcon from '@mui/icons-material/Settings';
+import UpdateIcon from '@mui/icons-material/Update';
+import WarningIcon from '@mui/icons-material/Warning';
 import {
   Box,
   Checkbox,
@@ -9,15 +18,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import UpdateIcon from '@mui/icons-material/Update';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import FaceIcon from '@mui/icons-material/Face';
-import LinkIcon from '@mui/icons-material/Link';
-import WarningIcon from '@mui/icons-material/Warning';
-import HelpIcon from '@mui/icons-material/Help';
-import SettingsIcon from '@mui/icons-material/Settings';
-import { useCallback, useMemo } from 'react';
-import { Draggable } from 'react-beautiful-dnd';
 import { useSelectedMod, useToggleMod } from './ModsContext';
 
 const RendererAPI = window.electron.RendererAPI;

@@ -1,19 +1,19 @@
-import { Box, Divider, Tab } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import ModList from './ModList';
-import ModManagerSettings from './ModManagerSettings';
-import ModManagerLogs from './ModManagerLogs';
-import ToastProvider from './ToastProvider';
-import { PreferencesProvider } from './Preferences';
-import { LogsProvider } from './Logs';
-import { ModsContextProvider } from './ModsContext';
-import ThemeContextProvider from './ThemeContext';
+import { Box, Divider, Tab } from '@mui/material';
+import './App.css';
 import ErrorBoundary from './ErrorBoundary';
+import { LogsProvider } from './Logs';
+import ModList from './ModList';
+import ModManagerLogs from './ModManagerLogs';
+import ModManagerSettings from './ModManagerSettings';
+import { ModsContextProvider } from './ModsContext';
+import { PreferencesProvider } from './Preferences';
+import ThemeContextProvider from './ThemeContext';
+import ToastProvider from './ToastProvider';
 
 function TabPanelBox({
   children,

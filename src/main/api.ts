@@ -1,4 +1,6 @@
+import { execFile, execFileSync } from 'child_process';
 import { BrowserWindow, app, ipcMain } from 'electron';
+import ffi from 'ffi-napi';
 import {
   copyFileSync,
   existsSync,
@@ -9,29 +11,27 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
-import regedit from 'regedit';
-import path from 'path';
-import ffi from 'ffi-napi';
-import ref from 'ref-napi';
-import { execFile, execFileSync } from 'child_process';
 import json5 from 'json5';
-import ts from 'typescript';
-import type { ConsoleAPI } from 'bridge/ConsoleAPI';
-import type { ModConfigValue } from 'bridge/ModConfigValue';
-import type { TSVDataRow } from 'bridge/TSV';
-import type { JSONData } from 'bridge/JSON';
-import packageManifest from '../../release/app/package.json';
-import { getModAPI } from './ModAPI';
-import { InstallationRuntime } from './InstallationRuntime';
-import { datamod } from './datamod';
+import path from 'path';
 import { Scope, getQuickJSSync } from 'quickjs-emscripten';
-import { getConsoleAPI } from './ConsoleAPI';
+import ref from 'ref-napi';
+import regedit from 'regedit';
 import {
   MappingItem,
   NullableMappedPosition,
   SourceMapConsumer,
   SourceMapGenerator,
 } from 'source-map';
+import ts from 'typescript';
+import type { ConsoleAPI } from 'bridge/ConsoleAPI';
+import type { JSONData } from 'bridge/JSON';
+import type { ModConfigValue } from 'bridge/ModConfigValue';
+import type { TSVDataRow } from 'bridge/TSV';
+import packageManifest from '../../release/app/package.json';
+import { getConsoleAPI } from './ConsoleAPI';
+import { InstallationRuntime } from './InstallationRuntime';
+import { getModAPI } from './ModAPI';
+import { datamod } from './datamod';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;

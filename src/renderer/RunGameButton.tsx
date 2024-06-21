@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { Button, Tooltip } from '@mui/material';
+import { useIsInstallConfigChanged } from './ModsContext';
 import { usePreferences } from './Preferences';
 import useGameArgs from './useGameArgs';
-import { useIsInstallConfigChanged } from './ModsContext';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

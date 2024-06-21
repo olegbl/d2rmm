@@ -1,5 +1,5 @@
-import { TextField } from '@mui/material';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { TextField } from '@mui/material';
 import { ModConfigFieldNumber } from 'bridge/ModConfig';
 
 function useIsFocused(): [

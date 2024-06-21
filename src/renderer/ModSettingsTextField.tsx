@@ -1,5 +1,5 @@
-import { TextField } from '@mui/material';
 import { ChangeEvent, useCallback } from 'react';
+import { TextField } from '@mui/material';
 import { ModConfigFieldText } from 'bridge/ModConfig';
 import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 

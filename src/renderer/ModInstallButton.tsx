@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
-import useToast from './useToast';
-import { usePreferences } from './Preferences';
 import { useLogger } from './Logs';
 import {
   useInstalledMods,
   useIsInstallConfigChanged,
   useModsToInstall,
 } from './ModsContext';
+import { usePreferences } from './Preferences';
+import useToast from './useToast';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

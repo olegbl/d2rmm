@@ -1,5 +1,5 @@
-import { AlertColor } from '@mui/material';
 import React from 'react';
+import { AlertColor } from '@mui/material';
 
 export type Toast = {
   severity: AlertColor;

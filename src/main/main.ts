@@ -9,13 +9,13 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import 'core-js/stable';
-import 'regenerator-runtime/runtime';
-import path from 'path';
 import { app, BrowserWindow, shell } from 'electron';
-import { resolveHtmlPath } from './util';
+import path from 'path';
+import { getQuickJS } from 'quickjs-emscripten';
+import 'regenerator-runtime/runtime';
 import { initBridgeAPI } from './api';
 import { initPreferences } from './preferences';
-import { getQuickJS } from 'quickjs-emscripten';
+import { resolveHtmlPath } from './util';
 
 let mainWindow: BrowserWindow | null = null;
 if (process.env.NODE_ENV === 'production') {

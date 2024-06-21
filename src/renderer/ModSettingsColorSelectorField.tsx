@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, useTransition } from 'react';
 import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import { ModConfigFieldColor } from 'bridge/ModConfig';
 import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 

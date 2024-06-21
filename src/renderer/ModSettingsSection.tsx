@@ -1,3 +1,4 @@
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
   AccordionDetails,
@@ -6,7 +7,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ModConfigFieldOrSection, ModConfigSection } from 'bridge/ModConfig';
 import ModSettingsField from './ModSettingsField';
 

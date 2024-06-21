@@ -1,3 +1,6 @@
+import { useCallback, useState } from 'react';
+import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   Box,
   ButtonGroup,
@@ -6,16 +9,13 @@ import {
   List,
   TextField,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
-import SearchIcon from '@mui/icons-material/Search';
-import ModListItem from './ModListItem';
-import { useEnabledMods, useOrderedMods } from './ModsContext';
-import ModSettingsDrawer from './ModSettingsDrawer';
-import RunGameButton from './RunGameButton';
-import RefreshModsButton from './RefreshModsButton';
 import ModInstallButton from './ModInstallButton';
+import ModListItem from './ModListItem';
+import ModSettingsDrawer from './ModSettingsDrawer';
+import { useEnabledMods, useOrderedMods } from './ModsContext';
 import { usePreferences } from './Preferences';
+import RefreshModsButton from './RefreshModsButton';
+import RunGameButton from './RunGameButton';
 
 type Props = {
   onShowLogsTab: () => unknown;

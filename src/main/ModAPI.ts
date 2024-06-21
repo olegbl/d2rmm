@@ -4,15 +4,6 @@ import { TSVData } from 'renderer/TSV';
 import { InstallationRuntime } from './InstallationRuntime';
 import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
 
-// keep in sync with api.ts
-enum Relative {
-  // files in the game folder will be accessed via fully resolved paths
-  None = 'None',
-  App = 'App',
-  Saves = 'Saves',
-  Output = 'Output',
-}
-
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;
 
@@ -42,7 +33,7 @@ export function getModAPI(
       throwIfError(
         runtime.BridgeAPI.deleteFile(
           runtime.getDestinationFilePath(filePath),
-          Relative.None
+          'None'
         )
       );
     }

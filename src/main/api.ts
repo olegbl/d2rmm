@@ -33,15 +33,6 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 
-// keep in sync with ModAPI.tsx
-enum Relative {
-  // files in the game folder will be accessed via fully resolved paths
-  None = 'None',
-  App = 'App',
-  Saves = 'Saves',
-  Output = 'Output',
-}
-
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
@@ -96,22 +87,22 @@ function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
 
 function resolvePath(inputPath: string, relative: Relative): string {
   switch (relative) {
-    case Relative.App:
+    case 'App':
       return validatePathIsSafe(
         getAppPath(),
         path.resolve(getAppPath(), inputPath)
       );
-    case Relative.Saves:
+    case 'Saves':
       return validatePathIsSafe(
         getSavesPath(),
         path.resolve(getSavesPath(), inputPath)
       );
-    case Relative.Output:
+    case 'Output':
       return validatePathIsSafe(
         getOutputRootPath(),
         path.resolve(getOutputPath(), inputPath)
       );
-    case Relative.None:
+    case 'None':
       return validatePathIsSafe(
         getOutputRootPath(),
         path.resolve(getOutputPath(), inputPath)
@@ -638,14 +629,12 @@ export const BridgeAPI: BridgeAPIImplementation = {
       id,
     });
 
-    const result = BridgeAPI.readFile(`mods\\${id}\\mod.json`, Relative.App);
+    const result = BridgeAPI.readFile(`mods\\${id}\\mod.json`, 'App');
 
     if (result instanceof Error || result == null) {
       // check if this is a data mod
       try {
-        if (
-          statSync(resolvePath(`mods\\${id}\\data`, Relative.App)).isDirectory()
-        ) {
+        if (statSync(resolvePath(`mods\\${id}\\data`, 'App')).isDirectory()) {
           return {
             type: 'data',
             name: id,
@@ -676,7 +665,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    const result = BridgeAPI.readFile(filePath, Relative.App);
+    const result = BridgeAPI.readFile(filePath, 'App');
 
     if (result instanceof Error) {
       return result;
@@ -696,7 +685,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    return BridgeAPI.writeFile(filePath, Relative.App, JSON.stringify(value));
+    return BridgeAPI.writeFile(filePath, 'App', JSON.stringify(value));
   },
 
   readModCode: async (id: string) => {
@@ -709,7 +698,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const relativeFilePath = `mods\\${id}\\mod.js`;
       const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
-        const result = BridgeAPI.readFile(relativeFilePath, Relative.App);
+        const result = BridgeAPI.readFile(relativeFilePath, 'App');
         if (typeof result !== 'string') {
           return createError(
             'BridgeAPI.readModCode',
@@ -800,7 +789,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
           modulesProcessed.push(module.id);
 
           const relativeFilePath = `mods\\${id}\\${module.id}.ts`;
-          const sourceCode = BridgeAPI.readFile(relativeFilePath, Relative.App);
+          const sourceCode = BridgeAPI.readFile(relativeFilePath, 'App');
           if (typeof sourceCode !== 'string') {
             throw createError(
               'BridgeAPI.readModCode',
@@ -946,7 +935,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       filePath,
     });
 
-    const result = BridgeAPI.readFile(filePath, Relative.None);
+    const result = BridgeAPI.readFile(filePath, 'None');
 
     if (result instanceof Error) {
       return result;
@@ -984,13 +973,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       headers.map((header) => row[header] ?? '').join('\t')
     );
     const content = [headersRaw, ...rowsRaw, ''].join('\n');
-    return BridgeAPI.writeFile(filePath, Relative.None, content);
+    return BridgeAPI.writeFile(filePath, 'None', content);
   },
 
   readJson: (filePath) => {
     rendererConsole.debug('BridgeAPI.readJson', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, Relative.None);
+    const result = BridgeAPI.readFile(filePath, 'None');
 
     if (result instanceof Error) {
       return result;
@@ -1007,7 +996,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     try {
       return json5.parse<JSONData>(cleanContent);
     } catch (e) {
-      return e instanceof Error ? e : new Error(String(e));
+      return createError(
+        'BridgeAPI.readJson',
+        'Failed to parse file',
+        e instanceof Error ? e.toString() : String(e)
+      );
     }
   },
 
@@ -1017,13 +1010,12 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
     const result = BridgeAPI.writeFile(
       filePath,
-      Relative.None,
+      'None',
       // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
       `\uFEFF${content}`
     );
 
     if (result instanceof Error) {
-      rendererConsole.error('BridgeAPI.writeJson', result);
       return result;
     }
 
@@ -1033,10 +1025,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
   readTxt: (filePath) => {
     rendererConsole.debug('BridgeAPI.readTxt', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, Relative.None);
+    const result = BridgeAPI.readFile(filePath, 'None');
 
     if (result instanceof Error) {
-      rendererConsole.error('BridgeAPI.readTxt', result);
       return result;
     }
 
@@ -1051,10 +1042,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
   writeTxt: (filePath, data) => {
     rendererConsole.debug('BridgeAPI.writeTxt', { filePath });
 
-    const result = BridgeAPI.writeFile(filePath, Relative.None, data);
+    const result = BridgeAPI.writeFile(filePath, 'None', data);
 
     if (result instanceof Error) {
-      rendererConsole.error('BridgeAPI.writeTxt', result);
       return result;
     }
 
@@ -1071,7 +1061,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     if (!runtime.options.isDirectMode) {
-      BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, Relative.None);
+      BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, 'None');
       BridgeAPI.createDirectory(runtime.options.mergedPath);
       BridgeAPI.writeJson(`${runtime.options.mergedPath}\\..\\modinfo.json`, {
         name: runtime.options.outputModName,
@@ -1150,10 +1140,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     // since they should be the same as the vanilla files in CASC
     if (!runtime.options.isDryRun && !runtime.options.isDirectMode) {
       runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
-        BridgeAPI.deleteFile(
-          runtime!.getDestinationFilePath(file),
-          Relative.None
-        );
+        BridgeAPI.deleteFile(runtime!.getDestinationFilePath(file), 'None');
       });
     }
 

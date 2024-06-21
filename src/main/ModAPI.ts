@@ -190,7 +190,7 @@ export function getModAPI(
     readSaveFile: (filePath: string): Buffer | null => {
       console.debug('D2RMM.readSaveFile', filePath);
       const result = throwIfError(
-        runtime.BridgeAPI.readBinaryFile(filePath, Relative.Saves)
+        runtime.BridgeAPI.readBinaryFile(filePath, 'Saves')
       );
       runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
@@ -199,7 +199,7 @@ export function getModAPI(
       console.debug('D2RMM.writeSaveFile', filePath, data);
       if (!runtime.options.isDryRun) {
         throwIfError(
-          runtime.BridgeAPI.writeBinaryFile(filePath, Relative.Saves, data)
+          runtime.BridgeAPI.writeBinaryFile(filePath, 'Saves', data)
         );
         runtime.fileManager.write(filePath, runtime.mod.id);
       }

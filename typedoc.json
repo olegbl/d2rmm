@@ -2,13 +2,13 @@
   "name": "D2RMM",
   "readme": "DOCS.md",
   "entryPoints": [
-    "src/renderer/Bindings.d.ts",
-    "src/renderer/ConsoleAPI.d.ts",
-    "src/renderer/JSON.d.ts",
-    "src/renderer/ModAPI.d.ts",
-    "src/renderer/ModConfig.d.ts",
-    "src/renderer/ModConfigValue.d.ts",
-    "src/renderer/TSV.d.ts"
+    "src/bridge/Bindings.d.ts",
+    "src/bridge/ConsoleAPI.d.ts",
+    "src/bridge/JSON.d.ts",
+    "src/bridge/ModAPI.d.ts",
+    "src/bridge/ModConfig.d.ts",
+    "src/bridge/ModConfigValue.d.ts",
+    "src/bridge/TSV.d.ts"
   ],
   "out": "docs",
   "githubPages": false,

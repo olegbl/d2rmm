@@ -1,6 +1,6 @@
-import { JSONData } from 'renderer/JSON';
-import { ModAPI } from 'renderer/ModAPI';
-import { TSVData } from 'renderer/TSV';
+import type { JSONData } from 'bridge/JSON';
+import type { ModAPI } from 'bridge/ModAPI';
+import type { TSVData } from 'bridge/TSV';
 import { InstallationRuntime } from './InstallationRuntime';
 import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
 

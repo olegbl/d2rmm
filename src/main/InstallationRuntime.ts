@@ -1,4 +1,4 @@
-import { ConsoleAPI } from 'renderer/ConsoleAPI';
+import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 import { FileManager } from './FileManager';
 
 export class InstallationRuntime {

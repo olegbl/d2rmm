@@ -1,5 +1,5 @@
-import { Binding } from './Bindings';
-import { ModConfigSingleValue, ModConfigValue } from './ModConfigValue';
+import { Binding } from 'bridge/Bindings';
+import { ModConfigSingleValue, ModConfigValue } from 'bridge/ModConfigValue';
 
 export function parseBinding<T extends ModConfigSingleValue>(
   value: Binding<T>,

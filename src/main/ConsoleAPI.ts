@@ -1,5 +1,5 @@
 import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
-import { ConsoleAPI } from 'renderer/ConsoleAPI';
+import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 
 export function getConsoleAPI(
   vm: QuickJSContext,

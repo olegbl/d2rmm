@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
-import { ModConfigFieldColor } from './ModConfig';
-import { ModConfigSingleValue } from './ModConfigValue';
+import { ModConfigFieldColor } from 'bridge/ModConfig';
+import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 
 function debounce<TArgs extends unknown[]>(
   fn: (...args: TArgs) => void,

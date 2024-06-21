@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from 'react';
 import useSavedState from './useSavedState';
-import { IPreferences } from './PreferenceTypes';
+import { IPreferences } from 'bridge/PreferenceTypes';
 
 const BridgeAPI = window.electron.BridgeAPI;
 

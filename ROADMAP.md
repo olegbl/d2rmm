@@ -1,7 +1,6 @@
 # Mod Manager
 
 - Mod config actions
-- Toggle all for subsections of only checkboxes
 - Typeahead config
 
 # Mods

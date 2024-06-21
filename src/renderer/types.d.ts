@@ -1,4 +1,3 @@
-import { SourceMapConsumer } from 'source-map';
 import { JSONData } from './JSON';
 import { ModConfig } from './ModConfig';
 import { ModConfigValue } from './ModConfigValue';
@@ -12,6 +11,7 @@ declare global {
     None = 'None',
     App = 'App',
     Saves = 'Saves',
+    Output = 'Output',
   }
 
   type ILogLevel = 'error' | 'warn' | 'log' | 'debug';

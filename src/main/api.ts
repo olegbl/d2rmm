@@ -39,6 +39,7 @@ enum Relative {
   None = 'None',
   App = 'App',
   Saves = 'Saves',
+  Output = 'Output',
 }
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
@@ -69,14 +70,56 @@ function getSavesPath(): string {
   );
 }
 
+function getOutputPath(): string {
+  if (runtime!.options.isDirectMode) {
+    return runtime!.options.dataPath;
+  }
+  return runtime!.options.mergedPath;
+}
+
+function getOutputRootPath(): string {
+  if (runtime!.options.isDirectMode) {
+    return runtime!.options.dataPath;
+  }
+  return path.resolve(runtime!.options.mergedPath, '../');
+}
+
+// we don't want mods doing any ../../.. shenanigans
+function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
+  if (!absolutePath.startsWith(allowedRoot)) {
+    throw new Error(
+      `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`
+    );
+  }
+  return absolutePath;
+}
+
 function resolvePath(inputPath: string, relative: Relative): string {
   switch (relative) {
     case Relative.App:
-      return path.join(getAppPath(), inputPath);
+      return validatePathIsSafe(
+        getAppPath(),
+        path.resolve(getAppPath(), inputPath)
+      );
     case Relative.Saves:
-      return path.join(getSavesPath(), inputPath);
+      return validatePathIsSafe(
+        getSavesPath(),
+        path.resolve(getSavesPath(), inputPath)
+      );
+    case Relative.Output:
+      return validatePathIsSafe(
+        getOutputRootPath(),
+        path.resolve(getOutputPath(), inputPath)
+      );
+    case Relative.None:
+      return validatePathIsSafe(
+        getOutputRootPath(),
+        path.resolve(getOutputPath(), inputPath)
+      );
     default:
-      return inputPath;
+      throw new Error(
+        `Invalid relative value "${relative}" for path "${inputPath}".`
+      );
   }
 }
 
@@ -415,9 +458,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
   readFile: (inputPath: string, relative: Relative) => {
     rendererConsole.debug('BridgeAPI.readFile', { inputPath, relative });
 
-    const filePath = resolvePath(inputPath, relative);
-
     try {
+      const filePath = resolvePath(inputPath, relative);
       if (existsSync(filePath)) {
         const result = readFileSync(filePath, {
           encoding: 'utf-8',
@@ -439,9 +481,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
   writeFile: (inputPath: string, relative: Relative, data: string) => {
     rendererConsole.debug('BridgeAPI.writeFile', { inputPath, relative });
 
-    const filePath = resolvePath(inputPath, relative);
-
     try {
+      const filePath = resolvePath(inputPath, relative);
       mkdirSync(path.dirname(filePath), { recursive: true });
       writeFileSync(filePath, data, {
         encoding: 'utf-8',
@@ -464,9 +505,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
       relative,
     });
 
-    const filePath = resolvePath(inputPath, relative);
-
     try {
+      const filePath = resolvePath(inputPath, relative);
       if (existsSync(filePath)) {
         return readFileSync(filePath, {
           encoding: null, // binary
@@ -490,9 +530,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
       relative,
     });
 
-    const filePath = resolvePath(inputPath, relative);
-
     try {
+      const filePath = resolvePath(inputPath, relative);
       mkdirSync(path.dirname(filePath), { recursive: true });
       writeFileSync(filePath, data, {
         encoding: null,
@@ -512,9 +551,8 @@ export const BridgeAPI: BridgeAPIImplementation = {
   deleteFile: (inputPath: string, relative: Relative) => {
     rendererConsole.debug('BridgeAPI.deleteFile', { inputPath, relative });
 
-    const filePath = resolvePath(inputPath, relative);
-
     try {
+      const filePath = resolvePath(inputPath, relative);
       if (existsSync(filePath)) {
         const stat = statSync(filePath);
         if (stat.isDirectory()) {

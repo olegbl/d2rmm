@@ -10,6 +10,7 @@ enum Relative {
   None = 'None',
   App = 'App',
   Saves = 'Saves',
+  Output = 'Output',
 }
 
 let nextStringIDRaw: string | null = null;

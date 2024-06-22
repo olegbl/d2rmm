@@ -3,6 +3,8 @@
 - Auto-updates (https://www.electron.build/auto-update)
 - Mod config actions
 - Typeahead config
+- Check for mod updates via Nexus Mods
+- Download mod updates for premium Nexus Mods users
 
 # Mods
 

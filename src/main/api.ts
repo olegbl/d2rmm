@@ -496,7 +496,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return readFileSync(filePath, {
           encoding: null, // binary
           flag: 'r',
-        });
+        }).buffer;
       }
     } catch (e) {
       return createError(
@@ -509,7 +509,11 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return null;
   },
 
-  writeBinaryFile: (inputPath: string, relative: Relative, data: Buffer) => {
+  writeBinaryFile: (
+    inputPath: string,
+    relative: Relative,
+    data: ArrayBuffer,
+  ) => {
     console.debug('BridgeAPI.writeBinaryFile', {
       inputPath,
       relative,
@@ -518,7 +522,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     try {
       const filePath = resolvePath(inputPath, relative);
       mkdirSync(path.dirname(filePath), { recursive: true });
-      writeFileSync(filePath, data, {
+      writeFileSync(filePath, Buffer.from(data), {
         encoding: null,
         flag: 'w',
       });

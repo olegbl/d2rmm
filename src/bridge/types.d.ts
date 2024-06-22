@@ -84,7 +84,7 @@ declare global {
     readBinaryFile: (
       filePath: string,
       relative: Relative,
-    ) => Buffer | null | Error;
+    ) => ArrayBuffer | null | Error;
     readJson: (filePath: string) => JSONData | Error;
     readModCode: (id: string) => Promise<[string, string] | Error>;
     readModConfig: (id: string) => JSON;
@@ -100,7 +100,7 @@ declare global {
     writeBinaryFile: (
       inputPath: string,
       relative: Relative,
-      data: Buffer,
+      data: ArrayBuffer,
     ) => number | Error;
     writeJson: (filePath: string, data: JSONData) => number | Error;
     writeModConfig: (id: string, value: ModConfigValue) => number | Error;

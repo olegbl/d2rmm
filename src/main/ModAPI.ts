@@ -178,7 +178,7 @@ export function getModAPI(
         runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
-    readSaveFile: (filePath: string): Buffer | null => {
+    readSaveFile: (filePath: string): ArrayBuffer | null => {
       console.debug('D2RMM.readSaveFile', filePath);
       const result = throwIfError(
         runtime.BridgeAPI.readBinaryFile(filePath, 'Saves'),
@@ -186,7 +186,7 @@ export function getModAPI(
       runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
-    writeSaveFile: (filePath: string, data: Buffer): void => {
+    writeSaveFile: (filePath: string, data: ArrayBuffer): void => {
       console.debug('D2RMM.writeSaveFile', filePath, data);
       if (!runtime.options.isDryRun) {
         throwIfError(
@@ -281,7 +281,7 @@ function getHandleForValue<T>(
     return scope.manage(vm.newNumber(value));
   } else if (typeof value === 'string') {
     return scope.manage(vm.newString(value));
-  } else if (value instanceof Buffer) {
+  } else if (value instanceof ArrayBuffer) {
     return scope.manage(vm.newArrayBuffer(value));
   } else if (Array.isArray(value)) {
     const arrayHandle = scope.manage(vm.newArray());

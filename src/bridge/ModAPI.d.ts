@@ -167,7 +167,7 @@ export interface ModAPI {
   writeTxt: (filePath: string, data: string) => void;
 
   /**
-   * Reads a save file from the saves directory as a binary Buffer.
+   * Reads a save file from the saves directory as a binary ArrayBuffer.
    * @example
    * ```
    * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
@@ -176,21 +176,21 @@ export interface ModAPI {
    * @param filePath - The path of the save file to read, relative to the saves directory.
    * @returns The binary data of the save file.
    */
-  readSaveFile: (filePath: string) => Buffer | null;
+  readSaveFile: (filePath: string) => ArrayBuffer | null;
 
   /**
-   * Writes a save file to the saves directory as a binary Buffer.
+   * Writes a save file to the saves directory as a binary ArrayBuffer.
    * @note It's highly recommended to write a backup of any save file you are modifying
    *       because save files can be corrupted if written incorrectly.
    * @example
    * ```
    * const stashData = D2RMM.readSaveFile('SharedStashSoftCoreV2.d2i');
-   * D2RMM.writeSaveFile('SharedStashSoftCoreV2.d2i', Buffer.concat([stashData, EXTRA_STASH_TAB]));
+   * D2RMM.writeSaveFile('SharedStashSoftCoreV2.d2i', ArrayBuffer.concat([stashData, EXTRA_STASH_TAB]));
    * ```
    * @param filePath - The path of the save file to write, relative to the saves directory.
    * @param data - The binary data of the save file to write.
    */
-  writeSaveFile: (filePath: string, data: Buffer) => void;
+  writeSaveFile: (filePath: string, data: ArrayBuffer) => void;
 
   /**
    * Copies a file or directory from the mod directory to the data directory. This

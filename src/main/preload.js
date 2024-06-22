@@ -16,21 +16,6 @@ consoleMethods.forEach((level) => {
   console[level] = replacement;
 });
 
-function addConsoleListener(callback) {
-  listeners.push(callback);
-}
-
-function removeConsoleListener(callback) {
-  const index = listeners.indexOf(callback);
-  if (index !== -1) {
-    listeners.splice(index, 1);
-  }
-}
-
-function openURL(url) {
-  return shell.openExternal(url);
-}
-
 ipcRenderer.on('console', (_event, [level, args]) => {
   console[level](...args);
 });
@@ -83,9 +68,27 @@ const BridgeAPI = BridgeAPINames.reduce(
 );
 
 const RendererAPI = {
-  addConsoleListener,
-  openURL,
-  removeConsoleListener,
+  openURL: (url) => {
+    return shell.openExternal(url);
+  },
+  addConsoleListener: (callback) => {
+    listeners.push(callback);
+  },
+  removeConsoleListener: (callback) => {
+    const index = listeners.indexOf(callback);
+    if (index !== -1) {
+      listeners.splice(index, 1);
+    }
+  },
+  addUpdateListener: (callback) => {
+    ipcRenderer.on('update-available', callback);
+  },
+  removeUpdateListener: (callback) => {
+    ipcRenderer.removeListener('update-available', callback);
+  },
+  installUpdate: () => {
+    ipcRenderer.sendSync('install-update');
+  },
 };
 
 contextBridge.exposeInMainWorld('electron', {

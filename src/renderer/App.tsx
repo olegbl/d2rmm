@@ -14,6 +14,7 @@ import { ModsContextProvider } from './ModsContext';
 import { PreferencesProvider } from './Preferences';
 import ThemeContextProvider from './ThemeContext';
 import ToastProvider from './ToastProvider';
+import UpdaterDialog from './UpdaterDialog';
 
 function TabPanelBox({
   children,
@@ -89,6 +90,7 @@ export default function App() {
                     <Route path="/" element={<D2RMMRootView />} />
                   </Routes>
                 </Router>
+                <UpdaterDialog />
               </ModsContextProvider>
             </PreferencesProvider>
           </LogsProvider>

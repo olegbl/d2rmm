@@ -16,7 +16,9 @@ import 'regenerator-runtime/runtime';
 import { initBridgeAPI } from './api';
 import { initPreferences } from './preferences';
 import { initQuickJS } from './quickjs';
+import { checkForUpdates } from './updater';
 import { resolveHtmlPath } from './util';
+import { CURRENT_VERSION } from './version';
 
 log.initialize();
 log.transports.file.resolvePathFn = () =>
@@ -68,9 +70,6 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
-  const packageManifest = require('../../release/app/package.json');
-  const { version } = packageManifest;
-
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -81,7 +80,9 @@ const createWindow = async () => {
       contextIsolation: true,
     },
   });
-  mainWindow.setTitle(`[D2RMM] Diablo II: Resurrected Mod Manager ${version}`);
+  mainWindow.setTitle(
+    `[D2RMM] Diablo II: Resurrected Mod Manager ${CURRENT_VERSION}`,
+  );
   mainWindow.removeMenu();
 
   await initBridgeAPI(mainWindow);
@@ -97,6 +98,8 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
+
+    checkForUpdates(mainWindow);
   });
 
   mainWindow.on('closed', () => {

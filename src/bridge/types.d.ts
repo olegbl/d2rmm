@@ -45,6 +45,13 @@ declare global {
     removeConsoleListener: (
       listener: (level: ILogLevel, args: unknown[]) => void,
     ) => void;
+    addUpdateListener: (
+      listener: (event: unknown, version: string) => void,
+    ) => void;
+    removeUpdateListener: (
+      listener: (event: unknown, version: string) => void,
+    ) => void;
+    installUpdate: () => void;
   };
 
   type CopiedFile = {

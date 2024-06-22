@@ -1,24 +1,25 @@
 module.exports = {
-  extends: 'erb',
+  root: true,
+  env: {
+    node: true,
+  },
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+  ],
   rules: {
-    'import/no-extraneous-dependencies': 'off',
-    'import/no-unresolved': 'error',
-    'import/prefer-default-export': 'off',
-    'react/react-in-jsx-scope': 'off',
-    'react/jsx-boolean-value': ['error', 'always'],
-    'react/jsx-props-no-spreading': 'off',
-    'react/jsx-filename-extension': 'off',
-    'react/require-default-props': 'off',
-    'react/destructuring-assignment': 'off',
-    'operator-assignment': ['warn', 'never'],
-    'no-await-in-loop': 'off',
-    'no-continue': 'off',
-    'no-inner-declarations': 'off',
-    'no-plusplus': 'off',
-    'no-restricted-syntax': 'off',
+    // disabled
     '@typescript-eslint/ban-ts-comment': 'off',
-    '@typescript-eslint/naming-convention': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
+    '@typescript-eslint/no-non-null-assertion': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    'no-empty': 'off',
+    'no-inner-declarations': 'off',
+    // customized
+    'import/no-unresolved': 'error',
+    'react/jsx-boolean-value': ['error', 'always'],
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {
@@ -30,17 +31,33 @@ module.exports = {
         caughtErrorsIgnorePattern: '^_.*$',
       },
     ],
-    '@typescript-eslint/return-await': 'off',
-    'prefer-destructuring': 'off',
-    'no-console': 'off',
   },
+  plugins: [
+    '@typescript-eslint',
+    'eslint-plugin-compat',
+    'eslint-plugin-import',
+    'eslint-plugin-jest',
+    'eslint-plugin-jsx-a11y',
+    'eslint-plugin-prettier',
+    'eslint-plugin-promise',
+    'eslint-plugin-react',
+    'eslint-plugin-react-hooks',
+  ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: ['./tsconfig.json'],
     tsconfigRootDir: __dirname,
     createDefaultProgram: true,
   },
+  ignorePatterns: [
+    './docs/**',
+    './mods/**',
+    './mods.empty/**',
+    './release/**',
+    './.erb/dll/**',
+  ],
   settings: {
     'import/resolver': {
       // See https://github.com/benmosher/eslint-plugin-import/issues/1396#issuecomment-575727774 for line below

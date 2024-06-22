@@ -20,7 +20,7 @@ export default function ModSettingsCheckboxField({
     (_event: React.ChangeEvent<HTMLInputElement>, newValue: boolean): void => {
       onChangeFromProps(field.id, newValue);
     },
-    [field, onChangeFromProps]
+    [field, onChangeFromProps],
   );
 
   return (

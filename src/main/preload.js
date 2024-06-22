@@ -75,11 +75,11 @@ const BridgeAPI = BridgeAPINames.reduce(
       throwIfError(
         ipcRenderer.sendSync(
           api,
-          args.map((arg) => (arg == null ? undefined : arg))
-        )
+          args.map((arg) => (arg == null ? undefined : arg)),
+        ),
       ),
   }),
-  {}
+  {},
 );
 
 const RendererAPI = {

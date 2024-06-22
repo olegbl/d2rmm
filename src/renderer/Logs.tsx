@@ -98,7 +98,7 @@ export function LogsProvider({ children }: Props): JSX.Element {
       levels,
       setLevels,
     }),
-    [logs, levels, setLevels]
+    [logs, levels, setLevels],
   );
 
   const writerContext = useMemo(
@@ -110,7 +110,7 @@ export function LogsProvider({ children }: Props): JSX.Element {
       log,
       debug,
     }),
-    [clear, add, error, warn, log, debug]
+    [clear, add, error, warn, log, debug],
   );
 
   useConsoleListener(add);

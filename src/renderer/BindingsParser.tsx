@@ -3,7 +3,7 @@ import { ModConfigSingleValue, ModConfigValue } from 'bridge/ModConfigValue';
 
 export function parseBinding<T extends ModConfigSingleValue>(
   value: Binding<T>,
-  config: ModConfigValue
+  config: ModConfigValue,
 ): T {
   if (
     Array.isArray(value) &&
@@ -21,7 +21,7 @@ export function parseBinding<T extends ModConfigSingleValue>(
       if (typeof condition === 'boolean') {
         return parseBinding(
           (condition ? value[2] : value[3]) as Binding<T>,
-          config
+          config,
         );
       }
     }

@@ -53,7 +53,7 @@ export default function ModInstallButton({
       let modsInstalled = [];
       modsInstalled = BridgeAPI.installMods(modsToInstall, options);
       setInstalledMods(
-        modsToInstall.map((mod) => ({ id: mod.id, config: mod.config }))
+        modsToInstall.map((mod) => ({ id: mod.id, config: mod.config })),
       );
 
       if (modsToInstall.length === 0) {

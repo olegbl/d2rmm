@@ -57,19 +57,19 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const onOpenExportMenu = useCallback(
     (event: MouseEvent<HTMLButtonElement>): void =>
       setExportAnchorEl(event.currentTarget),
-    []
+    [],
   );
 
   const onCloseExportMenu = useCallback(
     (): void => setExportAnchorEl(null),
-    []
+    [],
   );
 
   const onChangeLevels = useCallback(
     (_event: React.MouseEvent<HTMLElement>, newValue: ILogLevel[]) => {
       setLevels(newValue);
     },
-    [setLevels]
+    [setLevels],
   );
 
   const onCopy = useCallback((): void => {
@@ -83,7 +83,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           ...log.data.map(prettyPrintData),
         ])
         .map((log) => log.join(','))
-        .join('\n')
+        .join('\n'),
     );
     onCloseExportMenu();
   }, [logs, onCloseExportMenu]);
@@ -99,9 +99,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         .filter(
           (log) =>
             filter === '' ||
-            log.text.toLowerCase().includes(filter.toLowerCase())
+            log.text.toLowerCase().includes(filter.toLowerCase()),
         ),
-    [logs, levels, filter]
+    [logs, levels, filter],
   );
 
   const renderRow = useCallback(
@@ -140,12 +140,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         </ListItemButton>
       );
     },
-    [filteredLogs]
+    [filteredLogs],
   );
 
   const getItemKey = useCallback(
     (index: number) => filteredLogs[index].id,
-    [filteredLogs]
+    [filteredLogs],
   );
 
   return (
@@ -258,12 +258,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   {filteredLogs[selectedRowIndex].level === 'error'
                     ? 'Error'
                     : filteredLogs[selectedRowIndex].level === 'warn'
-                    ? 'Warning'
-                    : filteredLogs[selectedRowIndex].level === 'log'
-                    ? 'Info'
-                    : filteredLogs[selectedRowIndex].level === 'debug'
-                    ? 'Debug'
-                    : ''}
+                      ? 'Warning'
+                      : filteredLogs[selectedRowIndex].level === 'log'
+                        ? 'Info'
+                        : filteredLogs[selectedRowIndex].level === 'debug'
+                          ? 'Debug'
+                          : ''}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <IconButton
@@ -272,7 +272,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   color="inherit"
                   onClick={() =>
                     navigator.clipboard.writeText(
-                      filteredLogs[selectedRowIndex].text
+                      filteredLogs[selectedRowIndex].text,
                     )
                   }
                   sx={{ marginRight: 2 }}

@@ -26,7 +26,7 @@ export default function ModSettingsField({
     (fieldID: string, value: ModConfigSingleValue): void => {
       setModConfig(mod.id, { ...mod.config, [fieldID]: value });
     },
-    [mod, setModConfig]
+    [mod, setModConfig],
   );
 
   const onReset = useCallback((): void => {

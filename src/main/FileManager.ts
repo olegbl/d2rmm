@@ -93,8 +93,8 @@ export class FileManager {
           `Mod "${mod}" is modifying file "${
             fileStatus.filePath
           }" without reading it first. This file was previously modified by ${joinListInEnglish(
-            modsThatWroteThisFile.map((mod) => `"${mod}"`)
-          )} and these changes will be lost. Consider moving "${mod}" higher in the load order.`
+            modsThatWroteThisFile.map((mod) => `"${mod}"`),
+          )} and these changes will be lost. Consider moving "${mod}" higher in the load order.`,
         );
       }
       // otherwise, this mod could be overwriting game updates
@@ -106,7 +106,7 @@ export class FileManager {
         this.gameFile(filePath)
       ) {
         this.runtime.console.warn(
-          `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`
+          `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`,
         );
       }
     }

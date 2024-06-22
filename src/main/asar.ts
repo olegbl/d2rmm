@@ -5,8 +5,8 @@ import path from 'path';
 type Method = (...args: string[]) => string;
 
 function wrap(method: Method): Method {
-  return function (): string {
-    const result = method.call(path, ...arguments);
+  return function (...args: string[]): string {
+    const result = method.call(path, ...args);
 
     // .wasm modules cannot be shipped inside of app.asar
     // so we ship them in app.asar.unpacked, but we need to

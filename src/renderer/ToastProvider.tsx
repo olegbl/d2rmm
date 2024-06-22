@@ -25,7 +25,7 @@ export default function ToastProvider({ children }: Props): JSX.Element {
 
   const context = useMemo(
     () => ({ showToast, clearToasts }),
-    [showToast, clearToasts]
+    [showToast, clearToasts],
   );
 
   return (

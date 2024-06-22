@@ -5,7 +5,7 @@ import { ModConfigSingleValue } from 'bridge/ModConfigValue';
 
 function debounce<TArgs extends unknown[]>(
   fn: (...args: TArgs) => void,
-  timeoutMs: number
+  timeoutMs: number,
 ): (...args: TArgs) => void {
   // TODO: figure out why we're using NodeJS types instead of DOM types in here
   let timeoutID: NodeJS.Timeout | null = null;
@@ -38,20 +38,20 @@ export default function ModSettingsColorSelectorField({
       number,
       number,
       number,
-      number
+      number,
     ];
     return { r, g, b, a };
   });
 
   const onChangeFromPropsDebounced = useMemo(
     () => debounce(onChangeFromProps, 1000),
-    [onChangeFromProps]
+    [onChangeFromProps],
   );
 
   const onChange = useCallback(
     (_value: string, colors: MuiColorInputColors): void => {
       const match = colors.rgb.match(
-        /rgba?\((\d+), (\d+), (\d+)(?:, (\d+(?:\.\d+)?))?\)/
+        /rgba?\((\d+), (\d+), (\d+)(?:, (\d+(?:\.\d+)?))?\)/,
       );
       if (match != null) {
         const r = parseInt(match[1], 10);
@@ -64,7 +64,7 @@ export default function ModSettingsColorSelectorField({
         });
       }
     },
-    [field, onChangeFromPropsDebounced]
+    [field, onChangeFromPropsDebounced],
   );
 
   const hexR = value.r.toString(16).padStart(2, '0');

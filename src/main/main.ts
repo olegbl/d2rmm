@@ -24,7 +24,7 @@ log.transports.file.resolvePathFn = () =>
     app.isPackaged
       ? path.join(process.resourcesPath, '../')
       : path.join(__dirname, '../../'),
-    'd2rmm.log'
+    'd2rmm.log',
   );
 Object.assign(console, log.functions);
 console.log('electron-log initialized');
@@ -50,7 +50,7 @@ const installExtensions = async () => {
   return installer
     .default(
       extensions.map((name) => installer[name]),
-      forceDownload
+      forceDownload,
     )
     .catch(console.log);
 };

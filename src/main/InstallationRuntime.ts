@@ -11,7 +11,7 @@ export class InstallationRuntime {
     public BridgeAPI: BridgeAPIImplementation,
     public console: ConsoleAPI,
     public options: IInstallModsOptions,
-    public modsToInstall: Mod[]
+    public modsToInstall: Mod[],
   ) {
     this.fileManager = new FileManager(this);
   }

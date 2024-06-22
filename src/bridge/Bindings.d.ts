@@ -27,7 +27,7 @@ export type BindingLiteralValue<T> = T;
  */
 export type BindingConfigValue<_T extends ModConfigSingleValue> = [
   operator: 'value',
-  id: string
+  id: string,
 ];
 
 /**
@@ -50,7 +50,7 @@ export type BindingConditional<T> = [
   operator: 'if',
   condition: Binding<boolean>,
   thenBinding: Binding<T>,
-  elseBinding: Binding<T>
+  elseBinding: Binding<T>,
 ];
 
 /**
@@ -90,7 +90,7 @@ export type BindingNot = [operator: 'not', binding: Binding<boolean>];
 export type BindingAnd = [
   operator: 'and',
   binding1: Binding<boolean>,
-  binding2: Binding<boolean>
+  binding2: Binding<boolean>,
 ];
 
 /**
@@ -114,7 +114,7 @@ export type BindingAnd = [
 export type BindingOr = [
   operator: 'or',
   binding1: Binding<boolean>,
-  binding2: Binding<boolean>
+  binding2: Binding<boolean>,
 ];
 
 /**
@@ -134,7 +134,7 @@ export type BindingOr = [
 export type BindingEquals<T> = [
   operator: 'eq',
   binding1: Binding<T>,
-  binding2: Binding<T>
+  binding2: Binding<T>,
 ];
 
 /**
@@ -154,7 +154,7 @@ export type BindingEquals<T> = [
 export type BindingNotEquals<T> = [
   operator: 'neq',
   binding1: Binding<T>,
-  binding2: Binding<T>
+  binding2: Binding<T>,
 ];
 
 /**
@@ -174,7 +174,7 @@ export type BindingNotEquals<T> = [
 export type BindingLessThan = [
   operator: 'lt',
   binding1: Binding<number>,
-  binding2: Binding<number>
+  binding2: Binding<number>,
 ];
 
 /**
@@ -194,7 +194,7 @@ export type BindingLessThan = [
 export type BindingLessThanOrEqual = [
   operator: 'lte',
   binding1: Binding<number>,
-  binding2: Binding<number>
+  binding2: Binding<number>,
 ];
 
 /**
@@ -214,7 +214,7 @@ export type BindingLessThanOrEqual = [
 export type BindingGreaterThan = [
   operator: 'gt',
   binding1: Binding<number>,
-  binding2: Binding<number>
+  binding2: Binding<number>,
 ];
 
 /**
@@ -234,7 +234,7 @@ export type BindingGreaterThan = [
 export type BindingGreaterThanOrEqual = [
   operator: 'gte',
   binding1: Binding<number>,
-  binding2: Binding<number>
+  binding2: Binding<number>,
 ];
 
 /**
@@ -257,8 +257,8 @@ export type BindingIncludes<T> = [
   binding2: T extends string
     ? Binding<string[]>
     : T extends number
-    ? Binding<number[]>
-    : never
+      ? Binding<number[]>
+      : never,
 ];
 
 /**
@@ -335,11 +335,11 @@ export type Binding<T> =
   T extends string
     ? StringBinding
     : T extends number
-    ? NumberBinding
-    : T extends boolean
-    ? BooleanBinding
-    : T extends string[]
-    ? StringArrayBinding
-    : T extends number[]
-    ? NumberArrayBinding
-    : BindingLiteralValue<T>;
+      ? NumberBinding
+      : T extends boolean
+        ? BooleanBinding
+        : T extends string[]
+          ? StringArrayBinding
+          : T extends number[]
+            ? NumberArrayBinding
+            : BindingLiteralValue<T>;

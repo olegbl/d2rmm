@@ -36,7 +36,7 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
         reorderMod(from, to);
       }
     },
-    [reorderMod]
+    [reorderMod],
   );
 
   const isReorderEnabled = filter === '';

@@ -4,7 +4,7 @@ import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 export function getConsoleAPI(
   vm: QuickJSContext,
   scope: Scope,
-  console: ConsoleAPI
+  console: ConsoleAPI,
 ): QuickJSHandle {
   const consoleHandle = scope.manage(vm.newObject());
   vm.setProp(
@@ -13,8 +13,8 @@ export function getConsoleAPI(
     scope.manage(
       vm.newFunction('debug', (...args) => {
         console.debug(...args.map(vm.dump));
-      })
-    )
+      }),
+    ),
   );
   vm.setProp(
     consoleHandle,
@@ -22,8 +22,8 @@ export function getConsoleAPI(
     scope.manage(
       vm.newFunction('log', (...args) => {
         console.log(...args.map(vm.dump));
-      })
-    )
+      }),
+    ),
   );
   vm.setProp(
     consoleHandle,
@@ -31,8 +31,8 @@ export function getConsoleAPI(
     scope.manage(
       vm.newFunction('warn', (...args) => {
         console.warn(...args.map(vm.dump));
-      })
-    )
+      }),
+    ),
   );
   vm.setProp(
     consoleHandle,
@@ -40,8 +40,8 @@ export function getConsoleAPI(
     scope.manage(
       vm.newFunction('error', (...args) => {
         console.error(...args.map(vm.dump));
-      })
-    )
+      }),
+    ),
   );
   return consoleHandle;
 }

@@ -20,7 +20,7 @@ export default function ModSettingsTextField({
     (event: ChangeEvent<HTMLInputElement>): void => {
       onChangeFromProps(field.id, event.target.value);
     },
-    [field, onChangeFromProps]
+    [field, onChangeFromProps],
   );
 
   return <TextField value={value} variant="outlined" onChange={onChange} />;

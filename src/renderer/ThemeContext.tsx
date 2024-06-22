@@ -63,7 +63,7 @@ export default function ThemeContextProvider({
       themeMode,
       setThemeMode,
     }),
-    [themeMode, setThemeMode]
+    [themeMode, setThemeMode],
   );
 
   return (
@@ -76,7 +76,7 @@ export default function ThemeContextProvider({
 
 export function useThemeMode(): [
   IThemeMode,
-  React.Dispatch<React.SetStateAction<IThemeMode>>
+  React.Dispatch<React.SetStateAction<IThemeMode>>,
 ] {
   const context = useContext(Context);
   if (context == null) {

@@ -51,7 +51,7 @@ function getSavesPath(): string {
     process.env.USERPROFILE ?? path.join(app.getPath('home'), '../'),
     `Saved Games/Diablo II Resurrected/mods/${
       runtime?.options.outputModName ?? 'D2RMM'
-    }/`
+    }/`,
   );
 }
 
@@ -73,7 +73,7 @@ function getOutputRootPath(): string {
 function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
   if (!path.resolve(absolutePath).startsWith(path.resolve(allowedRoot))) {
     throw new Error(
-      `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`
+      `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`,
     );
   }
   return absolutePath;
@@ -84,26 +84,26 @@ function resolvePath(inputPath: string, relative: Relative): string {
     case 'App':
       return validatePathIsSafe(
         getAppPath(),
-        path.resolve(getAppPath(), inputPath)
+        path.resolve(getAppPath(), inputPath),
       );
     case 'Saves':
       return validatePathIsSafe(
         getSavesPath(),
-        path.resolve(getSavesPath(), inputPath)
+        path.resolve(getSavesPath(), inputPath),
       );
     case 'Output':
       return validatePathIsSafe(
         getOutputRootPath(),
-        path.resolve(getOutputPath(), inputPath)
+        path.resolve(getOutputPath(), inputPath),
       );
     case 'None':
       return validatePathIsSafe(
         getOutputRootPath(),
-        path.resolve(getOutputPath(), inputPath)
+        path.resolve(getOutputPath(), inputPath),
       );
     default:
       throw new Error(
-        `Invalid relative value "${relative}" for path "${inputPath}".`
+        `Invalid relative value "${relative}" for path "${inputPath}".`,
       );
   }
 }
@@ -171,7 +171,7 @@ function processErrorCode(errorCodeArg: string | number): string {
 function createError(
   method: string,
   message: string,
-  errorCodeArg?: unknown
+  errorCodeArg?: unknown,
 ): Error {
   const prefix = `${method}: ${message}`;
   let errorCode = errorCodeArg;
@@ -221,7 +221,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       console.debug(
         'BridgeAPI.getGamePath',
         'Failed to fetch game path from the registry',
-        String(error)
+        String(error),
       );
       return null;
     }
@@ -230,7 +230,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
   execute: (
     executablePath: string,
     args: string[] = [],
-    sync: boolean = false
+    sync: boolean = false,
   ) => {
     console.debug('BridgeAPI.execute', { executablePath, args, sync });
 
@@ -258,7 +258,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.openStorage',
           'Failed to open CASC storage',
-          `(CascLib Error Code: ${CascLib.GetLastError()})`
+          `(CascLib Error Code: ${CascLib.GetLastError()})`,
         );
       }
     }
@@ -277,7 +277,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.closeStorage',
           'Failed to close CASC storage',
-          `(CascLib Error Code: ${CascLib.GetLastError()})`
+          `(CascLib Error Code: ${CascLib.GetLastError()})`,
         );
       }
     }
@@ -307,7 +307,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'API.isGameFile',
         'Failed to check if a file exists in CASC storage',
-        String(e)
+        String(e),
       );
     }
 
@@ -334,7 +334,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.extractFile',
           `Failed to open file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`
+          `(CascLib Error Code: ${CascLib.GetLastError()})`,
         );
       }
 
@@ -357,7 +357,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.extractFile',
           `Failed to read file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`
+          `(CascLib Error Code: ${CascLib.GetLastError()})`,
         );
       }
 
@@ -365,14 +365,14 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return createError(
           'API.extractFile',
           `Failed to close file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`
+          `(CascLib Error Code: ${CascLib.GetLastError()})`,
         );
       }
     } catch (e) {
       return createError(
         'API.extractFile',
         'Failed to extract file',
-        String(e)
+        String(e),
       );
     }
 
@@ -391,7 +391,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'API.createDirectory',
         'Failed to create directory',
-        String(e)
+        String(e),
       );
     }
 
@@ -414,7 +414,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'API.readDirectory',
         'Failed to read directory',
-        String(e)
+        String(e),
       );
     }
   },
@@ -435,7 +435,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'API.readModDirectory',
         'Failed to read directory',
-        String(e)
+        String(e),
       );
     }
   },
@@ -456,7 +456,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.readFile',
         'Failed to read file',
-        String(e)
+        String(e),
       );
     }
 
@@ -477,7 +477,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.writeFile',
         'Failed to write file',
-        String(e)
+        String(e),
       );
     }
 
@@ -502,7 +502,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.readBinaryFile',
         'Failed to read file',
-        String(e)
+        String(e),
       );
     }
 
@@ -526,7 +526,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.writeBinaryFile',
         'Failed to write file',
-        String(e)
+        String(e),
       );
     }
 
@@ -552,7 +552,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.deleteFile',
         'Failed to delete file',
-        String(e)
+        String(e),
       );
     }
 
@@ -564,7 +564,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     fromPath: string,
     toPath: string,
     overwrite: boolean = false,
-    outCopiedFiles?: CopiedFile[]
+    outCopiedFiles?: CopiedFile[],
   ) => {
     console.debug('BridgeAPI.copyFile', {
       fromPath,
@@ -610,7 +610,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.copyFile',
         'Failed to copy file',
-        String(e)
+        String(e),
       );
     }
 
@@ -648,7 +648,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       return createError(
         'BridgeAPI.readModInfo',
         'Failed to parse mod config',
-        String(e)
+        String(e),
       );
     }
   },
@@ -697,7 +697,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
           return createError(
             'BridgeAPI.readModCode',
             'Failed to read source code.',
-            result
+            result,
           );
         }
 
@@ -738,14 +738,14 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
         function processDependencies(
           module: ModuleWithSourceCode,
-          absoluteFilePath: string
+          absoluteFilePath: string,
         ): Module[] {
           const sourceFile = ts.createSourceFile(
             absoluteFilePath,
             module.sourceCode,
             ts.ScriptTarget.ESNext,
             true,
-            ts.ScriptKind.TS
+            ts.ScriptKind.TS,
           );
           const rootPath = path.dirname(module.id + '.ts');
           const dependencies: Module[] = [];
@@ -764,7 +764,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
                 statement.getFullText(),
                 statement
                   .getFullText()
-                  .replace(importPath, `./${dependencyPath}`)
+                  .replace(importPath, `./${dependencyPath}`),
               );
             }
           });
@@ -788,14 +788,14 @@ export const BridgeAPI: BridgeAPIImplementation = {
             throw createError(
               'BridgeAPI.readModCode',
               `Failed to read ${relativeFilePath}`,
-              sourceCode
+              sourceCode,
             );
           }
 
           const moduleWithSourceCode = { ...module, sourceCode };
           const dependencies = processDependencies(
             moduleWithSourceCode,
-            path.join(getAppPath(), relativeFilePath)
+            path.join(getAppPath(), relativeFilePath),
           );
           dependencies.forEach((m) => processModule(m));
           modulesWithSourceCode.push(moduleWithSourceCode);
@@ -913,14 +913,14 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         return createError(
           'BridgeAPI.readModCode',
           'Failed to compile mod',
-          error
+          error,
         );
       }
     }
 
     return createError(
       'BridgeAPI.readModCode',
-      'Could not find source code (mod.ts or mod.js).'
+      'Could not find source code (mod.ts or mod.js).',
     );
   },
 
@@ -964,7 +964,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const { headers, rows } = data;
     const headersRaw = headers.join('\t');
     const rowsRaw = rows.map((row) =>
-      headers.map((header) => row[header] ?? '').join('\t')
+      headers.map((header) => row[header] ?? '').join('\t'),
     );
     const content = [headersRaw, ...rowsRaw, ''].join('\n');
     return BridgeAPI.writeFile(filePath, 'None', content);
@@ -993,7 +993,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       return createError(
         'BridgeAPI.readJson',
         'Failed to parse file',
-        e instanceof Error ? e.toString() : String(e)
+        e instanceof Error ? e.toString() : String(e),
       );
     }
   },
@@ -1006,7 +1006,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       filePath,
       'None',
       // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
-      `\uFEFF${content}`
+      `\uFEFF${content}`,
     );
 
     if (result instanceof Error) {
@@ -1050,7 +1050,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       BridgeAPI,
       console,
       options,
-      modsToInstall
+      modsToInstall,
     );
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
@@ -1110,7 +1110,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               error.stack
                 ?.replace(/\s*at <eval>[\s\S]*/m, '')
                 ?.replace(/eval.js/g, `mods\\${runtime.mod.id}\\mod.gen.js`),
-              sourceMapConsumer
+              sourceMapConsumer,
             );
             sourceMapConsumer.destroy();
           }
@@ -1157,7 +1157,7 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
   const nativeConsole = { ...console };
   const consoleWrapper = { ...console };
   const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
-  consoleMethods.forEach((level: typeof consoleMethods[number]) => {
+  consoleMethods.forEach((level: (typeof consoleMethods)[number]) => {
     consoleWrapper[level] = (...args) => {
       nativeConsole[level](...args);
       if (runtime?.isModInstalling() ?? false) {
@@ -1175,7 +1175,7 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
 
 function findBestMappingForLine(
   lineNumber: number,
-  sourceMapConsumer: SourceMapConsumer
+  sourceMapConsumer: SourceMapConsumer,
 ): NullableMappedPosition {
   let bestMapping: MappingItem | null = null;
   sourceMapConsumer.eachMapping((mapping) => {
@@ -1198,7 +1198,7 @@ function findBestMappingForLine(
 
 function applySourceMapToStackTrace(
   stackTrace: string,
-  sourceMapConsumer: SourceMapConsumer
+  sourceMapConsumer: SourceMapConsumer,
 ): string {
   return stackTrace
     .split('\n')
@@ -1219,7 +1219,7 @@ function applySourceMapToStackTrace(
       if (originalPosition.source == null) {
         originalPosition = findBestMappingForLine(
           generatedPosition.line,
-          sourceMapConsumer
+          sourceMapConsumer,
         );
       }
       if (originalPosition.source == null) {
@@ -1229,11 +1229,11 @@ function applySourceMapToStackTrace(
       return stackFrame
         .replace(
           `(${generatedPosition.source}:${generatedPosition.line})`,
-          `(${originalPosition.source}:${originalPosition.line})`
+          `(${originalPosition.source}:${originalPosition.line})`,
         )
         .replace(
           `(${generatedPosition.source}:${generatedPosition.line}:${generatedPosition.column})`,
-          `(${originalPosition.source}:${originalPosition.line}:${originalPosition.column})`
+          `(${originalPosition.source}:${originalPosition.line}:${originalPosition.column})`,
         );
     })
     .filter((stackFrame) => !stackFrame.includes('.gen.js:'))

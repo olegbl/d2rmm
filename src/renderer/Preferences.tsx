@@ -27,33 +27,33 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
 
   const [preExtractedDataPath, setPreExtractedDataPath] = useSavedState(
     'pre-extracted-data-path',
-    `${rawGamePath}\\data`
+    `${rawGamePath}\\data`,
   );
 
   const [outputModName, setOutputModName] = useSavedState(
     'output-mod-name',
-    'D2RMM'
+    'D2RMM',
   );
 
   const [isPreExtractedData, setIsPreExtractedData] = useSavedState(
     'pre-extracted-data',
     false,
     (bool) => String(bool),
-    (str) => str === 'true'
+    (str) => str === 'true',
   );
 
   const [isDirectMode, setIsDirectMode] = useSavedState(
     'direct-mod',
     false,
     (bool) => String(bool),
-    (str) => str === 'true'
+    (str) => str === 'true',
   );
 
   const [extraArgs, setExtraArgs] = useSavedState(
     'extra-args',
     [] as string[],
     (strarr) => strarr.join(' '),
-    (str) => str.split(' ')
+    (str) => str.split(' '),
   );
 
   const gamePath = rawGamePath.replace(/\\$/, '');
@@ -94,7 +94,7 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
       setOutputModName,
       setPreExtractedDataPath,
       setRawGamePath,
-    ]
+    ],
   );
 
   return <Context.Provider value={context}>{children}</Context.Provider>;

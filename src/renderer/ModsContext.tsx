@@ -43,7 +43,7 @@ type IModOrderMutator = (from: number, to: number) => unknown;
 
 type IModConfigMutator = (
   id: string,
-  value: React.SetStateAction<ModConfigValue>
+  value: React.SetStateAction<ModConfigValue>,
 ) => void;
 
 export type IModsContext = {
@@ -85,7 +85,7 @@ export function ModsContextProvider({
           }
 
           const config = BridgeAPI.readModConfig(
-            modID
+            modID,
           ) as unknown as ModConfigValue;
 
           const defaultConfig = info.config?.reduce((agg, field) => {
@@ -127,10 +127,10 @@ export function ModsContextProvider({
             return { ...mod, config };
           }
           return mod;
-        })
+        }),
       );
     },
-    []
+    [],
   );
 
   const refreshMods = useCallback((): void => {
@@ -142,35 +142,35 @@ export function ModsContextProvider({
     'installed-mods',
     {} as IInstalledMods,
     (map) => JSON.stringify(map),
-    (str) => JSON.parse(str)
+    (str) => JSON.parse(str),
   );
 
   const [enabledMods, setEnabledMods] = useSavedState(
     'enabled-mods',
     {} as IEnabledMods,
     (map) => JSON.stringify(map),
-    (str) => JSON.parse(str)
+    (str) => JSON.parse(str),
   );
 
   const [modOrder, setModOrder] = useSavedState(
     'mods-order',
     [] as IModOrder,
     (arr) => JSON.stringify(arr),
-    (str) => JSON.parse(str)
+    (str) => JSON.parse(str),
   );
 
   const modByID = useMemo(
     () =>
       mods.reduce(
         (agg, mod) => ({ ...agg, [mod.id]: mod }),
-        {} as { [id: string]: Mod }
+        {} as { [id: string]: Mod },
       ),
-    [mods]
+    [mods],
   );
 
   const orderedMods = useMemo(
     () => modOrder.map((mod) => modByID[mod]).filter(Boolean),
-    [modByID, modOrder]
+    [modByID, modOrder],
   );
 
   const reorderMod = useCallback(
@@ -182,7 +182,7 @@ export function ModsContextProvider({
         return newOrder;
       });
     },
-    [setModOrder]
+    [setModOrder],
   );
 
   // update modOrder to match current mods state
@@ -203,12 +203,12 @@ export function ModsContextProvider({
   const getModByID = useCallback(
     (modID: string | null): Mod | null =>
       mods.filter((mod) => mod.id === modID).shift() ?? null,
-    [mods]
+    [mods],
   );
 
   const selectedMod: ISelectedMod = useMemo(
     () => getModByID(selectedModID),
-    [selectedModID, getModByID]
+    [selectedModID, getModByID],
   );
 
   const setSelectedMod: ISelectedModMutator = useCallback(
@@ -220,12 +220,12 @@ export function ModsContextProvider({
         return action?.id ?? null;
       });
     },
-    [getModByID]
+    [getModByID],
   );
 
   const modsToInstall = useMemo(
     () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
-    [orderedMods, enabledMods]
+    [orderedMods, enabledMods],
   );
 
   const isInstallConfigChanged = useMemo(() => {
@@ -266,7 +266,7 @@ export function ModsContextProvider({
       setInstalledMods,
       setModConfig,
       setSelectedMod,
-    ]
+    ],
   );
 
   return <Context.Provider value={context}>{children}</Context.Provider>;
@@ -296,7 +296,7 @@ export function useToggleMod(): (mod: Mod) => void {
         ...prev,
         [mod.id]: !prev[mod.id],
       })),
-    [setEnabledMods]
+    [setEnabledMods],
   );
 }
 

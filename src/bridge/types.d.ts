@@ -39,11 +39,11 @@ declare global {
 
   type RendererAPI = {
     addConsoleListener: (
-      listener: (level: ILogLevel, args: unknown[]) => void
+      listener: (level: ILogLevel, args: unknown[]) => void,
     ) => void;
     openURL: (url: string) => void;
     removeConsoleListener: (
-      listener: (level: ILogLevel, args: unknown[]) => void
+      listener: (level: ILogLevel, args: unknown[]) => void,
     ) => void;
   };
 
@@ -58,14 +58,14 @@ declare global {
       fromPath: string,
       toPath: string,
       overwrite?: boolean,
-      outCopiedFiles?: CopiedFile[]
+      outCopiedFiles?: CopiedFile[],
     ) => number | Error;
     createDirectory: (filePath: string) => boolean | Error;
     deleteFile: (filePath: string, relative: Relative) => number | Error;
     execute: (
       executablePath: string,
       args?: string[],
-      sync?: boolean
+      sync?: boolean,
     ) => number | Error;
     isGameFile: (filePath: string) => boolean | Error;
     extractFile: (filePath: string, targetPath: string) => boolean | Error;
@@ -74,16 +74,16 @@ declare global {
     getVersion: () => [number, number, number];
     installMods: (
       modsToInstall: Mod[],
-      options: IInstallModsOptions
+      options: IInstallModsOptions,
     ) => Promise<string[]>;
     openStorage: (gamePath: string) => boolean | Error;
     readDirectory: (
-      filePath: string
+      filePath: string,
     ) => { name: string; isDirectory: boolean }[] | Error;
     readFile: (filePath: string, relative: Relative) => string | null | Error;
     readBinaryFile: (
       filePath: string,
-      relative: Relative
+      relative: Relative,
     ) => Buffer | null | Error;
     readJson: (filePath: string) => JSONData | Error;
     readModCode: (id: string) => Promise<[string, string] | Error>;
@@ -95,12 +95,12 @@ declare global {
     writeFile: (
       inputPath: string,
       relative: Relative,
-      data: string
+      data: string,
     ) => number | Error;
     writeBinaryFile: (
       inputPath: string,
       relative: Relative,
-      data: Buffer
+      data: Buffer,
     ) => number | Error;
     writeJson: (filePath: string, data: JSONData) => number | Error;
     writeModConfig: (id: string, value: ModConfigValue) => number | Error;

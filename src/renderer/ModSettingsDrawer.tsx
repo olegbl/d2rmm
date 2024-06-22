@@ -3,7 +3,7 @@ import ModSettings from './ModSettings';
 import { useSelectedMod } from './ModsContext';
 
 export default function ModSettingsDrawer(
-  _props: Record<string, never>
+  _props: Record<string, never>,
 ): JSX.Element {
   const [selectedMod, setSelectedMod] = useSelectedMod();
   return (

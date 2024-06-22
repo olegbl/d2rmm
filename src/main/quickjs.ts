@@ -14,7 +14,7 @@ export async function initQuickJS(): Promise<void> {
   const modulePath = path.join(
     process.resourcesPath,
     'app.asar.unpacked/node_modules',
-    '@jitl/quickjs-wasmfile-release-sync/dist'
+    '@jitl/quickjs-wasmfile-release-sync/dist',
   );
 
   // issue: https://github.com/electron/asar/issues/249
@@ -26,12 +26,12 @@ export async function initQuickJS(): Promise<void> {
           ...releaseSyncVariant,
           importModuleLoader: () => {
             const mjsSourceCode = readFileSync(
-              path.join(modulePath, 'emscripten-module.mjs')
+              path.join(modulePath, 'emscripten-module.mjs'),
             )
               .toString()
               .replace(
                 /import.meta.url/g,
-                `"file:///${modulePath.replace(/\\/g, '/')}"`
+                `"file:///${modulePath.replace(/\\/g, '/')}"`,
               )
               .replace('export default ', '');
             return eval(mjsSourceCode);
@@ -39,9 +39,9 @@ export async function initQuickJS(): Promise<void> {
         },
         {
           wasmBinary: readFileSync(
-            path.join(modulePath, 'emscripten-module.wasm')
+            path.join(modulePath, 'emscripten-module.wasm'),
           ),
-        }
+        },
       )
     : releaseSyncVariant;
 

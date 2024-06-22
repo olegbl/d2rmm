@@ -39,7 +39,7 @@ const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
 }));
 
 function getRecursiveFieldDescendants(
-  node: ModConfigFieldOrSection
+  node: ModConfigFieldOrSection,
 ): ModConfigField[] {
   if (node.type !== 'section') {
     return [node];
@@ -50,7 +50,7 @@ function getRecursiveFieldDescendants(
         ...agg,
         ...getRecursiveFieldDescendants(field),
       ],
-      []
+      [],
     ) ?? []
   );
 }
@@ -71,7 +71,7 @@ export default function ModSettingsSection({
   const areAnyDescendantsModified = descendants.some(
     (child) =>
       JSON.stringify(mod.config[child.id]) !==
-      JSON.stringify(child.defaultValue)
+      JSON.stringify(child.defaultValue),
   );
 
   const onReset = useCallback(
@@ -85,11 +85,11 @@ export default function ModSettingsSection({
             ...agg,
             [child.id]: child.defaultValue,
           }),
-          {}
+          {},
         ),
       });
     },
-    [setModConfig]
+    [setModConfig],
   );
 
   const areAllDescendantsCheckboxes =
@@ -110,11 +110,11 @@ export default function ModSettingsSection({
             ...agg,
             [child.id]: !areAllDescendantsChecked,
           }),
-          {}
+          {},
         ),
       });
     },
-    [setModConfig, areAllDescendantsChecked]
+    [setModConfig, areAllDescendantsChecked],
   );
 
   return (
@@ -179,7 +179,7 @@ export default function ModSettingsSection({
               ),
             ].filter(Boolean) as JSX.Element[];
           },
-          []
+          [],
         )}
       </StyledAccordionDetails>
     </StyledAccordion>

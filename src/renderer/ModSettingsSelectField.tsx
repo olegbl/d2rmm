@@ -23,7 +23,7 @@ export default function ModSettingsSelectField({
         onChangeFromProps(field.id, newValue);
       }
     },
-    [field, onChangeFromProps]
+    [field, onChangeFromProps],
   );
 
   return (

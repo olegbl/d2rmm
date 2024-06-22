@@ -5,7 +5,7 @@ import { ModConfigFieldNumber } from 'bridge/ModConfig';
 function useIsFocused(): [
   isFocused: boolean,
   onFocus: () => void,
-  onBlur: () => void
+  onBlur: () => void,
 ] {
   const [isFocused, setIsFocused] = useState(false);
   const onFocus = useCallback(() => setIsFocused(true), []);
@@ -68,7 +68,7 @@ export default function ModSettingsNumberField({
       field.maxValue,
       field.minValue,
       onChangeFromProps,
-    ]
+    ],
   );
 
   useEffect(() => {

@@ -76,7 +76,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
 
   const isValidGamePath = useMemo(
     () => getIsValidGamePath(gamePath),
-    [gamePath]
+    [gamePath],
   );
 
   const isValidPreExtractedDataPath = useMemo(
@@ -84,7 +84,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       dataSource === 'directory'
         ? getIsValidPreExtractedDataPath(preExtractedDataPath)
         : true,
-    [dataSource, preExtractedDataPath]
+    [dataSource, preExtractedDataPath],
   );
 
   return (
@@ -190,7 +190,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 value={outputModName}
                 onChange={(event) =>
                   setOutputModName(
-                    event.target.value.replace(/[^a-zA-Z0-9-_]/g, '')
+                    event.target.value.replace(/[^a-zA-Z0-9-_]/g, ''),
                   )
                 }
               />

@@ -178,7 +178,7 @@ export function getModAPI(
         runtime.fileManager.write(filePath, runtime.mod.id);
       }
     },
-    readSaveFile: (filePath: string): ArrayBuffer | null => {
+    readSaveFile: (filePath: string): number[] | null => {
       console.debug('D2RMM.readSaveFile', filePath);
       const result = throwIfError(
         runtime.BridgeAPI.readBinaryFile(filePath, 'Saves'),
@@ -186,7 +186,7 @@ export function getModAPI(
       runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
-    writeSaveFile: (filePath: string, data: ArrayBuffer): void => {
+    writeSaveFile: (filePath: string, data: number[]): void => {
       console.debug('D2RMM.writeSaveFile', filePath);
       if (!runtime.options.isDryRun) {
         throwIfError(

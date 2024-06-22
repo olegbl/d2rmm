@@ -35,7 +35,10 @@
     "appId": "com.lokhvitsky.D2RMM",
     "artifactName": "${productName} ${version}.${ext}",
     "asar": true,
-    "asarUnpack": "**\\*.{node,dll}",
+    "asarUnpack": [
+      "**\\*.{node,dll,wasm}",
+      "**\\node_modules\\@jitl\\quickjs-wasmfile-release-sync\\dist\\{index.js,emscripten-module.mjs,emscripten-module.wasm}"
+    ],
     "win": {
       "target": [
         "zip"
@@ -57,6 +60,13 @@
         "to": "assets",
         "filter": [
           "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/source-map/lib",
+        "to": "app.asar.unpacked/dist/main",
+        "filter": [
+          "mappings.wasm"
         ]
       }
     ],
@@ -187,7 +197,7 @@
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "^5.15.19",
     "electron-debug": "^3.2.0",
-    "electron-log": "^4.4.4",
+    "electron-log": "^5.1.5",
     "electron-updater": "^4.6.5",
     "history": "^5.2.0",
     "json5": "^2.2.0",

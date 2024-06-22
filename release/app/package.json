@@ -14,9 +14,10 @@
     "postinstall": "npm run electron-rebuild && npm run link-modules"
   },
   "dependencies": {
+    "@jitl/quickjs-wasmfile-release-sync": "^0.29.2",
     "ffi-napi": "^4.0.3",
     "json5": "^2.2.0",
-    "quickjs-emscripten": "^0.29.2",
+    "quickjs-emscripten-core": "^0.29.2",
     "ref-napi": "^3.0.3",
     "regedit": "^5.1.2",
     "typescript": "^5.2.2"

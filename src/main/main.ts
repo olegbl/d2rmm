@@ -10,12 +10,24 @@
  */
 import 'core-js/stable';
 import { app, BrowserWindow, shell } from 'electron';
+import log from 'electron-log/main';
 import path from 'path';
-import { getQuickJS } from 'quickjs-emscripten';
 import 'regenerator-runtime/runtime';
 import { initBridgeAPI } from './api';
 import { initPreferences } from './preferences';
+import { initQuickJS } from './quickjs';
 import { resolveHtmlPath } from './util';
+
+log.initialize();
+log.transports.file.resolvePathFn = () =>
+  path.join(
+    app.isPackaged
+      ? path.join(process.resourcesPath, '../')
+      : path.join(__dirname, '../../'),
+    'd2rmm.log'
+  );
+Object.assign(console, log.functions);
+console.log('electron-log initialized');
 
 let mainWindow: BrowserWindow | null = null;
 if (process.env.NODE_ENV === 'production') {
@@ -72,7 +84,6 @@ const createWindow = async () => {
   mainWindow.setTitle(`[D2RMM] Diablo II: Resurrected Mod Manager ${version}`);
   mainWindow.removeMenu();
 
-  await getQuickJS();
   await initBridgeAPI(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
@@ -97,6 +108,8 @@ const createWindow = async () => {
     event.preventDefault();
     shell.openExternal(url);
   });
+
+  await initQuickJS();
 };
 
 app.on('window-all-closed', () => {

@@ -13,7 +13,7 @@ import {
 } from 'fs';
 import json5 from 'json5';
 import path from 'path';
-import { Scope, getQuickJSSync } from 'quickjs-emscripten';
+import { Scope } from 'quickjs-emscripten';
 import ref from 'ref-napi';
 import regedit from 'regedit';
 import {
@@ -23,7 +23,6 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 import ts from 'typescript';
-import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import type { TSVDataRow } from 'bridge/TSV';
@@ -31,20 +30,15 @@ import packageManifest from '../../release/app/package.json';
 import { getConsoleAPI } from './ConsoleAPI';
 import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
+import './asar.ts';
 import { datamod } from './datamod';
+import { getQuickJS } from './quickjs';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 
 let runtime: InstallationRuntime | null = null;
-
-const console: ConsoleAPI = {
-  debug: (..._args: unknown[]): void => {},
-  log: (..._args: unknown[]): void => {},
-  warn: (..._args: unknown[]): void => {},
-  error: (..._args: unknown[]): void => {},
-};
 
 function getAppPath(): string {
   return app.isPackaged
@@ -77,7 +71,7 @@ function getOutputRootPath(): string {
 
 // we don't want mods doing any ../../.. shenanigans
 function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
-  if (!absolutePath.startsWith(allowedRoot)) {
+  if (!path.resolve(absolutePath).startsWith(path.resolve(allowedRoot))) {
     throw new Error(
       `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`
     );
@@ -1095,11 +1089,12 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         if (error instanceof Error) {
           console.error(`Mod encountered a compile error!\n${error.stack}`);
         }
+        continue;
       }
       const scope = new Scope();
       try {
         console.debug(`Mod ${action.toLowerCase()}ing...`);
-        const vm = scope.manage(getQuickJSSync().newContext());
+        const vm = scope.manage(getQuickJS().newContext());
         vm.setProp(vm.global, 'console', getConsoleAPI(vm, scope, console));
         vm.setProp(vm.global, 'D2RMM', getModAPI(vm, scope, runtime));
         scope.manage(vm.unwrapResult(vm.evalCode(code)));
@@ -1159,9 +1154,12 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
   });
 
   // forward console messages to the renderer process
+  const nativeConsole = { ...console };
+  const consoleWrapper = { ...console };
   const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
   consoleMethods.forEach((level: typeof consoleMethods[number]) => {
-    console[level] = (...args) => {
+    consoleWrapper[level] = (...args) => {
+      nativeConsole[level](...args);
       if (runtime?.isModInstalling() ?? false) {
         mainWindow.webContents.send('console', [
           level,
@@ -1172,6 +1170,7 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
       }
     };
   });
+  Object.assign(console, consoleWrapper);
 }
 
 function findBestMappingForLine(

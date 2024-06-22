@@ -7,28 +7,7 @@
   resolved "https://registry.yarnpkg.com/@jitl/quickjs-ffi-types/-/quickjs-ffi-types-0.29.2.tgz#91aaa6be43471b5c8fc3a85f94582c86d345ba2e"
   integrity sha512-069uQTiEla2PphXg6UpyyJ4QXHkTj3S9TeXgaMCd8NDYz3ODBw5U/rkg6fhuU8SMpoDrWjEzybmV5Mi2Pafb5w==
 
-"@jitl/quickjs-wasmfile-debug-asyncify@0.29.2":
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/@jitl/quickjs-wasmfile-debug-asyncify/-/quickjs-wasmfile-debug-asyncify-0.29.2.tgz#ddf58d1ab90b94a70a73b93f95c4e17f16d0a2a9"
-  integrity sha512-YdRw2414pFkxzyyoJGv81Grbo9THp/5athDMKipaSBNNQvFE9FGRrgE9tt2DT2mhNnBx1kamtOGj0dX84Yy9bg==
-  dependencies:
-    "@jitl/quickjs-ffi-types" "0.29.2"
-
-"@jitl/quickjs-wasmfile-debug-sync@0.29.2":
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/@jitl/quickjs-wasmfile-debug-sync/-/quickjs-wasmfile-debug-sync-0.29.2.tgz#b1a9c0f9371de2e8e67f8d025c0d9c9b7360f175"
-  integrity sha512-VgisubjyPMWEr44g+OU0QWGyIxu7VkApkLHMxdORX351cw22aLTJ+Z79DJ8IVrTWc7jh4CBPsaK71RBQDuVB7w==
-  dependencies:
-    "@jitl/quickjs-ffi-types" "0.29.2"
-
-"@jitl/quickjs-wasmfile-release-asyncify@0.29.2":
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/@jitl/quickjs-wasmfile-release-asyncify/-/quickjs-wasmfile-release-asyncify-0.29.2.tgz#51c23bfd93d56d9eaab47ee937838c91376b093a"
-  integrity sha512-sf3luCPr8wBVmGV6UV8Set+ie8wcO6mz5wMvDVO0b90UVCKfgnx65A1JfeA+zaSGoaFyTZ3sEpXSGJU+6qJmLw==
-  dependencies:
-    "@jitl/quickjs-ffi-types" "0.29.2"
-
-"@jitl/quickjs-wasmfile-release-sync@0.29.2":
+"@jitl/quickjs-wasmfile-release-sync@^0.29.2":
   version "0.29.2"
   resolved "https://registry.yarnpkg.com/@jitl/quickjs-wasmfile-release-sync/-/quickjs-wasmfile-release-sync-0.29.2.tgz#7a9a055739bfc6261203701a46e2c627cfabe6f2"
   integrity sha512-UFIcbY3LxBRUjEqCHq3Oa6bgX5znt51V5NQck8L2US4u989ErasiMLUjmhq6UPC837Sjqu37letEK/ZpqlJ7aA==
@@ -132,23 +111,12 @@ node-gyp-build@^4.2.1:
   resolved "https://registry.yarnpkg.com/node-gyp-build/-/node-gyp-build-4.3.0.tgz#9f256b03e5826150be39c764bf51e993946d71a3"
   integrity sha512-iWjXZvmboq0ja1pUGULQBexmxq8CV4xBhX7VDOTbL7ZR4FOowwY/VOtRxBN/yKxmdGoIp4j5ysNT4u3S2pDQ3Q==
 
-quickjs-emscripten-core@0.29.2:
+quickjs-emscripten-core@^0.29.2:
   version "0.29.2"
   resolved "https://registry.yarnpkg.com/quickjs-emscripten-core/-/quickjs-emscripten-core-0.29.2.tgz#ad9bef103fce7d8ba879510905824e33119a62f3"
   integrity sha512-jEAiURW4jGqwO/fW01VwlWqa2G0AJxnN5FBy1xnVu8VIVhVhiaxUfCe+bHqS6zWzfjFm86HoO40lzpteusvyJA==
   dependencies:
     "@jitl/quickjs-ffi-types" "0.29.2"
-
-quickjs-emscripten@^0.29.2:
-  version "0.29.2"
-  resolved "https://registry.yarnpkg.com/quickjs-emscripten/-/quickjs-emscripten-0.29.2.tgz#da6c7afb543cc5b4854eaca457778cfae5069f8b"
-  integrity sha512-SlvkvyZgarReu2nr4rkf+xz1vN0YDUz7sx4WHz8LFtK6RNg4/vzAGcFjE7nfHYBEbKrzfIWvKnMnxZkctQ898w==
-  dependencies:
-    "@jitl/quickjs-wasmfile-debug-asyncify" "0.29.2"
-    "@jitl/quickjs-wasmfile-debug-sync" "0.29.2"
-    "@jitl/quickjs-wasmfile-release-asyncify" "0.29.2"
-    "@jitl/quickjs-wasmfile-release-sync" "0.29.2"
-    quickjs-emscripten-core "0.29.2"
 
 "readable-stream@>=1.0.33-1 <1.1.0-0":
   version "1.0.34"

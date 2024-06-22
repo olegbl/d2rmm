@@ -1,5 +1,7 @@
 # Mod Manager
 
+- Fix linter
+- Auto-updates (https://www.electron.build/auto-update)
 - Mod config actions
 - Typeahead config
 

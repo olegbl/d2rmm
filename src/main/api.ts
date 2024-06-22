@@ -1163,15 +1163,12 @@ export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
   const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
   consoleMethods.forEach((level: (typeof consoleMethods)[number]) => {
     consoleWrapper[level] = (...args) => {
-      nativeConsole[level](...args);
-      if (runtime?.isModInstalling() ?? false) {
-        mainWindow.webContents.send('console', [
-          level,
-          [`[${runtime!.mod!.info.name}]`, ...args],
-        ]);
-      } else {
-        mainWindow.webContents.send('console', [level, args]);
-      }
+      const newArgs =
+        runtime?.isModInstalling() ?? false
+          ? [`[${runtime!.mod!.info.name}]`, ...args]
+          : args;
+      nativeConsole[level](...newArgs);
+      mainWindow.webContents.send('console', [level, newArgs]);
     };
   });
   Object.assign(console, consoleWrapper);

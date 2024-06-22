@@ -105,7 +105,7 @@ export function getModAPI(
       return result;
     },
     writeTsv: (filePath: string, data: TSVData): void => {
-      console.debug('D2RMM.writeTsv', filePath, data);
+      console.debug('D2RMM.writeTsv', filePath);
       if (!runtime.options.isDryRun) {
         throwIfError(
           runtime.BridgeAPI.writeTsv(
@@ -126,7 +126,7 @@ export function getModAPI(
       return result;
     },
     writeJson: (filePath: string, data: JSONData): void => {
-      console.debug('D2RMM.writeJson', filePath, data);
+      console.debug('D2RMM.writeJson', filePath);
       if (!runtime.options.isDryRun) {
         throwIfError(
           runtime.BridgeAPI.writeJson(
@@ -167,7 +167,7 @@ export function getModAPI(
       return result;
     },
     writeTxt: (filePath: string, data: string): void => {
-      console.debug('D2RMM.writeTxt', filePath, data);
+      console.debug('D2RMM.writeTxt', filePath);
       if (!runtime.options.isDryRun) {
         throwIfError(
           runtime.BridgeAPI.writeTxt(
@@ -187,7 +187,7 @@ export function getModAPI(
       return result;
     },
     writeSaveFile: (filePath: string, data: ArrayBuffer): void => {
-      console.debug('D2RMM.writeSaveFile', filePath, data);
+      console.debug('D2RMM.writeSaveFile', filePath);
       if (!runtime.options.isDryRun) {
         throwIfError(
           runtime.BridgeAPI.writeBinaryFile(filePath, 'Saves', data),

@@ -23,11 +23,11 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 import ts from 'typescript';
+import { ConsoleAPI } from 'bridge/ConsoleAPI';
 import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import type { TSVDataRow } from 'bridge/TSV';
 import packageManifest from '../../release/app/package.json';
-import { getConsoleAPI } from './ConsoleAPI';
 import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
 import './asar.ts';
@@ -1097,7 +1097,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       try {
         console.debug(`Mod ${action.toLowerCase()}ing...`);
         const vm = scope.manage(getQuickJS().newContext());
-        vm.setProp(vm.global, 'console', getConsoleAPI(vm, scope, console));
+        vm.setProp(
+          vm.global,
+          'console',
+          getQuicKJSProxyAPI(vm, scope, console as ConsoleAPI),
+        );
         vm.setProp(
           vm.global,
           'D2RMM',

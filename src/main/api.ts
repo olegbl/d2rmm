@@ -32,7 +32,7 @@ import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
 import './asar.ts';
 import { datamod } from './datamod';
-import { getQuickJS } from './quickjs';
+import { getQuicKJSProxyAPI, getQuickJS } from './quickjs';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
@@ -1098,7 +1098,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         console.debug(`Mod ${action.toLowerCase()}ing...`);
         const vm = scope.manage(getQuickJS().newContext());
         vm.setProp(vm.global, 'console', getConsoleAPI(vm, scope, console));
-        vm.setProp(vm.global, 'D2RMM', getModAPI(vm, scope, runtime));
+        vm.setProp(
+          vm.global,
+          'D2RMM',
+          getQuicKJSProxyAPI(vm, scope, getModAPI(runtime)),
+        );
         scope.manage(vm.unwrapResult(vm.evalCode(code)));
         runtime!.modsInstalled.push(runtime.mod.id);
         console.log(`Mod ${action.toLowerCase()}ed successfully.`);

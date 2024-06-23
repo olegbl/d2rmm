@@ -1,4 +1,3 @@
-import { QuickJSContext, QuickJSHandle, Scope } from 'quickjs-emscripten';
 import type { JSONData } from 'bridge/JSON';
 import type { ModAPI } from 'bridge/ModAPI';
 import type { TSVData } from 'bridge/TSV';
@@ -14,11 +13,7 @@ function throwIfError<T>(value: T | Error): T {
   return value;
 }
 
-export function getModAPI(
-  vm: QuickJSContext,
-  scope: Scope,
-  runtime: InstallationRuntime,
-): QuickJSHandle {
+export function getModAPI(runtime: InstallationRuntime): ModAPI {
   function extractFile(filePath: string): void {
     // if file is already exists (was creating during this installation), don't need to extract it again
     if (runtime.fileManager.exists(filePath)) {
@@ -64,7 +59,7 @@ export function getModAPI(
     runtime.fileManager.extract(filePath, runtime.mod.id);
   }
 
-  const api: ModAPI = {
+  return {
     getConfigJSON: (): string => {
       console.debug('D2RMM.getConfigJSON');
       return JSON.stringify(runtime.mod.config);
@@ -231,71 +226,4 @@ export function getModAPI(
       return stringID;
     },
   };
-
-  const apiHandle = scope.manage(vm.newObject());
-
-  for (const key in api) {
-    const name = key as keyof ModAPI;
-    addAPIProxy(vm, scope, apiHandle, api, name);
-  }
-
-  return apiHandle;
-}
-
-function addAPIProxy<T extends keyof ModAPI>(
-  vm: QuickJSContext,
-  scope: Scope,
-  handle: QuickJSHandle,
-  api: ModAPI,
-  name: T,
-): void {
-  vm.setProp(
-    handle,
-    name,
-    scope.manage(
-      vm.newFunction(name, (...args) =>
-        getHandleForValue(
-          vm,
-          scope,
-          api[name](
-            // @ts-ignore
-            ...args.map(vm.dump),
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-function getHandleForValue<T>(
-  vm: QuickJSContext,
-  scope: Scope,
-  value: T,
-): QuickJSHandle {
-  if (value instanceof Error) {
-    return scope.manage(vm.newError(value.message));
-  } else if (typeof value === 'boolean') {
-    // vm.newBoolean doesn't exist - but numbers can be used as booleans in JS
-    return scope.manage(vm.newNumber(value ? 1 : 0));
-  } else if (typeof value === 'number') {
-    return scope.manage(vm.newNumber(value));
-  } else if (typeof value === 'string') {
-    return scope.manage(vm.newString(value));
-  } else if (value instanceof ArrayBuffer) {
-    return scope.manage(vm.newArrayBuffer(value));
-  } else if (Array.isArray(value)) {
-    const arrayHandle = scope.manage(vm.newArray());
-    for (let i = 0; i < value.length; i++) {
-      vm.setProp(arrayHandle, i, getHandleForValue(vm, scope, value[i]));
-    }
-    return arrayHandle;
-  } else if (typeof value === 'object' && value !== null) {
-    const objectHandle = scope.manage(vm.newObject());
-    for (const key in value) {
-      vm.setProp(objectHandle, key, getHandleForValue(vm, scope, value[key]));
-    }
-    return objectHandle;
-  } else {
-    return vm.undefined;
-  }
 }

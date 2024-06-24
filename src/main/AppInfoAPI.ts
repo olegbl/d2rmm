@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import type { IAppInfoAPI, GetPathParams } from 'bridge/AppInfoAPI';
-import { provideAPI } from './main-ipc';
+import { provideAPI } from './IPC';
 
 export async function initAppInfoAPI(): Promise<void> {
   provideAPI('AppInfoAPI', {

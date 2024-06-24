@@ -1,5 +1,5 @@
 import type { IBridgeAPI } from 'bridge/BridgeAPI';
-import { consumeAPI } from './renderer-ipc';
+import { consumeAPI } from './IPC';
 
 const BridgeAPI = consumeAPI<IBridgeAPI>('BridgeAPI');
 

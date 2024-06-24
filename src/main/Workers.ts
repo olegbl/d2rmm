@@ -1,7 +1,7 @@
 import { fork } from 'child_process';
 import { app } from 'electron';
 import path from 'path';
-import { registerWorker, unregisterWorker } from './main-ipc';
+import { registerWorker, unregisterWorker } from './IPC';
 
 export async function spawnNewWorker(): Promise<void> {
   return new Promise((resolve, reject) => {

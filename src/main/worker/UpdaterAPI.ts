@@ -10,8 +10,8 @@ import {
   getIsPackaged,
   getUserDataPath,
 } from './AppInfoAPI';
-import { FileDestination, StringDestination, fetch } from './downloader';
-import { provideAPI } from './worker-ipc';
+import { provideAPI } from './IPC';
+import { FileDestination, StringDestination, fetch } from './NetworkFetch';
 
 const getRepoPath = () =>
   'https://api.github.com/repos/olegbl/d2rmm/releases/latest';

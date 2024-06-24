@@ -1,7 +1,7 @@
 import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
-import { consumeAPI, provideAPI } from './main-ipc';
+import { consumeAPI, provideAPI } from './IPC';
 
-export async function initConsole(): Promise<void> {
+export async function initConsoleAPI(): Promise<void> {
   const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI');
   const localConsole = { ...console };
 

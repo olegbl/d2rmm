@@ -4,7 +4,7 @@ import type {
   IBroadcastLocalAPI,
   IBroadcastUnifiedAPI,
 } from 'bridge/BroadcastAPI';
-import { consumeAPI, provideAPI } from './renderer-ipc';
+import { consumeAPI, provideAPI } from './IPC';
 
 export const BroadcastAPI: IBroadcastUnifiedAPI = consumeAPI<
   IBroadcastAPI,

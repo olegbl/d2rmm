@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import type { IUpdaterAPI, Update } from 'bridge/Updater';
-import { consumeAPI } from './renderer-ipc';
+import { consumeAPI } from './IPC';
 
 const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
 

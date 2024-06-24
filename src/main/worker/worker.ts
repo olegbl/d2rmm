@@ -3,10 +3,10 @@ import { initBridgeAPI } from './BridgeAPI';
 import { initBroadcastAPI } from './BroadcastAPI';
 import { initCascLib } from './CascLib';
 import { initConsoleAPI } from './ConsoleAPI';
+import { initIPC } from './IPC';
 import { initUpdaterAPI } from './UpdaterAPI';
 import { initAsar } from './asar';
 import { initQuickJS } from './quickjs';
-import { initIPC } from './worker-ipc';
 
 async function start(): Promise<void> {
   console.log('[worker] Initializing...');

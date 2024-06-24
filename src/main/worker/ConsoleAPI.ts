@@ -1,6 +1,6 @@
 import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 import { getRuntime } from './BridgeAPI';
-import { consumeAPI } from './worker-ipc';
+import { consumeAPI } from './IPC';
 
 // for a worker thread, the local console will print to the same place
 // as the main thread's console - so we just ignore the local console

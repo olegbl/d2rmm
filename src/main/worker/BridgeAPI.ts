@@ -35,12 +35,12 @@ import type { TSVDataRow } from 'bridge/TSV';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getHomePath } from './AppInfoAPI';
 import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';
+import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
 import './asar';
 import { datamod } from './datamod';
 import { getQuickJSProxyAPI, getQuickJS } from './quickjs';
-import { provideAPI } from './worker-ipc';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;

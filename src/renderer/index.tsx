@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { initBroadcastAPI } from './BroadcastAPI';
 import { initConsoleAPI } from './ConsoleAPI';
-import { initIPC } from './renderer-ipc';
+import { initIPC } from './IPC';
 
 async function initUI(): Promise<void> {
   const container = document.getElementById('root');

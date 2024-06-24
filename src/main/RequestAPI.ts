@@ -1,7 +1,7 @@
 import { net } from 'electron';
 import type { IRequestAPI } from 'bridge/RequestAPI';
 import { BroadcastAPI } from './BroadcastAPI';
-import { provideAPI } from './main-ipc';
+import { provideAPI } from './IPC';
 
 let REQUEST_COUNT = 0;
 const PENDING_REQUESTS: Map<string, string> = new Map();

@@ -166,7 +166,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     if (isInstalling) {
       listRef.current?.scrollToItem(filteredLogs.length - 1, 'end');
     }
-  }, [filteredLogs]);
+  }, [isInstalling, filteredLogs]);
 
   return (
     <>

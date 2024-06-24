@@ -120,7 +120,7 @@ export function ModsContextProvider({
 
   useEffect(() => {
     getMods().then(setMods).catch(console.error);
-  }, []);
+  }, [getMods]);
 
   const setModConfig = useCallback(
     (id: string, value: React.SetStateAction<ModConfigValue>): void => {

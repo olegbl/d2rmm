@@ -24,9 +24,13 @@ export function PreferencesProvider({ children }: Props): JSX.Element {
     null,
   );
 
+  const bridgeGamePath = useAsyncMemo(
+    useCallback(() => BridgeAPI.getGamePath(), []),
+  );
+
   const rawGamePath =
     rawGamePathSaved ??
-    useAsyncMemo(useCallback(() => BridgeAPI.getGamePath(), [])) ??
+    bridgeGamePath ??
     'C:\\Program Files\\Battle.net\\Games\\Diablo II Resurrected';
 
   const [preExtractedDataPath, setPreExtractedDataPath] = useSavedState(

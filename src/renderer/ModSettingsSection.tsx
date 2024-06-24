@@ -90,7 +90,7 @@ export default function ModSettingsSection({
         ),
       });
     },
-    [setModConfig],
+    [descendants, mod.config, mod.id, setModConfig],
   );
 
   const areAllDescendantsCheckboxes =
@@ -115,7 +115,7 @@ export default function ModSettingsSection({
         ),
       });
     },
-    [setModConfig, areAllDescendantsChecked],
+    [setModConfig, mod.id, mod.config, descendants, areAllDescendantsChecked],
   );
 
   return (

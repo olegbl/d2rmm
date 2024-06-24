@@ -43,10 +43,10 @@ export default function UpdaterDialog() {
 
   return (
     <Dialog
-      open={true}
-      onClose={onIgnore}
-      aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
+      aria-labelledby="alert-dialog-title"
+      onClose={onIgnore}
+      open={true}
     >
       <DialogTitle id="alert-dialog-title">New Update Available</DialogTitle>
       <DialogContent>
@@ -56,7 +56,7 @@ export default function UpdaterDialog() {
       </DialogContent>
       <DialogActions>
         <Button onClick={onIgnore}>Ignore</Button>
-        <Button variant="contained" onClick={onInstall}>
+        <Button onClick={onInstall} variant="contained">
           Update
         </Button>
       </DialogActions>

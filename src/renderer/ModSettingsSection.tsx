@@ -123,13 +123,13 @@ export default function ModSettingsSection({
       key={section.id ?? 'default'}
       defaultExpanded={section.defaultExpanded ?? true}
       disableGutters={true}
-      square={true}
       elevation={0}
+      square={true}
     >
       {section.name === '' ? null : (
         <StyledAccordionSummary
-          expandIcon={<ExpandMoreIcon />}
           aria-controls="general-content"
+          expandIcon={<ExpandMoreIcon />}
           id="general-header"
         >
           <Typography>{section.name}</Typography>
@@ -143,14 +143,14 @@ export default function ModSettingsSection({
           >
             {!areAllDescendantsCheckboxes ? null : (
               <Tooltip title="Toggle All Checkboxes">
-                <IconButton size="small" onClick={onToggle}>
+                <IconButton onClick={onToggle} size="small">
                   {areAllDescendantsChecked ? <ToggleOff /> : <ToggleOn />}
                 </IconButton>
               </Tooltip>
             )}
             {!areAnyDescendantsModified ? null : (
               <Tooltip title="Revert to Default">
-                <IconButton size="small" onClick={onReset}>
+                <IconButton onClick={onReset} size="small">
                   <Refresh />
                 </IconButton>
               </Tooltip>
@@ -174,7 +174,7 @@ export default function ModSettingsSection({
               ...agg,
               addDivider ? <Divider key={`divider:${field.id}`} /> : null,
               field.type === 'section' ? (
-                <ModSettingsSection key={field.id} section={field} mod={mod} />
+                <ModSettingsSection key={field.id} mod={mod} section={field} />
               ) : (
                 <ModSettingsField key={field.id} field={field} mod={mod} />
               ),

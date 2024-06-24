@@ -34,7 +34,7 @@ export default function ModSettings({
           alignItems: 'center',
         }}
       >
-        <Typography variant="h6" color="text.secondary">
+        <Typography color="text.secondary" variant="h6">
           {mod.info.name}
         </Typography>
         <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
@@ -74,7 +74,7 @@ export default function ModSettings({
             return [...agg, field];
           }, [])
           .map((section) => (
-            <ModSettingsSection key={section.id} section={section} mod={mod} />
+            <ModSettingsSection key={section.id} mod={mod} section={section} />
           ))
       }
     </FormGroup>

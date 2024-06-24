@@ -27,7 +27,7 @@ function TabPanelBox({
   value: string;
 }): JSX.Element {
   return (
-    <TabPanel value={value} sx={{ height: '100%', position: 'relative' }}>
+    <TabPanel sx={{ height: '100%', position: 'relative' }} value={value}>
       <Box
         sx={{
           bottom: 0,
@@ -98,7 +98,7 @@ export default function App() {
                     <InstallContextProvider>
                       <Router>
                         <Routes>
-                          <Route path="/" element={<D2RMMRootView />} />
+                          <Route element={<D2RMMRootView />} path="/" />
                         </Routes>
                       </Router>
                       <UpdaterDialog />

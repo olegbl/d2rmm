@@ -114,8 +114,8 @@ export default function ModInstallButton({
     <LoadingButton
       loading={isInstalling}
       loadingPosition="start"
-      startIcon={isInstallConfigChanged ? <Save /> : <SaveOutlined />}
       onClick={onInstallMods}
+      startIcon={isInstallConfigChanged ? <Save /> : <SaveOutlined />}
       variant={isInstallConfigChanged ? 'contained' : 'outlined'}
     >
       {label} Mods

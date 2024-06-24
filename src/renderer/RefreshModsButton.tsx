@@ -9,7 +9,7 @@ export default function RefreshModsButton(_props: Props): JSX.Element {
 
   return (
     <Tooltip title="Re-scan the /mods directory for any changes.">
-      <Button startIcon={<Refresh />} onClick={onRefreshMods}>
+      <Button onClick={onRefreshMods} startIcon={<Refresh />}>
         Refresh Mod List
       </Button>
     </Tooltip>

@@ -9,8 +9,8 @@ export default function ModSettingsDrawer(
   return (
     <Drawer
       anchor="right"
-      open={selectedMod != null}
       onClose={() => setSelectedMod(null)}
+      open={selectedMod != null}
     >
       {selectedMod == null ? null : (
         <ModSettings mod={selectedMod} onClose={() => setSelectedMod(null)} />

@@ -104,14 +104,14 @@ export default function ModSettingsField({
           {JSON.stringify(mod.config[field.id]) ===
           JSON.stringify(field.defaultValue) ? null : (
             <Tooltip title="Revert to Default">
-              <IconButton size="small" onClick={onReset}>
+              <IconButton onClick={onReset} size="small">
                 <Refresh />
               </IconButton>
             </Tooltip>
           )}
           {field.description == null ? null : (
             <Tooltip title={field.description}>
-              <Help fontSize="small" color="disabled" />
+              <Help color="disabled" fontSize="small" />
             </Tooltip>
           )}
         </Box>

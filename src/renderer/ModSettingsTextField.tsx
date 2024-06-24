@@ -24,5 +24,5 @@ export default function ModSettingsTextField({
     [field, onChangeFromProps],
   );
 
-  return <TextField value={value} variant="outlined" onChange={onChange} />;
+  return <TextField onChange={onChange} value={value} variant="outlined" />;
 }

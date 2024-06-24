@@ -32,14 +32,14 @@ export default function ToastProvider({ children }: Props): JSX.Element {
     <ToastContext.Provider value={context}>
       {children}
       <Snackbar
+        onClose={popToast}
         open={toasts.length > 0}
         transitionDuration={0}
-        onClose={popToast}
       >
         <Alert
+          onClose={popToast}
           severity={currentToast?.severity}
           variant="filled"
-          onClose={popToast}
         >
           <AlertTitle>{currentToast?.title}</AlertTitle>
           {currentToast?.description}
@@ -47,7 +47,7 @@ export default function ToastProvider({ children }: Props): JSX.Element {
             <>
               <br />
               <br />
-              <Button color="inherit" variant="outlined" onClick={clearToasts}>
+              <Button color="inherit" onClick={clearToasts} variant="outlined">
                 Clear All ({toasts.length})
               </Button>
             </>

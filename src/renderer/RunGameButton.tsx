@@ -30,6 +30,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
       title={`Run Diablo II: Resurrected by launching "${command}".${warning}`}
     >
       <Button
+        onClick={onRunGame}
         startIcon={
           !isInstallConfigChanged ? (
             <PlayCircleFilled />
@@ -37,7 +38,6 @@ export default function RunGameButton(_props: Props): JSX.Element {
             <PlayCircleOutlineOutlined />
           )
         }
-        onClick={onRunGame}
         variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
       >
         Run D2R

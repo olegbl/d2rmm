@@ -79,12 +79,12 @@ export default function ModSettingsColorSelectorField({
     <MuiColorInput
       format={field.isAlphaHidden ? 'hex' : 'hex8'}
       isAlphaHidden={field.isAlphaHidden ?? false}
+      onChange={onChange}
       value={
         field.isAlphaHidden
           ? `#${hexR}${hexG}${hexB}`
           : `#${hexR}${hexG}${hexB}${hexA}`
       }
-      onChange={onChange}
     />
   );
 }

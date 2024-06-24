@@ -28,7 +28,7 @@ export default function ModSettingsSelectField({
   );
 
   return (
-    <Select value={value} onChange={onChange}>
+    <Select onChange={onChange} value={value}>
       {field.options.map((option) => (
         <MenuItem
           key={option.label}

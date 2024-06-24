@@ -84,11 +84,11 @@ export default function ModSettingsNumberField({
         inputMode: 'numeric',
         pattern: PATTERN,
       }}
-      value={valueString}
-      variant="outlined"
+      onBlur={onBlur}
       onChange={onChange}
       onFocus={onFocus}
-      onBlur={onBlur}
+      value={valueString}
+      variant="outlined"
     />
   );
 }

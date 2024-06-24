@@ -33,6 +33,18 @@ module.exports = {
     ],
     'import/no-unresolved': 'error',
     'react/jsx-boolean-value': ['error', 'always'],
+    'react/jsx-sort-props': [
+      'error',
+      {
+        callbacksLast: false,
+        shorthandFirst: false,
+        shorthandLast: false,
+        multiline: 'ignore',
+        ignoreCase: true,
+        noSortAlphabetically: false,
+        reservedFirst: true,
+      },
+    ],
   },
   plugins: [
     '@typescript-eslint',

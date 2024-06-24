@@ -91,18 +91,18 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
 
   return (
     <List
-      sx={{ width: '100%', flex: 1, overflow: 'auto', border: 'none' }}
       disablePadding={true}
+      sx={{ width: '100%', flex: 1, overflow: 'auto', border: 'none' }}
     >
       <StyledAccordion
         defaultExpanded={!isValidGamePath || !isValidPreExtractedDataPath}
         disableGutters={true}
-        square={true}
         elevation={0}
+        square={true}
       >
         <StyledAccordionSummary
-          expandIcon={<ExpandMoreIcon />}
           aria-controls="general-content"
+          expandIcon={<ExpandMoreIcon />}
           id="general-header"
         >
           <Typography>General</Typography>
@@ -113,17 +113,17 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             &quot;D2R.exe&quot; should in in this directory.
           </Typography>
           <TextField
-            fullWidth={true}
-            variant="filled"
-            label="Game Directory"
-            value={rawGamePath}
-            onChange={(event) => setRawGamePath(event.target.value)}
             error={!isValidGamePath}
+            fullWidth={true}
             helperText={
               isValidGamePath
                 ? null
                 : "This doesn't look like a valid D2R game directory. Could not find D2R.exe inside."
             }
+            label="Game Directory"
+            onChange={(event) => setRawGamePath(event.target.value)}
+            value={rawGamePath}
+            variant="filled"
           />
           <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
           <Typography color="text.secondary" variant="subtitle2">
@@ -131,14 +131,14 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             installing mods.
           </Typography>
           <TextField
-            select={true}
             fullWidth={true}
-            variant="filled"
             label="Game Data Source"
-            value={dataSource}
             onChange={(event) =>
               setIsPreExtractedData(event.target.value === 'directory')
             }
+            select={true}
+            value={dataSource}
+            variant="filled"
           >
             <MenuItem value="casc">Casc Archive</MenuItem>
             <MenuItem value="directory">Pre-Extracted Data</MenuItem>
@@ -151,19 +151,19 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 pre-extracted data from Diablo II: Resurrected.
               </Typography>
               <TextField
-                fullWidth={true}
-                variant="filled"
-                label="Data Directory"
-                value={preExtractedDataPath}
-                onChange={(event) =>
-                  setPreExtractedDataPath(event.target.value)
-                }
                 error={!isValidPreExtractedDataPath}
+                fullWidth={true}
                 helperText={
                   isValidPreExtractedDataPath
                     ? null
                     : "This doesn't look like a valid D2R game data directory. Could not find the global directory inside. Are you sure you extracted the game data to this directory using CascView?"
                 }
+                label="Data Directory"
+                onChange={(event) =>
+                  setPreExtractedDataPath(event.target.value)
+                }
+                value={preExtractedDataPath}
+                variant="filled"
               />
               {isDirectMode &&
               preExtractedDataPath === `${rawGamePath}\\data` ? (
@@ -187,14 +187,14 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               </Typography>
               <TextField
                 fullWidth={true}
-                variant="filled"
                 label="Output Mod Name"
-                value={outputModName}
                 onChange={(event) =>
                   setOutputModName(
                     event.target.value.replace(/[^a-zA-Z0-9-_]/g, ''),
                   )
                 }
+                value={outputModName}
+                variant="filled"
               />
               <Typography color="text.secondary" variant="subtitle2">
                 Generated files will be located in &ldquo;{mergedPath}\&rdquo;.
@@ -210,12 +210,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       <StyledAccordion
         defaultExpanded={isDirectMode}
         disableGutters={true}
-        square={true}
         elevation={0}
+        square={true}
       >
         <StyledAccordionSummary
-          expandIcon={<ExpandMoreIcon />}
           aria-controls="direct-mode-content"
+          expandIcon={<ExpandMoreIcon />}
           id="direct-mode-header"
         >
           <Typography>Direct Mode</Typography>
@@ -235,13 +235,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           >
             <ListItemIcon>
               <Checkbox
-                edge="start"
                 checked={isDirectMode}
-                tabIndex={-1}
                 disableRipple={true}
+                edge="start"
                 inputProps={{
                   'aria-labelledby': 'enable-direct-mode',
                 }}
+                tabIndex={-1}
               />
             </ListItemIcon>
             <ListItemText
@@ -263,12 +263,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       <StyledAccordion
         defaultExpanded={false}
         disableGutters={true}
-        square={true}
         elevation={0}
+        square={true}
       >
         <StyledAccordionSummary
-          expandIcon={<ExpandMoreIcon />}
           aria-controls="launcher-content"
+          expandIcon={<ExpandMoreIcon />}
           id="launcher-header"
         >
           <Typography>Game Launcher</Typography>
@@ -280,10 +280,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           </Typography>
           <TextField
             fullWidth={true}
-            variant="filled"
             label="Extra Game Args"
-            value={extraArgs.join(' ')}
             onChange={(event) => setExtraArgs(event.target.value.split(' '))}
+            value={extraArgs.join(' ')}
+            variant="filled"
           />
           {['-enablerespec', '-resetofflinemaps', '-w'].map((arg) => (
             <ListItemButton
@@ -298,13 +298,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             >
               <ListItemIcon>
                 <Checkbox
-                  edge="start"
                   checked={extraArgs.map((a) => a.trim()).includes(arg)}
-                  tabIndex={-1}
                   disableRipple={true}
+                  edge="start"
                   inputProps={{
                     'aria-labelledby': 'enable-respec',
                   }}
+                  tabIndex={-1}
                 />
               </ListItemIcon>
               <ListItemText id="enable-respec" primary={`Include "${arg}"`} />
@@ -316,24 +316,24 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       <StyledAccordion
         defaultExpanded={false}
         disableGutters={true}
-        square={true}
         elevation={0}
+        square={true}
       >
         <StyledAccordionSummary
-          expandIcon={<ExpandMoreIcon />}
           aria-controls="display-content"
+          expandIcon={<ExpandMoreIcon />}
           id="display-header"
         >
           <Typography>Display</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="display-content">
           <TextField
-            select={true}
             fullWidth={true}
-            variant="filled"
             label="Theme"
-            value={themeMode}
             onChange={(event) => setThemeMode(event.target.value as IThemeMode)}
+            select={true}
+            value={themeMode}
+            variant="filled"
           >
             <MenuItem value="system">System</MenuItem>
             <MenuItem value="light">Light</MenuItem>

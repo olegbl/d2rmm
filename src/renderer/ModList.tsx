@@ -52,9 +52,9 @@ export default function ModList(): JSX.Element {
   return (
     <>
       <List
-        sx={{ width: '100%', flex: 1, overflow: 'auto' }}
-        disablePadding={true}
         dense={true}
+        disablePadding={true}
+        sx={{ width: '100%', flex: 1, overflow: 'auto' }}
       >
         {isReorderEnabled ? (
           <DragDropContext onDragEnd={onDragEnd}>
@@ -77,12 +77,7 @@ export default function ModList(): JSX.Element {
       <Divider />
       <Box sx={{ display: 'flex', flexDirection: 'row', p: 1 }}>
         <TextField
-          size="small"
-          variant="outlined"
           hiddenLabel={true}
-          placeholder="Search..."
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -90,6 +85,9 @@ export default function ModList(): JSX.Element {
               </InputAdornment>
             ),
           }}
+          onChange={(event) => setFilter(event.target.value)}
+          placeholder="Search..."
+          size="small"
           sx={{
             flex: '0 1 auto',
             display: 'flex',
@@ -102,9 +100,11 @@ export default function ModList(): JSX.Element {
               },
             },
           }}
+          value={filter}
+          variant="outlined"
         />
         <Box sx={{ flex: '1 1 0', ml: 1 }} />
-        <ButtonGroup variant="outlined" sx={{ flex: '0 0 auto' }}>
+        <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
           <RunGameButton />
           <RefreshModsButton />
           {isDirectMode ? (

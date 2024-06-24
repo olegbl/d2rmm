@@ -122,8 +122,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       const log = filteredLogs[index];
       return (
         <ListItemButton
-          divider={index < filteredLogs.length - 1}
           key={log.id}
+          divider={index < filteredLogs.length - 1}
           onClick={() => setSelectedRowIndex(index)}
           style={style}
           sx={{ flex: 1, userSelect: 'none' }}
@@ -175,12 +175,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           {({ height, width }) => (
             <FixedSizeList
               ref={listRef}
-              width={width}
               height={height}
-              itemKey={getItemKey}
               itemCount={filteredLogs.length}
-              overscanCount={5}
+              itemKey={getItemKey}
               itemSize={80}
+              overscanCount={5}
+              width={width}
             >
               {renderRow}
             </FixedSizeList>
@@ -197,12 +197,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         }}
       >
         <TextField
-          size="small"
-          variant="outlined"
           hiddenLabel={true}
-          placeholder="Search..."
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -210,6 +205,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               </InputAdornment>
             ),
           }}
+          onChange={(event) => setFilter(event.target.value)}
+          placeholder="Search..."
+          size="small"
           sx={{
             flex: '0 1 auto',
             display: 'flex',
@@ -222,60 +220,62 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               },
             },
           }}
+          value={filter}
+          variant="outlined"
         />
         <Box sx={{ flex: 1 }} />
         <ToggleButtonGroup
-          size="small"
-          value={levels}
-          onChange={onChangeLevels}
           aria-label="text alignment"
+          onChange={onChangeLevels}
+          size="small"
           sx={{ marginRight: 2 }}
+          value={levels}
         >
-          <ToggleButton value="error" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+          <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="error">
             <ErrorOutlineIcon color="error" sx={{ marginRight: 1 }} />
             Error
           </ToggleButton>
-          <ToggleButton value="warn" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+          <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="warn">
             <ReportProblemOutlinedIcon
               color="warning"
               sx={{ marginRight: 1 }}
             />
             Warning
           </ToggleButton>
-          <ToggleButton value="log" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+          <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="log">
             <InfoOutlinedIcon color="primary" sx={{ marginRight: 1 }} />
             Info
           </ToggleButton>
-          <ToggleButton value="debug" sx={{ paddingLeft: 1, paddingRight: 1 }}>
+          <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="debug">
             <PendingOutlinedIcon color="disabled" sx={{ marginRight: 1 }} />
             Debug
           </ToggleButton>
         </ToggleButtonGroup>
         <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
           onClick={onOpenExportMenu}
+          startIcon={<DownloadIcon />}
+          variant="outlined"
         >
           Export
         </Button>
         <Menu
           anchorEl={exportAnchorEl}
-          open={exportAnchorEl != null}
           onClose={onCloseExportMenu}
+          open={exportAnchorEl != null}
         >
           <MenuItem onClick={onCopy}>Copy to clipboard</MenuItem>
         </Menu>
       </Box>
       <Drawer
         anchor="bottom"
-        open={selectedRowIndex !== -1}
         onClose={() => setSelectedRowIndex(-1)}
+        open={selectedRowIndex !== -1}
       >
         {selectedRowIndex === -1 ? null : (
           <>
             <AppBar position="static">
               <Toolbar>
-                <Typography variant="h6" component="div">
+                <Typography component="div" variant="h6">
                   {filteredLogs[selectedRowIndex].level === 'error'
                     ? 'Error'
                     : filteredLogs[selectedRowIndex].level === 'warn'
@@ -288,23 +288,23 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <IconButton
-                  size="large"
-                  edge="start"
                   color="inherit"
+                  edge="start"
                   onClick={() =>
                     navigator.clipboard.writeText(
                       filteredLogs[selectedRowIndex].text,
                     )
                   }
+                  size="large"
                   sx={{ marginRight: 2 }}
                 >
                   <ContentCopyOutlinedIcon />
                 </IconButton>
                 <IconButton
-                  size="large"
-                  edge="start"
                   color="inherit"
+                  edge="start"
                   onClick={() => setSelectedRowIndex(-1)}
+                  size="large"
                 >
                   <CloseIcon />
                 </IconButton>

@@ -12,9 +12,9 @@ export default function InstallationProgressBar() {
   return (
     <>
       <Box sx={{ flex: 1 }}>
-        <LinearProgress variant="determinate" value={installationProgress} />
+        <LinearProgress value={installationProgress} variant="determinate" />
       </Box>
-      <Tab label={`${installationProgress.toFixed(0)}%`} disabled={true} />
+      <Tab disabled={true} label={`${installationProgress.toFixed(0)}%`} />
     </>
   );
 }

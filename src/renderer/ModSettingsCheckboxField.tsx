@@ -26,7 +26,7 @@ export default function ModSettingsCheckboxField({
 
   return (
     <FormControlLabel
-      control={<Switch checked={value} onChange={onChange} name={field.name} />}
+      control={<Switch checked={value} name={field.name} onChange={onChange} />}
       label={value ? 'On' : 'Off'}
     />
   );

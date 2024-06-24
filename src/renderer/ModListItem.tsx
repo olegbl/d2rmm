@@ -59,13 +59,13 @@ function ListChip({
 
   const chip = (
     <Chip
+      clickable={onClick != null}
       color={color}
       icon={icon}
       label={label}
-      size="small"
-      clickable={onClick != null}
       onClick={onClickWithoutPropagation}
       onMouseDown={onMouseDownWithoutPropagation}
+      size="small"
       sx={{ ml: 1, cursor: 'pointer' }}
     />
   );
@@ -113,13 +113,13 @@ export default function ModListItem({
       >
         <ListItemIcon>
           <Checkbox
-            edge="start"
             checked={isEnabled}
-            tabIndex={-1}
             disableRipple={true}
+            edge="start"
             inputProps={{
               'aria-labelledby': labelId,
             }}
+            tabIndex={-1}
           />
         </ListItemIcon>
         <ListItemText

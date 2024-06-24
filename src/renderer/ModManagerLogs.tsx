@@ -28,6 +28,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import type { ILogLevel } from 'bridge/ConsoleAPI';
 import { useLogLevels, useLogs } from './Logs';
 
 function prettyPrintData(data: unknown): string {

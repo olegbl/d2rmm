@@ -5,12 +5,15 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { ModConfigSingleValue, ModConfigValue } from 'bridge/ModConfigValue';
+import type { Mod } from 'bridge/BridgeAPI';
+import type {
+  ModConfigSingleValue,
+  ModConfigValue,
+} from 'bridge/ModConfigValue';
+import BridgeAPI from './BridgeAPI';
 import { useLogger } from './Logs';
 import useSavedState from './useSavedState';
 import useToast from './useToast';
-
-const BridgeAPI = window.electron.BridgeAPI;
 
 // inversse of Readonly<T>
 type Mutable<T> = {
@@ -72,49 +75,52 @@ export function ModsContextProvider({
   const logger = useLogger();
   const showToast = useToast();
 
-  const getMods = useCallback((): Mod[] => {
-    const modIDs = BridgeAPI.readModDirectory();
-    return modIDs
-      .map((modID) => {
-        try {
-          const info = BridgeAPI.readModInfo(modID);
+  const getMods = useCallback(async (): Promise<Mod[]> => {
+    const modIDs = await BridgeAPI.readModDirectory();
+    const mods: Mod[] = [];
+    for (const modID of modIDs) {
+      try {
+        const info = await BridgeAPI.readModInfo(modID);
 
-          if (info == null) {
-            // ignore folder as it may not be a mod
-            return null;
-          }
-
-          const config = BridgeAPI.readModConfig(
-            modID,
-          ) as unknown as ModConfigValue;
-
-          const defaultConfig = info.config?.reduce((agg, field) => {
-            if (field.type !== 'section') {
-              agg[field.id] =
-                field.defaultValue as unknown as ModConfigSingleValue;
-            }
-            return agg;
-          }, {} as Mutable<ModConfigValue>);
-
-          return {
-            id: modID,
-            info,
-            config: { ...defaultConfig, ...config },
-          };
-        } catch (error) {
-          logger.error('Failed to load mod', modID, error);
-          showToast({
-            severity: 'error',
-            title: `Failed to load mod ${modID}`,
-            description: String(error),
-          });
-          return null;
+        if (info == null) {
+          // ignore folder as it may not be a mod
+          continue;
         }
-      })
-      .filter((mod): mod is Mod => mod != null);
+
+        const config = (await BridgeAPI.readModConfig(
+          modID,
+        )) as unknown as ModConfigValue;
+
+        const defaultConfig = info.config?.reduce((agg, field) => {
+          if (field.type !== 'section') {
+            agg[field.id] =
+              field.defaultValue as unknown as ModConfigSingleValue;
+          }
+          return agg;
+        }, {} as Mutable<ModConfigValue>);
+
+        mods.push({
+          id: modID,
+          info,
+          config: { ...defaultConfig, ...config },
+        });
+      } catch (error) {
+        logger.error('Failed to load mod', modID, error as Error);
+        showToast({
+          severity: 'error',
+          title: `Failed to load mod ${modID}`,
+          description: String(error),
+        });
+      }
+    }
+    return mods;
   }, [logger, showToast]);
 
-  const [mods, setMods] = useState<Mod[]>(() => getMods());
+  const [mods, setMods] = useState<Mod[]>([]);
+
+  useEffect(() => {
+    getMods().then(setMods);
+  }, []);
 
   const setModConfig = useCallback(
     (id: string, value: React.SetStateAction<ModConfigValue>): void => {
@@ -135,7 +141,7 @@ export function ModsContextProvider({
 
   const refreshMods = useCallback((): void => {
     // manually refresh mods
-    setMods(getMods());
+    getMods().then(setMods);
   }, [getMods]);
 
   const [installedMods, setInstalledMods] = useSavedState(

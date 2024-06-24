@@ -12,7 +12,8 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import {
+import type { Mod } from 'bridge/BridgeAPI';
+import type {
   ModConfigField,
   ModConfigFieldOrSection,
   ModConfigSection,

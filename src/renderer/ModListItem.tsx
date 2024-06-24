@@ -18,9 +18,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { Mod } from 'bridge/BridgeAPI';
+import { IShellAPI } from 'bridge/ShellAPI';
 import { useSelectedMod, useToggleMod } from './ModsContext';
+import { consumeAPI } from './renderer-ipc';
 
-const RendererAPI = window.electron.RendererAPI;
+const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
 function ListChip({
   color,
@@ -96,7 +99,7 @@ export default function ModListItem({
 
   const onOpenWebsite = useCallback((): void => {
     if (mod.info.website != null) {
-      RendererAPI.openURL(mod.info.website);
+      ShellAPI.openExternal(mod.info.website);
     }
   }, [mod]);
 

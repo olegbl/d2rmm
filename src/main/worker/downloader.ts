@@ -1,5 +1,6 @@
-import { net } from 'electron';
 import { WriteStream, createWriteStream } from 'fs';
+import { BroadcastAPI } from './BroadcastAPI';
+import { RequestAPI } from './RequestAPI';
 
 abstract class Destination {
   public abstract chunk(chunk: Buffer): void;
@@ -11,9 +12,9 @@ export async function fetch<T extends Destination>(
   destination: T,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const onChunk = (chunk: Buffer) => {
+    const onData = (chunk: number[]) => {
       try {
-        destination.chunk(chunk);
+        destination.chunk(Buffer.from(chunk));
       } catch (error) {
         reject(error);
       }
@@ -36,14 +37,25 @@ export async function fetch<T extends Destination>(
       }
       reject();
     };
-    const request = net.request(sourceUrl);
-    request.on('response', (response) => {
-      response.on('data', onChunk);
-      response.on('end', onSuccess);
-      response.on('error', onFailure);
+    RequestAPI.createRequest(sourceUrl).then((id) => {
+      const listener = async (event: unknown, payload: unknown) => {
+        switch (event as 'data' | 'success' | 'error') {
+          case 'data':
+            onData(payload as number[]);
+            break;
+          case 'success':
+            BroadcastAPI.removeEventListener(id, listener);
+            onSuccess();
+            break;
+          case 'error':
+            BroadcastAPI.removeEventListener(id, listener);
+            onFailure();
+            break;
+        }
+      };
+      BroadcastAPI.addEventListener(id, listener);
+      RequestAPI.sendRequest(id);
     });
-    request.on('error', onFailure);
-    request.end();
   });
 }
 

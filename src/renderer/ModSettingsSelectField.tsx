@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
 import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
-import { ModConfigFieldSelect } from 'bridge/ModConfig';
-import { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import type { Mod } from 'bridge/BridgeAPI';
+import type { ModConfigFieldSelect } from 'bridge/ModConfig';
+import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
 
 type Props = {
   field: ModConfigFieldSelect;

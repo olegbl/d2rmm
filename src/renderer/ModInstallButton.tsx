@@ -1,6 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { SaveOutlined } from '@mui/icons-material';
+import Save from '@mui/icons-material/Save';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
+import BridgeAPI from './BridgeAPI';
 import { useLogger } from './Logs';
 import {
   useInstalledMods,
@@ -9,8 +12,6 @@ import {
 } from './ModsContext';
 import { usePreferences } from './Preferences';
 import useToast from './useToast';
-
-const BridgeAPI = window.electron.BridgeAPI;
 
 type Props = {
   isUninstall?: boolean;
@@ -29,12 +30,14 @@ export default function ModInstallButton({
   const modsToInstall = useModsToInstall();
   const [, setInstalledMods] = useInstalledMods();
   const isInstallConfigChanged = useIsInstallConfigChanged();
+  const [isInstalling, setIsInstalling] = useState(false);
 
   const label = isUninstall ? 'Uninstall' : 'Install';
 
-  const onInstallMods = useCallback((): void => {
+  const onInstallMods = useCallback(async (): Promise<void> => {
     try {
       logger.clear();
+      setIsInstalling(true);
 
       const options = {
         dataPath: preferences.dataPath,
@@ -51,10 +54,11 @@ export default function ModInstallButton({
 
       console.debug(`Installing mods...`, options);
       let modsInstalled = [];
-      modsInstalled = BridgeAPI.installMods(modsToInstall, options);
+      modsInstalled = await BridgeAPI.installMods(modsToInstall, options);
       setInstalledMods(
         modsToInstall.map((mod) => ({ id: mod.id, config: mod.config })),
       );
+      setIsInstalling(false);
 
       if (modsToInstall.length === 0) {
         showToast({
@@ -93,6 +97,9 @@ export default function ModInstallButton({
 
   const button = (
     <LoadingButton
+      loading={isInstalling}
+      loadingPosition="start"
+      startIcon={isInstallConfigChanged ? <Save /> : <SaveOutlined />}
       onClick={onInstallMods}
       variant={isInstallConfigChanged ? 'contained' : 'outlined'}
     >

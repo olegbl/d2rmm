@@ -1,3 +1,5 @@
+export type ILogLevel = 'error' | 'warn' | 'log' | 'debug';
+
 /**
  * Because we're passing console arguments across multiple bridges
  * between Electron main, Electron renderer, and QuickJS, we need

@@ -1,6 +1,4 @@
 import { execFile, execFileSync } from 'child_process';
-import { BrowserWindow, app, ipcMain } from 'electron';
-import ffi from 'ffi-napi';
 import {
   copyFileSync,
   existsSync,
@@ -23,16 +21,26 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 import ts from 'typescript';
-import { ConsoleAPI } from 'bridge/ConsoleAPI';
+import type {
+  CopiedFile,
+  IBridgeAPI,
+  IInstallModsOptions,
+  Mod,
+} from 'bridge/BridgeAPI';
+import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
 import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
+import { Relative } from 'bridge/Relative';
 import type { TSVDataRow } from 'bridge/TSV';
-import packageManifest from '../../release/app/package.json';
+import packageManifest from '../../../release/app/package.json';
+import { getAppPath, getHomePath } from './AppInfoAPI';
+import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';
 import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
-import './asar.ts';
+import './asar';
 import { datamod } from './datamod';
 import { getQuicKJSProxyAPI, getQuickJS } from './quickjs';
+import { provideAPI } from './worker-ipc';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
@@ -40,15 +48,13 @@ function notNull<TValue>(value: TValue | null | undefined): value is TValue {
 
 let runtime: InstallationRuntime | null = null;
 
-function getAppPath(): string {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, '../')
-    : path.join(__dirname, '../../');
+export function getRuntime(): InstallationRuntime | null {
+  return runtime;
 }
 
 function getSavesPath(): string {
   return path.join(
-    process.env.USERPROFILE ?? path.join(app.getPath('home'), '../'),
+    process.env.USERPROFILE ?? path.join(getHomePath(), '../'),
     `Saved Games/Diablo II Resurrected/mods/${
       runtime?.options.outputModName ?? 'D2RMM'
     }/`,
@@ -123,51 +129,6 @@ function copyDirSync(src: string, dest: string) {
   });
 }
 
-const voidPtr = ref.refType(ref.types.void);
-const voidPtrPtr = ref.refType(voidPtr);
-const dwordPtr = ref.refType(ref.types.uint32);
-
-// http://www.zezula.net/en/casc/casclib.html
-const CascLib = ffi.Library(path.join(getAppPath(), 'tools', 'CascLib.dll'), {
-  CascCloseFile: ['bool', [voidPtr]],
-  CascCloseStorage: ['bool', [voidPtr]],
-  CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],
-  CascOpenStorage: ['bool', ['string', 'int', voidPtrPtr]],
-  CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
-  GetLastError: ['int', []],
-});
-
-// CascLib Error Codes for GetLastError()
-const KnownCastLibErrorCodes: { [code: number]: string } = {
-  0: 'ERROR_SUCCESS',
-  2: 'ERROR_PATH_NOT_FOUND',
-  1: 'ERROR_ACCESS_DENIED',
-  9: 'ERROR_INVALID_HANDLE',
-  12: 'ERROR_NOT_ENOUGH_MEMORY',
-  45: 'ERROR_NOT_SUPPORTED',
-  22: 'ERROR_INVALID_PARAMETER',
-  28: 'ERROR_DISK_FULL',
-  17: 'ERROR_ALREADY_EXISTS',
-  55: 'ERROR_INSUFFICIENT_BUFFER',
-  1000: 'ERROR_BAD_FORMAT',
-  1001: 'ERROR_NO_MORE_FILES',
-  1002: 'ERROR_HANDLE_EOF',
-  1003: 'ERROR_CAN_NOT_COMPLETE',
-  1004: 'ERROR_FILE_CORRUPT',
-  1005: 'ERROR_FILE_ENCRYPTED',
-  1006: 'ERROR_FILE_TOO_LARGE',
-  1007: 'ERROR_ARITHMETIC_OVERFLOW',
-  1008: 'ERROR_NETWORK_NOT_AVAILABLE',
-};
-
-function processErrorCode(errorCodeArg: string | number): string {
-  let errorCode = errorCodeArg;
-  if (typeof errorCode === 'string') {
-    errorCode = parseInt(errorCode, 10);
-  }
-  return KnownCastLibErrorCodes[errorCode];
-}
-
 function createError(
   method: string,
   message: string,
@@ -191,8 +152,8 @@ function createError(
 const cascStoragePtr = ref.alloc(voidPtrPtr);
 let cascStorageIsOpen = false;
 
-export const BridgeAPI: BridgeAPIImplementation = {
-  getVersion: () => {
+export const BridgeAPI: IBridgeAPI = {
+  getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
 
     const [major, minor, patch] = packageManifest.version
@@ -201,7 +162,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return [major ?? 0, minor ?? 0, patch ?? 0];
   },
 
-  getAppPath: () => {
+  getAppPath: async () => {
     console.debug('BridgeAPI.getAppPath');
 
     return getAppPath();
@@ -227,7 +188,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     }
   },
 
-  execute: (
+  execute: async (
     executablePath: string,
     args: string[] = [],
     sync: boolean = false,
@@ -242,23 +203,25 @@ export const BridgeAPI: BridgeAPIImplementation = {
       }
       return 0;
     } catch (error) {
-      return createError('BridgeAPI.execute', 'Failed to execute file', error);
+      throw createError('BridgeAPI.execute', 'Failed to execute file', error);
     }
   },
 
-  openStorage: (gamePath: string) => {
+  openStorage: async (gamePath: string) => {
     console.debug('BridgeAPI.openStorage', { gamePath });
 
     if (!cascStorageIsOpen) {
-      if (CascLib.CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
+      if (getCascLib().CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
         cascStorageIsOpen = true;
-      } else if (CascLib.CascOpenStorage(`${gamePath}:`, 0, cascStoragePtr)) {
+      } else if (
+        getCascLib().CascOpenStorage(`${gamePath}:`, 0, cascStoragePtr)
+      ) {
         cascStorageIsOpen = true;
       } else {
-        return createError(
+        throw createError(
           'API.openStorage',
           'Failed to open CASC storage',
-          `(CascLib Error Code: ${CascLib.GetLastError()})`,
+          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
         );
       }
     }
@@ -266,18 +229,18 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return cascStorageIsOpen;
   },
 
-  closeStorage: () => {
+  closeStorage: async () => {
     console.debug('BridgeAPI.closeStorage');
 
     if (cascStorageIsOpen) {
       const storage = cascStoragePtr.deref();
-      if (CascLib.CascCloseStorage(storage)) {
+      if (getCascLib().CascCloseStorage(storage)) {
         cascStorageIsOpen = false;
       } else {
-        return createError(
+        throw createError(
           'API.closeStorage',
           'Failed to close CASC storage',
-          `(CascLib Error Code: ${CascLib.GetLastError()})`,
+          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
         );
       }
     }
@@ -285,26 +248,32 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return !cascStorageIsOpen;
   },
 
-  isGameFile: (filePath: string) => {
+  isGameFile: async (filePath: string) => {
     console.debug('BridgeAPI.isGameFile', {
       filePath,
     });
 
     try {
       if (!cascStorageIsOpen) {
-        return createError('BridgeAPI.isGameFile', 'CASC storage is not open');
+        throw createError('BridgeAPI.isGameFile', 'CASC storage is not open');
       }
 
       const storage = cascStoragePtr.deref();
 
       const filePtr = ref.alloc(voidPtrPtr);
       if (
-        !CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+        !getCascLib().CascOpenFile(
+          storage,
+          `data:data\\${filePath}`,
+          0,
+          0,
+          filePtr,
+        )
       ) {
         return false;
       }
     } catch (e) {
-      return createError(
+      throw createError(
         'API.isGameFile',
         'Failed to check if a file exists in CASC storage',
         String(e),
@@ -314,7 +283,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return true;
   },
 
-  extractFile: (filePath: string, targetPath: string) => {
+  extractFile: async (filePath: string, targetPath: string) => {
     console.debug('BridgeAPI.extractFile', {
       filePath,
       targetPath,
@@ -322,19 +291,25 @@ export const BridgeAPI: BridgeAPIImplementation = {
 
     try {
       if (!cascStorageIsOpen) {
-        return createError('BridgeAPI.extractFile', 'CASC storage is not open');
+        throw createError('BridgeAPI.extractFile', 'CASC storage is not open');
       }
 
       const storage = cascStoragePtr.deref();
 
       const filePtr = ref.alloc(voidPtrPtr);
       if (
-        !CascLib.CascOpenFile(storage, `data:data\\${filePath}`, 0, 0, filePtr)
+        !getCascLib().CascOpenFile(
+          storage,
+          `data:data\\${filePath}`,
+          0,
+          0,
+          filePtr,
+        )
       ) {
-        return createError(
+        throw createError(
           'API.extractFile',
           `Failed to open file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`,
+          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
         );
       }
 
@@ -346,7 +321,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const buffer = Buffer.alloc(size) as ref.Pointer<void>;
       buffer.type = ref.types.void;
 
-      if (CascLib.CascReadFile(file, buffer, size, bytesReadPtr)) {
+      if (getCascLib().CascReadFile(file, buffer, size, bytesReadPtr)) {
         const data = buffer.readCString();
         mkdirSync(path.dirname(targetPath), { recursive: true });
         writeFileSync(targetPath, data, {
@@ -354,32 +329,28 @@ export const BridgeAPI: BridgeAPIImplementation = {
           flag: 'w',
         });
       } else {
-        return createError(
+        throw createError(
           'API.extractFile',
           `Failed to read file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`,
+          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
         );
       }
 
-      if (!CascLib.CascCloseFile(file)) {
-        return createError(
+      if (!getCascLib().CascCloseFile(file)) {
+        throw createError(
           'API.extractFile',
           `Failed to close file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${CascLib.GetLastError()})`,
+          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
         );
       }
     } catch (e) {
-      return createError(
-        'API.extractFile',
-        'Failed to extract file',
-        String(e),
-      );
+      throw createError('API.extractFile', 'Failed to extract file', String(e));
     }
 
     return true;
   },
 
-  createDirectory: (filePath: string) => {
+  createDirectory: async (filePath: string) => {
     console.debug('BridgeAPI.createDirectory', { filePath });
 
     try {
@@ -388,7 +359,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return true;
       }
     } catch (e) {
-      return createError(
+      throw createError(
         'API.createDirectory',
         'Failed to create directory',
         String(e),
@@ -398,7 +369,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return false;
   },
 
-  readDirectory: (filePath: string) => {
+  readDirectory: async (filePath: string) => {
     console.debug('BridgeAPI.readDirectory', { filePath });
 
     try {
@@ -411,7 +382,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       }
       return [];
     } catch (e) {
-      return createError(
+      throw createError(
         'API.readDirectory',
         'Failed to read directory',
         String(e),
@@ -419,7 +390,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     }
   },
 
-  readModDirectory: () => {
+  readModDirectory: async () => {
     console.debug('BridgeAPI.readModDirectory');
 
     try {
@@ -432,7 +403,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
       }
       return [];
     } catch (e) {
-      return createError(
+      throw createError(
         'API.readModDirectory',
         'Failed to read directory',
         String(e),
@@ -440,7 +411,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     }
   },
 
-  readFile: (inputPath: string, relative: Relative) => {
+  readFile: async (inputPath: string, relative: Relative) => {
     console.debug('BridgeAPI.readFile', { inputPath, relative });
 
     try {
@@ -453,17 +424,13 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return result;
       }
     } catch (e) {
-      return createError(
-        'BridgeAPI.readFile',
-        'Failed to read file',
-        String(e),
-      );
+      throw createError('BridgeAPI.readFile', 'Failed to read file', String(e));
     }
 
     return null;
   },
 
-  writeFile: (inputPath: string, relative: Relative, data: string) => {
+  writeFile: async (inputPath: string, relative: Relative, data: string) => {
     console.debug('BridgeAPI.writeFile', { inputPath, relative });
 
     try {
@@ -474,7 +441,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         flag: 'w',
       });
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.writeFile',
         'Failed to write file',
         String(e),
@@ -484,7 +451,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return 0;
   },
 
-  readBinaryFile: (inputPath: string, relative: Relative) => {
+  readBinaryFile: async (inputPath: string, relative: Relative) => {
     console.debug('BridgeAPI.readBinaryFile', {
       inputPath,
       relative,
@@ -501,7 +468,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         ];
       }
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.readBinaryFile',
         'Failed to read file',
         String(e),
@@ -511,7 +478,11 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return null;
   },
 
-  writeBinaryFile: (inputPath: string, relative: Relative, data: number[]) => {
+  writeBinaryFile: async (
+    inputPath: string,
+    relative: Relative,
+    data: number[],
+  ) => {
     console.debug('BridgeAPI.writeBinaryFile', {
       inputPath,
       relative,
@@ -525,7 +496,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         flag: 'w',
       });
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.writeBinaryFile',
         'Failed to write file',
         String(e),
@@ -535,7 +506,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return 0;
   },
 
-  deleteFile: (inputPath: string, relative: Relative) => {
+  deleteFile: async (inputPath: string, relative: Relative) => {
     console.debug('BridgeAPI.deleteFile', { inputPath, relative });
 
     try {
@@ -551,7 +522,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         return 0;
       }
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.deleteFile',
         'Failed to delete file',
         String(e),
@@ -562,7 +533,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return 1;
   },
 
-  copyFile: (
+  copyFile: async (
     fromPath: string,
     toPath: string,
     overwrite: boolean = false,
@@ -609,25 +580,21 @@ export const BridgeAPI: BridgeAPIImplementation = {
         outCopiedFiles?.push({ fromPath, toPath });
       }
     } catch (e) {
-      return createError(
-        'BridgeAPI.copyFile',
-        'Failed to copy file',
-        String(e),
-      );
+      throw createError('BridgeAPI.copyFile', 'Failed to copy file', String(e));
     }
 
     // file copied successfully
     return 0;
   },
 
-  readModInfo: (id: string) => {
+  readModInfo: async (id: string) => {
     console.debug('BridgeAPI.readModInfo', {
       id,
     });
 
-    const result = BridgeAPI.readFile(`mods\\${id}\\mod.json`, 'App');
+    const result = await BridgeAPI.readFile(`mods\\${id}\\mod.json`, 'App');
 
-    if (result instanceof Error || result == null) {
+    if (result == null) {
       // check if this is a data mod
       try {
         if (statSync(resolvePath(`mods\\${id}\\data`, 'App')).isDirectory()) {
@@ -636,10 +603,15 @@ export const BridgeAPI: BridgeAPIImplementation = {
             name: id,
           };
         }
-      } catch {}
-
-      return result;
+      } catch {
+        // it's okay if this operation fails
+      }
     }
+
+    if (result == null) {
+      throw createError('BridgeAPI.readModInfo', 'Failed to read mod config');
+    }
+
     try {
       return {
         type: 'd2rmm',
@@ -647,7 +619,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         ...JSON.parse(result),
       };
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.readModInfo',
         'Failed to parse mod config',
         String(e),
@@ -655,17 +627,13 @@ export const BridgeAPI: BridgeAPIImplementation = {
     }
   },
 
-  readModConfig: (id: string) => {
+  readModConfig: async (id: string) => {
     console.debug('BridgeAPI.readModConfig', {
       id,
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    const result = BridgeAPI.readFile(filePath, 'App');
-
-    if (result instanceof Error) {
-      return result;
-    }
+    const result = await BridgeAPI.readFile(filePath, 'App');
 
     if (result != null) {
       return JSON.parse(result);
@@ -674,14 +642,14 @@ export const BridgeAPI: BridgeAPIImplementation = {
     return null;
   },
 
-  writeModConfig: (id: string, value: ModConfigValue) => {
+  writeModConfig: async (id: string, value: ModConfigValue) => {
     console.debug('BridgeAPI.writeModConfig', {
       id,
       value,
     });
 
     const filePath = `mods\\${id}\\config.json`;
-    return BridgeAPI.writeFile(filePath, 'App', JSON.stringify(value));
+    return await BridgeAPI.writeFile(filePath, 'App', JSON.stringify(value));
   },
 
   readModCode: async (id: string) => {
@@ -694,9 +662,9 @@ export const BridgeAPI: BridgeAPIImplementation = {
       const relativeFilePath = `mods\\${id}\\mod.js`;
       const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
-        const result = BridgeAPI.readFile(relativeFilePath, 'App');
+        const result = await BridgeAPI.readFile(relativeFilePath, 'App');
         if (typeof result !== 'string') {
-          return createError(
+          throw createError(
             'BridgeAPI.readModCode',
             'Failed to read source code.',
             result,
@@ -777,7 +745,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
         const modulesWithTranspiledCode: ModuleWithTranspiledCode[] = [];
 
         const modulesProcessed: string[] = [];
-        function processModule(module: Module): void {
+        async function processModule(module: Module): Promise<void> {
           // TODO: detect circular dependencies and throw an error
           if (modulesProcessed.includes(module.id)) {
             return;
@@ -785,7 +753,7 @@ export const BridgeAPI: BridgeAPIImplementation = {
           modulesProcessed.push(module.id);
 
           const relativeFilePath = `mods\\${id}\\${module.id}.ts`;
-          const sourceCode = BridgeAPI.readFile(relativeFilePath, 'App');
+          const sourceCode = await BridgeAPI.readFile(relativeFilePath, 'App');
           if (typeof sourceCode !== 'string') {
             throw createError(
               'BridgeAPI.readModCode',
@@ -799,15 +767,17 @@ export const BridgeAPI: BridgeAPIImplementation = {
             moduleWithSourceCode,
             path.join(getAppPath(), relativeFilePath),
           );
-          dependencies.forEach((m) => processModule(m));
+          for (const dependency of dependencies) {
+            await processModule(dependency);
+          }
           modulesWithSourceCode.push(moduleWithSourceCode);
         }
 
         try {
-          processModule({ id: 'mod' });
+          await processModule({ id: 'mod' });
         } catch (error) {
           if (error instanceof Error) {
-            return error;
+            throw error;
           }
         }
 
@@ -912,7 +882,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           .concat("\nrequire.load('./mod');");
         return [code, sourceMapGenerator.toString()];
       } catch (error) {
-        return createError(
+        throw createError(
           'BridgeAPI.readModCode',
           'Failed to compile mod',
           error,
@@ -920,22 +890,18 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       }
     }
 
-    return createError(
+    throw createError(
       'BridgeAPI.readModCode',
       'Could not find source code (mod.ts or mod.js).',
     );
   },
 
-  readTsv: (filePath: string) => {
+  readTsv: async (filePath: string) => {
     console.debug('BridgeAPI.readTsv', {
       filePath,
     });
 
-    const result = BridgeAPI.readFile(filePath, 'None');
-
-    if (result instanceof Error) {
-      return result;
-    }
+    const result = await BridgeAPI.readFile(filePath, 'None');
 
     if (result == null) {
       return { headers: [], rows: [] };
@@ -958,7 +924,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     return { headers, rows };
   },
 
-  writeTsv: (filePath, data) => {
+  writeTsv: async (filePath, data) => {
     console.debug('BridgeAPI.writeTsv', {
       filePath,
     });
@@ -969,17 +935,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       headers.map((header) => row[header] ?? '').join('\t'),
     );
     const content = [headersRaw, ...rowsRaw, ''].join('\n');
-    return BridgeAPI.writeFile(filePath, 'None', content);
+    return await BridgeAPI.writeFile(filePath, 'None', content);
   },
 
-  readJson: (filePath) => {
+  readJson: async (filePath) => {
     console.debug('BridgeAPI.readJson', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, 'None');
-
-    if (result instanceof Error) {
-      return result;
-    }
+    const result = await BridgeAPI.readFile(filePath, 'None');
 
     if (result == null) {
       console.warn('BridgeAPI.readJson', 'file not found');
@@ -992,7 +954,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     try {
       return json5.parse<JSONData>(cleanContent);
     } catch (e) {
-      return createError(
+      throw createError(
         'BridgeAPI.readJson',
         'Failed to parse file',
         e instanceof Error ? e.toString() : String(e),
@@ -1000,32 +962,24 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     }
   },
 
-  writeJson: (filePath, data) => {
+  writeJson: async (filePath, data) => {
     console.debug('BridgeAPI.writeJson', { filePath });
 
     const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
-    const result = BridgeAPI.writeFile(
+    const result = await BridgeAPI.writeFile(
       filePath,
       'None',
       // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
       `\uFEFF${content}`,
     );
 
-    if (result instanceof Error) {
-      return result;
-    }
-
     return result;
   },
 
-  readTxt: (filePath) => {
+  readTxt: async (filePath) => {
     console.debug('BridgeAPI.readTxt', { filePath });
 
-    const result = BridgeAPI.readFile(filePath, 'None');
-
-    if (result instanceof Error) {
-      return result;
-    }
+    const result = await BridgeAPI.readFile(filePath, 'None');
 
     if (result == null) {
       console.warn('BridgeAPI.readTxt', 'file not found');
@@ -1035,16 +989,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     return result;
   },
 
-  writeTxt: (filePath, data) => {
+  writeTxt: async (filePath, data) => {
     console.debug('BridgeAPI.writeTxt', { filePath });
 
-    const result = BridgeAPI.writeFile(filePath, 'None', data);
-
-    if (result instanceof Error) {
-      return result;
-    }
-
-    return result;
+    return await BridgeAPI.writeFile(filePath, 'None', data);
   },
 
   installMods: async (modsToInstall: Mod[], options: IInstallModsOptions) => {
@@ -1057,16 +1005,19 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     if (!runtime.options.isDirectMode) {
-      BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, 'None');
-      BridgeAPI.createDirectory(runtime.options.mergedPath);
-      BridgeAPI.writeJson(`${runtime.options.mergedPath}\\..\\modinfo.json`, {
-        name: runtime.options.outputModName,
-        savepath: `${runtime.options.outputModName}/`,
-      });
+      await BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, 'None');
+      await BridgeAPI.createDirectory(runtime.options.mergedPath);
+      await BridgeAPI.writeJson(
+        `${runtime.options.mergedPath}\\..\\modinfo.json`,
+        {
+          name: runtime.options.outputModName,
+          savepath: `${runtime.options.outputModName}/`,
+        },
+      );
     }
 
     if (!runtime.options.isPreExtractedData) {
-      BridgeAPI.openStorage(runtime.options.gamePath);
+      await BridgeAPI.openStorage(runtime.options.gamePath);
     }
 
     for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
@@ -1100,14 +1051,27 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         vm.setProp(
           vm.global,
           'console',
-          getQuicKJSProxyAPI(vm, scope, console as ConsoleAPI),
+          getQuicKJSProxyAPI(vm, scope, {
+            debug: async (...args: ConsoleArg[]) => {
+              console.debug(...args);
+            },
+            log: async (...args: ConsoleArg[]) => {
+              console.log(...args);
+            },
+            warn: async (...args: ConsoleArg[]) => {
+              console.warn(...args);
+            },
+            error: async (...args: ConsoleArg[]) => {
+              console.error(...args);
+            },
+          } as ConsoleAPI),
         );
         vm.setProp(
           vm.global,
           'D2RMM',
           getQuicKJSProxyAPI(vm, scope, getModAPI(runtime)),
         );
-        scope.manage(vm.unwrapResult(vm.evalCode(code)));
+        scope.manage(vm.unwrapResult(await vm.evalCodeAsync(code)));
         runtime!.modsInstalled.push(runtime.mod.id);
         console.log(`Mod ${action.toLowerCase()}ed successfully.`);
       } catch (error) {
@@ -1132,15 +1096,18 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     runtime.mod = null;
 
     if (!runtime.options.isPreExtractedData) {
-      BridgeAPI.closeStorage();
+      await BridgeAPI.closeStorage();
     }
 
     // delete any files that were extracted but then unmodified
     // since they should be the same as the vanilla files in CASC
     if (!runtime.options.isDryRun && !runtime.options.isDirectMode) {
-      runtime.fileManager.getUnmodifiedExtractedFiles().forEach((file) => {
-        BridgeAPI.deleteFile(runtime!.getDestinationFilePath(file), 'None');
-      });
+      for (const file in runtime.fileManager.getUnmodifiedExtractedFiles()) {
+        await BridgeAPI.deleteFile(
+          runtime!.getDestinationFilePath(file),
+          'None',
+        );
+      }
     }
 
     const modsInstalled = runtime.modsInstalled;
@@ -1149,35 +1116,8 @@ const config = JSON.parse(D2RMM.getConfigJSON());
   },
 };
 
-export async function initBridgeAPI(mainWindow: BrowserWindow): Promise<void> {
-  // hook up bridge API calls
-  Object.keys(BridgeAPI).forEach((apiName) => {
-    const apiCall = BridgeAPI[apiName as keyof typeof BridgeAPI];
-    ipcMain.on(apiName, async (event, args: unknown[] | void) => {
-      // @ts-ignore[2556] - can't enforce strict typing for data coming across the bridge
-      let result = apiCall(...(args ?? []));
-      if (result instanceof Promise) {
-        result = await result;
-      }
-      event.returnValue = result;
-    });
-  });
-
-  // forward console messages to the renderer process
-  const nativeConsole = { ...console };
-  const consoleWrapper = { ...console };
-  const consoleMethods = ['debug', 'log', 'warn', 'error'] as const;
-  consoleMethods.forEach((level: (typeof consoleMethods)[number]) => {
-    consoleWrapper[level] = (...args) => {
-      const newArgs =
-        runtime?.isModInstalling() ?? false
-          ? [`[${runtime!.mod!.info.name}]`, ...args]
-          : args;
-      nativeConsole[level](...newArgs);
-      mainWindow.webContents.send('console', [level, newArgs]);
-    };
-  });
-  Object.assign(console, consoleWrapper);
+export async function initBridgeAPI(): Promise<void> {
+  provideAPI('BridgeAPI', BridgeAPI);
 }
 
 function findBestMappingForLine(

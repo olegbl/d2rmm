@@ -39,9 +39,13 @@ export function getIsUsingLocalUserDataDirectory(): boolean {
 
 export function initPreferences(): void {
   if (getIsUsingLocalUserDataDirectory()) {
-    console.log('Using local preferences');
+    console.log(
+      `[main] Using local preferences from ${path.join(LOCAL_USER_DATA_DIRECTORY, STORAGE_DIRECTORY)}.`,
+    );
     app.setPath('userData', LOCAL_USER_DATA_DIRECTORY);
   } else {
-    console.log('Using global preferences');
+    console.log(
+      `[main] Using global preferences from ${path.join(GLOBAL_USER_DATA_DIRECTORY, STORAGE_DIRECTORY)}.`,
+    );
   }
 }

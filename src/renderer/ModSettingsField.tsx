@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
 import { Help, Refresh } from '@mui/icons-material';
 import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
-import { ModConfigField } from 'bridge/ModConfig';
-import { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import type { Mod } from 'bridge/BridgeAPI';
+import type { ModConfigField } from 'bridge/ModConfig';
+import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
 import { parseBinding } from './BindingsParser';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 import ModSettingsColorSelectorField from './ModSettingsColorSelectorField';

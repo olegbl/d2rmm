@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -80,22 +80,24 @@ function D2RMMRootView() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <ThemeContextProvider>
-        <ToastProvider>
-          <LogsProvider>
-            <PreferencesProvider>
-              <ModsContextProvider>
-                <Router>
-                  <Routes>
-                    <Route path="/" element={<D2RMMRootView />} />
-                  </Routes>
-                </Router>
-                <UpdaterDialog />
-              </ModsContextProvider>
-            </PreferencesProvider>
-          </LogsProvider>
-        </ToastProvider>
-      </ThemeContextProvider>
+      <Suspense fallback={null}>
+        <ThemeContextProvider>
+          <ToastProvider>
+            <LogsProvider>
+              <PreferencesProvider>
+                <ModsContextProvider>
+                  <Router>
+                    <Routes>
+                      <Route path="/" element={<D2RMMRootView />} />
+                    </Routes>
+                  </Router>
+                  <UpdaterDialog />
+                </ModsContextProvider>
+              </PreferencesProvider>
+            </LogsProvider>
+          </ToastProvider>
+        </ThemeContextProvider>
+      </Suspense>
     </ErrorBoundary>
   );
 }

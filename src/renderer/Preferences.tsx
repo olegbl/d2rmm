@@ -1,8 +1,8 @@
-import React, { useContext, useMemo } from 'react';
-import { IPreferences } from 'bridge/PreferenceTypes';
+import React, { useCallback, useContext, useMemo } from 'react';
+import type { IPreferences } from 'bridge/PreferenceTypes';
+import BridgeAPI from './BridgeAPI';
+import { useAsyncMemo } from './useAsyncMemo';
 import useSavedState from './useSavedState';
-
-const BridgeAPI = window.electron.BridgeAPI;
 
 export const Context = React.createContext<IPreferences | null>(null);
 
@@ -19,11 +19,15 @@ type Props = {
 };
 
 export function PreferencesProvider({ children }: Props): JSX.Element {
-  const defaultGamePath =
-    BridgeAPI.getGamePath() ??
-    'C:\\Program Files\\Battle.net\\Games\\Diablo II Resurrected';
+  const [rawGamePathSaved, setRawGamePath] = useSavedState<string | null>(
+    'paths',
+    null,
+  );
 
-  const [rawGamePath, setRawGamePath] = useSavedState('paths', defaultGamePath);
+  const rawGamePath =
+    rawGamePathSaved ??
+    useAsyncMemo(useCallback(() => BridgeAPI.getGamePath(), [])) ??
+    'C:\\Program Files\\Battle.net\\Games\\Diablo II Resurrected';
 
   const [preExtractedDataPath, setPreExtractedDataPath] = useSavedState(
     'pre-extracted-data-path',

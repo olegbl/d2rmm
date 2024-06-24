@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -16,18 +16,18 @@ import {
   Typography,
   styled,
 } from '@mui/material';
+import BridgeAPI from './BridgeAPI';
 import { usePreferences } from './Preferences';
 import { IThemeMode, useThemeMode } from './ThemeContext';
+import { useAsyncMemo } from './useAsyncMemo';
 
-const BridgeAPI = window.electron.BridgeAPI;
-
-function getIsValidGamePath(path: string): boolean {
-  const files = BridgeAPI.readDirectory(path);
+async function getIsValidGamePath(path: string): Promise<boolean> {
+  const files = await BridgeAPI.readDirectory(path);
   return files.find(({ name }) => name === 'D2R.exe') != null;
 }
 
-function getIsValidPreExtractedDataPath(path: string): boolean {
-  const files = BridgeAPI.readDirectory(path);
+async function getIsValidPreExtractedDataPath(path: string): Promise<boolean> {
+  const files = await BridgeAPI.readDirectory(path);
   // search for the "global" folder
   return files.find(({ name }) => name === 'global') != null;
 }
@@ -74,18 +74,20 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
 
   const dataSource = isPreExtractedData ? 'directory' : 'casc';
 
-  const isValidGamePath = useMemo(
-    () => getIsValidGamePath(gamePath),
-    [gamePath],
-  );
+  const isValidGamePath =
+    useAsyncMemo(useCallback(() => getIsValidGamePath(gamePath), [gamePath])) ??
+    true;
 
-  const isValidPreExtractedDataPath = useMemo(
-    () =>
-      dataSource === 'directory'
-        ? getIsValidPreExtractedDataPath(preExtractedDataPath)
-        : true,
-    [dataSource, preExtractedDataPath],
-  );
+  const isValidPreExtractedDataPath =
+    useAsyncMemo(
+      useCallback(
+        () =>
+          dataSource === 'directory'
+            ? getIsValidPreExtractedDataPath(preExtractedDataPath)
+            : Promise.resolve(true),
+        [dataSource, preExtractedDataPath],
+      ),
+    ) ?? true;
 
   return (
     <List

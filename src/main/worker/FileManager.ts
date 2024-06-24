@@ -16,13 +16,6 @@ export type FileStatus = {
   operations: FileOperation[];
 };
 
-function falseIfError(value: boolean | Error): boolean {
-  if (value instanceof Error) {
-    return false;
-  }
-  return value;
-}
-
 export class FileManager {
   private files: Record<string, FileStatus> = {};
   constructor(private runtime: InstallationRuntime) {}
@@ -54,27 +47,31 @@ export class FileManager {
     return this.get(filePath).modified;
   }
 
-  public gameFile(filePath: string): boolean {
+  public async gameFile(filePath: string): Promise<boolean> {
     const fileStatus = this.get(filePath);
-    return (
-      fileStatus.gameFile ??
-      falseIfError(this.runtime.BridgeAPI.isGameFile(fileStatus.filePath))
-    );
+    if (fileStatus.gameFile != null) {
+      return fileStatus.gameFile;
+    }
+    try {
+      return await this.runtime.BridgeAPI.isGameFile(fileStatus.filePath);
+    } catch {
+      return false;
+    }
   }
 
-  public extract(filePath: string, mod: string): void {
+  public async extract(filePath: string, mod: string): Promise<void> {
     const fileStatus = this.get(filePath);
     fileStatus.operations.push({ mod, type: 'extract' });
     fileStatus.exists = true;
     fileStatus.extracted = true;
   }
 
-  public read(filePath: string, mod: string): void {
+  public async read(filePath: string, mod: string): Promise<void> {
     const fileStatus = this.get(filePath);
     fileStatus.operations.push({ mod, type: 'read' });
   }
 
-  public write(filePath: string, mod: string): void {
+  public async write(filePath: string, mod: string): Promise<void> {
     const fileStatus = this.get(filePath);
 
     if (
@@ -103,7 +100,7 @@ export class FileManager {
         (fileStatus.filePath.endsWith('.txt') ||
           fileStatus.filePath.endsWith('.json')) &&
         // and it's part of the game
-        this.gameFile(filePath)
+        (await this.gameFile(filePath))
       ) {
         this.runtime.console.warn(
           `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`,

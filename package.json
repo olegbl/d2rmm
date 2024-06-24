@@ -37,7 +37,7 @@
     "asar": true,
     "asarUnpack": [
       "**\\*.{node,dll,wasm}",
-      "**\\node_modules\\@jitl\\quickjs-wasmfile-release-sync\\dist\\{index.js,emscripten-module.mjs,emscripten-module.wasm}"
+      "**\\node_modules\\@jitl\\quickjs-wasmfile-release-asyncify\\dist\\{index.js,emscripten-module.mjs,emscripten-module.wasm}"
     ],
     "win": {
       "target": [

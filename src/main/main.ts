@@ -13,10 +13,14 @@ import { app, BrowserWindow, shell } from 'electron';
 import log from 'electron-log/main';
 import path from 'path';
 import 'regenerator-runtime/runtime';
-import { initBridgeAPI } from './api';
+import { initAppInfoAPI } from './AppInfoAPI';
+import { initBroadcastAPI } from './BroadcastAPI';
+import { initRequestAPI } from './RequestAPI';
+import { initShellAPI } from './ShellAPI';
+import { initConsole } from './main-console';
+import { initIPC } from './main-ipc';
+import { spawnNewWorker } from './main-workers';
 import { initPreferences } from './preferences';
-import { initQuickJS } from './quickjs';
-import { checkForUpdates } from './updater';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
 
@@ -29,7 +33,8 @@ log.transports.file.resolvePathFn = () =>
     'd2rmm.log',
   );
 Object.assign(console, log.functions);
-console.log('electron-log initialized');
+
+console.log('[main] Starting D2RMM...');
 
 let mainWindow: BrowserWindow | null = null;
 if (process.env.NODE_ENV === 'production') {
@@ -58,6 +63,7 @@ const installExtensions = async () => {
 };
 
 const createWindow = async () => {
+  console.log('[main] Initializing...');
   if (isDevelopment) {
     await installExtensions();
   }
@@ -85,10 +91,6 @@ const createWindow = async () => {
   );
   mainWindow.removeMenu();
 
-  await initBridgeAPI(mainWindow);
-
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
-
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
@@ -98,8 +100,6 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
-
-    checkForUpdates(mainWindow);
   });
 
   mainWindow.on('closed', () => {
@@ -112,7 +112,32 @@ const createWindow = async () => {
     shell.openExternal(url);
   });
 
-  await initQuickJS();
+  console.log('[main] Initializing IPC...');
+  await initIPC(mainWindow);
+  console.log('[main] Initializing BroadcastAPI...');
+  await initBroadcastAPI();
+  console.log('[main] Initializing ConsoleAPI...');
+  await initConsole();
+  console.log('[main] Initializing AppInfoAPI...');
+  await initAppInfoAPI();
+  console.log('[main] Initializing ShellAPI...');
+  await initShellAPI();
+  console.log('[main] Initializing RequestAPI...');
+  await initRequestAPI();
+  console.log('[main] Initialized');
+
+  try {
+    console.log('[main] Spawning worker...');
+    await spawnNewWorker();
+    console.log('[main] Worker spawned successfully!');
+  } catch (e) {
+    console.error(
+      `Catastrophic failure! Failed to start worker: ${e}. You should restart D2RMM.`,
+    );
+    app.quit();
+  }
+
+  mainWindow.loadURL(resolveHtmlPath('index.html'));
 };
 
 app.on('window-all-closed', () => {

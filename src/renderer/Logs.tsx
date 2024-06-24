@@ -6,13 +6,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import type { ConsoleArg, ILogLevel } from 'bridge/ConsoleAPI';
 import { useConsoleListener } from './Console';
 
 export type ILog = {
   id: number;
   level: ILogLevel;
   timestamp: number;
-  data: unknown[];
+  data: ConsoleArg[];
 };
 
 export type ILogs = ILog[];
@@ -25,11 +26,11 @@ type ILogReaderContext = {
 
 type ILogWriterContext = {
   clear: () => void;
-  add: (level: ILogLevel, ...data: unknown[]) => void;
-  error: (...data: unknown[]) => void;
-  warn: (...data: unknown[]) => void;
-  log: (...data: unknown[]) => void;
-  debug: (...data: unknown[]) => void;
+  add: (level: ILogLevel, args: ConsoleArg[]) => void;
+  error: (...data: ConsoleArg[]) => void;
+  warn: (...data: ConsoleArg[]) => void;
+  log: (...data: ConsoleArg[]) => void;
+  debug: (...data: ConsoleArg[]) => void;
 };
 
 let LOG_ID: number = 0;
@@ -74,23 +75,31 @@ export function LogsProvider({ children }: Props): JSX.Element {
 
   const clear = useCallback((): void => setLogs([]), []);
 
-  const add = useCallback((level: ILogLevel, ...data: unknown[]): void => {
+  const add = useCallback((level: ILogLevel, args: ConsoleArg[]): void => {
     const newLog: ILog = {
       id: LOG_ID++,
       level,
       timestamp: Date.now(),
-      data,
+      data: args,
     };
+
+    // TODO: use R18 transitions instaed
     // we don't necessarily want to re-render every time a log comes in
     // it could get laggy, and it could break if the log is from a React render error
     // so we put them all in a ref and update the state every second
     logsRef.current = [...logsRef.current, newLog];
   }, []);
 
-  const error = useCallback((...d: unknown[]) => add('error', ...d), [add]);
-  const warn = useCallback((...d: unknown[]) => add('warn', ...d), [add]);
-  const log = useCallback((...d: unknown[]) => add('log', ...d), [add]);
-  const debug = useCallback((...d: unknown[]) => add('debug', ...d), [add]);
+  const error = useCallback(
+    (...args: ConsoleArg[]) => add('error', args),
+    [add],
+  );
+  const warn = useCallback((...args: ConsoleArg[]) => add('warn', args), [add]);
+  const log = useCallback((...args: ConsoleArg[]) => add('log', args), [add]);
+  const debug = useCallback(
+    (...args: ConsoleArg[]) => add('debug', args),
+    [add],
+  );
 
   const readerContext = useMemo(
     (): ILogReaderContext => ({

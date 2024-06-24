@@ -1,3 +1,4 @@
+import { Refresh } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
 import { useMods } from './ModsContext';
 
@@ -8,7 +9,9 @@ export default function RefreshModsButton(_props: Props): JSX.Element {
 
   return (
     <Tooltip title="Re-scan the /mods directory for any changes.">
-      <Button onClick={onRefreshMods}>Refresh Mod List</Button>
+      <Button startIcon={<Refresh />} onClick={onRefreshMods}>
+        Refresh Mod List
+      </Button>
     </Tooltip>
   );
 }

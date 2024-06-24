@@ -1,10 +1,13 @@
 import { useCallback, useMemo } from 'react';
+import {
+  PlayCircleFilled,
+  PlayCircleOutlineOutlined,
+} from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
+import BridgeAPI from './BridgeAPI';
 import { useIsInstallConfigChanged } from './ModsContext';
 import { usePreferences } from './Preferences';
 import useGameArgs from './useGameArgs';
-
-const BridgeAPI = window.electron.BridgeAPI;
 
 type Props = Record<string, never>;
 
@@ -27,6 +30,13 @@ export default function RunGameButton(_props: Props): JSX.Element {
       title={`Run Diablo II: Resurrected by launching "${command}".${warning}`}
     >
       <Button
+        startIcon={
+          !isInstallConfigChanged ? (
+            <PlayCircleFilled />
+          ) : (
+            <PlayCircleOutlineOutlined />
+          )
+        }
         onClick={onRunGame}
         variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
       >

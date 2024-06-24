@@ -1,7 +1,8 @@
-import { JSONData } from './JSON';
-import { ModConfig } from './ModConfig';
-import { ModConfigValue } from './ModConfigValue';
-import { TSVData } from './TSV';
+import type { Mod } from './BridgeAPI';
+import type { JSONData } from './JSON';
+import type { ModConfig } from './ModConfig';
+import type { ModConfigValue } from './ModConfigValue';
+import type { TSVData } from './TSV';
 
 /**
  * This is the interface of the global "D2RMM" variable provided to mods at runtime.
@@ -233,3 +234,12 @@ export interface ModAPI {
    */
   error: (message: string | Error) => void;
 }
+
+/**
+ * @internal
+ */
+export type AsyncModAPI = {
+  [K in keyof ModAPI]: (
+    ...args: Parameters<ModAPI[K]>
+  ) => Promise<ReturnType<ModAPI[K]>>;
+};

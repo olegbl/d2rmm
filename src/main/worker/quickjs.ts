@@ -1,32 +1,33 @@
-import { app } from 'electron';
 import { readFileSync } from 'fs';
 import path from 'path';
 import {
-  QuickJSContext,
+  QuickJSAsyncContext,
   QuickJSHandle,
-  QuickJSWASMModule,
+  QuickJSAsyncWASMModule,
   Scope,
-  newQuickJSWASMModuleFromVariant,
+  newQuickJSAsyncWASMModuleFromVariant,
   newVariant,
 } from 'quickjs-emscripten-core';
-import releaseSyncVariant from '@jitl/quickjs-wasmfile-release-sync';
+import releaseAsyncVariant from '@jitl/quickjs-wasmfile-release-asyncify';
+import type { AsAsyncSerializableAPI, AsyncSerializableAPI } from 'bridge/API';
+import { getIsPackaged, getResourcesPath } from './AppInfoAPI';
 
-let loadedQuickJSWASMModule: QuickJSWASMModule | null;
+let loadedQuickJSAsyncWASMModule: QuickJSAsyncWASMModule | null;
 
 export async function initQuickJS(): Promise<void> {
   const modulePath = path.join(
-    process.resourcesPath,
+    getResourcesPath(),
     'app.asar.unpacked/node_modules',
-    '@jitl/quickjs-wasmfile-release-sync/dist',
+    '@jitl/quickjs-wasmfile-release-asyncify/dist',
   );
 
   // issue: https://github.com/electron/asar/issues/249
   // fix: https://github.com/electron/electron/pull/37535
   // lots of blockers prevent upgrading electron & NodeJS versions :(
-  const variant = app.isPackaged
+  const variant = getIsPackaged()
     ? newVariant(
         {
-          ...releaseSyncVariant,
+          ...releaseAsyncVariant,
           importModuleLoader: () => {
             const mjsSourceCode = readFileSync(
               path.join(modulePath, 'emscripten-module.mjs'),
@@ -46,51 +47,23 @@ export async function initQuickJS(): Promise<void> {
           ),
         },
       )
-    : releaseSyncVariant;
+    : releaseAsyncVariant;
 
-  loadedQuickJSWASMModule = await newQuickJSWASMModuleFromVariant(variant);
+  loadedQuickJSAsyncWASMModule =
+    await newQuickJSAsyncWASMModuleFromVariant(variant);
 }
 
-export function getQuickJS(): QuickJSWASMModule {
-  if (loadedQuickJSWASMModule == null) {
+export function getQuickJS(): QuickJSAsyncWASMModule {
+  if (loadedQuickJSAsyncWASMModule == null) {
     throw new Error('QuickJS module not loaded');
   }
-  return loadedQuickJSWASMModule;
+  return loadedQuickJSAsyncWASMModule;
 }
 
-type SerializableType =
-  | undefined
-  | null
-  | Error
-  | boolean
-  | number
-  | string
-  | SerializableType[]
-  | { [key: string]: SerializableType };
-
-type SerializableAPI<T> = {
-  [K in keyof T as T[K] extends (...args: infer TArgs) => unknown
-    ? TArgs extends SerializableType[]
-      ? T[K] extends (...args: TArgs) => SerializableType
-        ? K
-        : ((...args: TArgs) => void) extends T[K]
-          ? K
-          : never
-      : never
-    : never]: T[K];
-};
-
-type AsSerializableAPI<T> =
-  T extends SerializableAPI<T>
-    ? SerializableAPI<T> extends T
-      ? T
-      : never
-    : never;
-
-export function getQuicKJSProxyAPI<T extends SerializableAPI<T>>(
-  vm: QuickJSContext,
+export function getQuicKJSProxyAPI<T extends AsyncSerializableAPI<T>>(
+  vm: QuickJSAsyncContext,
   scope: Scope,
-  api: AsSerializableAPI<T>,
+  api: AsAsyncSerializableAPI<T>,
 ): QuickJSHandle {
   const handle = scope.manage(vm.newObject());
   for (const key in api) {
@@ -98,8 +71,13 @@ export function getQuicKJSProxyAPI<T extends SerializableAPI<T>>(
       handle,
       key,
       scope.manage(
-        vm.newFunction(key, (...args) =>
-          getHandleForValue(vm, scope, api[key](...args.map(vm.dump))),
+        vm.newAsyncifiedFunction(key, async (...args) =>
+          getHandleForValue(
+            vm,
+            scope,
+            // @ts-ignore: TypeScript can't recurse deeply enough for this
+            await api[key](...args.map(vm.dump)),
+          ),
         ),
       ),
     );
@@ -108,7 +86,7 @@ export function getQuicKJSProxyAPI<T extends SerializableAPI<T>>(
 }
 
 function getHandleForValue<T>(
-  vm: QuickJSContext,
+  vm: QuickJSAsyncContext,
   scope: Scope,
   value: T,
 ): QuickJSHandle {

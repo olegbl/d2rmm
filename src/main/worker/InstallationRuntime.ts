@@ -1,3 +1,4 @@
+import type { IBridgeAPI, IInstallModsOptions, Mod } from 'bridge/BridgeAPI';
 import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 import { FileManager } from './FileManager';
 
@@ -8,7 +9,7 @@ export class InstallationRuntime {
   public modsInstalled: string[] = [];
 
   constructor(
-    public BridgeAPI: BridgeAPIImplementation,
+    public BridgeAPI: IBridgeAPI,
     public console: ConsoleAPI,
     public options: IInstallModsOptions,
     public modsToInstall: Mod[],

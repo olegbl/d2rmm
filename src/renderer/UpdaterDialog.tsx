@@ -7,19 +7,21 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import type { IUpdaterAPI, Update } from 'bridge/Updater';
+import { consumeAPI } from './renderer-ipc';
+
+const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
 
 export default function UpdaterDialog() {
   const [isUpdateIgnored, setIsUpdateIgnored] = useState<boolean>(false);
-  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [update, setUpdate] = useState<Update | null>(null);
 
-  useEffect(() => {
-    const listener = (_event: unknown, version: string) => {
-      console.log('update available:', version);
-      setUpdateVersion(version);
-    };
-
-    window.electron.RendererAPI.addUpdateListener(listener);
-    return () => window.electron.RendererAPI.removeUpdateListener(listener);
+  const onCheckForUpdates = useCallback(() => {
+    UpdaterAPI.getLatestUpdate()
+      .then((update) => {
+        setUpdate(update);
+      })
+      .catch(console.error);
   }, []);
 
   const onIgnore = useCallback(() => {
@@ -27,11 +29,15 @@ export default function UpdaterDialog() {
   }, []);
 
   const onInstall = useCallback(() => {
-    window.electron.RendererAPI.installUpdate();
+    if (update != null) {
+      UpdaterAPI.installUpdate(update);
+    }
     setIsUpdateIgnored(true);
-  }, []);
+  }, [update]);
 
-  if (updateVersion == null || isUpdateIgnored) {
+  useEffect(onCheckForUpdates, [onCheckForUpdates]);
+
+  if (update == null || isUpdateIgnored) {
     return null;
   }
 
@@ -45,7 +51,7 @@ export default function UpdaterDialog() {
       <DialogTitle id="alert-dialog-title">New Update Available</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          Do you want to update to version {updateVersion} of D2RMM?
+          Do you want to update to version {update.version} of D2RMM?
         </DialogContentText>
       </DialogContent>
       <DialogActions>

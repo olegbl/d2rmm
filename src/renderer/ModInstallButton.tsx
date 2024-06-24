@@ -41,9 +41,6 @@ export default function ModInstallButton({
       logger.clear();
       setIsInstalling(true);
 
-      // switch to the logs tab so user can see what's happening
-      setTab('logs');
-
       const options = {
         dataPath: preferences.dataPath,
         extraArgs: preferences.extraArgs,
@@ -77,11 +74,6 @@ export default function ModInstallButton({
           title: `${modsInstalled.length}/${modsToInstall.length} Mods ${label}ed`,
         });
       }
-
-      // if all mods were installed, switch back to the mods tab
-      if (modsInstalled.length === modsToInstall.length) {
-        setTab('mods');
-      }
     } catch (error) {
       console.error(String(error));
       showToast({
@@ -89,6 +81,8 @@ export default function ModInstallButton({
         title: `Error When ${label}ing Mods`,
         description: String(error),
       });
+      // switch to the logs tab so user can see what happened
+      setTab('logs');
     }
   }, [
     isUninstall,

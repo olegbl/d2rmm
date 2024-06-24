@@ -122,7 +122,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       if (!runtime.options.isDryRun) {
         const copiedFiles: CopiedFile[] = [];
         await runtime.BridgeAPI.copyFile(
-          runtime.getModSourceFilePath(src),
+          await runtime.getModSourceFilePath(src),
           runtime.getDestinationFilePath(dst),
           overwrite,
           copiedFiles,

@@ -1,3 +1,4 @@
+import path from 'path';
 import type { IBridgeAPI, IInstallModsOptions, Mod } from 'bridge/BridgeAPI';
 import type { ConsoleAPI } from 'bridge/ConsoleAPI';
 import { FileManager } from './FileManager';
@@ -36,17 +37,16 @@ export class InstallationRuntime {
     return `${this.options.preExtractedDataPath}\\${filePath}`;
   }
 
-  public getModSourceFilePath(filePath: string): string {
-    const appPath = this.BridgeAPI.getAppPath();
-    return `${appPath}\\mods\\${this.mod.id}\\${filePath}`;
+  public async getModSourceFilePath(filePath: string): Promise<string> {
+    const appPath = await this.BridgeAPI.getAppPath();
+    return path.join(appPath, 'mods', this.mod.id, filePath);
   }
 
   public getDestinationFilePath(filePath: string): string {
-    const suffix = filePath === '' ? '' : `\\${filePath}`;
     if (this.options.isDirectMode) {
-      return `${this.options.dataPath}${suffix}`;
+      return path.join(this.options.dataPath, filePath);
     }
-    return `${this.options.mergedPath}${suffix}`;
+    return path.join(this.options.mergedPath, filePath);
   }
 
   public getRelativeFilePathFromDestinationFilePath(filePath: string): string {

@@ -34,6 +34,7 @@ import { Relative } from 'bridge/Relative';
 import type { TSVDataRow } from 'bridge/TSV';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getHomePath } from './AppInfoAPI';
+import { BroadcastAPI } from './BroadcastAPI';
 import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
@@ -1021,6 +1022,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     }
 
     for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
+      BroadcastAPI.send(
+        'installationProgress',
+        i,
+        runtime.modsToInstall.length,
+      );
       runtime.mod = runtime.modsToInstall[i];
       let code: string = '';
       let sourceMap: string = '';
@@ -1094,6 +1100,12 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       scope.dispose();
     }
     runtime.mod = null;
+
+    BroadcastAPI.send(
+      'installationProgress',
+      runtime.modsToInstall.length,
+      runtime.modsToInstall.length,
+    );
 
     if (!runtime.options.isPreExtractedData) {
       await BridgeAPI.closeStorage();

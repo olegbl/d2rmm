@@ -7,6 +7,7 @@ import { Box, Divider, Tab } from '@mui/material';
 import './App.css';
 import ErrorBoundary from './ErrorBoundary';
 import { InstallContextProvider } from './InstallContext';
+import InstallationProgressBar from './InstallationProgressBar';
 import { LogsProvider } from './Logs';
 import ModList from './ModList';
 import ModManagerLogs from './ModManagerLogs';
@@ -58,11 +59,17 @@ function D2RMMRootView() {
           overflow: 'hidden',
         }}
       >
-        <TabList onChange={(_event, value) => setTab(value)}>
-          <Tab label="Mods" value="mods" />
-          <Tab label="Settings" value="settings" />
-          <Tab label="Logs" value="logs" />
-        </TabList>
+        <Box
+          sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
+        >
+          <TabList onChange={(_event, value) => setTab(value)}>
+            <Tab label="Mods" value="mods" />
+            <Tab label="Settings" value="settings" />
+            <Tab label="Logs" value="logs" />
+          </TabList>
+          <Box sx={{ flex: 1 }} />
+          <InstallationProgressBar />
+        </Box>
         <Divider />
         <TabPanelBox value="mods">
           <ModList />

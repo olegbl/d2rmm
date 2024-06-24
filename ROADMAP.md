@@ -1,9 +1,6 @@
 # Mod Manager
 
-- Improved made possible by new architecture
-  - Auto-scroll console to latest message while intalling mods
-  - Show progress bar (mod N/M) while installing mods
-  - Show progress bar while downloading update
+- Show progress bar while downloading update
 - Mod config actions
 - Typeahead config
 - Check for mod updates via GitHub

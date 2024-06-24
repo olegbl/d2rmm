@@ -11,17 +11,16 @@ import {
   useModsToInstall,
 } from './ModsContext';
 import { usePreferences } from './Preferences';
+import { useTabState } from './TabContext';
 import useToast from './useToast';
 
 type Props = {
   isUninstall?: boolean;
-  onErrorsEncountered: () => unknown;
   tooltip?: string | null;
 };
 
 export default function ModInstallButton({
   isUninstall = false,
-  onErrorsEncountered,
   tooltip,
 }: Props): JSX.Element {
   const showToast = useToast();
@@ -34,10 +33,15 @@ export default function ModInstallButton({
 
   const label = isUninstall ? 'Uninstall' : 'Install';
 
+  const [, setTab] = useTabState();
+
   const onInstallMods = useCallback(async (): Promise<void> => {
     try {
       logger.clear();
       setIsInstalling(true);
+
+      // switch to the logs tab so user can see what's happening
+      setTab('logs');
 
       const options = {
         dataPath: preferences.dataPath,
@@ -73,8 +77,9 @@ export default function ModInstallButton({
         });
       }
 
-      if (modsInstalled.length < modsToInstall.length) {
-        onErrorsEncountered();
+      // if all mods were installed, switch back to the mods tab
+      if (modsInstalled.length === modsToInstall.length) {
+        setTab('mods');
       }
     } catch (error) {
       console.error(String(error));
@@ -83,15 +88,14 @@ export default function ModInstallButton({
         title: `Error When ${label}ing Mods`,
         description: String(error),
       });
-      onErrorsEncountered();
     }
   }, [
     isUninstall,
     label,
     logger,
     modsToInstall,
-    onErrorsEncountered,
     preferences,
+    setTab,
     showToast,
   ]);
 

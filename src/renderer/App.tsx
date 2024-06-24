@@ -12,6 +12,7 @@ import ModManagerLogs from './ModManagerLogs';
 import ModManagerSettings from './ModManagerSettings';
 import { ModsContextProvider } from './ModsContext';
 import { PreferencesProvider } from './Preferences';
+import { TabContextProvider, useTabState } from './TabContext';
 import ThemeContextProvider from './ThemeContext';
 import ToastProvider from './ToastProvider';
 import UpdaterDialog from './UpdaterDialog';
@@ -43,8 +44,7 @@ function TabPanelBox({
 }
 
 function D2RMMRootView() {
-  const [tab, setTab] = useState('mods');
-  const onShowLogsTab = useCallback((): void => setTab('logs'), [setTab]);
+  const [tab, setTab] = useTabState();
 
   return (
     <TabContext value={tab}>
@@ -64,7 +64,7 @@ function D2RMMRootView() {
         </TabList>
         <Divider />
         <TabPanelBox value="mods">
-          <ModList onShowLogsTab={onShowLogsTab} />
+          <ModList />
         </TabPanelBox>
         <TabPanelBox value="settings">
           <ModManagerSettings />
@@ -86,12 +86,14 @@ export default function App() {
             <LogsProvider>
               <PreferencesProvider>
                 <ModsContextProvider>
-                  <Router>
-                    <Routes>
-                      <Route path="/" element={<D2RMMRootView />} />
-                    </Routes>
-                  </Router>
-                  <UpdaterDialog />
+                  <TabContextProvider>
+                    <Router>
+                      <Routes>
+                        <Route path="/" element={<D2RMMRootView />} />
+                      </Routes>
+                    </Router>
+                    <UpdaterDialog />
+                  </TabContextProvider>
                 </ModsContextProvider>
               </PreferencesProvider>
             </LogsProvider>

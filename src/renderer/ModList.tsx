@@ -17,11 +17,7 @@ import { usePreferences } from './Preferences';
 import RefreshModsButton from './RefreshModsButton';
 import RunGameButton from './RunGameButton';
 
-type Props = {
-  onShowLogsTab: () => unknown;
-};
-
-export default function ModList({ onShowLogsTab }: Props): JSX.Element {
+export default function ModList(): JSX.Element {
   const [orderedMods, reorderMod] = useOrderedMods();
   const [enabledMods] = useEnabledMods();
   const { isDirectMode } = usePreferences();
@@ -114,11 +110,10 @@ export default function ModList({ onShowLogsTab }: Props): JSX.Element {
           {isDirectMode ? (
             <ModInstallButton
               isUninstall={true}
-              onErrorsEncountered={onShowLogsTab}
               tooltip="Revert any files modified by the enabled mods back to their vanilla state."
             />
           ) : null}
-          <ModInstallButton onErrorsEncountered={onShowLogsTab} />
+          <ModInstallButton />
         </ButtonGroup>
       </Box>
       <ModSettingsDrawer />

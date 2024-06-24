@@ -1,7 +1,6 @@
 # Mod Manager
 
 - Improved made possible by new architecture
-  - Show console while installing mods
   - Auto-scroll console to latest message while intalling mods
   - Show progress bar (mod N/M) while installing mods
   - Show progress bar while downloading update

@@ -30,7 +30,7 @@ export default function UpdaterDialog() {
 
   const onInstall = useCallback(() => {
     if (update != null) {
-      UpdaterAPI.installUpdate(update);
+      UpdaterAPI.installUpdate(update).catch(console.error);
     }
     setIsUpdateIgnored(true);
   }, [update]);

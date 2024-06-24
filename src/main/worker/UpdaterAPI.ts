@@ -89,7 +89,7 @@ export async function installUpdate(update: Update): Promise<void> {
   });
 
   child.unref();
-  AppInfoAPI.quit();
+  await AppInfoAPI.quit();
 }
 
 async function cleanupUpdate(): Promise<void> {

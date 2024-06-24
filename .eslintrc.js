@@ -18,8 +18,7 @@ module.exports = {
     'no-empty': 'off',
     'no-inner-declarations': 'off',
     // customized
-    'import/no-unresolved': 'error',
-    'react/jsx-boolean-value': ['error', 'always'],
+    '@typescript-eslint/no-floating-promises': 'error',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {
@@ -31,6 +30,8 @@ module.exports = {
         caughtErrorsIgnorePattern: '^_.*$',
       },
     ],
+    'import/no-unresolved': 'error',
+    'react/jsx-boolean-value': ['error', 'always'],
   },
   plugins: [
     '@typescript-eslint',

@@ -24,15 +24,17 @@ export async function initRequestAPI(): Promise<void> {
 
       const onData = (buffer: Buffer) => {
         // IPC has trouble with Buffer so send it as number[]
-        BroadcastAPI.send(id, 'data', [...buffer.values()]);
+        BroadcastAPI.send(id, 'data', [...buffer.values()]).catch(
+          console.error,
+        );
       };
 
       const onSuccess = () => {
-        BroadcastAPI.send(id, 'success');
+        BroadcastAPI.send(id, 'success').catch(console.error);
       };
 
       const onFailure = (error: Error) => {
-        BroadcastAPI.send(id, 'error', error);
+        BroadcastAPI.send(id, 'error', error).catch(console.error);
       };
 
       const request = net.request(url);

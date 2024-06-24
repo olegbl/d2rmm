@@ -84,18 +84,20 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   );
 
   const onCopy = useCallback((): void => {
-    navigator.clipboard.writeText(
-      // always copy all logs, including the filtered ones
-      // because people will forget to enable debug level
-      logs
-        .map((log) => [
-          new Date(log.timestamp).toISOString(),
-          log.level,
-          ...log.data.map(prettyPrintData),
-        ])
-        .map((log) => log.join(','))
-        .join('\n'),
-    );
+    navigator.clipboard
+      .writeText(
+        // always copy all logs, including the filtered ones
+        // because people will forget to enable debug level
+        logs
+          .map((log) => [
+            new Date(log.timestamp).toISOString(),
+            log.level,
+            ...log.data.map(prettyPrintData),
+          ])
+          .map((log) => log.join(','))
+          .join('\n'),
+      )
+      .catch(console.error);
     onCloseExportMenu();
   }, [logs, onCloseExportMenu]);
 

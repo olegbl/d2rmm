@@ -99,7 +99,7 @@ export default function ModListItem({
 
   const onOpenWebsite = useCallback((): void => {
     if (mod.info.website != null) {
-      ShellAPI.openExternal(mod.info.website);
+      ShellAPI.openExternal(mod.info.website).catch(console.error);
     }
   }, [mod]);
 

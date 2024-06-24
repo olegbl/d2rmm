@@ -119,7 +119,7 @@ export function ModsContextProvider({
   const [mods, setMods] = useState<Mod[]>([]);
 
   useEffect(() => {
-    getMods().then(setMods);
+    getMods().then(setMods).catch(console.error);
   }, []);
 
   const setModConfig = useCallback(
@@ -129,7 +129,7 @@ export function ModsContextProvider({
         prevMods.map((mod) => {
           if (mod.id === id) {
             const config = getConfig(mod.config);
-            BridgeAPI.writeModConfig(id, config);
+            BridgeAPI.writeModConfig(id, config).catch(console.error);
             return { ...mod, config };
           }
           return mod;
@@ -141,7 +141,7 @@ export function ModsContextProvider({
 
   const refreshMods = useCallback((): void => {
     // manually refresh mods
-    getMods().then(setMods);
+    getMods().then(setMods).catch(console.error);
   }, [getMods]);
 
   const [installedMods, setInstalledMods] = useSavedState(

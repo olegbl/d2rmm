@@ -109,7 +109,7 @@ const createWindow = async () => {
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
-    shell.openExternal(url);
+    shell.openExternal(url).catch(console.error);
   });
 
   console.log('[main] Initializing IPC...');
@@ -137,7 +137,7 @@ const createWindow = async () => {
     app.quit();
   }
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  await mainWindow.loadURL(resolveHtmlPath('index.html'));
 };
 
 app.on('window-all-closed', () => {
@@ -153,11 +153,11 @@ initPreferences();
 app
   .whenReady()
   .then(() => {
-    createWindow();
+    createWindow().catch(console.error);
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
+      if (mainWindow === null) createWindow().catch(console.error);
     });
   })
   .catch(console.log);

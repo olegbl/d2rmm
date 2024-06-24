@@ -1026,7 +1026,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         'installationProgress',
         i,
         runtime.modsToInstall.length,
-      );
+      ).catch(console.error);
       runtime.mod = runtime.modsToInstall[i];
       let code: string = '';
       let sourceMap: string = '';
@@ -1105,7 +1105,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       'installationProgress',
       runtime.modsToInstall.length,
       runtime.modsToInstall.length,
-    );
+    ).catch(console.error);
 
     if (!runtime.options.isPreExtractedData) {
       await BridgeAPI.closeStorage();

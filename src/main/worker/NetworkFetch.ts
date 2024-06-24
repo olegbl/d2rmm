@@ -37,25 +37,27 @@ export async function fetch<T extends Destination>(
       }
       reject();
     };
-    RequestAPI.createRequest(sourceUrl).then((id) => {
-      const listener = async (event: unknown, payload: unknown) => {
-        switch (event as 'data' | 'success' | 'error') {
-          case 'data':
-            onData(payload as number[]);
-            break;
-          case 'success':
-            BroadcastAPI.removeEventListener(id, listener);
-            onSuccess();
-            break;
-          case 'error':
-            BroadcastAPI.removeEventListener(id, listener);
-            onFailure();
-            break;
-        }
-      };
-      BroadcastAPI.addEventListener(id, listener);
-      RequestAPI.sendRequest(id);
-    });
+    RequestAPI.createRequest(sourceUrl)
+      .then((id) => {
+        const listener = async (event: unknown, payload: unknown) => {
+          switch (event as 'data' | 'success' | 'error') {
+            case 'data':
+              onData(payload as number[]);
+              break;
+            case 'success':
+              BroadcastAPI.removeEventListener(id, listener);
+              onSuccess();
+              break;
+            case 'error':
+              BroadcastAPI.removeEventListener(id, listener);
+              onFailure();
+              break;
+          }
+        };
+        BroadcastAPI.addEventListener(id, listener);
+        RequestAPI.sendRequest(id).catch(console.error);
+      })
+      .catch(console.error);
   });
 }
 

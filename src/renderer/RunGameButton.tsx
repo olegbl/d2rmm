@@ -22,7 +22,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
   const command = useMemo(() => ['D2R.exe'].concat(args).join(' '), [args]);
 
   const onRunGame = useCallback(() => {
-    BridgeAPI.execute(`${gamePath}\\D2R.exe`, args);
+    BridgeAPI.execute(`${gamePath}\\D2R.exe`, args).catch(console.error);
   }, [args, gamePath]);
 
   return (

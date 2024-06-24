@@ -39,7 +39,7 @@ import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
 import './asar';
 import { datamod } from './datamod';
-import { getQuicKJSProxyAPI, getQuickJS } from './quickjs';
+import { getQuickJSProxyAPI, getQuickJS } from './quickjs';
 import { provideAPI } from './worker-ipc';
 
 function notNull<TValue>(value: TValue | null | undefined): value is TValue {
@@ -1051,7 +1051,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         vm.setProp(
           vm.global,
           'console',
-          getQuicKJSProxyAPI(vm, scope, {
+          getQuickJSProxyAPI(vm, scope, {
             debug: async (...args: ConsoleArg[]) => {
               console.debug(...args);
             },
@@ -1069,7 +1069,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         vm.setProp(
           vm.global,
           'D2RMM',
-          getQuicKJSProxyAPI(vm, scope, getModAPI(runtime)),
+          getQuickJSProxyAPI(vm, scope, getModAPI(runtime)),
         );
         scope.manage(vm.unwrapResult(await vm.evalCodeAsync(code)));
         runtime!.modsInstalled.push(runtime.mod.id);

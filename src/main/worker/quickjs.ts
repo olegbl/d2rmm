@@ -60,7 +60,7 @@ export function getQuickJS(): QuickJSAsyncWASMModule {
   return loadedQuickJSAsyncWASMModule;
 }
 
-export function getQuicKJSProxyAPI<T extends AsyncSerializableAPI<T>>(
+export function getQuickJSProxyAPI<T extends AsyncSerializableAPI<T>>(
   vm: QuickJSAsyncContext,
   scope: Scope,
   api: AsAsyncSerializableAPI<T>,

@@ -165,44 +165,31 @@ export function ModsContextProvider({
     (str) => JSON.parse(str),
   );
 
-  const modByID = useMemo(
-    () =>
-      mods.reduce(
-        (agg, mod) => ({ ...agg, [mod.id]: mod }),
-        {} as { [id: string]: Mod },
-      ),
-    [mods],
+  const freshModOrder = useMemo(
+    () => [
+      ...modOrder.filter((modID) => mods.some((mod) => mod.id === modID)),
+      ...mods.filter((mod) => !modOrder.includes(mod.id)).map((mod) => mod.id),
+    ],
+    [modOrder, mods],
   );
 
   const orderedMods = useMemo(
-    () => modOrder.map((mod) => modByID[mod]).filter(Boolean),
-    [modByID, modOrder],
+    () =>
+      mods.sort(
+        (a, b) => freshModOrder.indexOf(a.id) - freshModOrder.indexOf(b.id),
+      ),
+    [mods, freshModOrder],
   );
 
   const reorderMod = useCallback(
     (from: number, to: number): void => {
-      setModOrder((prevOrder) => {
-        const newOrder = prevOrder.slice();
-        const [removed] = newOrder.splice(from, 1);
-        newOrder.splice(to, 0, removed);
-        return newOrder;
-      });
+      const newOrder = freshModOrder.slice();
+      const [removed] = newOrder.splice(from, 1);
+      newOrder.splice(to, 0, removed);
+      setModOrder(newOrder);
     },
-    [setModOrder],
+    [freshModOrder, setModOrder],
   );
-
-  // update modOrder to match current mods state
-  useEffect(() => {
-    const modIDs = mods.map((mod) => mod.id);
-    const addMods = modIDs.filter((mod) => modOrder.indexOf(mod) === -1);
-    const remMods = modOrder.filter((mod) => modIDs.indexOf(mod) === -1);
-    if (addMods.length > 0 || remMods.length > 0) {
-      setModOrder((prevOrder) => [
-        ...prevOrder.filter((mod) => modIDs.indexOf(mod) !== -1),
-        ...addMods,
-      ]);
-    }
-  }, [mods, modOrder, setModOrder]);
 
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
 

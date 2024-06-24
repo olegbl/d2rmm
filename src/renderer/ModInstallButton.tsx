@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { SaveOutlined } from '@mui/icons-material';
 import Save from '@mui/icons-material/Save';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
 import BridgeAPI from './BridgeAPI';
+import { useIsInstalling } from './InstallContext';
 import { useLogger } from './Logs';
 import {
   useInstalledMods,
@@ -29,7 +30,7 @@ export default function ModInstallButton({
   const modsToInstall = useModsToInstall();
   const [, setInstalledMods] = useInstalledMods();
   const isInstallConfigChanged = useIsInstallConfigChanged();
-  const [isInstalling, setIsInstalling] = useState(false);
+  const [isInstalling, setIsInstalling] = useIsInstalling();
 
   const label = isUninstall ? 'Uninstall' : 'Install';
 

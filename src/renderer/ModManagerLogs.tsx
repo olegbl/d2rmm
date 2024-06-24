@@ -1,4 +1,11 @@
-import { MouseEvent, useCallback, useMemo, useState } from 'react';
+import {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CloseIcon from '@mui/icons-material/Close';
@@ -29,6 +36,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ILogLevel } from 'bridge/ConsoleAPI';
+import { useIsInstalling } from './InstallContext';
 import { useLogLevels, useLogs } from './Logs';
 
 function prettyPrintData(data: unknown): string {
@@ -49,9 +57,11 @@ type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const logs = useLogs();
+  const [isInstalling] = useIsInstalling();
   const [levels, setLevels] = useLogLevels();
   const [filter, setFilter] = useState('');
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
+  const listRef = useRef<FixedSizeList | null>(null);
   const [exportAnchorEl, setExportAnchorEl] =
     useState<HTMLButtonElement | null>(null);
 
@@ -149,12 +159,20 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     [filteredLogs],
   );
 
+  useEffect(() => {
+    // while mods are installing, continuously scroll to the bottom
+    if (isInstalling) {
+      listRef.current?.scrollToItem(filteredLogs.length - 1, 'end');
+    }
+  }, [filteredLogs]);
+
   return (
     <>
       <Box sx={{ width: '100%', flex: 1, bgcolor: 'background.paper' }}>
         <ReactVirtualizedAutoSizer>
           {({ height, width }) => (
             <FixedSizeList
+              ref={listRef}
               width={width}
               height={height}
               itemKey={getItemKey}

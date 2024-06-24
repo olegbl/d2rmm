@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -6,6 +6,7 @@ import TabPanel from '@mui/lab/TabPanel';
 import { Box, Divider, Tab } from '@mui/material';
 import './App.css';
 import ErrorBoundary from './ErrorBoundary';
+import { InstallContextProvider } from './InstallContext';
 import { LogsProvider } from './Logs';
 import ModList from './ModList';
 import ModManagerLogs from './ModManagerLogs';
@@ -87,12 +88,14 @@ export default function App() {
               <PreferencesProvider>
                 <ModsContextProvider>
                   <TabContextProvider>
-                    <Router>
-                      <Routes>
-                        <Route path="/" element={<D2RMMRootView />} />
-                      </Routes>
-                    </Router>
-                    <UpdaterDialog />
+                    <InstallContextProvider>
+                      <Router>
+                        <Routes>
+                          <Route path="/" element={<D2RMMRootView />} />
+                        </Routes>
+                      </Router>
+                      <UpdaterDialog />
+                    </InstallContextProvider>
                   </TabContextProvider>
                 </ModsContextProvider>
               </PreferencesProvider>

@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import type { Mod } from 'bridge/BridgeAPI';
+import type { ModConfigFieldOrSection } from 'bridge/ModConfig';
 import type {
   ModConfigSingleValue,
   ModConfigValue,
@@ -67,6 +68,24 @@ export type IModsContext = {
 
 export const Context = React.createContext<IModsContext | null>(null);
 
+function getDefaultConfig(
+  fields?: readonly ModConfigFieldOrSection[] | null,
+): ModConfigValue {
+  if (fields == null) {
+    return {};
+  }
+  const defaultConfig: Mutable<ModConfigValue> = {};
+  for (const field of fields) {
+    if (field.type === 'section') {
+      Object.assign(defaultConfig, getDefaultConfig(field.children));
+    } else {
+      defaultConfig[field.id] =
+        field.defaultValue as unknown as ModConfigSingleValue;
+    }
+  }
+  return defaultConfig;
+}
+
 export function ModsContextProvider({
   children,
 }: {
@@ -91,13 +110,7 @@ export function ModsContextProvider({
           modID,
         )) as unknown as ModConfigValue;
 
-        const defaultConfig = info.config?.reduce((agg, field) => {
-          if (field.type !== 'section') {
-            agg[field.id] =
-              field.defaultValue as unknown as ModConfigSingleValue;
-          }
-          return agg;
-        }, {} as Mutable<ModConfigValue>);
+        const defaultConfig = getDefaultConfig(info.config);
 
         mods.push({
           id: modID,

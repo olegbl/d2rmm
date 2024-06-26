@@ -39,6 +39,8 @@ import type { ILogLevel } from 'bridge/ConsoleAPI';
 import { useIsInstalling } from './InstallContext';
 import { useLogLevels, useLogs } from './Logs';
 
+const ROW_HEIGHT = 80;
+
 function prettyPrintData(data: unknown): string {
   if (Array.isArray(data)) {
     return data.map(prettyPrintData).join(' ');
@@ -161,9 +163,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     [filteredLogs],
   );
 
+  const isScrolledToEndRef = useRef(false);
   useEffect(() => {
     // while mods are installing, continuously scroll to the bottom
-    if (isInstalling) {
+    if (isInstalling && isScrolledToEndRef.current) {
       listRef.current?.scrollToItem(filteredLogs.length - 1, 'end');
     }
   }, [isInstalling, filteredLogs]);
@@ -178,7 +181,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               height={height}
               itemCount={filteredLogs.length}
               itemKey={getItemKey}
-              itemSize={80}
+              itemSize={ROW_HEIGHT}
+              onScroll={(event) => {
+                const maxScroll = filteredLogs.length * ROW_HEIGHT - height;
+                const graceAmount = ROW_HEIGHT / 2;
+                isScrolledToEndRef.current =
+                  event.scrollOffset >= maxScroll - graceAmount;
+              }}
               overscanCount={5}
               width={width}
             >

@@ -1022,6 +1022,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     }
 
     for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
+      const startTime = Date.now();
       BroadcastAPI.send(
         'installationProgress',
         i,
@@ -1079,6 +1080,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         );
         scope.manage(vm.unwrapResult(await vm.evalCodeAsync(code)));
         runtime!.modsInstalled.push(runtime.mod.id);
+        console.debug(
+          `Mod ${action.toLowerCase()} took ${Date.now() - startTime}ms.`,
+        );
         console.log(`Mod ${action.toLowerCase()}ed successfully.`);
       } catch (error) {
         if (error instanceof Error) {

@@ -1,6 +1,5 @@
 # Mod Manager
 
-- Show progress bar while downloading update
 - Mod config actions
 - Typeahead config
 - Check for mod updates via GitHub

@@ -12,9 +12,6 @@ import { FileDestination, StringDestination, fetch } from './NetworkFetch';
 const UpdateInstallerAPI =
   consumeAPI<IUpdateInstallerAPI>('UpdateInstallerAPI');
 
-const UPDATE_REPO_PATH =
-  'https://api.github.com/repos/olegbl/d2rmm/releases/latest';
-
 type Asset = {
   name: string;
   browser_download_url: string;
@@ -22,6 +19,7 @@ type Asset = {
 
 type Release = {
   assets: Asset[];
+  prerelease: boolean;
   tag_name: string;
 };
 
@@ -41,23 +39,53 @@ async function getUpdate(): Promise<Update | null> {
     return null;
   }
 
-  const response = await fetch(UPDATE_REPO_PATH, new StringDestination());
-  const release = response.toJSON<Release>();
-  const releaseVersion = release.tag_name.replace(/^v/, '');
+  const appDirectoryPath = path.dirname(getExecutablePath());
+  const isPreleaseEnabled = existsSync(
+    path.join(appDirectoryPath, 'ENABLE_PRE_RELEASE_UPDATES'),
+  );
+  const isSameVersionUpdateEnabled = existsSync(
+    path.join(appDirectoryPath, 'ENABLE_SAME_VERSION_UPDATES'),
+  );
 
-  if (compareVersions(CURRENT_VERSION, releaseVersion) > 0) {
-    const asset = release.assets.find((asset) => asset.name.endsWith('.zip'));
-    if (asset != null) {
-      console.log('[Updater] New version available:', releaseVersion);
-      return {
-        version: releaseVersion,
-        url: asset.browser_download_url,
-      };
+  const release =
+    (isPreleaseEnabled ? await getLatestPrerelease() : null) ??
+    (await getLatestRelease());
+  if (release == null) {
+    console.debug('[Updater] No release found.');
+  } else {
+    const releaseVersion = release.tag_name.replace(/^v/, '');
+
+    const comparison = compareVersions(CURRENT_VERSION, releaseVersion);
+    if (isSameVersionUpdateEnabled ? comparison >= 0 : comparison > 0) {
+      const asset = release.assets.find((asset) => asset.name.endsWith('.zip'));
+      if (asset != null) {
+        console.log('[Updater] New version available:', releaseVersion);
+        return {
+          version: releaseVersion,
+          url: asset.browser_download_url,
+        };
+      }
     }
   }
 
   console.log('[Updater] No updates available.');
   return null;
+}
+
+async function getLatestRelease(): Promise<Release> {
+  const response = await fetch(
+    'https://api.github.com/repos/olegbl/d2rmm/releases/latest',
+    new StringDestination(),
+  );
+  return response.toJSON<Release>();
+}
+
+async function getLatestPrerelease(): Promise<Release | null> {
+  const response = await fetch(
+    'https://api.github.com/repos/olegbl/d2rmm/releases',
+    new StringDestination(),
+  );
+  return response.toJSON<Release[]>().find((r) => r.prerelease) ?? null;
 }
 
 export async function installUpdate(update: Update): Promise<void> {

@@ -65,7 +65,7 @@ const installExtensions = async () => {
 };
 
 const createWindow = async () => {
-  console.log('[main] Initializing...');
+  console.debug('[main] Initializing...');
   if (isDevelopment) {
     await installExtensions();
   }
@@ -114,26 +114,26 @@ const createWindow = async () => {
     shell.openExternal(url).catch(console.error);
   });
 
-  console.log('[main] Initializing IPC...');
+  console.debug('[main] Initializing IPC...');
   await initIPC(mainWindow);
-  console.log('[main] Initializing BroadcastAPI...');
+  console.debug('[main] Initializing BroadcastAPI...');
   await initBroadcastAPI();
-  console.log('[main] Initializing ConsoleAPI...');
+  console.debug('[main] Initializing ConsoleAPI...');
   await initConsoleAPI();
-  console.log('[main] Initializing AppInfoAPI...');
+  console.debug('[main] Initializing AppInfoAPI...');
   await initAppInfoAPI();
-  console.log('[main] Initializing ShellAPI...');
+  console.debug('[main] Initializing ShellAPI...');
   await initShellAPI();
-  console.log('[main] Initializing RequestAPI...');
+  console.debug('[main] Initializing RequestAPI...');
   await initRequestAPI();
-  console.log('[main] Initializing UpdateInstallerAPI...');
+  console.debug('[main] Initializing UpdateInstallerAPI...');
   await initUpdateInstallerAPI();
-  console.log('[main] Initialized');
+  console.debug('[main] Initialized');
 
   try {
-    console.log('[main] Spawning worker...');
+    console.debug('[main] Spawning worker...');
     await spawnNewWorker();
-    console.log('[main] Worker spawned successfully!');
+    console.debug('[main] Worker spawned successfully!');
   } catch (e) {
     console.error(
       `Catastrophic failure! Failed to start worker: ${e}. You should restart D2RMM.`,

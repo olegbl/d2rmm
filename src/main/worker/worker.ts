@@ -9,26 +9,26 @@ import { initAsar } from './asar';
 import { initQuickJS } from './quickjs';
 
 async function start(): Promise<void> {
-  console.log('[worker] Initializing...');
-  console.log('[worker] Initializing IPC...');
+  console.debug('[worker] Initializing...');
+  console.debug('[worker] Initializing IPC...');
   await initIPC();
-  console.log('[worker] Initializing BroadcastAPI...');
+  console.debug('[worker] Initializing BroadcastAPI...');
   await initBroadcastAPI();
-  console.log('[worker] Initializing ConsoleAPI...');
+  console.debug('[worker] Initializing ConsoleAPI...');
   await initConsoleAPI();
-  console.log('[worker] Initializing AppInfoAPI...');
+  console.debug('[worker] Initializing AppInfoAPI...');
   await initAppInfoAPI();
-  console.log('[worker] Initializing Asar...');
+  console.debug('[worker] Initializing Asar...');
   await initAsar();
-  console.log('[worker] Initializing QuickJS...');
+  console.debug('[worker] Initializing QuickJS...');
   await initQuickJS();
-  console.log('[worker] Initializing CascLib...');
+  console.debug('[worker] Initializing CascLib...');
   await initCascLib();
-  console.log('[worker] Initializing BridgeAPI...');
+  console.debug('[worker] Initializing BridgeAPI...');
   await initBridgeAPI();
-  console.log('[worker] Initializing UpdaterAPI...');
+  console.debug('[worker] Initializing UpdaterAPI...');
   await initUpdaterAPI();
-  console.log('[worker] Initialized');
+  console.debug('[worker] Initialized');
 }
 
 start().then().catch(console.error);

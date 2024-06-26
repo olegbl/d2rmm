@@ -11,16 +11,16 @@ async function initUI(): Promise<void> {
 }
 
 async function start(): Promise<void> {
-  console.log('[renderer] Initializing...');
-  console.log('[renderer] Initializing IPC...');
+  console.debug('[renderer] Initializing...');
+  console.debug('[renderer] Initializing IPC...');
   await initIPC();
-  console.log('[renderer] Initializing BroadcastAPI...');
+  console.debug('[renderer] Initializing BroadcastAPI...');
   await initBroadcastAPI();
-  console.log('[renderer] Initializing ConsoleAPI...');
+  console.debug('[renderer] Initializing ConsoleAPI...');
   await initConsoleAPI();
-  console.log('[renderer] Initializing UI...');
+  console.debug('[renderer] Initializing UI...');
   await initUI();
-  console.log('[renderer] Initialized');
+  console.debug('[renderer] Initialized');
 }
 
 start().then().catch(console.error);

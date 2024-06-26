@@ -10,4 +10,7 @@ contextBridge.exposeInMainWorld('IPCBridge', {
   send: (data) => {
     ipcRenderer.send('ipc', data);
   },
+  removeAllListeners: () => {
+    ipcRenderer.removeAllListeners();
+  },
 });

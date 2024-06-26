@@ -9,17 +9,19 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import 'core-js/stable';
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import log from 'electron-log/main';
 import path from 'path';
 import 'regenerator-runtime/runtime';
+import type { IRendererIPCAPI } from 'bridge/RendererIPCAPI';
 import { initAppInfoAPI } from './AppInfoAPI';
 import { initBroadcastAPI } from './BroadcastAPI';
 import { initConsoleAPI } from './ConsoleAPI';
-import { initIPC } from './IPC';
+import { consumeAPI, initIPC } from './IPC';
 import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
-import { spawnNewWorker } from './Workers';
+import { initUpdateInstallerAPI } from './UpdateInstallerAPI';
+import { getWorkers, spawnNewWorker } from './Workers';
 import { initPreferences } from './preferences';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
@@ -124,6 +126,8 @@ const createWindow = async () => {
   await initShellAPI();
   console.log('[main] Initializing RequestAPI...');
   await initRequestAPI();
+  console.log('[main] Initializing UpdateInstallerAPI...');
+  await initUpdateInstallerAPI();
   console.log('[main] Initialized');
 
   try {
@@ -148,6 +152,29 @@ app.on('window-all-closed', () => {
   }
 });
 
+let isSafeToQuit = false;
+app.on('before-quit', (event) => {
+  if (!isSafeToQuit) {
+    event.preventDefault();
+    const timeoutID = setTimeout(() => {
+      isSafeToQuit = true;
+      app.quit();
+    }, 5000);
+    consumeAPI<IRendererIPCAPI>('RendererIPCAPI')
+      .disconnect()
+      .catch(console.error)
+      .finally(() => {
+        clearTimeout(timeoutID);
+        isSafeToQuit = true;
+        app.quit();
+      });
+    return;
+  }
+  getWorkers().forEach((worker) => worker.kill());
+  BrowserWindow.getAllWindows().forEach((win) => win.close());
+  ipcMain.removeAllListeners();
+});
+
 initPreferences();
 
 app
@@ -160,4 +187,4 @@ app
       if (mainWindow === null) createWindow().catch(console.error);
     });
   })
-  .catch(console.log);
+  .catch(console.error);

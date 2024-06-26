@@ -7,7 +7,7 @@ import { consumeAPI } from './IPC';
 // and trust ConsoleAPI handlers for the main and renderer threads to
 // take care of printing the messages to the right places
 export async function initConsoleAPI(): Promise<void> {
-  const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI');
+  const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI', {}, true);
 
   // forward console messages to the renderer process
   const consoleWrapper = { ...console };

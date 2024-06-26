@@ -10,6 +10,7 @@ type CachedAppInfo = {
   homePath: string;
   isPackaged: boolean;
   resourcesPath: string;
+  tempPath: string;
   userDataPath: string;
 };
 
@@ -19,6 +20,7 @@ export async function initAppInfoAPI(): Promise<void> {
   const isPackaged = await AppInfoAPI.getIsPackaged();
   const homePath = await AppInfoAPI.getPath('home');
   const userDataPath = await AppInfoAPI.getPath('userData');
+  const tempPath = await AppInfoAPI.getPath('temp');
   const executablePath = await AppInfoAPI.getPath('exe');
   const dirname = await AppInfoAPI.getDirname();
   const resourcesPath = await AppInfoAPI.getResourcesPath();
@@ -32,6 +34,7 @@ export async function initAppInfoAPI(): Promise<void> {
     homePath,
     isPackaged,
     resourcesPath,
+    tempPath,
     userDataPath,
   };
 }
@@ -58,4 +61,8 @@ export function getAppPath(): string {
 
 export function getResourcesPath(): string {
   return CACHED_APP_INFO.resourcesPath;
+}
+
+export function getTempPath(): string {
+  return CACHED_APP_INFO.tempPath;
 }

@@ -1,7 +1,13 @@
-import { fork } from 'child_process';
+import { ChildProcess, fork } from 'child_process';
 import { app } from 'electron';
 import path from 'path';
 import { registerWorker, unregisterWorker } from './IPC';
+
+const workers: Set<ChildProcess> = new Set();
+
+export function getWorkers(): Set<ChildProcess> {
+  return new Set(workers);
+}
 
 export async function spawnNewWorker(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -17,6 +23,7 @@ export async function spawnNewWorker(): Promise<void> {
       });
 
       worker.on('spawn', () => {
+        workers.delete(worker);
         registerWorker(worker);
         resolve();
       });
@@ -26,6 +33,7 @@ export async function spawnNewWorker(): Promise<void> {
           `Catastrophic failure! Worker exited with code ${code} (${sign}). You should restart D2RMM.`,
         );
         unregisterWorker(worker);
+        workers.delete(worker);
       });
     } catch (error) {
       reject(error);

@@ -5,5 +5,4 @@ export type IAppInfoAPI = {
   getPath(name: GetPathParams): Promise<string>;
   getResourcesPath(): Promise<string>;
   getDirname(): Promise<string>;
-  quit(): Promise<void>;
 };

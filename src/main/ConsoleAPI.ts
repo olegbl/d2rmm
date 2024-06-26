@@ -2,7 +2,7 @@ import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
 import { consumeAPI, provideAPI } from './IPC';
 
 export async function initConsoleAPI(): Promise<void> {
-  const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI');
+  const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI', {}, true);
   const localConsole = { ...console };
 
   // forward console messages to the renderer process
@@ -18,18 +18,22 @@ export async function initConsoleAPI(): Promise<void> {
   Object.assign(console, consoleWrapper);
 
   // listen for console messages from other threads
-  provideAPI('ConsoleAPI', {
-    debug: async (...args: ConsoleArg[]) => {
-      localConsole.debug(...args);
-    },
-    log: async (...args: ConsoleArg[]) => {
-      localConsole.log(...args);
-    },
-    warn: async (...args: ConsoleArg[]) => {
-      localConsole.warn(...args);
-    },
-    error: async (...args: ConsoleArg[]) => {
-      localConsole.error(...args);
-    },
-  } as ConsoleAPI);
+  provideAPI(
+    'ConsoleAPI',
+    {
+      debug: async (...args: ConsoleArg[]) => {
+        localConsole.debug(...args);
+      },
+      log: async (...args: ConsoleArg[]) => {
+        localConsole.log(...args);
+      },
+      warn: async (...args: ConsoleArg[]) => {
+        localConsole.warn(...args);
+      },
+      error: async (...args: ConsoleArg[]) => {
+        localConsole.error(...args);
+      },
+    } as ConsoleAPI,
+    true,
+  );
 }

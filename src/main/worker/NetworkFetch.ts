@@ -10,54 +10,53 @@ abstract class Destination {
 export async function fetch<T extends Destination>(
   sourceUrl: string,
   destination: T,
+  {
+    onProgress,
+  }: {
+    onProgress?: (bytesDownloaded: number, bytesTotal: number) => Promise<void>;
+  } = {},
 ): Promise<T> {
+  const requestID = await RequestAPI.createRequest(sourceUrl);
+
   return new Promise<T>((resolve, reject) => {
-    const onData = (chunk: number[]) => {
+    async function listener({
+      chunk,
+      bytesDownloaded,
+      bytesTotal,
+    }: {
+      chunk: number[];
+      bytesDownloaded: number;
+      bytesTotal: number;
+    }) {
       try {
         destination.chunk(Buffer.from(chunk));
+        await onProgress?.(bytesDownloaded, bytesTotal);
       } catch (error) {
         reject(error);
       }
-    };
-    const onSuccess = () => {
-      try {
-        destination.end();
-      } catch (error) {
-        reject(error);
-        return;
-      }
-      resolve(destination);
-    };
-    const onFailure = () => {
-      try {
-        destination.end();
-      } catch (error) {
-        reject(error);
-        return;
-      }
-      reject();
-    };
-    RequestAPI.createRequest(sourceUrl)
-      .then((id) => {
-        const listener = async (event: unknown, payload: unknown) => {
-          switch (event as 'data' | 'success' | 'error') {
-            case 'data':
-              onData(payload as number[]);
-              break;
-            case 'success':
-              BroadcastAPI.removeEventListener(id, listener);
-              onSuccess();
-              break;
-            case 'error':
-              BroadcastAPI.removeEventListener(id, listener);
-              onFailure();
-              break;
-          }
-        };
-        BroadcastAPI.addEventListener(id, listener);
-        RequestAPI.sendRequest(id).catch(console.error);
+    }
+
+    BroadcastAPI.addEventListener(requestID, listener);
+
+    RequestAPI.sendRequest(requestID)
+      .then(() => {
+        try {
+          destination.end();
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        resolve(destination);
       })
-      .catch(console.error);
+      .catch((error) => {
+        try {
+          destination.end();
+        } catch {}
+        reject(error);
+      })
+      .finally(() => {
+        BroadcastAPI.removeEventListener(requestID, listener);
+      });
   });
 }
 

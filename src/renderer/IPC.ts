@@ -9,6 +9,7 @@ import type {
   IPCMessageRequest,
   IPCMessageSuccessResponse,
 } from 'bridge/IPC';
+import type { IRendererIPCAPI } from 'bridge/RendererIPCAPI';
 import type { RendererIPCBridge } from 'bridge/RendererIPCBridge';
 import type { SerializableType } from 'bridge/Serializable';
 
@@ -20,14 +21,17 @@ declare global {
 
 const IPCBridge = window.IPCBridge;
 
-type RegisteredAPIs = { [namespace: string]: AsyncSerializableAPI<unknown> };
-const REGISTERED_APIS: RegisteredAPIs = {};
+const REGISTERED_APIS: Map<
+  string,
+  { api: AsyncSerializableAPI<unknown>; broadcast: boolean }
+> = new Map();
 
 export function provideAPI<T extends AsyncSerializableAPI<T>>(
   namespace: string,
   api: AsAsyncSerializableAPI<T>,
+  broadcast: boolean = false,
 ): void {
-  REGISTERED_APIS[namespace] = api;
+  REGISTERED_APIS.set(namespace, { api, broadcast });
 }
 
 function getAPIHandler(
@@ -36,10 +40,13 @@ function getAPIHandler(
   if (message.namespace == null) {
     return null;
   }
-  const api: AsyncSerializableAPI<unknown> | undefined =
-    REGISTERED_APIS[message.namespace];
+  const api = REGISTERED_APIS.get(message.namespace)?.api;
   // @ts-ignore TypeScript can't guarantee that message.api exists on this API
   return api?.[message.api] ?? null;
+}
+
+function getIsProvidedAPIBroadcast(message: IPCMessage): boolean {
+  return REGISTERED_APIS.get(message.namespace ?? '')?.broadcast ?? false;
 }
 
 let REQUEST_COUNT = 0;
@@ -50,44 +57,58 @@ const PENDING_REQUESTS: {
   };
 } = {};
 
-export async function initIPC(): Promise<void> {
-  IPCBridge.addListener(
-    (_event: Electron.IpcRendererEvent, message: IPCMessage) => {
-      if (message.args != null) {
-        const handler = getAPIHandler(message);
-        if (handler != null) {
-          handler(...message.args)
-            .then((result) => {
-              IPCBridge.send({
-                id: message.id,
-                result,
-              } as IPCMessageSuccessResponse);
-            })
-            .catch((error: Error) => {
-              IPCBridge.send({
-                id: message.id,
-                error,
-              } as IPCMessageErrorResponse);
-            });
-        }
-      } else {
-        const request = PENDING_REQUESTS[message.id];
-        if (request != null) {
-          delete PENDING_REQUESTS[message.id];
-          if (message.error instanceof Error) {
-            request.reject(message.error);
-          } else {
-            request.resolve(message.result);
+const listener = (_event: Electron.IpcRendererEvent, message: IPCMessage) => {
+  if (message.args != null) {
+    const handler = getAPIHandler(message);
+    if (handler != null) {
+      const broadcast = getIsProvidedAPIBroadcast(message);
+      handler(...message.args)
+        .then((result) => {
+          if (!broadcast) {
+            IPCBridge.send({
+              id: message.id,
+              result,
+            } as IPCMessageSuccessResponse);
           }
-        }
+        })
+        .catch((error: Error) => {
+          if (!broadcast) {
+            IPCBridge.send({
+              id: message.id,
+              error,
+            } as IPCMessageErrorResponse);
+          } else {
+            console.error(error);
+          }
+        });
+    }
+  } else {
+    const request = PENDING_REQUESTS[message.id];
+    if (request != null) {
+      delete PENDING_REQUESTS[message.id];
+      if (message.error instanceof Error) {
+        request.reject(message.error);
+      } else {
+        request.resolve(message.result);
       }
+    }
+  }
+};
+
+export async function initIPC(): Promise<void> {
+  IPCBridge.addListener(listener);
+
+  provideAPI('RendererIPCAPI', {
+    disconnect: async () => {
+      IPCBridge.removeAllListeners();
     },
-  );
+  } as IRendererIPCAPI);
 }
 
 export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
   namespace: string,
   localAPI: TLocalAPI = {} as TLocalAPI,
+  broadcast: boolean = false,
 ): TLocalAPI & T {
   return new Proxy(localAPI, {
     get: (target, api) => {
@@ -97,13 +118,19 @@ export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
       return (...args: SerializableType[]) => {
         return new Promise((resolve, reject) => {
           const id = `worker:${REQUEST_COUNT++}`;
-          PENDING_REQUESTS[id] = { resolve, reject };
-          IPCBridge.send({
+          const request = {
             id,
             namespace,
             api: String(api),
             args,
-          } as IPCMessageRequest);
+          } as IPCMessageRequest;
+          if (!broadcast) {
+            PENDING_REQUESTS[id] = { resolve, reject };
+          }
+          IPCBridge.send(request);
+          if (broadcast) {
+            (resolve as () => void)();
+          }
         });
       };
     },

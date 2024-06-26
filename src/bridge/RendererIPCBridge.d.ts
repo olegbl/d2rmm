@@ -7,6 +7,7 @@ type RendererIPCListener = (
 
 export type RendererIPCBridge = {
   addListener: (listener: RendererIPCListener) => void;
+  removeAllListeners: () => void;
   removeListener: (listener: RendererIPCListener) => void;
   send: (message: IPCMessage) => void;
 };

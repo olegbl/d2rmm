@@ -12,14 +12,17 @@ import type {
   IPCMessageSuccessResponse,
 } from 'bridge/IPC';
 
-const REGISTERED_APIS: { [namespace: string]: AsyncSerializableAPI<unknown> } =
-  {};
+const REGISTERED_APIS: Map<
+  string,
+  { api: AsyncSerializableAPI<unknown>; broadcast: boolean }
+> = new Map();
 
 export function provideAPI<T extends AsyncSerializableAPI<T>>(
   namespace: string,
   api: AsAsyncSerializableAPI<T>,
+  broadcast: boolean = false,
 ): void {
-  REGISTERED_APIS[namespace] = api;
+  REGISTERED_APIS.set(namespace, { api, broadcast });
 }
 
 function getAPIHandler(
@@ -28,10 +31,13 @@ function getAPIHandler(
   if (message.namespace == null) {
     return null;
   }
-  const api: AsyncSerializableAPI<unknown> | undefined =
-    REGISTERED_APIS[message.namespace];
+  const api = REGISTERED_APIS.get(message.namespace)?.api;
   // @ts-ignore TypeScript can't guarantee that message.api exists on this API
   return api?.[message.api] ?? null;
+}
+
+function getIsProvidedAPIBroadcast(message: IPCMessage): boolean {
+  return REGISTERED_APIS.get(message.namespace ?? '')?.broadcast ?? false;
 }
 
 let REQUEST_COUNT = 0;
@@ -45,6 +51,7 @@ const PENDING_REQUESTS: {
 export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
   namespace: string,
   localAPI: TLocalAPI = {} as TLocalAPI,
+  broadcast: boolean = false,
 ): TLocalAPI & T {
   return new Proxy(localAPI, {
     get: (target, api) => {
@@ -54,10 +61,22 @@ export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
       return (...args: unknown[]) => {
         return new Promise((resolve, reject) => {
           const id = `main:${REQUEST_COUNT++}`;
-          PENDING_REQUESTS[id] = { resolve, reject };
-          const request = { id, namespace, api, args } as IPCMessageRequest;
-          renderer?.send('ipc', request);
+          const request = {
+            id,
+            namespace,
+            api,
+            args,
+          } as IPCMessageRequest;
+          if (!broadcast) {
+            PENDING_REQUESTS[id] = { resolve, reject };
+          }
+          if (!renderer?.isDestroyed()) {
+            renderer?.send('ipc', request);
+          }
           workers.forEach((w) => w.send(request));
+          if (broadcast) {
+            (resolve as () => void)();
+          }
         });
       };
     },
@@ -78,18 +97,25 @@ export function registerWorker(worker: ChildProcess): void {
     if (message.args != null) {
       const handler = getAPIHandler(message);
       if (handler != null) {
+        const broadcast = getIsProvidedAPIBroadcast(message);
         handler(...message.args)
           .then((result) => {
-            worker.send({
-              id: message.id,
-              result,
-            } as IPCMessageSuccessResponse);
+            if (!broadcast) {
+              worker.send({
+                id: message.id,
+                result,
+              } as IPCMessageSuccessResponse);
+            }
           })
           .catch((error: Error) => {
-            worker.send({
-              id: message.id,
-              error,
-            } as IPCMessageErrorResponse);
+            if (!broadcast) {
+              worker.send({
+                id: message.id,
+                error,
+              } as IPCMessageErrorResponse);
+            } else {
+              console.error(error);
+            }
           });
       }
     } else {
@@ -105,7 +131,9 @@ export function registerWorker(worker: ChildProcess): void {
     }
 
     // forward message to the other threads
-    renderer?.send('ipc', message);
+    if (!renderer?.isDestroyed()) {
+      renderer?.send('ipc', message);
+    }
     workers.forEach((w) => {
       if (w !== worker) {
         w.send(message);
@@ -126,18 +154,29 @@ export async function initIPC(mainWindow: BrowserWindow): Promise<void> {
       if (message.args != null) {
         const handler = getAPIHandler(message);
         if (handler != null) {
+          const broadcast = getIsProvidedAPIBroadcast(message);
           handler(...message.args)
             .then((result) => {
-              renderer?.send('ipc', {
-                id: message.id,
-                result,
-              } as IPCMessageSuccessResponse);
+              if (!broadcast) {
+                if (!renderer?.isDestroyed()) {
+                  renderer?.send('ipc', {
+                    id: message.id,
+                    result,
+                  } as IPCMessageSuccessResponse);
+                }
+              }
             })
             .catch((error: Error) => {
-              renderer?.send('ipc', {
-                id: message.id,
-                error,
-              } as IPCMessageErrorResponse);
+              if (!broadcast) {
+                if (!renderer?.isDestroyed()) {
+                  renderer?.send('ipc', {
+                    id: message.id,
+                    error,
+                  } as IPCMessageErrorResponse);
+                }
+              } else {
+                console.error(error);
+              }
             });
         }
       } else {

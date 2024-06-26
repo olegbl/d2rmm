@@ -10,14 +10,17 @@ import type {
   IPCMessageSuccessResponse,
 } from 'bridge/IPC';
 
-type RegisteredAPIs = { [namespace: string]: AsyncSerializableAPI<unknown> };
-const REGISTERED_APIS: RegisteredAPIs = {};
+const REGISTERED_APIS: Map<
+  string,
+  { api: AsyncSerializableAPI<unknown>; broadcast: boolean }
+> = new Map();
 
 export function provideAPI<T extends AsyncSerializableAPI<T>>(
   namespace: string,
   api: AsAsyncSerializableAPI<T>,
+  broadcast: boolean = false,
 ): void {
-  REGISTERED_APIS[namespace] = api;
+  REGISTERED_APIS.set(namespace, { api, broadcast });
 }
 
 function getAPIHandler(
@@ -26,10 +29,13 @@ function getAPIHandler(
   if (message.namespace == null) {
     return null;
   }
-  const api: AsyncSerializableAPI<unknown> | undefined =
-    REGISTERED_APIS[message.namespace];
+  const api = REGISTERED_APIS.get(message.namespace)?.api;
   // @ts-ignore TypeScript can't guarantee that message.api exists on this API
   return api?.[message.api] ?? null;
+}
+
+function getIsProvidedAPIBroadcast(message: IPCMessage): boolean {
+  return REGISTERED_APIS.get(message.namespace ?? '')?.broadcast ?? false;
 }
 
 let REQUEST_COUNT = 0;
@@ -45,18 +51,25 @@ export async function initIPC(): Promise<void> {
     if (message.args != null) {
       const handler = getAPIHandler(message);
       if (handler != null) {
+        const broadcast = getIsProvidedAPIBroadcast(message);
         handler(...message.args)
           .then((result) => {
-            process.send?.({
-              id: message.id,
-              result,
-            } as IPCMessageSuccessResponse);
+            if (!broadcast) {
+              process.send?.({
+                id: message.id,
+                result,
+              } as IPCMessageSuccessResponse);
+            }
           })
           .catch((error: Error) => {
-            process.send?.({
-              id: message.id,
-              error,
-            } as IPCMessageErrorResponse);
+            if (!broadcast) {
+              process.send?.({
+                id: message.id,
+                error,
+              } as IPCMessageErrorResponse);
+            } else {
+              console.error(error);
+            }
           });
       }
     } else {
@@ -76,6 +89,7 @@ export async function initIPC(): Promise<void> {
 export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
   namespace: string,
   localAPI: TLocalAPI = {} as TLocalAPI,
+  broadcast: boolean = false,
 ): TLocalAPI & T {
   return new Proxy(localAPI, {
     get: (target, api) => {
@@ -85,8 +99,19 @@ export function consumeAPI<T, TLocalAPI extends object = Record<string, never>>(
       return (...args: unknown[]) => {
         return new Promise((resolve, reject) => {
           const id = `worker:${REQUEST_COUNT++}`;
-          PENDING_REQUESTS[id] = { resolve, reject };
-          process.send?.({ id, namespace, api, args } as IPCMessageRequest);
+          const request = {
+            id,
+            namespace,
+            api,
+            args,
+          } as IPCMessageRequest;
+          if (!broadcast) {
+            PENDING_REQUESTS[id] = { resolve, reject };
+          }
+          process.send?.(request);
+          if (broadcast) {
+            (resolve as () => void)();
+          }
         });
       };
     },

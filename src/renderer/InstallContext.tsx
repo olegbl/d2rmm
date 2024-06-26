@@ -28,12 +28,9 @@ export function InstallContextProvider({
 
   useEffect(() => {
     const listener = async (
-      installedModsCount: unknown,
-      totalModsCount: unknown,
-    ) =>
-      setProgress(
-        ((installedModsCount as number) / (totalModsCount as number)) * 100,
-      );
+      installedModsCount: number,
+      totalModsCount: number,
+    ) => setProgress((installedModsCount / totalModsCount) * 100);
     BroadcastAPI.addEventListener('installationProgress', listener);
     return () =>
       BroadcastAPI.removeEventListener('installationProgress', listener);

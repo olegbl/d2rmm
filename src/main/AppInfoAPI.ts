@@ -16,8 +16,5 @@ export async function initAppInfoAPI(): Promise<void> {
     getDirname: async () => {
       return __dirname;
     },
-    quit: async () => {
-      app.quit();
-    },
   } as IAppInfoAPI);
 }

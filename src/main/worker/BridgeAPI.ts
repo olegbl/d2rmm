@@ -997,6 +997,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
   },
 
   installMods: async (modsToInstall: Mod[], options: IInstallModsOptions) => {
+    console.debug('BridgeAPI.installMods', {
+      modsToInstall: modsToInstall.map((mod) => mod.id),
+      options,
+    });
+
     runtime = new InstallationRuntime(
       BridgeAPI,
       console,

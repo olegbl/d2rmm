@@ -1,8 +1,8 @@
 import { initAppInfoAPI } from './AppInfoAPI';
 import { initBridgeAPI } from './BridgeAPI';
-import { initBroadcastAPI } from './BroadcastAPI';
 import { initCascLib } from './CascLib';
 import { initConsoleAPI } from './ConsoleAPI';
+import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
 import { initUpdaterAPI } from './UpdaterAPI';
 import { initAsar } from './asar';
@@ -12,8 +12,8 @@ async function start(): Promise<void> {
   console.debug('[worker] Initializing...');
   console.debug('[worker] Initializing IPC...');
   await initIPC();
-  console.debug('[worker] Initializing BroadcastAPI...');
-  await initBroadcastAPI();
+  console.debug('[worker] Initializing EventAPI...');
+  await initEventAPI();
   console.debug('[worker] Initializing ConsoleAPI...');
   await initConsoleAPI();
   console.debug('[worker] Initializing AppInfoAPI...');

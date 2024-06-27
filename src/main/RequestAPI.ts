@@ -2,7 +2,7 @@ import { app, net } from 'electron';
 import { createWriteStream, mkdirSync } from 'fs';
 import path from 'path';
 import type { IRequestAPI } from 'bridge/RequestAPI';
-import { BroadcastAPI } from './BroadcastAPI';
+import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 
 const THROTTLE_TIME_MS = 500;
@@ -24,7 +24,7 @@ export async function initRequestAPI(): Promise<void> {
         const file = createWriteStream(filePath);
         let bytesTotal = 0;
         let bytesDownloaded = 0;
-        let lastBroadcastTime = 0;
+        let lastEventTime = 0;
 
         const request = net.request(url);
         request.on('response', (response) => {
@@ -43,10 +43,10 @@ export async function initRequestAPI(): Promise<void> {
 
             if (
               eventID != null &&
-              Date.now() - lastBroadcastTime > THROTTLE_TIME_MS
+              Date.now() - lastEventTime > THROTTLE_TIME_MS
             ) {
-              lastBroadcastTime = Date.now();
-              BroadcastAPI.send(eventID, {
+              lastEventTime = Date.now();
+              EventAPI.send(eventID, {
                 // IPC has trouble with Buffer so send it as number[]
                 bytesDownloaded,
                 bytesTotal,

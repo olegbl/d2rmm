@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { initBroadcastAPI } from './BroadcastAPI';
 import { initConsoleAPI } from './ConsoleAPI';
+import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
 
 async function initUI(): Promise<void> {
@@ -14,8 +14,8 @@ async function start(): Promise<void> {
   console.debug('[renderer] Initializing...');
   console.debug('[renderer] Initializing IPC...');
   await initIPC();
-  console.debug('[renderer] Initializing BroadcastAPI...');
-  await initBroadcastAPI();
+  console.debug('[renderer] Initializing EventAPI...');
+  await initEventAPI();
   console.debug('[renderer] Initializing ConsoleAPI...');
   await initConsoleAPI();
   console.debug('[renderer] Initializing UI...');

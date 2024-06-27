@@ -1,6 +1,6 @@
 import { readFileSync, rmSync } from 'fs';
 import type { IRequestAPI } from 'bridge/RequestAPI';
-import { BroadcastAPI } from './BroadcastAPI';
+import { EventAPI } from './EventAPI';
 import { consumeAPI } from './IPC';
 import { uuid } from './uuid';
 
@@ -28,11 +28,11 @@ export const RequestAPI = {
   ): Promise<string> {
     const eventID = onProgress == null ? null : uuid();
     if (eventID != null && onProgress != null) {
-      BroadcastAPI.addEventListener(eventID, onProgress);
+      EventAPI.addEventListener(eventID, onProgress);
     }
     const filePath = await NetworkedRequestAPI.download(url, fileName, eventID);
     if (eventID != null && onProgress != null) {
-      BroadcastAPI.removeEventListener(eventID, onProgress);
+      EventAPI.removeEventListener(eventID, onProgress);
     }
     return filePath;
   },

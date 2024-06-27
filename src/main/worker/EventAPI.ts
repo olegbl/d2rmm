@@ -1,16 +1,13 @@
 import type {
-  BroadcastListener,
-  IBroadcastAPI,
-  IBroadcastLocalAPI,
-  IBroadcastUnifiedAPI,
-} from 'bridge/BroadcastAPI';
+  EventAPIListener,
+  IEventAPI,
+  IEventLocalAPI,
+  IEventUnifiedAPI,
+} from 'bridge/EventAPI';
 import { consumeAPI, provideAPI } from './IPC';
 
-export const BroadcastAPI: IBroadcastUnifiedAPI = consumeAPI<
-  IBroadcastAPI,
-  IBroadcastLocalAPI
->(
-  'BroadcastAPI',
+export const EventAPI: IEventUnifiedAPI = consumeAPI<IEventAPI, IEventLocalAPI>(
+  'EventAPI',
   {
     addEventListener: (eventID, listener) => {
       let eventListeners = LISTENERS.get(eventID);
@@ -29,11 +26,11 @@ export const BroadcastAPI: IBroadcastUnifiedAPI = consumeAPI<
   true,
 );
 
-const LISTENERS: Map<string, Set<BroadcastListener>> = new Map();
+const LISTENERS: Map<string, Set<EventAPIListener>> = new Map();
 
-export async function initBroadcastAPI(): Promise<void> {
+export async function initEventAPI(): Promise<void> {
   provideAPI(
-    'BroadcastAPI',
+    'EventAPI',
     {
       send: async (eventID: string, ...args: unknown[]) => {
         const eventListeners = LISTENERS.get(eventID);
@@ -46,7 +43,7 @@ export async function initBroadcastAPI(): Promise<void> {
           }
         }
       },
-    } as IBroadcastAPI,
+    } as IEventAPI,
     true,
   );
 }

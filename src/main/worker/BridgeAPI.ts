@@ -34,8 +34,8 @@ import { Relative } from 'bridge/Relative';
 import type { TSVDataRow } from 'bridge/TSV';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getHomePath } from './AppInfoAPI';
-import { BroadcastAPI } from './BroadcastAPI';
 import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';
+import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
 import { getModAPI } from './ModAPI';
@@ -1023,7 +1023,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
 
     for (let i = 0; i < runtime.modsToInstall.length; i = i + 1) {
       const startTime = Date.now();
-      BroadcastAPI.send(
+      EventAPI.send(
         'installationProgress',
         i,
         runtime.modsToInstall.length,
@@ -1105,7 +1105,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     }
     runtime.mod = null;
 
-    BroadcastAPI.send(
+    EventAPI.send(
       'installationProgress',
       runtime.modsToInstall.length,
       runtime.modsToInstall.length,

@@ -9,7 +9,7 @@ import {
   LinearProgress,
 } from '@mui/material';
 import type { IUpdaterAPI, Update } from 'bridge/Updater';
-import { useBroadcastAPIListener } from './BroadcastAPI';
+import { useEventAPIListener } from './EventAPI';
 import { consumeAPI } from './IPC';
 
 const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
@@ -38,7 +38,7 @@ function useUpdaterState(): UpdaterState | null {
   const [updaterState, setUpdaterState] = useState<UpdaterState | null>(null);
   // TODO: this lags significantly behind the actual events
   //       possibly because renderer IPC is getting events slowly?
-  useBroadcastAPIListener('updater', setUpdaterState);
+  useEventAPIListener('updater', setUpdaterState);
   return updaterState;
 }
 

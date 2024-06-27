@@ -5,7 +5,7 @@ import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
 import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
-import { BroadcastAPI } from './BroadcastAPI';
+import { EventAPI } from './EventAPI';
 import { consumeAPI, provideAPI } from './IPC';
 import { RequestAPI } from './RequestAPI';
 
@@ -116,7 +116,7 @@ async function getConfig(): Promise<Config> {
 
 async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
   console.log('[Updater] Cleaning up temporary directory');
-  await BroadcastAPI.send('updater', { event: 'cleanup' });
+  await EventAPI.send('updater', { event: 'cleanup' });
   if (existsSync(tempDirPath) && statSync(tempDirPath).isDirectory()) {
     rmSync(tempDirPath, { recursive: true });
   }
@@ -124,12 +124,12 @@ async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
 
 async function downloadUpdate(config: Config, update: Update): Promise<void> {
   console.log('[Updater] Downloading update');
-  await BroadcastAPI.send('updater', { event: 'download' });
+  await EventAPI.send('updater', { event: 'download' });
   config.updateZipPath = await RequestAPI.downloadToFile(
     update.url,
     'update.zip',
     async ({ bytesDownloaded, bytesTotal }) => {
-      await BroadcastAPI.send('updater', {
+      await EventAPI.send('updater', {
         event: 'download-progress',
         bytesDownloaded,
         bytesTotal,
@@ -145,7 +145,7 @@ async function extractUpdate({
   updateDirPath,
 }: Config): Promise<void> {
   console.log('[Updater] Extracting update');
-  await BroadcastAPI.send('updater', { event: 'extract' });
+  await EventAPI.send('updater', { event: 'extract' });
   mkdirSync(path.dirname(tempDirPath), { recursive: true });
   process.noAsar = true;
   await decompress(updateZipPath, updateDirPath);
@@ -158,7 +158,7 @@ async function applyUpdate(
   update: Update,
 ): Promise<void> {
   console.log('[Updater] Applying update');
-  await BroadcastAPI.send('updater', { event: 'apply' });
+  await EventAPI.send('updater', { event: 'apply' });
   const appExecutablePath = getExecutablePath();
   const appDirectoryPath = path.dirname(appExecutablePath);
   const updateDirectoryPath = path.join(

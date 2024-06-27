@@ -15,8 +15,8 @@ import path from 'path';
 import 'regenerator-runtime/runtime';
 import type { IRendererIPCAPI } from 'bridge/RendererIPCAPI';
 import { initAppInfoAPI } from './AppInfoAPI';
-import { initBroadcastAPI } from './BroadcastAPI';
 import { initConsoleAPI } from './ConsoleAPI';
+import { initEventAPI } from './EventAPI';
 import { consumeAPI, initIPC } from './IPC';
 import { RendererIPCAPI } from './RendererIPCAPI';
 import { initRequestAPI } from './RequestAPI';
@@ -117,8 +117,8 @@ const createWindow = async () => {
 
   console.debug('[main] Initializing IPC...');
   await initIPC(mainWindow);
-  console.debug('[main] Initializing BroadcastAPI...');
-  await initBroadcastAPI();
+  console.debug('[main] Initializing EventAPI...');
+  await initEventAPI();
   console.debug('[main] Initializing ConsoleAPI...');
   await initConsoleAPI();
   console.debug('[main] Initializing AppInfoAPI...');

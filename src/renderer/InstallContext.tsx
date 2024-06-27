@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { BroadcastAPI } from './BroadcastAPI';
+import { EventAPI } from './EventAPI';
 
 type SetIsInstalling = React.Dispatch<React.SetStateAction<boolean>>;
 type SetProgress = React.Dispatch<React.SetStateAction<number>>;
@@ -31,9 +31,8 @@ export function InstallContextProvider({
       installedModsCount: number,
       totalModsCount: number,
     ) => setProgress((installedModsCount / totalModsCount) * 100);
-    BroadcastAPI.addEventListener('installationProgress', listener);
-    return () =>
-      BroadcastAPI.removeEventListener('installationProgress', listener);
+    EventAPI.addEventListener('installationProgress', listener);
+    return () => EventAPI.removeEventListener('installationProgress', listener);
   }, [setProgress]);
 
   return (

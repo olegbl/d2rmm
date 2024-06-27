@@ -7,7 +7,7 @@ import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
 import { BroadcastAPI } from './BroadcastAPI';
 import { consumeAPI, provideAPI } from './IPC';
-import { FileDestination, StringDestination, fetch } from './NetworkFetch';
+import { RequestAPI } from './RequestAPI';
 
 const UpdateInstallerAPI =
   consumeAPI<IUpdateInstallerAPI>('UpdateInstallerAPI');
@@ -73,19 +73,18 @@ async function getUpdate(): Promise<Update | null> {
 }
 
 async function getLatestRelease(): Promise<Release> {
-  const response = await fetch(
+  const response = await RequestAPI.downloadToBuffer(
     'https://api.github.com/repos/olegbl/d2rmm/releases/latest',
-    new StringDestination(),
   );
-  return response.toJSON<Release>();
+  return JSON.parse(response.toString()) as Release;
 }
 
 async function getLatestPrerelease(): Promise<Release | null> {
-  const response = await fetch(
+  const response = await RequestAPI.downloadToBuffer(
     'https://api.github.com/repos/olegbl/d2rmm/releases',
-    new StringDestination(),
   );
-  return response.toJSON<Release[]>().find((r) => r.prerelease) ?? null;
+  const releases = JSON.parse(response.toString()) as Release[];
+  return releases.find((r) => r.prerelease) ?? null;
 }
 
 export async function installUpdate(update: Update): Promise<void> {
@@ -97,70 +96,61 @@ export async function installUpdate(update: Update): Promise<void> {
 }
 
 type Config = {
+  tempDirPath: string;
   updateZipPath: string;
   updateDirPath: string;
   updateScriptPath: string;
 };
 
 async function getConfig(): Promise<Config> {
-  const tempDirPath = getTempPath();
-  const updateZipPath = path.join(tempDirPath, 'update.zip');
+  const tempDirPath = path.join(getTempPath(), 'D2RMM', 'Updater');
   const updateDirPath = path.join(tempDirPath, 'update');
-  // const updateScriptPath = path.join(tempDirPath, 'update.js');
   const updateScriptPath = path.join(tempDirPath, 'update.ps1');
   return {
-    updateZipPath,
+    tempDirPath,
+    updateZipPath: '',
     updateDirPath,
     updateScriptPath,
   };
 }
 
-async function cleanupUpdate({
-  updateZipPath,
-  updateDirPath,
-  updateScriptPath,
-}: Config): Promise<void> {
+async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
   console.log('[Updater] Cleaning up temporary directory');
-  await BroadcastAPI.send('updater', { type: 'cleanup' });
-  if (existsSync(updateZipPath)) {
-    rmSync(updateZipPath);
-  }
-  if (existsSync(updateScriptPath)) {
-    rmSync(updateScriptPath);
-  }
-  if (existsSync(updateDirPath) && statSync(updateDirPath).isDirectory()) {
-    rmSync(updateDirPath, { recursive: true });
+  await BroadcastAPI.send('updater', { event: 'cleanup' });
+  if (existsSync(tempDirPath) && statSync(tempDirPath).isDirectory()) {
+    rmSync(tempDirPath, { recursive: true });
   }
 }
 
-async function downloadUpdate(
-  { updateZipPath }: Config,
-  update: Update,
-): Promise<void> {
+async function downloadUpdate(config: Config, update: Update): Promise<void> {
   console.log('[Updater] Downloading update');
   await BroadcastAPI.send('updater', { event: 'download' });
-  mkdirSync(path.dirname(updateZipPath), { recursive: true });
-  await fetch(update.url, new FileDestination(updateZipPath), {
-    onProgress: async (bytesDownloaded, bytesTotal) => {
+  config.updateZipPath = await RequestAPI.downloadToFile(
+    update.url,
+    'update.zip',
+    async ({ bytesDownloaded, bytesTotal }) => {
       await BroadcastAPI.send('updater', {
         event: 'download-progress',
         bytesDownloaded,
         bytesTotal,
       });
     },
-  });
-  console.log(`[Updater] Downloaded update to ${updateZipPath}`);
+  );
+  console.log(`[Updater] Downloaded update to ${config.updateZipPath}`);
 }
 
 async function extractUpdate({
+  tempDirPath,
   updateZipPath,
   updateDirPath,
 }: Config): Promise<void> {
   console.log('[Updater] Extracting update');
-  await BroadcastAPI.send('updater', { type: 'extract' });
+  await BroadcastAPI.send('updater', { event: 'extract' });
+  mkdirSync(path.dirname(tempDirPath), { recursive: true });
   process.noAsar = true;
   await decompress(updateZipPath, updateDirPath);
   process.noAsar = false;
+  rmSync(updateZipPath);
 }
 
 async function applyUpdate(

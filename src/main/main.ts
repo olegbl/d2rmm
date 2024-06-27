@@ -18,6 +18,7 @@ import { initAppInfoAPI } from './AppInfoAPI';
 import { initBroadcastAPI } from './BroadcastAPI';
 import { initConsoleAPI } from './ConsoleAPI';
 import { consumeAPI, initIPC } from './IPC';
+import { RendererIPCAPI } from './RendererIPCAPI';
 import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
 import { initUpdateInstallerAPI } from './UpdateInstallerAPI';
@@ -160,8 +161,7 @@ app.on('before-quit', (event) => {
       isSafeToQuit = true;
       app.quit();
     }, 5000);
-    consumeAPI<IRendererIPCAPI>('RendererIPCAPI')
-      .disconnect()
+    RendererIPCAPI.disconnect()
       .catch(console.error)
       .finally(() => {
         clearTimeout(timeoutID);

@@ -1,4 +1,7 @@
 export type IRequestAPI = {
-  createRequest: (url: string) => Promise<string>;
-  sendRequest: (id: string) => Promise<void>;
+  download: (
+    url: string,
+    fileName?: string | null,
+    eventID?: string | null,
+  ) => Promise<string>;
 };

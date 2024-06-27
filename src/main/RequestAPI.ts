@@ -1,31 +1,30 @@
-import { net } from 'electron';
+import { app, net } from 'electron';
+import { createWriteStream, mkdirSync } from 'fs';
+import path from 'path';
 import type { IRequestAPI } from 'bridge/RequestAPI';
 import { BroadcastAPI } from './BroadcastAPI';
 import { provideAPI } from './IPC';
 
-let REQUEST_COUNT = 0;
-const PENDING_REQUESTS: Map<string, string> = new Map();
+const THROTTLE_TIME_MS = 500;
+let REQUEST_ID = 0;
 
 export async function initRequestAPI(): Promise<void> {
   provideAPI('RequestAPI', {
-    async createRequest(url) {
-      const id = `RequestAPI:request:${REQUEST_COUNT++}`;
-      PENDING_REQUESTS.set(id, url);
-      return id;
-    },
     // splitting the API into 2 parts allows requestors to
     // set up event listeners for a request before sending it
-    async sendRequest(id) {
+    async download(url, fileName, eventID) {
       return new Promise((resolve, reject) => {
-        const url = PENDING_REQUESTS.get(id);
-        PENDING_REQUESTS.delete(id);
-        if (url == null) {
-          reject(new Error(`Request ${id} not found.`));
-          return;
-        }
-
+        const filePath = path.join(
+          app.getPath('temp'),
+          'D2RMM',
+          'RequestAPI',
+          fileName ?? `${REQUEST_ID++}.dat`,
+        );
+        mkdirSync(path.dirname(filePath), { recursive: true });
+        const file = createWriteStream(filePath);
         let bytesTotal = 0;
         let bytesDownloaded = 0;
+        let lastBroadcastTime = 0;
 
         const request = net.request(url);
         request.on('response', (response) => {
@@ -34,16 +33,25 @@ export async function initRequestAPI(): Promise<void> {
             10,
           );
           response.on('error', reject);
-          response.on('end', resolve);
+          response.on('end', () => {
+            file.end();
+            resolve(filePath);
+          });
           response.on('data', (buffer: Buffer) => {
             bytesDownloaded += buffer.length;
+            file.write(buffer);
 
-            // IPC has trouble with Buffer so send it as number[]
-            BroadcastAPI.send(id, {
-              chunk: [...buffer],
-              bytesDownloaded,
-              bytesTotal,
-            }).catch(console.error);
+            if (
+              eventID != null &&
+              Date.now() - lastBroadcastTime > THROTTLE_TIME_MS
+            ) {
+              lastBroadcastTime = Date.now();
+              BroadcastAPI.send(eventID, {
+                // IPC has trouble with Buffer so send it as number[]
+                bytesDownloaded,
+                bytesTotal,
+              }).catch(console.error);
+            }
           });
         });
         request.on('error', reject);

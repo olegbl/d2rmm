@@ -19,6 +19,7 @@ export const BroadcastAPI: IBroadcastUnifiedAPI = consumeAPI<
         LISTENERS.set(eventID, eventListeners);
       }
       eventListeners.add(listener);
+      return listener;
     },
     removeEventListener: (eventID, listener) => {
       const eventListeners = LISTENERS.get(eventID);

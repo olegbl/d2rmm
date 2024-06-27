@@ -15,7 +15,7 @@ export type IBroadcastLocalAPI = {
   addEventListener: <T>(
     eventID: string,
     listener: BroadcastListener<T>,
-  ) => void;
+  ) => BroadcastListener<T>;
   removeEventListener: <T>(
     eventID: string,
     listener: BroadcastListener<T>,

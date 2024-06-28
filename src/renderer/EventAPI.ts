@@ -10,7 +10,7 @@ import { consumeAPI, provideAPI } from './IPC';
 export const EventAPI: IEventUnifiedAPI = consumeAPI<IEventAPI, IEventLocalAPI>(
   'EventAPI',
   {
-    addEventListener: (eventID, listener) => {
+    addListener: (eventID, listener) => {
       let eventListeners = LISTENERS.get(eventID);
       if (eventListeners == null) {
         eventListeners = new Set();
@@ -19,7 +19,7 @@ export const EventAPI: IEventUnifiedAPI = consumeAPI<IEventAPI, IEventLocalAPI>(
       eventListeners.add(listener);
       return listener;
     },
-    removeEventListener: (eventID, listener) => {
+    removeListener: (eventID, listener) => {
       const eventListeners = LISTENERS.get(eventID);
       eventListeners?.delete(listener);
     },
@@ -54,7 +54,7 @@ export function useEventAPIListener<T>(
   listener: EventAPIListener<T>,
 ): void {
   useEffect(() => {
-    EventAPI.addEventListener(eventID, listener);
-    return () => EventAPI.removeEventListener(eventID, listener);
+    EventAPI.addListener(eventID, listener);
+    return () => EventAPI.removeListener(eventID, listener);
   }, [eventID, listener]);
 }

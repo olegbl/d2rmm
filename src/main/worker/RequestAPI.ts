@@ -28,11 +28,11 @@ export const RequestAPI = {
   ): Promise<string> {
     const eventID = onProgress == null ? null : uuid();
     if (eventID != null && onProgress != null) {
-      EventAPI.addEventListener(eventID, onProgress);
+      EventAPI.addListener(eventID, onProgress);
     }
     const filePath = await NetworkedRequestAPI.download(url, fileName, eventID);
     if (eventID != null && onProgress != null) {
-      EventAPI.removeEventListener(eventID, onProgress);
+      EventAPI.removeListener(eventID, onProgress);
     }
     return filePath;
   },

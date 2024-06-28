@@ -12,14 +12,11 @@ export type IEventAPI = {
 };
 
 export type IEventLocalAPI = {
-  addEventListener: <T>(
+  addListener: <T>(
     eventID: string,
     listener: EventAPIListener<T>,
   ) => EventAPIListener<T>;
-  removeEventListener: <T>(
-    eventID: string,
-    listener: EventAPIListener<T>,
-  ) => void;
+  removeListener: <T>(eventID: string, listener: EventAPIListener<T>) => void;
 };
 
 export type IEventUnifiedAPI = IEventAPI & IEventLocalAPI;

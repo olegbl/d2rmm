@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import ToastContext, { Toast } from './ToastContext';
+import ToastContext, { Toast } from '../context/ToastContext';
 
 const emptyFunction = () => {};
 

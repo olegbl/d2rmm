@@ -4,13 +4,13 @@ import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigField } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
-import { parseBinding } from './BindingsParser';
+import { parseBinding } from '../BindingsParser';
+import { useSetModConfig } from '../context/ModsContext';
 import ModSettingsCheckboxField from './ModSettingsCheckboxField';
 import ModSettingsColorSelectorField from './ModSettingsColorSelectorField';
 import ModSettingsNumberField from './ModSettingsNumberField';
 import ModSettingsSelectField from './ModSettingsSelectField';
 import ModSettingsTextField from './ModSettingsTextField';
-import { useSetModConfig } from './ModsContext';
 
 type Props = {
   field: ModConfigField;

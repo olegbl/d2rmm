@@ -20,8 +20,8 @@ import {
 } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import { IShellAPI } from 'bridge/ShellAPI';
-import { consumeAPI } from './IPC';
-import { useSelectedMod, useToggleMod } from './ModsContext';
+import { consumeAPI } from '../../IPC';
+import { useSelectedMod, useToggleMod } from '../context/ModsContext';
 
 const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 

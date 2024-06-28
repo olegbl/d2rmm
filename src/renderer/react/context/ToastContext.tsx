@@ -1,12 +1,26 @@
-import { useCallback, useMemo, useState } from 'react';
-import { Alert, AlertTitle, Button, Snackbar } from '@mui/material';
-import ToastContext, { Toast } from './ToastContext';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Alert, AlertColor, AlertTitle, Button, Snackbar } from '@mui/material';
+
+export type Toast = {
+  severity: AlertColor;
+  title: string;
+  description?: string;
+};
+
+export type IToastContext = {
+  showToast: (toast: Toast) => void;
+  clearToasts: () => void;
+};
+
+const ToastContext = React.createContext<IToastContext | null>(null);
+
+export default ToastContext;
 
 type Props = {
   children: React.ReactNode;
 };
 
-export default function ToastProvider({ children }: Props): JSX.Element {
+export function ToastContextProvider({ children }: Props): JSX.Element {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((toast: Toast): void => {

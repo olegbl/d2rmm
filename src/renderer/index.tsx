@@ -1,8 +1,8 @@
 import { createRoot } from 'react-dom/client';
-import App from './App';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
+import App from './react/App';
 
 async function initUI(): Promise<void> {
   const container = document.getElementById('root');

@@ -4,20 +4,20 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { Box, Divider, Tab } from '@mui/material';
-import './App.css';
+import '../css/App.css';
 import ErrorBoundary from './ErrorBoundary';
-import { InstallContextProvider } from './InstallContext';
 import InstallationProgressBar from './InstallationProgressBar';
-import { LogsProvider } from './Logs';
-import ModList from './ModList';
 import ModManagerLogs from './ModManagerLogs';
 import ModManagerSettings from './ModManagerSettings';
-import { ModsContextProvider } from './ModsContext';
-import { PreferencesProvider } from './Preferences';
-import { TabContextProvider, useTabState } from './TabContext';
-import ThemeContextProvider from './ThemeContext';
-import ToastProvider from './ToastProvider';
 import UpdaterDialog from './UpdaterDialog';
+import { InstallContextProvider } from './context/InstallContext';
+import { LogsProvider } from './context/LogContext';
+import { ModsContextProvider } from './context/ModsContext';
+import { PreferencesContextProvider } from './context/PreferencesContext';
+import { TabContextProvider, useTabState } from './context/TabContext';
+import ThemeContextProvider from './context/ThemeContext';
+import { ToastContextProvider } from './context/ToastContext';
+import ModList from './modlist/ModList';
 
 function TabPanelBox({
   children,
@@ -90,9 +90,9 @@ export default function App() {
     <ErrorBoundary>
       <Suspense fallback={null}>
         <ThemeContextProvider>
-          <ToastProvider>
+          <ToastContextProvider>
             <LogsProvider>
-              <PreferencesProvider>
+              <PreferencesContextProvider>
                 <ModsContextProvider>
                   <TabContextProvider>
                     <InstallContextProvider>
@@ -105,9 +105,9 @@ export default function App() {
                     </InstallContextProvider>
                   </TabContextProvider>
                 </ModsContextProvider>
-              </PreferencesProvider>
+              </PreferencesContextProvider>
             </LogsProvider>
-          </ToastProvider>
+          </ToastContextProvider>
         </ThemeContextProvider>
       </Suspense>
     </ErrorBoundary>

@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from 'react';
 import { CssBaseline, Theme, ThemeProvider, createTheme } from '@mui/material';
-import useSavedState from './useSavedState';
+import useSavedState from '../hooks/useSavedState';
 
 export type IExactThemeMode = 'light' | 'dark';
 export type IThemeMode = IExactThemeMode | 'system';

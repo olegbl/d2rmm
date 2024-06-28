@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
-import { EventAPI } from './EventAPI';
+import { EventAPI } from '../../EventAPI';
 
 type SetIsInstalling = React.Dispatch<React.SetStateAction<boolean>>;
 type SetProgress = React.Dispatch<React.SetStateAction<number>>;

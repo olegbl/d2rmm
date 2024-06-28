@@ -16,10 +16,10 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import BridgeAPI from './BridgeAPI';
-import { usePreferences } from './Preferences';
-import { IThemeMode, useThemeMode } from './ThemeContext';
-import { useAsyncMemo } from './useAsyncMemo';
+import BridgeAPI from '../BridgeAPI';
+import { usePreferences } from './context/PreferencesContext';
+import { IThemeMode, useThemeMode } from './context/ThemeContext';
+import { useAsyncMemo } from './hooks/useAsyncMemo';
 
 async function getIsValidGamePath(path: string): Promise<boolean> {
   const files = await BridgeAPI.readDirectory(path);

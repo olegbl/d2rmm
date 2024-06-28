@@ -1,6 +1,6 @@
 import { Drawer } from '@mui/material';
+import { useSelectedMod } from '../context/ModsContext';
 import ModSettings from './ModSettings';
-import { useSelectedMod } from './ModsContext';
 
 export default function ModSettingsDrawer(
   _props: Record<string, never>,

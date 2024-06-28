@@ -36,8 +36,8 @@ import {
   Typography,
 } from '@mui/material';
 import type { ILogLevel } from 'bridge/ConsoleAPI';
-import { useIsInstalling } from './InstallContext';
-import { useLogLevels, useLogs } from './Logs';
+import { useIsInstalling } from './context/InstallContext';
+import { useLogLevels, useLogs } from './context/LogContext';
 
 const ROW_HEIGHT = 80;
 

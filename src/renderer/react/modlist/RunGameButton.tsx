@@ -4,10 +4,10 @@ import {
   PlayCircleOutlineOutlined,
 } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
-import BridgeAPI from './BridgeAPI';
-import { useIsInstallConfigChanged } from './ModsContext';
-import { usePreferences } from './Preferences';
-import useGameArgs from './useGameArgs';
+import BridgeAPI from '../../BridgeAPI';
+import { useIsInstallConfigChanged } from '../context/ModsContext';
+import { usePreferences } from '../context/PreferencesContext';
+import useGameArgs from '../hooks/useGameArgs';
 
 type Props = Record<string, never>;
 

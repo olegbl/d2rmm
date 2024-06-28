@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { usePreferences } from './Preferences';
+import { usePreferences } from '../context/PreferencesContext';
 
 export default function useGameArgs(): string[] {
   const { extraArgs, isDirectMode, outputModName } = usePreferences();

@@ -3,9 +3,9 @@ import {
   ConsoleListener,
   addConsoleListener,
   removeConsoleListener,
-} from './ConsoleAPI';
+} from '../../ConsoleAPI';
 
-export function useConsoleListener(callback: ConsoleListener): void {
+export default function useConsoleListener(callback: ConsoleListener): void {
   useEffect(() => {
     addConsoleListener(callback);
     return () => removeConsoleListener(callback);

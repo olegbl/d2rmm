@@ -9,8 +9,8 @@ import {
   LinearProgress,
 } from '@mui/material';
 import type { IUpdaterAPI, Update } from 'bridge/Updater';
-import { useEventAPIListener } from './EventAPI';
-import { consumeAPI } from './IPC';
+import { useEventAPIListener } from '../EventAPI';
+import { consumeAPI } from '../IPC';
 
 const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
 

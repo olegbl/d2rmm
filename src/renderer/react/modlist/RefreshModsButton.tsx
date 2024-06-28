@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Refresh } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
-import { useMods } from './ModsContext';
+import { useMods } from '../context/ModsContext';
 
 type Props = Record<string, never>;
 

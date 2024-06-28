@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useMemo } from 'react';
 import type { IPreferences } from 'bridge/PreferenceTypes';
-import BridgeAPI from './BridgeAPI';
-import { useAsyncMemo } from './useAsyncMemo';
-import useSavedState from './useSavedState';
+import BridgeAPI from '../../BridgeAPI';
+import { useAsyncMemo } from '../hooks/useAsyncMemo';
+import useSavedState from '../hooks/useSavedState';
 
 export const Context = React.createContext<IPreferences | null>(null);
 
@@ -18,7 +18,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function PreferencesProvider({ children }: Props): JSX.Element {
+export function PreferencesContextProvider({ children }: Props): JSX.Element {
   const [rawGamePathSaved, setRawGamePath] = useSavedState<string | null>(
     'paths',
     null,

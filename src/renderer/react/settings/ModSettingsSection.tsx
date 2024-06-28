@@ -18,8 +18,8 @@ import type {
   ModConfigFieldOrSection,
   ModConfigSection,
 } from 'bridge/ModConfig';
+import { useSetModConfig } from '../context/ModsContext';
 import ModSettingsField from './ModSettingsField';
-import { useSetModConfig } from './ModsContext';
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,

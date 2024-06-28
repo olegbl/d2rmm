@@ -3,7 +3,7 @@ import { useCallback, useMemo, useState, useTransition } from 'react';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldColor } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
-import debounce from './debounce';
+import debounce from '../../utils/debounce';
 
 type Props = {
   field: ModConfigFieldColor;

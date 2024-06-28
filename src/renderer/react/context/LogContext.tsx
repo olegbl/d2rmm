@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import type { ConsoleArg, ILogLevel } from 'bridge/ConsoleAPI';
-import { useConsoleListener } from './Console';
+import useConsoleListener from '../hooks/useConsoleListener';
 
 export type ILog = {
   id: number;

@@ -9,11 +9,11 @@ import {
   List,
   TextField,
 } from '@mui/material';
+import { useEnabledMods, useOrderedMods } from '../context/ModsContext';
+import { usePreferences } from '../context/PreferencesContext';
+import ModSettingsDrawer from '../settings/ModSettingsDrawer';
 import ModInstallButton from './ModInstallButton';
 import ModListItem from './ModListItem';
-import ModSettingsDrawer from './ModSettingsDrawer';
-import { useEnabledMods, useOrderedMods } from './ModsContext';
-import { usePreferences } from './Preferences';
 import RefreshModsButton from './RefreshModsButton';
 import RunGameButton from './RunGameButton';
 

@@ -11,10 +11,10 @@ import type {
   ModConfigSingleValue,
   ModConfigValue,
 } from 'bridge/ModConfigValue';
-import BridgeAPI from './BridgeAPI';
-import { useLogger } from './Logs';
-import useSavedState from './useSavedState';
-import useToast from './useToast';
+import BridgeAPI from '../../BridgeAPI';
+import useSavedState from '../hooks/useSavedState';
+import useToast from '../hooks/useToast';
+import { useLogger } from './LogContext';
 
 // inversse of Readonly<T>
 type Mutable<T> = {

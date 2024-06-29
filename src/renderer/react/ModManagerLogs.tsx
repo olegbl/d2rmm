@@ -8,6 +8,7 @@ import {
 } from 'react';
 import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import { Clear } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -20,6 +21,7 @@ import {
   AppBar,
   Box,
   Button,
+  ButtonGroup,
   Divider,
   Drawer,
   IconButton,
@@ -37,7 +39,7 @@ import {
 } from '@mui/material';
 import type { ILogLevel } from 'bridge/ConsoleAPI';
 import { useIsInstalling } from './context/InstallContext';
-import { useLogLevels, useLogs } from './context/LogContext';
+import { useLogLevels, useLogger, useLogs } from './context/LogContext';
 
 const ROW_HEIGHT = 80;
 
@@ -59,6 +61,7 @@ type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const logs = useLogs();
+  const { clear } = useLogger();
   const [isInstalling] = useIsInstalling();
   const [levels, setLevels] = useLogLevels();
   const [filter, setFilter] = useState('');
@@ -66,6 +69,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const listRef = useRef<FixedSizeList | null>(null);
   const [exportAnchorEl, setExportAnchorEl] =
     useState<HTMLButtonElement | null>(null);
+
+  const onClear = useCallback(() => {
+    clear();
+  }, [clear]);
 
   const onOpenExportMenu = useCallback(
     (event: MouseEvent<HTMLButtonElement>): void =>
@@ -260,13 +267,18 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             Debug
           </ToggleButton>
         </ToggleButtonGroup>
-        <Button
-          onClick={onOpenExportMenu}
-          startIcon={<DownloadIcon />}
-          variant="outlined"
-        >
-          Export
-        </Button>
+        <ButtonGroup>
+          <Button
+            onClick={onOpenExportMenu}
+            startIcon={<DownloadIcon />}
+            variant="outlined"
+          >
+            Export
+          </Button>
+          <Button onClick={onClear} startIcon={<Clear />} variant="outlined">
+            Clear
+          </Button>
+        </ButtonGroup>
         <Menu
           anchorEl={exportAnchorEl}
           onClose={onCloseExportMenu}

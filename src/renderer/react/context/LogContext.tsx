@@ -1,10 +1,9 @@
 import React, {
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
   useState,
+  useTransition,
 } from 'react';
 import type { ConsoleArg, ILogLevel } from 'bridge/ConsoleAPI';
 import useConsoleListener from '../hooks/useConsoleListener';
@@ -69,7 +68,7 @@ type Props = {
 };
 
 export function LogsProvider({ children }: Props): JSX.Element {
-  const logsRef = useRef<ILogs>([]);
+  const [, startTransition] = useTransition();
   const [logs, setLogs] = useState<ILogs>([]);
   const [levels, setLevels] = useState<ILogLevel[]>(['error', 'warn', 'log']);
 
@@ -82,12 +81,9 @@ export function LogsProvider({ children }: Props): JSX.Element {
       timestamp: Date.now(),
       data: args,
     };
-
-    // TODO: use R18 transitions instaed
-    // we don't necessarily want to re-render every time a log comes in
-    // it could get laggy, and it could break if the log is from a React render error
-    // so we put them all in a ref and update the state every second
-    logsRef.current = [...logsRef.current, newLog];
+    startTransition(() => {
+      setLogs((logs) => [...logs, newLog]);
+    });
   }, []);
 
   const error = useCallback(
@@ -123,13 +119,6 @@ export function LogsProvider({ children }: Props): JSX.Element {
   );
 
   useConsoleListener(add);
-
-  useEffect(() => {
-    const intervalID = setInterval(() => {
-      setLogs(logsRef.current);
-    }, 1000);
-    return () => clearInterval(intervalID);
-  }, []);
 
   return (
     <WriterContext.Provider value={writerContext}>

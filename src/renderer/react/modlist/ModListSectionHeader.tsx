@@ -1,12 +1,6 @@
 import { MouseEvent, useCallback, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import {
-  ChevronRight,
-  Close,
-  DragIndicator,
-  Edit,
-  ExpandMore,
-} from '@mui/icons-material';
+import { Close, DragIndicator, Edit, ExpandMore } from '@mui/icons-material';
 import {
   Box,
   Chip,
@@ -75,7 +69,7 @@ export default function ModListSectionHeader({
         >
           <ListItem
             disablePadding={true}
-            sx={{ backgroundColor: theme.palette.divider }}
+            sx={{ backgroundColor: theme.palette.action.hover }}
           >
             <ListItemButton
               disableRipple={isEditing}
@@ -97,11 +91,21 @@ export default function ModListSectionHeader({
                       alignItems: 'center',
                     }}
                   >
-                    {sectionHeader.isExpanded ? (
+                    <Box
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: sectionHeader.isExpanded
+                          ? 'rotate(180deg)'
+                          : 'rotate(0deg)',
+                        transition:
+                          'transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
+                        color: theme.palette.action.active,
+                      }}
+                    >
                       <ExpandMore />
-                    ) : (
-                      <ChevronRight />
-                    )}
+                    </Box>
                     {isEditing ? (
                       <Input
                         autoFocus={true}

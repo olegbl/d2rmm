@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
   AccordionDetails,
@@ -32,23 +32,21 @@ async function getIsValidPreExtractedDataPath(path: string): Promise<boolean> {
   return files.find(({ name }) => name === 'global') != null;
 }
 
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  borderBottom: `1px solid ${theme.palette.divider}`,
+const StyledAccordion = styled(Accordion)(() => ({
   '&:before': {
     display: 'none',
   },
 }));
 
 const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
+  flexDirection: 'row-reverse',
   backgroundColor: theme.palette.action.hover,
   '&:hover': {
     backgroundColor: theme.palette.action.focus,
   },
 }));
 
-const StyledAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
-  borderTop: `1px solid ${theme.palette.divider}`,
-}));
+const StyledAccordionDetails = styled(AccordionDetails)(() => ({}));
 
 type Props = Record<string, never>;
 
@@ -102,10 +100,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       >
         <StyledAccordionSummary
           aria-controls="general-content"
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMore />}
           id="general-header"
         >
-          <Typography>General</Typography>
+          <Typography sx={{ marginLeft: 1 }}>General</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="general-content">
           <Typography color="text.secondary" variant="subtitle2">
@@ -215,10 +213,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       >
         <StyledAccordionSummary
           aria-controls="direct-mode-content"
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMore />}
           id="direct-mode-header"
         >
-          <Typography>Direct Mode</Typography>
+          <Typography sx={{ marginLeft: 1 }}>Direct Mode</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="direct-mode-content">
           <Typography color="text.secondary" variant="subtitle2">
@@ -268,10 +266,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       >
         <StyledAccordionSummary
           aria-controls="launcher-content"
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMore />}
           id="launcher-header"
         >
-          <Typography>Game Launcher</Typography>
+          <Typography sx={{ marginLeft: 1 }}>Game Launcher</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="launcher-content">
           <Typography color="text.secondary" variant="subtitle2">
@@ -312,7 +310,6 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           ))}
         </StyledAccordionDetails>
       </StyledAccordion>
-
       <StyledAccordion
         defaultExpanded={false}
         disableGutters={true}
@@ -321,10 +318,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       >
         <StyledAccordionSummary
           aria-controls="display-content"
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMore />}
           id="display-header"
         >
-          <Typography>Display</Typography>
+          <Typography sx={{ marginLeft: 1 }}>Display</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="display-content">
           <TextField

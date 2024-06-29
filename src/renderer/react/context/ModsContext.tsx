@@ -14,8 +14,7 @@ import type {
 import BridgeAPI from '../../BridgeAPI';
 import {
   getAbsoluteIndexFromRenderedIndex,
-  getItemCountForSection,
-  getOrderedSectionHeader,
+  getHiddenItemCountForSection,
   isOrderedMod,
 } from '../ReorderUtils';
 import useSavedState from '../hooks/useSavedState';
@@ -279,27 +278,28 @@ export function ModsContextProvider({
         orderedItems,
       );
 
-      const fromItemCount =
-        getOrderedSectionHeader(orderedItems[absoluteFromIndex])?.sectionHeader
-          ?.isExpanded ?? true
-          ? 1
-          : getItemCountForSection(absoluteFromIndex, orderedItems);
+      const fromHiddenItemCount = getHiddenItemCountForSection(
+        absoluteFromIndex,
+        orderedItems,
+      );
 
-      const toItemCount =
-        getOrderedSectionHeader(orderedItems[absoluteToIndex])?.sectionHeader
-          ?.isExpanded ?? true
-          ? 1
-          : getItemCountForSection(absoluteToIndex, orderedItems);
+      const toHiddenItemCount = getHiddenItemCountForSection(
+        absoluteToIndex,
+        orderedItems,
+      );
 
       const adjustedAbsoluteToIndex =
         absoluteToIndex +
         // if moving down, account for hidden section items
-        (absoluteToIndex > absoluteFromIndex ? toItemCount - 1 : 0) +
+        (absoluteToIndex > absoluteFromIndex ? toHiddenItemCount : 0) +
         // if moving down, account for removed items
-        (absoluteToIndex > absoluteFromIndex ? -(fromItemCount - 1) : 0);
+        (absoluteToIndex > absoluteFromIndex ? -fromHiddenItemCount : 0);
 
       const newOrder = updatedItemsOrder.slice();
-      const removed = newOrder.splice(absoluteFromIndex, fromItemCount);
+      const removed = newOrder.splice(
+        absoluteFromIndex,
+        fromHiddenItemCount + 1,
+      );
       newOrder.splice(adjustedAbsoluteToIndex, 0, ...removed);
       setItemsOrder(newOrder);
     },

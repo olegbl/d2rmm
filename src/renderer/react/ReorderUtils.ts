@@ -52,7 +52,7 @@ export function getAbsoluteIndexFromRenderedIndex(
   return -1;
 }
 
-export function getItemCountForSection(
+export function getTotalItemCountForSection(
   itemIndex: number,
   orderedItems: IOrderedItems,
 ): number {
@@ -69,4 +69,16 @@ export function getItemCountForSection(
       ? followingItems.length
       : followingItemsBeforeNextSectionHeader)
   );
+}
+
+export function getHiddenItemCountForSection(
+  itemIndex: number,
+  orderedItems: IOrderedItems,
+): number {
+  const isExpanded =
+    getOrderedSectionHeader(orderedItems[itemIndex])?.sectionHeader
+      ?.isExpanded ?? true;
+  return isExpanded
+    ? 0
+    : getTotalItemCountForSection(itemIndex, orderedItems) - 1;
 }

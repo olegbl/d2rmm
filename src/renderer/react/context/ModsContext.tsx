@@ -29,7 +29,9 @@ type IEnabledMods = { [id: string]: boolean };
 
 type IEnabledModsMutator = React.Dispatch<React.SetStateAction<IEnabledMods>>;
 
-type IInstalledMods = { id: Mod['id']; config: Mod['config'] }[];
+type IInstalledMod = { id: Mod['id']; config: Mod['config'] };
+
+type IInstalledMods = IInstalledMod[];
 
 type IInstalledModsMutator = React.Dispatch<
   React.SetStateAction<IInstalledMods>
@@ -39,11 +41,42 @@ type ISelectedMod = Mod | null;
 
 type ISelectedModMutator = React.Dispatch<React.SetStateAction<ISelectedMod>>;
 
+export type ISectionHeader = {
+  id: string;
+  label: string;
+  isExpanded: boolean;
+};
+
+type ISectionHeaders = {
+  nextIndex: number;
+  headers: ISectionHeader[];
+};
+
+type ISectionHeadersMutator = React.Dispatch<
+  React.SetStateAction<ISectionHeaders>
+>;
+
+type IOrderedMod = {
+  type: 'mod';
+  id: string;
+  mod: Mod;
+};
+
+type IOrderedSectionHeader = {
+  type: 'sectionHeader';
+  id: string;
+  sectionHeader: ISectionHeader;
+};
+
+type IOrderedItem = IOrderedMod | IOrderedSectionHeader;
+
+type IOrderedItems = IOrderedItem[];
+
 type IOrderedMods = Mod[];
 
-type IModOrder = string[];
+type IItemsOrder = string[];
 
-type IModOrderMutator = (from: number, to: number) => unknown;
+type IItemsOrderMutator = (from: number, to: number) => unknown;
 
 type IModConfigMutator = (
   id: string,
@@ -56,13 +89,15 @@ export type IModsContext = {
   isInstallConfigChanged: boolean;
   mods: IMods;
   modsToInstall: IOrderedMods;
-  orderedMods: IOrderedMods;
+  orderedItems: IOrderedItems;
   refreshMods: IModsRefresher;
-  reorderMod: IModOrderMutator;
+  reoderItems: IItemsOrderMutator;
+  sectionHeaders: ISectionHeaders;
   selectedMod: ISelectedMod;
   setEnabledMods: IEnabledModsMutator;
   setInstalledMods: IInstalledModsMutator;
   setModConfig: IModConfigMutator;
+  setSectionHeaders: ISectionHeadersMutator;
   setSelectedMod: ISelectedModMutator;
 };
 
@@ -171,37 +206,125 @@ export function ModsContextProvider({
     (str) => JSON.parse(str),
   );
 
-  const [modOrder, setModOrder] = useSavedState(
+  const [sectionHeaders, setSectionHeaders] = useSavedState(
+    'section-headers',
+    { nextIndex: 0, headers: [] } as ISectionHeaders,
+    (map) => JSON.stringify(map),
+    (str) => JSON.parse(str),
+  );
+
+  const [itemsOrder, setItemsOrder] = useSavedState(
     'mods-order',
-    [] as IModOrder,
+    [] as IItemsOrder,
     (arr) => JSON.stringify(arr),
     (str) => JSON.parse(str),
   );
 
-  const freshModOrder = useMemo(
+  const updatedItemsOrder = useMemo(
     () => [
-      ...modOrder.filter((modID) => mods.some((mod) => mod.id === modID)),
-      ...mods.filter((mod) => !modOrder.includes(mod.id)).map((mod) => mod.id),
-    ],
-    [modOrder, mods],
-  );
-
-  const orderedMods = useMemo(
-    () =>
-      mods.sort(
-        (a, b) => freshModOrder.indexOf(a.id) - freshModOrder.indexOf(b.id),
+      ...itemsOrder.filter(
+        (id) =>
+          mods.some((mod) => mod.id === id) ||
+          sectionHeaders.headers.some(
+            (sectionHeader) => sectionHeader.id === id,
+          ),
       ),
-    [mods, freshModOrder],
+      ...mods.map((mod) => mod.id).filter((id) => !itemsOrder.includes(id)),
+      ...sectionHeaders.headers
+        .map((sectionHeader) => sectionHeader.id)
+        .filter((id) => !itemsOrder.includes(id)),
+    ],
+    [itemsOrder, mods, sectionHeaders],
   );
 
-  const reorderMod = useCallback(
+  const orderedItems = useMemo(
+    () =>
+      [
+        ...mods.map((mod) => ({
+          type: 'mod' as const,
+          id: mod.id,
+          mod,
+        })),
+        ...sectionHeaders.headers.map((sectionHeader) => ({
+          type: 'sectionHeader' as const,
+          id: sectionHeader.id,
+          sectionHeader,
+        })),
+      ].sort(
+        (a, b) =>
+          updatedItemsOrder.indexOf(a.id) - updatedItemsOrder.indexOf(b.id),
+      ),
+    [mods, sectionHeaders, updatedItemsOrder],
+  );
+
+  const reoderItems = useCallback(
     (from: number, to: number): void => {
-      const newOrder = freshModOrder.slice();
-      const [removed] = newOrder.splice(from, 1);
-      newOrder.splice(to, 0, removed);
-      setModOrder(newOrder);
+      if (from === to) {
+        return;
+      }
+
+      // from/to don't account for hidden items so they need to be fixed
+      let isHidden = false;
+      let isFromFixed = false;
+      let isToFixed = false;
+      for (
+        let i = 0, hiddenIndex = 0;
+        i < orderedItems.length;
+        i++, hiddenIndex++
+      ) {
+        const item = orderedItems[i];
+        if (isOrderedSectionHeader(item)) {
+          isHidden = !item.sectionHeader.isExpanded;
+        } else if (isHidden) {
+          hiddenIndex--;
+        }
+
+        if (hiddenIndex === from && !isFromFixed) {
+          isFromFixed = true;
+          from = i;
+        }
+
+        if (hiddenIndex === to && !isToFixed) {
+          isToFixed = true;
+          to = i;
+        }
+      }
+
+      // figure out how many items to move in case we're moving a collapsed section
+      let count = 1;
+      const fromItem = orderedItems[from];
+      if (
+        isOrderedSectionHeader(fromItem) &&
+        !fromItem.sectionHeader.isExpanded
+      ) {
+        const followingItems = orderedItems.slice(from + 1);
+        count = followingItems.findIndex(isOrderedSectionHeader) + 1;
+        if (count === 0) {
+          count = followingItems.length + 1;
+        }
+      }
+
+      // figure out exactly where to move them in case we're moving right after a collapsed section
+      const toItem = orderedItems[to];
+      if (isOrderedSectionHeader(toItem) && !toItem.sectionHeader.isExpanded) {
+        for (let i = to + 1; i < orderedItems.length; i++) {
+          if (isOrderedSectionHeader(orderedItems[i])) {
+            break;
+          }
+          to++;
+        }
+      }
+
+      const newOrder = updatedItemsOrder.slice();
+      const removed = newOrder.splice(from, count);
+      // if moving down, adjust to account for removed items
+      if (to > from) {
+        to -= count - 1;
+      }
+      newOrder.splice(to, 0, ...removed);
+      setItemsOrder(newOrder);
     },
-    [freshModOrder, setModOrder],
+    [orderedItems, updatedItemsOrder, setItemsOrder],
   );
 
   const [selectedModID, setSelectedModID] = useState<string | null>(null);
@@ -230,8 +353,12 @@ export function ModsContextProvider({
   );
 
   const modsToInstall = useMemo(
-    () => orderedMods.filter((mod) => enabledMods[mod.id] ?? false),
-    [orderedMods, enabledMods],
+    () =>
+      orderedItems
+        .filter<IOrderedMod>(isOrderedMod)
+        .filter(({ mod }) => enabledMods[mod.id] ?? false)
+        .map(({ mod }) => mod),
+    [orderedItems, enabledMods],
   );
 
   const isInstallConfigChanged = useMemo(() => {
@@ -249,13 +376,15 @@ export function ModsContextProvider({
       isInstallConfigChanged,
       mods,
       modsToInstall,
-      orderedMods,
+      orderedItems,
       refreshMods,
-      reorderMod,
+      reoderItems,
+      sectionHeaders,
       selectedMod,
       setEnabledMods,
       setInstalledMods,
       setModConfig,
+      setSectionHeaders,
       setSelectedMod,
     }),
     [
@@ -264,18 +393,30 @@ export function ModsContextProvider({
       isInstallConfigChanged,
       mods,
       modsToInstall,
-      orderedMods,
+      orderedItems,
       refreshMods,
-      reorderMod,
+      reoderItems,
+      sectionHeaders,
       selectedMod,
       setEnabledMods,
       setInstalledMods,
       setModConfig,
+      setSectionHeaders,
       setSelectedMod,
     ],
   );
 
   return <Context.Provider value={context}>{children}</Context.Provider>;
+}
+
+export function isOrderedMod(item: IOrderedItem): item is IOrderedMod {
+  return item.type === 'mod';
+}
+
+export function isOrderedSectionHeader(
+  item: IOrderedItem,
+): item is IOrderedSectionHeader {
+  return item.type === 'sectionHeader';
 }
 
 export function useEnabledMods(): [IEnabledMods, IEnabledModsMutator] {
@@ -314,12 +455,80 @@ export function useMods(): [IMods, IModsRefresher] {
   return [context.mods, context.refreshMods];
 }
 
-export function useOrderedMods(): [IOrderedMods, IModOrderMutator] {
+export function useSectionHeaders(): [ISectionHeaders, ISectionHeadersMutator] {
   const context = useContext(Context);
   if (context == null) {
     throw new Error('No preferences context available.');
   }
-  return [context.orderedMods, context.reorderMod];
+  return [context.sectionHeaders, context.setSectionHeaders];
+}
+
+export function useAddSectionHeader(): () => void {
+  const [, setSectionHeaders] = useSectionHeaders();
+  return useCallback(() => {
+    setSectionHeaders((oldSectionHeaders) => ({
+      nextIndex: oldSectionHeaders.nextIndex + 1,
+      headers: [
+        ...oldSectionHeaders.headers,
+        {
+          id: `sectionHeader:${oldSectionHeaders.nextIndex}`,
+          label: 'New Section Header',
+          isExpanded: true,
+        },
+      ],
+    }));
+  }, [setSectionHeaders]);
+}
+
+export function useRemoveSectionHeader(id: string): () => void {
+  const [, setSectionHeaders] = useSectionHeaders();
+  return useCallback(() => {
+    setSectionHeaders((oldSectionHeaders) => ({
+      ...oldSectionHeaders,
+      headers: oldSectionHeaders.headers.filter((header) => header.id !== id),
+    }));
+  }, [id, setSectionHeaders]);
+}
+
+export function useRenameSectionHeader(id: string): (newName: string) => void {
+  const [, setSectionHeaders] = useSectionHeaders();
+  return useCallback(
+    (newName: string) => {
+      setSectionHeaders((oldSectionHeaders) => ({
+        ...oldSectionHeaders,
+        headers: oldSectionHeaders.headers.map((header) => {
+          if (header.id === id) {
+            return { ...header, label: newName };
+          }
+          return header;
+        }),
+      }));
+    },
+    [id, setSectionHeaders],
+  );
+}
+
+export function useToggleSectionHeader(id: string): () => void {
+  const [, setSectionHeaders] = useSectionHeaders();
+  return useCallback(() => {
+    setSectionHeaders((oldSectionHeaders) => ({
+      ...oldSectionHeaders,
+      headers: oldSectionHeaders.headers.map((header) => {
+        if (header.id === id) {
+          return { ...header, isExpanded: !header.isExpanded };
+        }
+        return header;
+      }),
+    }));
+  }, [id, setSectionHeaders]);
+}
+
+export function useOrdereredItems(): [IOrderedItems, IItemsOrderMutator] {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return [context.orderedItems, context.reoderItems];
 }
 
 export function useModsToInstall(): IOrderedMods {

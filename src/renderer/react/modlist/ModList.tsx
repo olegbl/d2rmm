@@ -1,4 +1,10 @@
-import { useCallback, useState } from 'react';
+import {
+  ChangeEvent,
+  useCallback,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -9,45 +15,108 @@ import {
   List,
   TextField,
 } from '@mui/material';
-import { useEnabledMods, useOrderedMods } from '../context/ModsContext';
+import {
+  isOrderedSectionHeader,
+  useEnabledMods,
+  useOrdereredItems,
+} from '../context/ModsContext';
 import { usePreferences } from '../context/PreferencesContext';
 import ModSettingsDrawer from '../settings/ModSettingsDrawer';
 import ModInstallButton from './ModInstallButton';
 import ModListItem from './ModListItem';
-import RefreshModsButton from './RefreshModsButton';
+import ModListSectionHeader from './ModListSectionHeader';
+import OverflowActionsButton from './OverflowActionsButton';
 import RunGameButton from './RunGameButton';
 
 export default function ModList(): JSX.Element {
-  const [orderedMods, reorderMod] = useOrderedMods();
+  const [, startTransition] = useTransition();
+  const [orderedItems, reorderItems] = useOrdereredItems();
   const [enabledMods] = useEnabledMods();
   const { isDirectMode } = usePreferences();
 
-  const [filter, setFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilter, setSearchFilter] = useState('');
+
+  const onChangeSearchQuery = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(event.target.value);
+      startTransition(() => {
+        setSearchFilter(event.target.value);
+      });
+    },
+    [],
+  );
 
   const onDragEnd = useCallback(
     ({ source, destination }: DropResult): void => {
       const from = source.index;
       const to = destination?.index;
       if (to != null) {
-        reorderMod(from, to);
+        reorderItems(from, to);
       }
     },
-    [reorderMod],
+    [reorderItems],
   );
 
-  const isReorderEnabled = filter === '';
+  const isReorderEnabled = searchFilter === '';
 
-  const items = orderedMods
-    .filter((mod) => mod.info.name.toLowerCase().includes(filter))
-    .map((mod, index) => (
-      <ModListItem
-        key={mod.id}
-        index={index}
-        isEnabled={enabledMods[mod.id] ?? false}
-        isReorderEnabled={isReorderEnabled}
-        mod={mod}
-      />
-    ));
+  const filteredItems = useMemo(
+    () =>
+      orderedItems
+        // filter by search query
+        .filter(
+          (item) =>
+            searchFilter === '' ||
+            (item.type === 'mod' &&
+              item.mod.info.name.toLowerCase().includes(searchFilter)),
+        )
+        // filter by section header
+        .filter((item, index, array) => {
+          if (isOrderedSectionHeader(item)) {
+            return true;
+          }
+          for (let i = index - 1; i >= 0; i--) {
+            const previousItem = array[i];
+            if (isOrderedSectionHeader(previousItem)) {
+              return previousItem.sectionHeader.isExpanded;
+            }
+          }
+          return true;
+        }),
+    [searchFilter, orderedItems],
+  );
+
+  const renderedItems = useMemo(
+    () =>
+      filteredItems
+        .map((item, index) =>
+          item.type === 'sectionHeader' ? (
+            <ModListSectionHeader
+              key={item.sectionHeader.id}
+              count={(() => {
+                const realIndex = orderedItems.findIndex(
+                  (i) => i.id === item.id,
+                );
+                const followingItems = orderedItems.slice(realIndex + 1);
+                const count = followingItems.findIndex(isOrderedSectionHeader);
+                return count === -1 ? followingItems.length : count;
+              })()}
+              index={index}
+              sectionHeader={item.sectionHeader}
+            />
+          ) : item.type === 'mod' ? (
+            <ModListItem
+              key={item.mod.id}
+              index={index}
+              isEnabled={enabledMods[item.mod.id] ?? false}
+              isReorderEnabled={isReorderEnabled}
+              mod={item.mod}
+            />
+          ) : null,
+        )
+        .filter(Boolean),
+    [enabledMods, filteredItems, orderedItems, isReorderEnabled],
+  );
 
   return (
     <>
@@ -64,14 +133,14 @@ export default function ModList(): JSX.Element {
                   {...providedDroppable.droppableProps}
                   ref={providedDroppable.innerRef}
                 >
-                  {items}
+                  {renderedItems}
                   {providedDroppable.placeholder}
                 </div>
               )}
             </Droppable>
           </DragDropContext>
         ) : (
-          items
+          renderedItems
         )}
       </List>
       <Divider />
@@ -85,7 +154,7 @@ export default function ModList(): JSX.Element {
               </InputAdornment>
             ),
           }}
-          onChange={(event) => setFilter(event.target.value)}
+          onChange={onChangeSearchQuery}
           placeholder="Search..."
           size="small"
           sx={{
@@ -100,13 +169,12 @@ export default function ModList(): JSX.Element {
               },
             },
           }}
-          value={filter}
+          value={searchQuery}
           variant="outlined"
         />
         <Box sx={{ flex: '1 1 0', ml: 1 }} />
         <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
           <RunGameButton />
-          <RefreshModsButton />
           {isDirectMode ? (
             <ModInstallButton
               isUninstall={true}
@@ -114,6 +182,7 @@ export default function ModList(): JSX.Element {
             />
           ) : null}
           <ModInstallButton />
+          <OverflowActionsButton />
         </ButtonGroup>
       </Box>
       <ModSettingsDrawer />

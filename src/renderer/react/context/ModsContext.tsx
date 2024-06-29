@@ -12,6 +12,12 @@ import type {
   ModConfigValue,
 } from 'bridge/ModConfigValue';
 import BridgeAPI from '../../BridgeAPI';
+import {
+  getAbsoluteIndexFromRenderedIndex,
+  getItemCountForSection,
+  getOrderedSectionHeader,
+  isOrderedMod,
+} from '../ReorderUtils';
 import useSavedState from '../hooks/useSavedState';
 import useToast from '../hooks/useToast';
 import { useLogger } from './LogContext';
@@ -56,21 +62,21 @@ type ISectionHeadersMutator = React.Dispatch<
   React.SetStateAction<ISectionHeaders>
 >;
 
-type IOrderedMod = {
+export type IOrderedMod = {
   type: 'mod';
   id: string;
   mod: Mod;
 };
 
-type IOrderedSectionHeader = {
+export type IOrderedSectionHeader = {
   type: 'sectionHeader';
   id: string;
   sectionHeader: ISectionHeader;
 };
 
-type IOrderedItem = IOrderedMod | IOrderedSectionHeader;
+export type IOrderedItem = IOrderedMod | IOrderedSectionHeader;
 
-type IOrderedItems = IOrderedItem[];
+export type IOrderedItems = IOrderedItem[];
 
 type IOrderedMods = Mod[];
 
@@ -91,7 +97,7 @@ export type IModsContext = {
   modsToInstall: IOrderedMods;
   orderedItems: IOrderedItems;
   refreshMods: IModsRefresher;
-  reoderItems: IItemsOrderMutator;
+  reorderItems: IItemsOrderMutator;
   sectionHeaders: ISectionHeaders;
   selectedMod: ISelectedMod;
   setEnabledMods: IEnabledModsMutator;
@@ -257,71 +263,44 @@ export function ModsContextProvider({
     [mods, sectionHeaders, updatedItemsOrder],
   );
 
-  const reoderItems = useCallback(
-    (from: number, to: number): void => {
-      if (from === to) {
+  const reorderItems = useCallback(
+    (renderedFromIndex: number, renderedToIndex: number): void => {
+      if (renderedFromIndex === renderedToIndex) {
         return;
       }
 
-      // from/to don't account for hidden items so they need to be fixed
-      let isHidden = false;
-      let isFromFixed = false;
-      let isToFixed = false;
-      for (
-        let i = 0, hiddenIndex = 0;
-        i < orderedItems.length;
-        i++, hiddenIndex++
-      ) {
-        const item = orderedItems[i];
-        if (isOrderedSectionHeader(item)) {
-          isHidden = !item.sectionHeader.isExpanded;
-        } else if (isHidden) {
-          hiddenIndex--;
-        }
+      const absoluteFromIndex = getAbsoluteIndexFromRenderedIndex(
+        renderedFromIndex,
+        orderedItems,
+      );
 
-        if (hiddenIndex === from && !isFromFixed) {
-          isFromFixed = true;
-          from = i;
-        }
+      const absoluteToIndex = getAbsoluteIndexFromRenderedIndex(
+        renderedToIndex,
+        orderedItems,
+      );
 
-        if (hiddenIndex === to && !isToFixed) {
-          isToFixed = true;
-          to = i;
-        }
-      }
+      const fromItemCount =
+        getOrderedSectionHeader(orderedItems[absoluteFromIndex])?.sectionHeader
+          ?.isExpanded ?? true
+          ? 1
+          : getItemCountForSection(absoluteFromIndex, orderedItems);
 
-      // figure out how many items to move in case we're moving a collapsed section
-      let count = 1;
-      const fromItem = orderedItems[from];
-      if (
-        isOrderedSectionHeader(fromItem) &&
-        !fromItem.sectionHeader.isExpanded
-      ) {
-        const followingItems = orderedItems.slice(from + 1);
-        count = followingItems.findIndex(isOrderedSectionHeader) + 1;
-        if (count === 0) {
-          count = followingItems.length + 1;
-        }
-      }
+      const toItemCount =
+        getOrderedSectionHeader(orderedItems[absoluteToIndex])?.sectionHeader
+          ?.isExpanded ?? true
+          ? 1
+          : getItemCountForSection(absoluteToIndex, orderedItems);
 
-      // figure out exactly where to move them in case we're moving right after a collapsed section
-      const toItem = orderedItems[to];
-      if (isOrderedSectionHeader(toItem) && !toItem.sectionHeader.isExpanded) {
-        for (let i = to + 1; i < orderedItems.length; i++) {
-          if (isOrderedSectionHeader(orderedItems[i])) {
-            break;
-          }
-          to++;
-        }
-      }
+      const adjustedAbsoluteToIndex =
+        absoluteToIndex +
+        // if moving down, account for hidden section items
+        (absoluteToIndex > absoluteFromIndex ? toItemCount - 1 : 0) +
+        // if moving down, account for removed items
+        (absoluteToIndex > absoluteFromIndex ? -(fromItemCount - 1) : 0);
 
       const newOrder = updatedItemsOrder.slice();
-      const removed = newOrder.splice(from, count);
-      // if moving down, adjust to account for removed items
-      if (to > from) {
-        to -= count - 1;
-      }
-      newOrder.splice(to, 0, ...removed);
+      const removed = newOrder.splice(absoluteFromIndex, fromItemCount);
+      newOrder.splice(adjustedAbsoluteToIndex, 0, ...removed);
       setItemsOrder(newOrder);
     },
     [orderedItems, updatedItemsOrder, setItemsOrder],
@@ -378,7 +357,7 @@ export function ModsContextProvider({
       modsToInstall,
       orderedItems,
       refreshMods,
-      reoderItems,
+      reorderItems,
       sectionHeaders,
       selectedMod,
       setEnabledMods,
@@ -395,7 +374,7 @@ export function ModsContextProvider({
       modsToInstall,
       orderedItems,
       refreshMods,
-      reoderItems,
+      reorderItems,
       sectionHeaders,
       selectedMod,
       setEnabledMods,
@@ -407,16 +386,6 @@ export function ModsContextProvider({
   );
 
   return <Context.Provider value={context}>{children}</Context.Provider>;
-}
-
-export function isOrderedMod(item: IOrderedItem): item is IOrderedMod {
-  return item.type === 'mod';
-}
-
-export function isOrderedSectionHeader(
-  item: IOrderedItem,
-): item is IOrderedSectionHeader {
-  return item.type === 'sectionHeader';
 }
 
 export function useEnabledMods(): [IEnabledMods, IEnabledModsMutator] {
@@ -528,7 +497,7 @@ export function useOrdereredItems(): [IOrderedItems, IItemsOrderMutator] {
   if (context == null) {
     throw new Error('No preferences context available.');
   }
-  return [context.orderedItems, context.reoderItems];
+  return [context.orderedItems, context.reorderItems];
 }
 
 export function useModsToInstall(): IOrderedMods {

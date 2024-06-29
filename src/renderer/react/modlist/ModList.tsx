@@ -15,11 +15,8 @@ import {
   List,
   TextField,
 } from '@mui/material';
-import {
-  isOrderedSectionHeader,
-  useEnabledMods,
-  useOrdereredItems,
-} from '../context/ModsContext';
+import { isOrderedSectionHeader } from '../ReorderUtils';
+import { useEnabledMods, useOrdereredItems } from '../context/ModsContext';
 import { usePreferences } from '../context/PreferencesContext';
 import ModSettingsDrawer from '../settings/ModSettingsDrawer';
 import ModInstallButton from './ModInstallButton';

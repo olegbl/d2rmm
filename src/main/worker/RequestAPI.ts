@@ -1,8 +1,8 @@
 import { readFileSync, rmSync } from 'fs';
+import uuid from 'uuid';
 import type { IRequestAPI } from 'bridge/RequestAPI';
 import { EventAPI } from './EventAPI';
 import { consumeAPI } from './IPC';
-import { uuid } from './uuid';
 
 const NetworkedRequestAPI = consumeAPI<IRequestAPI>('RequestAPI', {});
 
@@ -26,7 +26,7 @@ export const RequestAPI = {
     fileName?: string,
     onProgress?: OnProgress,
   ): Promise<string> {
-    const eventID = onProgress == null ? null : uuid();
+    const eventID = onProgress == null ? null : uuid.v4();
     if (eventID != null && onProgress != null) {
       EventAPI.addListener(eventID, onProgress);
     }

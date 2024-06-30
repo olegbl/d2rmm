@@ -134,6 +134,7 @@
     "@types/react-window": "^1.8.8",
     "@types/ref-napi": "^3.0.4",
     "@types/terser-webpack-plugin": "^5.0.4",
+    "@types/uuid": "^10.0.0",
     "@types/webpack-env": "^1.16.3",
     "@typescript-eslint/eslint-plugin": "^5.8.1",
     "@typescript-eslint/parser": "^5.8.1",
@@ -214,7 +215,8 @@
     "react-window": "^1.8.10",
     "regenerator-runtime": "^0.13.9",
     "source-map": "^0.7.4",
-    "typedoc": "^0.25.13"
+    "typedoc": "^0.25.13",
+    "uuid": "^10.0.0"
   },
   "devEngines": {
     "node": ">=14.x",

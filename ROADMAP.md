@@ -2,6 +2,7 @@
 
 - Mod config actions
 - Typeahead config
+- Add min D2RMM version for APIs in docs
 - Check for mod updates via GitHub
   - Check mod version via https://raw.githubusercontent.com/olegbl/d2rmm.mods/main/DisableBattleNet/mod.json
   - Download entire repo as zip from https://api.github.com/repos/olegbl/d2rmm.mods/zipball/main

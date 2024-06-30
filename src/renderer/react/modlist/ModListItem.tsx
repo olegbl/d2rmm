@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import FaceIcon from '@mui/icons-material/Face';
@@ -15,6 +15,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -24,6 +26,38 @@ import { consumeAPI } from '../../IPC';
 import { useSelectedMod, useToggleMod } from '../context/ModsContext';
 
 const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
+
+type ContextMenuAnchor = { left: number; top: number };
+
+function useContextMenu(): [
+  contextMenuAnchor: ContextMenuAnchor | null,
+  onOpenContextMenu: (event: React.MouseEvent<HTMLDivElement>) => void,
+  onCloseContextMenu: () => void,
+] {
+  const [contextMenuAnchor, setContextMenuAnchor] =
+    useState<ContextMenuAnchor | null>(null);
+
+  const onOpenContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setContextMenuAnchor((oldValue) =>
+        oldValue == null
+          ? {
+              left: event.clientX + 2,
+              top: event.clientY - 6,
+            }
+          : null,
+      );
+    },
+    [],
+  );
+
+  const onCloseContextMenu = useCallback(() => {
+    setContextMenuAnchor(null);
+  }, []);
+
+  return [contextMenuAnchor, onOpenContextMenu, onCloseContextMenu];
+}
 
 function ListChip({
   color,
@@ -77,6 +111,16 @@ function ListChip({
   return chip;
 }
 
+type Action = {
+  id: string;
+  icon: React.ComponentProps<typeof Chip>['icon'];
+  shortLabel?: string | null;
+  longLabel?: string | null;
+  color?: React.ComponentProps<typeof Chip>['color'] | null;
+  tooltip?: string | null;
+  onClick?: (() => void) | null;
+};
+
 type Props = {
   index: number;
   isEnabled: boolean;
@@ -103,12 +147,68 @@ export default function ModListItem({
     }
   }, [mod]);
 
+  const [contextMenuAnchor, onOpenContextMenu, onCloseContextMenu] =
+    useContextMenu();
+
+  const actions = [
+    mod.info.website == null
+      ? null
+      : ({
+          id: 'site',
+          shortLabel: 'site',
+          longLabel: 'Visit Website',
+          icon: <LinkIcon />,
+          onClick: onOpenWebsite,
+        } as Action),
+    mod.info.author == null
+      ? null
+      : ({
+          id: 'author',
+          shortLabel: mod.info.author,
+          icon: <FaceIcon />,
+        } as Action),
+    mod.info.version == null
+      ? null
+      : ({
+          id: 'version',
+          shortLabel: `v${mod.info.version}`,
+          icon: <UpdateIcon />,
+        } as Action),
+    mod.info.config == null
+      ? null
+      : ({
+          id: 'settings',
+          shortLabel: 'settings',
+          longLabel: 'Open Settings',
+          color: isEnabled ? 'primary' : undefined,
+          icon: <SettingsIcon />,
+          onClick: onConfigureMod,
+        } as Action),
+    mod.info.type !== 'data'
+      ? null
+      : ({
+          id: 'datamod',
+          shortLabel: 'data mod',
+          color: 'warning',
+          tooltip:
+            'This mod is a non-D2RMM data mod and may conflict with other mods or game updates.',
+          icon: <WarningIcon />,
+          onClick: onOpenWebsite,
+        } as Action),
+  ].filter<Action>((action: Action | null): action is Action => action != null);
+
+  const chipActions = actions.filter((action) => action.shortLabel != null);
+  const contextActions = actions.filter((action) => action.longLabel != null);
+
   const labelId = `mod-label-${mod}`;
 
   const item = (
     <ListItem key={mod.id} disablePadding={true}>
       <ListItemButton
         onClick={() => onToggleMod(mod)}
+        onContextMenu={
+          contextActions.length === 0 ? undefined : onOpenContextMenu
+        }
         sx={{ width: 'auto', flexGrow: 1, flexShrink: 1 }}
       >
         <ListItemIcon>
@@ -133,38 +233,16 @@ export default function ModListItem({
                 </Tooltip>
               )}
               <Box sx={{ flex: 1 }} />
-              {mod.info.website == null ? null : (
+              {chipActions.map((action) => (
                 <ListChip
-                  icon={<LinkIcon />}
-                  label="site"
-                  onClick={onOpenWebsite}
+                  key={action.id}
+                  color={action.color ?? undefined}
+                  icon={action.icon}
+                  label={action.shortLabel}
+                  onClick={action.onClick ?? undefined}
+                  tooltip={action.tooltip ?? undefined}
                 />
-              )}
-              {mod.info.type !== 'data' ? null : (
-                <ListChip
-                  color="warning"
-                  icon={<WarningIcon />}
-                  label="Data Mod"
-                  tooltip="This mod is a non-D2RMM data mod and may conflict with other mods or game updates."
-                />
-              )}
-              {mod.info.author == null ? null : (
-                <ListChip icon={<FaceIcon />} label={mod.info.author} />
-              )}
-              {mod.info.version == null ? null : (
-                <ListChip
-                  icon={<UpdateIcon />}
-                  label={`v${mod.info.version}`}
-                />
-              )}
-              {mod.info.config == null ? null : (
-                <ListChip
-                  color={isEnabled ? 'primary' : undefined}
-                  icon={<SettingsIcon />}
-                  label="settings"
-                  onClick={onConfigureMod}
-                />
-              )}
+              ))}
             </Box>
           }
         />
@@ -173,21 +251,43 @@ export default function ModListItem({
     </ListItem>
   );
 
-  if (isReorderEnabled) {
-    return (
-      <Draggable draggableId={mod.id} index={index}>
-        {(providedDraggable) => (
-          <div
-            ref={providedDraggable.innerRef}
-            {...providedDraggable.draggableProps}
-            {...providedDraggable.dragHandleProps}
-          >
-            {item}
-          </div>
-        )}
-      </Draggable>
-    );
-  }
-
-  return item;
+  return (
+    <>
+      {isReorderEnabled ? (
+        <Draggable draggableId={mod.id} index={index}>
+          {(providedDraggable) => (
+            <div
+              ref={providedDraggable.innerRef}
+              {...providedDraggable.draggableProps}
+              {...providedDraggable.dragHandleProps}
+            >
+              {item}
+            </div>
+          )}
+        </Draggable>
+      ) : (
+        item
+      )}
+      {contextActions.length === 0 ? null : (
+        <Menu
+          anchorPosition={contextMenuAnchor ?? undefined}
+          anchorReference="anchorPosition"
+          onClose={onCloseContextMenu}
+          open={contextMenuAnchor != null}
+        >
+          {contextActions.map((action) => (
+            <MenuItem
+              key={action.id}
+              onClick={() => {
+                onCloseContextMenu();
+                action.onClick?.();
+              }}
+            >
+              {action.longLabel}
+            </MenuItem>
+          ))}
+        </Menu>
+      )}
+    </>
+  );
 }

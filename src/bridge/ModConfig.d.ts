@@ -188,7 +188,7 @@ export interface ModConfigFieldSelect extends ModConfigFieldBase {
   /**
    * The default value of the select field.
    */
-  defaultValue: string;
+  defaultValue: ModConfigSingleValue;
 
   /**
    * The options that the user can select from.

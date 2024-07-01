@@ -36,8 +36,6 @@ type UpdaterState =
 
 function useUpdaterState(): UpdaterState | null {
   const [updaterState, setUpdaterState] = useState<UpdaterState | null>(null);
-  // TODO: this lags significantly behind the actual events
-  //       possibly because renderer IPC is getting events slowly?
   useEventAPIListener('updater', setUpdaterState);
   return updaterState;
 }

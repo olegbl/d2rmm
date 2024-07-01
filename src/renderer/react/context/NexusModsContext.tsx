@@ -7,8 +7,17 @@ import React, {
   useState,
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+} from '@mui/material';
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
-import { NexusModsAPIStateEvent as NexusModsApiStateEvent } from 'bridge/NexusModsAPI';
+import type { NexusModsAPIStateEvent as NexusModsApiStateEvent } from 'bridge/NexusModsAPI';
+import type { INxmProtocolAPI } from 'bridge/NxmProtocolAPI';
 import { useEventAPIListener } from 'renderer/EventAPI';
 import { consumeAPI } from 'renderer/IPC';
 import useSavedState from '../hooks/useSavedState';
@@ -20,6 +29,7 @@ import { useCheckModForUpdates, useUpdateModVersion } from './UpdatesContext';
 const APPLICATION_ID = 'vortex';
 
 const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
+const NxmProtocolAPI = consumeAPI<INxmProtocolAPI>('NxmProtocolAPI');
 
 type IApiKey = string | null;
 
@@ -39,9 +49,104 @@ export type INexusModsContext = {
   authState: INexusAuthState;
   setAuthState: ISetNexusAuthState;
   validateKey: () => void;
+  isRegisteredAsNxmProtocolHandler: boolean;
+  registerAsNxmProtocolHandler: () => void;
+  unregisterAsNxmProtocolHandler: () => void;
 };
 
 export const Context = React.createContext<INexusModsContext | null>(null);
+
+function useNxmProtocolHandler(): [
+  JSX.Element,
+  boolean,
+  () => void,
+  () => void,
+] {
+  const [isRejected, setIsRejected] = useSavedState(
+    'nxm-selection-rejected',
+    false,
+    (map) => JSON.stringify(map),
+    (str) => JSON.parse(str),
+  );
+
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  const [isShown, setIsShown] = useState(false);
+
+  const onShow = useCallback(() => {
+    setIsShown(true);
+  }, []);
+
+  const onHide = useCallback(() => {
+    setIsShown(false);
+  }, []);
+
+  const isInitialCheckDone = useRef(false);
+  useEffect(() => {
+    if (isInitialCheckDone.current) {
+      return;
+    }
+    isInitialCheckDone.current = true;
+    (async () => {
+      const isRegisteredNew = await NxmProtocolAPI.getIsRegistered();
+      setIsRegistered(isRegisteredNew);
+      if (!isRejected && !isRegisteredNew) {
+        onShow();
+      }
+    })()
+      .then()
+      .catch(console.error);
+  }, [isRejected, onShow]);
+
+  const onRegister = useCallback(async () => {
+    setIsRejected(false);
+    const success = await NxmProtocolAPI.register();
+    setIsRegistered(success);
+    if (!success) {
+      console.error('Failed to register as nxm:// protocol handler.');
+    }
+  }, [setIsRejected]);
+
+  const onUnregister = useCallback(async () => {
+    setIsRejected(false);
+    const success = await NxmProtocolAPI.unregister();
+    setIsRegistered(!success);
+    if (!success) {
+      console.error('Failed to unregister as nxm:// protocol handler.');
+    }
+  }, [setIsRejected]);
+
+  const onAgree = useCallback(async () => {
+    setIsRejected(false);
+    onHide();
+    await onRegister();
+  }, [onHide, onRegister, setIsRejected]);
+
+  const onDisagree = useCallback(() => {
+    setIsRejected(true);
+    onHide();
+  }, [onHide, setIsRejected]);
+
+  return [
+    <Dialog onClose={onHide} open={isShown}>
+      <DialogTitle>Nexus Mods Handler</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Would you like to set D2RMM as the default handler for nxm:// links?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onDisagree}>Disagree</Button>
+        <Button autoFocus={true} onClick={onAgree}>
+          Agree
+        </Button>
+      </DialogActions>
+    </Dialog>,
+    isRegistered,
+    onRegister,
+    onUnregister,
+  ];
+}
 
 export function NexusModsContextProvider({
   children,
@@ -61,6 +166,13 @@ export function NexusModsContextProvider({
   const [, onRefreshMods] = useMods();
   const updateModVersion = useUpdateModVersion();
   const checkModForUpdates = useCheckModForUpdates(authState);
+
+  const [
+    nxmDialog,
+    isRegisteredAsNxmProtocolHandler,
+    registerAsNxmProtocolHandler,
+    unregisterAsNxmProtocolHandler,
+  ] = useNxmProtocolHandler();
 
   const onOpenNxmUrl = useCallback(
     ({
@@ -147,11 +259,27 @@ export function NexusModsContextProvider({
       authState,
       setAuthState,
       validateKey,
+      isRegisteredAsNxmProtocolHandler,
+      registerAsNxmProtocolHandler,
+      unregisterAsNxmProtocolHandler,
     }),
-    [apiState, authState, setAuthState, validateKey],
+    [
+      apiState,
+      authState,
+      setAuthState,
+      validateKey,
+      isRegisteredAsNxmProtocolHandler,
+      registerAsNxmProtocolHandler,
+      unregisterAsNxmProtocolHandler,
+    ],
   );
 
-  return <Context.Provider value={context}>{children}</Context.Provider>;
+  return (
+    <Context.Provider value={context}>
+      {children}
+      {nxmDialog}
+    </Context.Provider>
+  );
 }
 
 export function useNexusAuthState(): {
@@ -160,6 +288,9 @@ export function useNexusAuthState(): {
   setNexusAuthState: ISetNexusAuthState;
   nexusSignIn: () => void;
   nexusSignOut: () => void;
+  isRegisteredAsNxmProtocolHandler: boolean;
+  registerAsNxmProtocolHandler: () => void;
+  unregisterAsNxmProtocolHandler: () => void;
 } {
   const context = useContext(Context);
   if (context == null) {
@@ -216,5 +347,8 @@ export function useNexusAuthState(): {
     setNexusAuthState: context.setAuthState,
     nexusSignIn,
     nexusSignOut,
+    isRegisteredAsNxmProtocolHandler: context.isRegisteredAsNxmProtocolHandler,
+    registerAsNxmProtocolHandler: context.registerAsNxmProtocolHandler,
+    unregisterAsNxmProtocolHandler: context.unregisterAsNxmProtocolHandler,
   };
 }

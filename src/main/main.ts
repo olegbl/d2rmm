@@ -17,7 +17,7 @@ import { initAppInfoAPI } from './AppInfoAPI';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
-import { initNexusModsProtocolHandler } from './NexusModsProtocolHandler';
+import { initNxmProtocolAPI } from './NxmProtocolAPI';
 import { RendererIPCAPI } from './RendererIPCAPI';
 import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
@@ -133,8 +133,8 @@ if (!isSingleInstance) {
     await initRequestAPI();
     console.debug('[main] Initializing UpdateInstallerAPI...');
     await initUpdateInstallerAPI();
-    console.debug('[main] Initializing NexusModsProtocolHandler...');
-    await initNexusModsProtocolHandler();
+    console.debug('[main] Initializing NxmProtocolAPI...');
+    await initNxmProtocolAPI();
     console.debug('[main] Initialized');
 
     try {

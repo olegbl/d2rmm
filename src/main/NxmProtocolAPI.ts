@@ -1,36 +1,34 @@
-import { app, dialog } from 'electron';
+import { app } from 'electron';
 import path from 'path';
 import { URL } from 'url';
+import type { INxmProtocolAPI } from 'bridge/NxmProtocolAPI';
 import { EventAPI } from './EventAPI';
+import { provideAPI } from './IPC';
 
-export async function initNexusModsProtocolHandler(): Promise<void> {
-  const isDefaultNxmHandler = app.isDefaultProtocolClient('nxm');
+export async function initNxmProtocolAPI(): Promise<void> {
+  let args: [string, string | undefined, string[] | undefined] = [
+    'nxm',
+    undefined,
+    undefined,
+  ];
 
-  if (!isDefaultNxmHandler) {
-    // TODO: move this to a nice place in the settings UI
-    //       and remember if user selected "no"
-    const choice = dialog.showMessageBoxSync({
-      type: 'question',
-      buttons: ['Yes', 'No'],
-      title: 'Set as Default Handler',
-      message:
-        'Would you like to set D2RMM as the default handler for nxm:// links?',
-    });
-
-    if (choice === 0) {
-      if (process.defaultApp) {
-        if (process.argv.length > 1) {
-          app.setAsDefaultProtocolClient('nxm', process.execPath, [
-            process.argv[1],
-            path.resolve(path.join('node_modules', process.argv[2])),
-            path.resolve(process.argv[3]),
-          ]);
-        }
-      } else {
-        app.setAsDefaultProtocolClient('nxm');
-      }
-    }
+  if (process.defaultApp && process.argv.length > 1) {
+    args = [
+      'nxm',
+      process.execPath,
+      [
+        process.argv[1],
+        path.resolve(path.join('node_modules', process.argv[2])),
+        path.resolve(process.argv[3]),
+      ],
+    ];
   }
+
+  provideAPI('NxmProtocolAPI', {
+    getIsRegistered: async () => app.isDefaultProtocolClient(...args),
+    register: async () => app.setAsDefaultProtocolClient(...args),
+    unregister: async () => app.removeAsDefaultProtocolClient(...args),
+  } as INxmProtocolAPI);
 
   function onOpenNxmUrl(url: string): boolean {
     if (url.startsWith('nxm://')) {

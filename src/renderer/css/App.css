@@ -6,3 +6,7 @@ body,
   padding: 0;
   width: 100%;
 }
+
+.MuiAlert-fullwidth .MuiAlert-message {
+  flex: 1;
+}

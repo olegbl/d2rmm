@@ -15,6 +15,7 @@ import {
   ListItemIcon,
   ListItemText,
   MenuItem,
+  Stack,
   TextField,
   Typography,
   styled,
@@ -91,8 +92,15 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       ),
     ) ?? true;
 
-  const { nexusApiState, nexusAuthState, nexusSignIn, nexusSignOut } =
-    useNexusAuthState();
+  const {
+    nexusApiState,
+    nexusAuthState,
+    nexusSignIn,
+    nexusSignOut,
+    isRegisteredAsNxmProtocolHandler,
+    registerAsNxmProtocolHandler,
+    unregisterAsNxmProtocolHandler,
+  } = useNexusAuthState();
 
   return (
     <List
@@ -359,54 +367,92 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           <Typography sx={{ marginLeft: 1 }}>Nexus Mods</Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="nexus-content">
-          {nexusAuthState.apiKey == null ? (
-            <>
-              <Typography color="text.secondary" variant="subtitle2">
-                Signing in to Nexus Mods allows you to check for mod updates
-                (and download them directly via D2RMM if you are a premium Nexus
-                Mods user.)
-              </Typography>
-              <Button
-                onClick={nexusSignIn}
-                sx={{ marginTop: 1 }}
-                variant="contained"
+          <Stack spacing={2} sx={{ marginTop: 1 }}>
+            {nexusAuthState.apiKey == null ? (
+              <Alert severity="warning">
+                <Typography color="text.secondary" variant="subtitle2">
+                  You are not signed in to Nexus Mods. You will not be able to
+                  check for mod updates or download mod updates directly via
+                  D2RMM (for premium Nexus Mods users).
+                </Typography>
+                <Button
+                  color="warning"
+                  onClick={nexusSignIn}
+                  sx={{ marginTop: 1 }}
+                  variant="contained"
+                >
+                  Sign In
+                </Button>
+              </Alert>
+            ) : (
+              <Alert
+                classes={{
+                  root: 'MuiAlert-fullwidth',
+                }}
+                severity="info"
               >
-                Sign In
-              </Button>
-            </>
-          ) : (
-            <>
-              {nexusAuthState.name && (
-                <Box sx={{ marginTop: 1 }}>
-                  Logged in as {nexusAuthState.name} ({nexusAuthState.email}) (
-                  {nexusAuthState.isPremium ? 'Premium' : 'Free'} user)
-                </Box>
-              )}
-              {nexusApiState != null && (
-                <>
-                  <NexusRequestLimit
-                    limit={nexusApiState.dailyLimit}
-                    remaining={nexusApiState.dailyRemaining}
-                    reset={nexusApiState.dailyReset}
-                    type="daily"
-                  />
-                  <NexusRequestLimit
-                    limit={nexusApiState.hourlyLimit}
-                    remaining={nexusApiState.hourlyRemaining}
-                    reset={nexusApiState.hourlyReset}
-                    type="hourly"
-                  />
-                </>
-              )}
-              <Button
-                onClick={nexusSignOut}
-                sx={{ marginTop: 1 }}
-                variant="outlined"
-              >
-                Sign Out
-              </Button>
-            </>
-          )}
+                {nexusAuthState.name && (
+                  <Box>
+                    Logged in as {nexusAuthState.name} ({nexusAuthState.email})
+                    ({nexusAuthState.isPremium ? 'Premium' : 'Free'} user)
+                  </Box>
+                )}
+                {nexusApiState != null && (
+                  <>
+                    <NexusRequestLimit
+                      limit={nexusApiState.dailyLimit}
+                      remaining={nexusApiState.dailyRemaining}
+                      reset={nexusApiState.dailyReset}
+                      type="daily"
+                    />
+                    <NexusRequestLimit
+                      limit={nexusApiState.hourlyLimit}
+                      remaining={nexusApiState.hourlyRemaining}
+                      reset={nexusApiState.hourlyReset}
+                      type="hourly"
+                    />
+                  </>
+                )}
+                <Button
+                  onClick={nexusSignOut}
+                  sx={{ marginTop: 1 }}
+                  variant="outlined"
+                >
+                  Sign Out
+                </Button>
+              </Alert>
+            )}
+            {isRegisteredAsNxmProtocolHandler ? (
+              <Alert severity="info">
+                <Typography>
+                  D2RMM is registered as the handler for nxm:// URLs.
+                </Typography>
+                <Button
+                  onClick={unregisterAsNxmProtocolHandler}
+                  sx={{ marginTop: 1 }}
+                  variant="outlined"
+                >
+                  Unregister as Handler
+                </Button>
+              </Alert>
+            ) : (
+              <Alert severity="warning">
+                <Typography>
+                  D2RMM is not registered as the handler for nxm:// URLs. You
+                  will not be able to download mods directly via D2RMM when
+                  using Mod Manager links on Nexus Mods.
+                </Typography>
+                <Button
+                  color="warning"
+                  onClick={registerAsNxmProtocolHandler}
+                  sx={{ marginTop: 1 }}
+                  variant="outlined"
+                >
+                  Register as Handler
+                </Button>
+              </Alert>
+            )}
+          </Stack>
         </StyledAccordionDetails>
       </StyledAccordion>
     </List>
@@ -435,14 +481,12 @@ function NexusRequestLimit({
         value={usedPercent}
         variant="determinate"
       />
-      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-        <Typography color="text.secondary" variant="subtitle2">
+      <Box sx={{ alignItems: 'center', display: 'flex', flexDirection: 'row' }}>
+        <Box>
           {remaining} / {limit} {type} requests remaining
-        </Typography>
+        </Box>
         <Box sx={{ flex: 1 }} />
-        <Typography color="text.secondary" variant="subtitle2">
-          resets at {resetStringForCurrentLocale}
-        </Typography>
+        <Box>resets at {resetStringForCurrentLocale}</Box>
       </Box>
     </Box>
   );

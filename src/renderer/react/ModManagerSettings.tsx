@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   Divider,
   LinearProgress,
   List,
@@ -17,6 +18,7 @@ import {
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
   styled,
 } from '@mui/material';
@@ -370,7 +372,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           <Stack spacing={2} sx={{ marginTop: 1 }}>
             {nexusAuthState.apiKey == null ? (
               <Alert severity="warning">
-                <Typography color="text.secondary" variant="subtitle2">
+                <Typography>
                   You are not signed in to Nexus Mods. You will not be able to
                   check for mod updates or download mod updates directly via
                   D2RMM (for premium Nexus Mods users).
@@ -391,11 +393,33 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 }}
                 severity="info"
               >
-                {nexusAuthState.name && (
-                  <Box>
-                    Logged in as {nexusAuthState.name} ({nexusAuthState.email})
-                    ({nexusAuthState.isPremium ? 'Premium' : 'Free'} user)
+                {nexusAuthState.name ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                    <Typography>
+                      Logged in as {nexusAuthState.name} ({nexusAuthState.email}
+                      )
+                    </Typography>
+                    <Box sx={{ flex: 1 }} />
+                    <Tooltip
+                      title={
+                        nexusAuthState.isPremium
+                          ? undefined
+                          : 'Free users cannot initiate mod downloads from within D2RMM. You must go to Nexus Mods website in order to download or update mods.'
+                      }
+                    >
+                      <Chip
+                        color={nexusAuthState.isPremium ? 'success' : 'warning'}
+                        label={
+                          nexusAuthState.isPremium
+                            ? 'Premium User'
+                            : 'Free User'
+                        }
+                        size="small"
+                      />
+                    </Tooltip>
                   </Box>
+                ) : (
+                  <Typography>Logged in. Loading details...</Typography>
                 )}
                 {nexusApiState != null && (
                   <>

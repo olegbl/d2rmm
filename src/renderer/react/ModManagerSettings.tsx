@@ -5,8 +5,11 @@ import {
   AccordionDetails,
   AccordionSummary,
   Alert,
+  Box,
+  Button,
   Checkbox,
   Divider,
+  LinearProgress,
   List,
   ListItemButton,
   ListItemIcon,
@@ -17,6 +20,7 @@ import {
   styled,
 } from '@mui/material';
 import BridgeAPI from '../BridgeAPI';
+import { useNexusAuthState } from './context/NexusModsContext';
 import { usePreferences } from './context/PreferencesContext';
 import { IThemeMode, useThemeMode } from './context/ThemeContext';
 import { useAsyncMemo } from './hooks/useAsyncMemo';
@@ -86,6 +90,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         [dataSource, preExtractedDataPath],
       ),
     ) ?? true;
+
+  const { nexusApiState, nexusAuthState, nexusSignIn, nexusSignOut } =
+    useNexusAuthState();
 
   return (
     <List
@@ -338,6 +345,105 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           </TextField>
         </StyledAccordionDetails>
       </StyledAccordion>
+      <StyledAccordion
+        defaultExpanded={false}
+        disableGutters={true}
+        elevation={0}
+        square={true}
+      >
+        <StyledAccordionSummary
+          aria-controls="nexus-content"
+          expandIcon={<ExpandMore />}
+          id="nexus-header"
+        >
+          <Typography sx={{ marginLeft: 1 }}>Nexus Mods</Typography>
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="nexus-content">
+          {nexusAuthState.apiKey == null ? (
+            <>
+              <Typography color="text.secondary" variant="subtitle2">
+                Signing in to Nexus Mods allows you to check for mod updates
+                (and download them directly via D2RMM if you are a premium Nexus
+                Mods user.)
+              </Typography>
+              <Button
+                onClick={nexusSignIn}
+                sx={{ marginTop: 1 }}
+                variant="contained"
+              >
+                Sign In
+              </Button>
+            </>
+          ) : (
+            <>
+              {nexusAuthState.name && (
+                <Box sx={{ marginTop: 1 }}>
+                  Logged in as {nexusAuthState.name} ({nexusAuthState.email}) (
+                  {nexusAuthState.isPremium ? 'Premium' : 'Free'} user)
+                </Box>
+              )}
+              {nexusApiState != null && (
+                <>
+                  <NexusRequestLimit
+                    limit={nexusApiState.dailyLimit}
+                    remaining={nexusApiState.dailyRemaining}
+                    reset={nexusApiState.dailyReset}
+                    type="daily"
+                  />
+                  <NexusRequestLimit
+                    limit={nexusApiState.hourlyLimit}
+                    remaining={nexusApiState.hourlyRemaining}
+                    reset={nexusApiState.hourlyReset}
+                    type="hourly"
+                  />
+                </>
+              )}
+              <Button
+                onClick={nexusSignOut}
+                sx={{ marginTop: 1 }}
+                variant="outlined"
+              >
+                Sign Out
+              </Button>
+            </>
+          )}
+        </StyledAccordionDetails>
+      </StyledAccordion>
     </List>
+  );
+}
+
+function NexusRequestLimit({
+  remaining,
+  limit,
+  reset,
+  type,
+}: {
+  remaining: string;
+  limit: string;
+  reset: string;
+  type: string;
+}): JSX.Element {
+  const remainingInt = parseInt(remaining, 10);
+  const limitInt = parseInt(limit, 10);
+  const usedPercent = (remainingInt / limitInt) * 100;
+  const resetStringForCurrentLocale = new Date(reset).toLocaleString();
+  return (
+    <Box sx={{ marginTop: 1 }}>
+      <LinearProgress
+        style={{ height: 10 }}
+        value={usedPercent}
+        variant="determinate"
+      />
+      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+        <Typography color="text.secondary" variant="subtitle2">
+          {remaining} / {limit} {type} requests remaining
+        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <Typography color="text.secondary" variant="subtitle2">
+          resets at {resetStringForCurrentLocale}
+        </Typography>
+      </Box>
+    </Box>
   );
 }

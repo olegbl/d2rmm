@@ -2,7 +2,12 @@ import decompress from 'decompress';
 import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
 import path from 'path';
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
-import type { DownloadLink, Files } from 'bridge/NexusModsAPI';
+import type {
+  DownloadLink,
+  Files,
+  NexusModsAPIStateEvent,
+  ValidateResult,
+} from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
 import { getAppPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
@@ -10,10 +15,10 @@ import { provideAPI } from './IPC';
 import { RequestAPI } from './RequestAPI';
 
 // TODO: publish status of update checking / downloading / installing for nice UX
+// TODO: add nxm:// URL handling
 
 const NexusAPI = {
   publishStatus: async (headers: ResponseHeaders): Promise<void> => {
-    // TODO: add Nexus API rate limiting status to the UI somewhere
     await EventAPI.send('nexus-mods-api-status', {
       dailyLimit: headers['x-rl-daily-limit'],
       dailyRemaining: headers['x-rl-daily-remaining'],
@@ -21,7 +26,20 @@ const NexusAPI = {
       hourlyLimit: headers['x-rl-hourly-limit'],
       hourlyRemaining: headers['x-rl-hourly-remaining'],
       hourlyReset: headers['x-rl-hourly-reset'],
-    });
+    } as NexusModsAPIStateEvent);
+  },
+  validateApiKey: async (nexusApiKey: string): Promise<ValidateResult> => {
+    const { response, headers } = await RequestAPI.downloadToBuffer(
+      'https://api.nexusmods.com/v1/users/validate.json',
+      {
+        headers: {
+          accept: 'application/json',
+          apikey: nexusApiKey,
+        },
+      },
+    );
+    await NexusAPI.publishStatus(headers);
+    return JSON.parse(response.toString()) as ValidateResult;
   },
   getFiles: async (nexusApiKey: string, nexusModID: string): Promise<Files> => {
     const { response, headers } = await RequestAPI.downloadToBuffer(
@@ -61,6 +79,16 @@ const NexusAPI = {
 
 export async function initModUpdaterAPI(): Promise<void> {
   provideAPI('ModUpdaterAPI', {
+    validateNexusApiKey: async (nexusApiKey) => {
+      const result = await NexusAPI.validateApiKey(nexusApiKey);
+      const isValid = result.key === nexusApiKey;
+      return {
+        name: result.name,
+        email: result.email,
+        isValid,
+        isPremium: !isValid ? false : result.is_premium,
+      };
+    },
     getDownloadsViaNexus: async (nexusApiKey, nexusModID) => {
       const result = await NexusAPI.getFiles(nexusApiKey, nexusModID);
       return result.files
@@ -104,7 +132,6 @@ export async function initModUpdaterAPI(): Promise<void> {
       const { filePath } = await RequestAPI.downloadToFile(downloadUrl, {
         fileName,
       });
-      console.log('update downloaded', nexusModID, nexusFileID, filePath);
 
       // extract the zip file
       process.noAsar = true;
@@ -114,37 +141,21 @@ export async function initModUpdaterAPI(): Promise<void> {
 
       // delete all mod files except mod.config
       const updateDirPath = path.join(path.dirname(filePath), modID);
-      console.log('update extracted', nexusModID, nexusFileID, updateDirPath);
       if (!existsSync(updateDirPath)) {
         throw new Error(
           `Mod has an unexpected file structure. Expected to find directory ${modID} in downloaded .zip file.`,
         );
       }
       const modDirPath = path.join(getAppPath(), 'mods', modID);
-      console.log(
-        'update ready',
-        nexusModID,
-        nexusFileID,
-        updateDirPath,
-        modDirPath,
-      );
       const configFilePath = path.join(modDirPath, 'config.json');
       if (existsSync(configFilePath)) {
         cpSync(configFilePath, path.join(updateDirPath, 'config.json'));
       }
       rmSync(modDirPath, { force: true, recursive: true });
-      console.log(
-        'update prepped',
-        nexusModID,
-        nexusFileID,
-        updateDirPath,
-        modDirPath,
-      );
 
       // copy the new extracted files to the mod directory
       mkdirSync(modDirPath, { recursive: true });
       cpSync(updateDirPath, modDirPath, { recursive: true });
-      console.log('update applied', nexusModID, nexusFileID, modDirPath);
 
       // clean up
       rmSync(updateDirPath, { force: true, recursive: true });

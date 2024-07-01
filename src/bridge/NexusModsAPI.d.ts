@@ -82,3 +82,22 @@ export type DownloadLink = {
   short_name: string;
   URI: string;
 }[];
+
+export type ValidateResult = {
+  email: string;
+  is_premium: boolean;
+  is_supporter: boolean;
+  key: string;
+  name: string;
+  profile_url: string;
+  user_id: number;
+};
+
+export type NexusModsAPIStateEvent = {
+  dailyLimit: string;
+  dailyRemaining: string;
+  dailyReset: string;
+  hourlyLimit: string;
+  hourlyRemaining: string;
+  hourlyReset: string;
+};

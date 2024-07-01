@@ -8,6 +8,12 @@ export type ModUpdaterNexusDownload = {
 export type ModUpdaterDownload = ModUpdaterNexusDownload;
 
 export type IModUpdaterAPI = {
+  validateNexusApiKey: (nexusApiKey: string) => Promise<{
+    name: string;
+    email: string;
+    isValid: boolean;
+    isPremium: boolean;
+  }>;
   getDownloadsViaNexus: (
     nexusApiKey: string,
     nexusModID: string,

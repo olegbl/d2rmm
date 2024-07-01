@@ -34,7 +34,7 @@ export function useModUpdater(mod: Mod): {
   onDownloadVersion: (download: ModUpdaterDownload) => Promise<void>;
 } {
   const [, onRefreshMods] = useMods();
-  const [nexusAuthState] = useNexusAuthState();
+  const { nexusAuthState } = useNexusAuthState();
   const nexusModID = getNexusModID(mod);
   const isUpdatePossible =
     nexusAuthState != null && mod.info.website != null && nexusModID != null;

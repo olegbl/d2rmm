@@ -17,6 +17,7 @@ import { initAppInfoAPI } from './AppInfoAPI';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
+import { initNexusModsProtocolHandler } from './NexusModsProtocolHandler';
 import { RendererIPCAPI } from './RendererIPCAPI';
 import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
@@ -26,164 +27,181 @@ import { initPreferences } from './preferences';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
 
-log.initialize();
-log.transports.file.resolvePathFn = () =>
-  path.join(
-    app.isPackaged
-      ? path.join(process.resourcesPath, '../')
-      : path.join(__dirname, '../../'),
-    'd2rmm.log',
-  );
-Object.assign(console, log.functions);
+const isSingleInstance = app.requestSingleInstanceLock();
+if (!isSingleInstance) {
+  app.quit();
+} else {
+  log.initialize();
+  log.transports.file.resolvePathFn = () =>
+    path.join(
+      app.isPackaged
+        ? path.join(process.resourcesPath, '../')
+        : path.join(__dirname, '../../'),
+      'd2rmm.log',
+    );
+  Object.assign(console, log.functions);
 
-console.log('[main] Starting D2RMM...');
+  console.log('[main] Starting D2RMM...');
 
-let mainWindow: BrowserWindow | null = null;
-if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support');
-  sourceMapSupport.install();
-}
-
-const isDevelopment =
-  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
-
-if (isDevelopment) {
-  require('electron-debug')();
-}
-
-const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
-
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload,
-    )
-    .catch(console.log);
-};
-
-const createWindow = async () => {
-  console.debug('[main] Initializing...');
-  if (isDevelopment) {
-    await installExtensions();
+  let mainWindow: BrowserWindow | null = null;
+  if (process.env.NODE_ENV === 'production') {
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install();
   }
 
-  const RESOURCES_PATH = app.isPackaged
-    ? path.join(process.resourcesPath, 'assets')
-    : path.join(__dirname, '../../assets');
+  const isDevelopment =
+    process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
-  const getAssetPath = (...paths: string[]): string => {
-    return path.join(RESOURCES_PATH, ...paths);
+  if (isDevelopment) {
+    require('electron-debug')();
+  }
+
+  const installExtensions = async () => {
+    const installer = require('electron-devtools-installer');
+    const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
+    const extensions = ['REACT_DEVELOPER_TOOLS'];
+
+    return installer
+      .default(
+        extensions.map((name) => installer[name]),
+        forceDownload,
+      )
+      .catch(console.log);
   };
 
-  mainWindow = new BrowserWindow({
-    show: false,
-    width: 1024,
-    height: 728,
-    icon: getAssetPath('icon.png'),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-    },
-  });
-  mainWindow.setTitle(
-    `[D2RMM] Diablo II: Resurrected Mod Manager ${CURRENT_VERSION}`,
-  );
-  mainWindow.removeMenu();
-
-  mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
+  const createWindow = async () => {
+    console.debug('[main] Initializing...');
+    if (isDevelopment) {
+      await installExtensions();
     }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
-    }
-  });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    const RESOURCES_PATH = app.isPackaged
+      ? path.join(process.resourcesPath, 'assets')
+      : path.join(__dirname, '../../assets');
 
-  // Open urls in the user's browser
-  mainWindow.webContents.on('new-window', (event, url) => {
-    event.preventDefault();
-    shell.openExternal(url).catch(console.error);
-  });
+    const getAssetPath = (...paths: string[]): string => {
+      return path.join(RESOURCES_PATH, ...paths);
+    };
 
-  console.debug('[main] Initializing IPC...');
-  await initIPC(mainWindow);
-  console.debug('[main] Initializing EventAPI...');
-  await initEventAPI();
-  console.debug('[main] Initializing ConsoleAPI...');
-  await initConsoleAPI();
-  console.debug('[main] Initializing AppInfoAPI...');
-  await initAppInfoAPI();
-  console.debug('[main] Initializing ShellAPI...');
-  await initShellAPI();
-  console.debug('[main] Initializing RequestAPI...');
-  await initRequestAPI();
-  console.debug('[main] Initializing UpdateInstallerAPI...');
-  await initUpdateInstallerAPI();
-  console.debug('[main] Initialized');
-
-  try {
-    console.debug('[main] Spawning worker...');
-    await spawnNewWorker();
-    console.debug('[main] Worker spawned successfully!');
-  } catch (e) {
-    console.error(
-      `Catastrophic failure! Failed to start worker: ${e}. You should restart D2RMM.`,
+    mainWindow = new BrowserWindow({
+      show: false,
+      width: 1024,
+      height: 728,
+      icon: getAssetPath('icon.png'),
+      webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
+        contextIsolation: true,
+      },
+    });
+    mainWindow.setTitle(
+      `[D2RMM] Diablo II: Resurrected Mod Manager ${CURRENT_VERSION}`,
     );
-    app.quit();
-  }
+    mainWindow.removeMenu();
 
-  await mainWindow.loadURL(resolveHtmlPath('index.html'));
-};
+    mainWindow.on('ready-to-show', () => {
+      if (!mainWindow) {
+        throw new Error('"mainWindow" is not defined');
+      }
+      if (process.env.START_MINIMIZED) {
+        mainWindow.minimize();
+      } else {
+        mainWindow.show();
+      }
+    });
 
-app.on('window-all-closed', () => {
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
 
-let isSafeToQuit = false;
-app.on('before-quit', (event) => {
-  if (!isSafeToQuit) {
-    event.preventDefault();
-    const timeoutID = setTimeout(() => {
-      isSafeToQuit = true;
+    // Open urls in the user's browser
+    mainWindow.webContents.on('new-window', (event, url) => {
+      event.preventDefault();
+      shell.openExternal(url).catch(console.error);
+    });
+
+    console.debug('[main] Initializing IPC...');
+    await initIPC(mainWindow);
+    console.debug('[main] Initializing EventAPI...');
+    await initEventAPI();
+    console.debug('[main] Initializing ConsoleAPI...');
+    await initConsoleAPI();
+    console.debug('[main] Initializing AppInfoAPI...');
+    await initAppInfoAPI();
+    console.debug('[main] Initializing ShellAPI...');
+    await initShellAPI();
+    console.debug('[main] Initializing RequestAPI...');
+    await initRequestAPI();
+    console.debug('[main] Initializing UpdateInstallerAPI...');
+    await initUpdateInstallerAPI();
+    console.debug('[main] Initializing NexusModsProtocolHandler...');
+    await initNexusModsProtocolHandler();
+    console.debug('[main] Initialized');
+
+    try {
+      console.debug('[main] Spawning worker...');
+      await spawnNewWorker();
+      console.debug('[main] Worker spawned successfully!');
+    } catch (e) {
+      console.error(
+        `Catastrophic failure! Failed to start worker: ${e}. You should restart D2RMM.`,
+      );
       app.quit();
-    }, 5000);
-    RendererIPCAPI.disconnect()
-      .catch(console.error)
-      .finally(() => {
-        clearTimeout(timeoutID);
+    }
+
+    await mainWindow.loadURL(resolveHtmlPath('index.html'));
+  };
+
+  app.on('window-all-closed', () => {
+    // Respect the OSX convention of having the application in memory even
+    // after all windows have been closed
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  let isSafeToQuit = false;
+  app.on('before-quit', (event) => {
+    if (!isSafeToQuit) {
+      event.preventDefault();
+      const timeoutID = setTimeout(() => {
         isSafeToQuit = true;
         app.quit();
+      }, 5000);
+      RendererIPCAPI.disconnect()
+        .catch(console.error)
+        .finally(() => {
+          clearTimeout(timeoutID);
+          isSafeToQuit = true;
+          app.quit();
+        });
+      return;
+    }
+    getWorkers().forEach((worker) => worker.kill());
+    BrowserWindow.getAllWindows().forEach((win) => win.close());
+    ipcMain.removeAllListeners();
+  });
+
+  app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance of D2RMM, we should focus the primary window instead.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  });
+
+  initPreferences();
+
+  app
+    .whenReady()
+    .then(() => {
+      createWindow().catch(console.error);
+      app.on('activate', () => {
+        // On macOS it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        if (mainWindow === null) createWindow().catch(console.error);
       });
-    return;
-  }
-  getWorkers().forEach((worker) => worker.kill());
-  BrowserWindow.getAllWindows().forEach((win) => win.close());
-  ipcMain.removeAllListeners();
-});
-
-initPreferences();
-
-app
-  .whenReady()
-  .then(() => {
-    createWindow().catch(console.error);
-    app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow().catch(console.error);
-    });
-  })
-  .catch(console.error);
+    })
+    .catch(console.error);
+}

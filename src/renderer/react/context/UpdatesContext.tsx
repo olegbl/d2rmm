@@ -1,5 +1,26 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
-import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
+import type { Mod } from 'bridge/BridgeAPI';
+import type { IModUpdaterAPI, ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
+import { consumeAPI } from 'renderer/IPC';
+import { compareVersions } from 'renderer/utils/version';
+import { INexusAuthState } from './NexusModsContext';
+
+const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
+
+export function getNexusModID(mod?: Mod | null): string | null {
+  return (
+    mod?.info?.website?.match(/\/diablo2resurrected\/mods\/(\d+)/)?.[1] ?? null
+  );
+}
+
+function getUpdatesFromDownloads(
+  currentVersion: string,
+  downloads: ModUpdaterDownload[],
+): ModUpdaterDownload[] {
+  return downloads.filter(
+    (download) => compareVersions(download.version, currentVersion) < 0,
+  );
+}
 
 type IUpdateState = {
   isUpdateChecked: boolean;
@@ -56,16 +77,95 @@ export function useModUpdate(modID: string): [IUpdateState, ISetUpdateState] {
   const [updates, setUpdates] = useModUpdates();
   const updateState = updates.get(modID) ?? DEFAULT_UPDATE_STATE;
   const setUpdateState = useCallback(
-    (arg: React.SetStateAction<IUpdateState>) => {
+    (arg: React.SetStateAction<IUpdateState>) =>
       setUpdates((oldUpdates) => {
         const newUpdates = new Map(oldUpdates);
         const oldState = oldUpdates.get(modID) ?? DEFAULT_UPDATE_STATE;
         const newState = typeof arg === 'function' ? arg(oldState) : arg;
         newUpdates.set(modID, newState);
         return newUpdates;
-      });
-    },
+      }),
     [modID, setUpdates],
   );
   return [updateState, setUpdateState];
+}
+
+export function useUpdateModVersion(): (
+  modID: string,
+  version: string,
+) => Promise<boolean> {
+  const [, setUpdates] = useModUpdates();
+
+  return useCallback(
+    async (modID: string, newVersion: string): Promise<boolean> => {
+      let isUpdated = false;
+      setUpdates((oldUpdates) => {
+        const oldUpdateState = oldUpdates.get(modID);
+        if (oldUpdateState == null) {
+          isUpdated = false;
+          return oldUpdates;
+        }
+
+        const nexusUpdates = getUpdatesFromDownloads(
+          newVersion,
+          oldUpdateState.nexusDownloads,
+        );
+
+        const newUpdates = new Map(oldUpdates);
+        newUpdates.set(modID, {
+          isUpdateChecked: true,
+          isUpdateAvailable: nexusUpdates.length > 0,
+          nexusUpdates,
+          nexusDownloads: oldUpdateState.nexusDownloads,
+        });
+        isUpdated = true;
+        return newUpdates;
+      });
+      return isUpdated;
+    },
+    [setUpdates],
+  );
+}
+
+export function useCheckModForUpdates(
+  nexusAuthState: INexusAuthState,
+  modOuter?: Mod,
+): (modInner?: Mod) => Promise<void> {
+  const [, setUpdates] = useModUpdates();
+
+  return useCallback(
+    async (modInner?: Mod): Promise<void> => {
+      const mod = modOuter ?? modInner;
+      const nexusModID = getNexusModID(mod);
+      if (nexusAuthState.apiKey == null || nexusModID == null || mod == null) {
+        return;
+      }
+
+      const currentVersion = mod.info.version ?? '0';
+
+      const nexusDownloads = (
+        await ModUpdaterAPI.getDownloadsViaNexus(
+          nexusAuthState.apiKey,
+          nexusModID,
+        )
+      ).sort((a, b) => compareVersions(a.version, b.version));
+
+      const nexusUpdates = getUpdatesFromDownloads(
+        currentVersion,
+        nexusDownloads,
+      );
+
+      setUpdates((oldUpdates) => {
+        const newUpdates = new Map(oldUpdates);
+        newUpdates.set(mod.id, {
+          isUpdateChecked: true,
+          isUpdateAvailable: nexusUpdates.length > 0,
+          nexusUpdates,
+          nexusDownloads,
+        });
+        return newUpdates;
+      });
+    },
+    [modOuter, nexusAuthState.apiKey, setUpdates],
+  );
 }

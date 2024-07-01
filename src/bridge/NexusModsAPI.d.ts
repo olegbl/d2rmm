@@ -37,6 +37,8 @@ export type Mod = {
   };
 };
 
+// /v1/games/{game_domain_name}/mods/{mod_id}/files/{file_id}.json
+// View a specified mod file
 export type File = {
   category_id: number;
   category_name: string;

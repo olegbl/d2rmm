@@ -28,7 +28,7 @@ type Mutable<T> = {
 
 type IMods = Mod[];
 
-type IModsRefresher = () => Promise<void>;
+type IModsRefresher = () => Promise<IMods>;
 
 type IEnabledMods = { [id: string]: boolean };
 
@@ -192,9 +192,11 @@ export function ModsContextProvider({
     [],
   );
 
-  const refreshMods = useCallback(async (): Promise<void> => {
+  const refreshMods = useCallback(async (): Promise<IMods> => {
     // manually refresh mods
-    setMods(await getMods());
+    const mods = await getMods();
+    setMods(mods);
+    return mods;
   }, [getMods]);
 
   const [installedMods, setInstalledMods] = useSavedState(

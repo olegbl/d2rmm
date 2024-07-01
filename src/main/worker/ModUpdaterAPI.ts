@@ -15,20 +15,22 @@ import { provideAPI } from './IPC';
 import { RequestAPI } from './RequestAPI';
 
 // TODO: publish status of update checking / downloading / installing for nice UX
-// TODO: add nxm:// URL handling
 
-const NexusAPI = {
+const NexusModsAPI = {
   publishStatus: async (headers: ResponseHeaders): Promise<void> => {
-    await EventAPI.send('nexus-mods-api-status', {
+    const status = {
       dailyLimit: headers['x-rl-daily-limit'],
       dailyRemaining: headers['x-rl-daily-remaining'],
       dailyReset: headers['x-rl-daily-reset'],
       hourlyLimit: headers['x-rl-hourly-limit'],
       hourlyRemaining: headers['x-rl-hourly-remaining'],
       hourlyReset: headers['x-rl-hourly-reset'],
-    } as NexusModsAPIStateEvent);
+    } as NexusModsAPIStateEvent;
+    console.debug('NexusModsAPI', 'publishStatus', status);
+    await EventAPI.send('nexus-mods-api-status', status);
   },
   validateApiKey: async (nexusApiKey: string): Promise<ValidateResult> => {
+    console.debug('NexusModsAPI', 'validateApiKey');
     const { response, headers } = await RequestAPI.downloadToBuffer(
       'https://api.nexusmods.com/v1/users/validate.json',
       {
@@ -38,10 +40,34 @@ const NexusAPI = {
         },
       },
     );
-    await NexusAPI.publishStatus(headers);
+    await NexusModsAPI.publishStatus(headers);
     return JSON.parse(response.toString()) as ValidateResult;
   },
+  getFile: async (
+    nexusApiKey: string,
+    nexusModID: string,
+    nexusFileID: number,
+  ): Promise<File> => {
+    console.debug('NexusModsAPI', 'getFile', {
+      nexusModID,
+      nexusFileID,
+    });
+    const { response, headers } = await RequestAPI.downloadToBuffer(
+      `https://api.nexusmods.com/v1/games/diablo2resurrected/mods/${nexusModID}/files/${nexusFileID}.json`,
+      {
+        headers: {
+          accept: 'application/json',
+          apikey: nexusApiKey,
+        },
+      },
+    );
+    await NexusModsAPI.publishStatus(headers);
+    return JSON.parse(response.toString()) as File;
+  },
   getFiles: async (nexusApiKey: string, nexusModID: string): Promise<Files> => {
+    console.debug('NexusModsAPI', 'getFiles', {
+      nexusModID,
+    });
     const { response, headers } = await RequestAPI.downloadToBuffer(
       `https://api.nexusmods.com/v1/games/diablo2resurrected/mods/${nexusModID}/files.json`,
       {
@@ -51,7 +77,7 @@ const NexusAPI = {
         },
       },
     );
-    await NexusAPI.publishStatus(headers);
+    await NexusModsAPI.publishStatus(headers);
     return JSON.parse(response.toString()) as Files;
   },
   getDownloadLink: async (
@@ -61,6 +87,11 @@ const NexusAPI = {
     key?: string,
     expires?: number,
   ): Promise<DownloadLink> => {
+    console.debug('NexusModsAPI', 'getDownloadLink', {
+      nexusModID,
+      nexusFileID,
+      expires,
+    });
     const args =
       key != null && expires != null ? `?key=${key}&expires=${expires}` : '';
     const { response, headers } = await RequestAPI.downloadToBuffer(
@@ -72,7 +103,7 @@ const NexusAPI = {
         },
       },
     );
-    await NexusAPI.publishStatus(headers);
+    await NexusModsAPI.publishStatus(headers);
     return JSON.parse(response.toString()) as DownloadLink;
   },
 };
@@ -80,7 +111,7 @@ const NexusAPI = {
 export async function initModUpdaterAPI(): Promise<void> {
   provideAPI('ModUpdaterAPI', {
     validateNexusApiKey: async (nexusApiKey) => {
-      const result = await NexusAPI.validateApiKey(nexusApiKey);
+      const result = await NexusModsAPI.validateApiKey(nexusApiKey);
       const isValid = result.key === nexusApiKey;
       return {
         name: result.name,
@@ -90,7 +121,7 @@ export async function initModUpdaterAPI(): Promise<void> {
       };
     },
     getDownloadsViaNexus: async (nexusApiKey, nexusModID) => {
-      const result = await NexusAPI.getFiles(nexusApiKey, nexusModID);
+      const result = await NexusModsAPI.getFiles(nexusApiKey, nexusModID);
       return result.files
         .filter(
           (file) =>
@@ -113,7 +144,7 @@ export async function initModUpdaterAPI(): Promise<void> {
       expires,
     ) => {
       // get link to the zip file on Nexus Mods CDN
-      const downloadLink = await NexusAPI.getDownloadLink(
+      const downloadLink = await NexusModsAPI.getDownloadLink(
         nexusApiKey,
         nexusModID,
         nexusFileID,
@@ -125,6 +156,15 @@ export async function initModUpdaterAPI(): Promise<void> {
         throw new Error(
           `No download links found for Nexus mod ${nexusModID} file ${nexusFileID}.`,
         );
+      }
+
+      if (modID == null) {
+        const file = await NexusModsAPI.getFile(
+          nexusApiKey,
+          nexusModID,
+          nexusFileID,
+        );
+        modID = file.name;
       }
 
       // download the zip file
@@ -151,7 +191,9 @@ export async function initModUpdaterAPI(): Promise<void> {
       if (existsSync(configFilePath)) {
         cpSync(configFilePath, path.join(updateDirPath, 'config.json'));
       }
-      rmSync(modDirPath, { force: true, recursive: true });
+      if (existsSync(modDirPath)) {
+        rmSync(modDirPath, { force: true, recursive: true });
+      }
 
       // copy the new extracted files to the mod directory
       mkdirSync(modDirPath, { recursive: true });
@@ -159,6 +201,8 @@ export async function initModUpdaterAPI(): Promise<void> {
 
       // clean up
       rmSync(updateDirPath, { force: true, recursive: true });
+
+      return modID;
     },
   } as IModUpdaterAPI);
 }

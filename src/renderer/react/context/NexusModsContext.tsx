@@ -12,6 +12,8 @@ import { NexusModsAPIStateEvent as NexusModsApiStateEvent } from 'bridge/NexusMo
 import { useEventAPIListener } from 'renderer/EventAPI';
 import { consumeAPI } from 'renderer/IPC';
 import useSavedState from '../hooks/useSavedState';
+import { useMods } from './ModsContext';
+import { useCheckModForUpdates, useUpdateModVersion } from './UpdatesContext';
 
 // DEBUG: Using Vortex app id during development
 // TODO: get a real app id from Nexus Mods staff
@@ -21,14 +23,16 @@ const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
 
 type IApiKey = string | null;
 
-type INexusAuthState = {
+export type INexusAuthState = {
   apiKey: IApiKey;
   name?: string | null;
   email?: string | null;
   isPremium?: boolean | null;
 };
 
-type ISetNexusAuthState = React.Dispatch<React.SetStateAction<INexusAuthState>>;
+export type ISetNexusAuthState = React.Dispatch<
+  React.SetStateAction<INexusAuthState>
+>;
 
 export type INexusModsContext = {
   apiState: NexusModsApiStateEvent | null;
@@ -52,8 +56,57 @@ export function NexusModsContextProvider({
   );
 
   const [apiState, setApiState] = useState<NexusModsApiStateEvent | null>(null);
-
   useEventAPIListener('nexus-mods-api-status', setApiState);
+
+  const [, onRefreshMods] = useMods();
+  const updateModVersion = useUpdateModVersion();
+  const checkModForUpdates = useCheckModForUpdates(authState);
+
+  const onOpenNxmUrl = useCallback(
+    ({
+      nexusModID,
+      nexusFileID,
+      key,
+      expires,
+    }: {
+      nexusModID: string;
+      nexusFileID: number;
+      key: string | null;
+      expires: number | null;
+    }) => {
+      if (authState.apiKey != null) {
+        (async () => {
+          const modID = await ModUpdaterAPI.installModViaNexus(
+            null,
+            authState.apiKey ?? '',
+            nexusModID,
+            nexusFileID,
+            key ?? undefined,
+            expires ?? undefined,
+          );
+          const mods = await onRefreshMods();
+          const mod = mods.find((mod) => mod.id === modID);
+          if (mod != null) {
+            const newVersion = mod.info.version;
+            if (newVersion != null) {
+              const isUpdated = await updateModVersion(modID, newVersion);
+              if (!isUpdated) {
+                await checkModForUpdates(mod);
+              }
+            }
+          }
+        })()
+          .then()
+          .catch(console.error);
+      } else {
+        console.warn(
+          `Couldn't handle nxm:// url for file ${nexusFileID} in mod ${nexusModID} because Nexus Mods is not authenticated.`,
+        );
+      }
+    },
+    [authState.apiKey, checkModForUpdates, onRefreshMods, updateModVersion],
+  );
+  useEventAPIListener('nexus-mods-open-url', onOpenNxmUrl);
 
   const validateKey = useCallback(() => {
     if (authState.apiKey == null) {

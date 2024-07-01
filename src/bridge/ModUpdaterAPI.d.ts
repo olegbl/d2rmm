@@ -19,12 +19,12 @@ export type IModUpdaterAPI = {
     nexusModID: string,
   ) => Promise<ModUpdaterDownload[]>;
   installModViaNexus: (
-    modID: string,
+    modID: string | null,
     nexusApiKey: string,
     nexusModID: string,
     nexusFileID: number,
-    // when installing from a .nxm link
+    // when installing from a nxm:// link
     key?: string,
     expires?: number,
-  ) => Promise<void>;
+  ) => Promise<string>;
 };

@@ -44,6 +44,12 @@
         "zip"
       ]
     },
+    "protocols": {
+      "name": "nxm",
+      "schemes": [
+        "nxm"
+      ]
+    },
     "files": [
       "dist",
       "node_modules",

@@ -153,6 +153,7 @@ export default function ModListItem({
 
   const {
     isUpdatePossible,
+    isDownloadPossible,
     isUpdateChecked,
     isUpdateAvailable,
     latestUpdate,
@@ -206,19 +207,23 @@ export default function ModListItem({
                 : 'Check for Updates',
           tooltip: !isUpdatePossible
             ? null
-            : isUpdateAvailable
-              ? `Download Version ${latestUpdate?.version}`
-              : isUpdateChecked
-                ? 'Recheck for Updates'
-                : 'Check for Updates',
+            : !isDownloadPossible
+              ? 'Update is Available'
+              : isUpdateAvailable
+                ? `Download Version ${latestUpdate?.version}`
+                : isUpdateChecked
+                  ? 'Recheck for Updates'
+                  : 'Check for Updates',
           icon: <Update />,
           onClick: !isUpdatePossible
             ? null
-            : isUpdateAvailable
-              ? onDownloadLatestUpdate
-              : onCheckForUpdates,
+            : !isDownloadPossible
+              ? onOpenWebsite
+              : isUpdateAvailable
+                ? onDownloadLatestUpdate
+                : onCheckForUpdates,
         } as Action),
-    mod.info.version == null || downloads.length === 0
+    mod.info.version == null || downloads.length === 0 || !isDownloadPossible
       ? null
       : {
           id: 'download',

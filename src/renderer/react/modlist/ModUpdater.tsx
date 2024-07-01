@@ -15,6 +15,7 @@ const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
 
 export function useModUpdater(mod: Mod): {
   isUpdatePossible: boolean;
+  isDownloadPossible: boolean;
   isUpdateChecked: boolean;
   isUpdateAvailable: boolean;
   latestUpdate: ModUpdaterDownload | null;
@@ -29,11 +30,11 @@ export function useModUpdater(mod: Mod): {
   const nexusModID = getNexusModID(mod);
   const isUpdatePossible =
     nexusAuthState != null && mod.info.website != null && nexusModID != null;
+  const isDownloadPossible = nexusAuthState.isPremium ?? false;
   const [updateState] = useModUpdate(mod.id);
   const latestUpdate = updateState.nexusUpdates[0];
   const isUpdateChecked = updateState.isUpdateChecked;
   const isUpdateAvailable = updateState.isUpdateAvailable;
-  // TODO: handle non-premium Nexus Mods users
 
   const onCheckForUpdates = useCallback(async () => {
     await checkModForUpdates(mod);
@@ -67,6 +68,7 @@ export function useModUpdater(mod: Mod): {
 
   return {
     isUpdatePossible,
+    isDownloadPossible,
     isUpdateChecked,
     isUpdateAvailable,
     latestUpdate,

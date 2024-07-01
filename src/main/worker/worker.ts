@@ -4,6 +4,7 @@ import { initCascLib } from './CascLib';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
+import { initModUpdaterAPI } from './ModUpdaterAPI';
 import { initUpdaterAPI } from './UpdaterAPI';
 import { initAsar } from './asar';
 import { initQuickJS } from './quickjs';
@@ -28,6 +29,8 @@ async function start(): Promise<void> {
   await initBridgeAPI();
   console.debug('[worker] Initializing UpdaterAPI...');
   await initUpdaterAPI();
+  console.debug('[worker] Initializing ModUpdaterAPI...');
+  await initModUpdaterAPI();
   console.debug('[worker] Initialized');
 }
 

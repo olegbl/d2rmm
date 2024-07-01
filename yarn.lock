@@ -7666,6 +7666,11 @@ mui-color-input@^2.0.3:
   dependencies:
     "@ctrl/tinycolor" "^4.0.3"
 
+mui-nested-menu@^3.4.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/mui-nested-menu/-/mui-nested-menu-3.4.0.tgz#e104b1b492e0a9ef95820e97827851310c3a56ba"
+  integrity sha512-QUZqsCKW4tX1GwcbemBvf++ZvKsRXvHdZ+CT6GvnHvusucmEB18WKuJjAZVD8L5trXS98+9psie11Ev3FTez2A==
+
 multicast-dns-service-types@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/multicast-dns-service-types/-/multicast-dns-service-types-1.1.0.tgz#899f11d9686e5e05cb91b35d5f0e63b773cfc901"

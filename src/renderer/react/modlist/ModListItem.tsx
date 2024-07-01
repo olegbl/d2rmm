@@ -1,12 +1,14 @@
+import { NestedMenuItem } from 'mui-nested-menu';
 import { useCallback, useMemo, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import FaceIcon from '@mui/icons-material/Face';
-import HelpIcon from '@mui/icons-material/Help';
-import LinkIcon from '@mui/icons-material/Link';
-import SettingsIcon from '@mui/icons-material/Settings';
-import UpdateIcon from '@mui/icons-material/Update';
-import WarningIcon from '@mui/icons-material/Warning';
+import { Download } from '@mui/icons-material';
+import DragIndicator from '@mui/icons-material/DragIndicator';
+import Face from '@mui/icons-material/Face';
+import Help from '@mui/icons-material/Help';
+import Link from '@mui/icons-material/Link';
+import Settings from '@mui/icons-material/Settings';
+import Update from '@mui/icons-material/Update';
+import Warning from '@mui/icons-material/Warning';
 import {
   Box,
   Checkbox,
@@ -21,9 +23,10 @@ import {
   Typography,
 } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
-import { IShellAPI } from 'bridge/ShellAPI';
+import type { IShellAPI } from 'bridge/ShellAPI';
 import { consumeAPI } from '../../IPC';
 import { useSelectedMod, useToggleMod } from '../context/ModsContext';
+import { useModUpdater } from './ModUpdater';
 
 const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
@@ -112,13 +115,14 @@ function ListChip({
 }
 
 type Action = {
-  id: string;
-  icon: React.ComponentProps<typeof Chip>['icon'];
-  shortLabel?: string | null;
-  longLabel?: string | null;
+  children?: Action[];
   color?: React.ComponentProps<typeof Chip>['color'] | null;
-  tooltip?: string | null;
+  icon?: React.ComponentProps<typeof Chip>['icon'] | null;
+  id: string;
+  longLabel?: string | null;
   onClick?: (() => void) | null;
+  shortLabel?: string | null;
+  tooltip?: string | null;
 };
 
 type Props = {
@@ -147,6 +151,22 @@ export default function ModListItem({
     }
   }, [mod]);
 
+  const {
+    isUpdatePossible,
+    isUpdateChecked,
+    isUpdateAvailable,
+    latestUpdate,
+    downloads,
+    onCheckForUpdates,
+    onDownloadVersion,
+  } = useModUpdater(mod);
+
+  const onDownloadLatestUpdate = useCallback(async () => {
+    if (latestUpdate != null) {
+      await onDownloadVersion(latestUpdate);
+    }
+  }, [latestUpdate, onDownloadVersion]);
+
   const [contextMenuAnchor, onOpenContextMenu, onCloseContextMenu] =
     useContextMenu();
 
@@ -157,7 +177,7 @@ export default function ModListItem({
           id: 'site',
           shortLabel: 'site',
           longLabel: 'Visit Website',
-          icon: <LinkIcon />,
+          icon: <Link />,
           onClick: onOpenWebsite,
         } as Action),
     mod.info.author == null
@@ -165,15 +185,53 @@ export default function ModListItem({
       : ({
           id: 'author',
           shortLabel: mod.info.author,
-          icon: <FaceIcon />,
+          icon: <Face />,
         } as Action),
     mod.info.version == null
       ? null
       : ({
           id: 'version',
+          color: isUpdateAvailable
+            ? 'warning'
+            : isUpdateChecked
+              ? 'success'
+              : undefined,
           shortLabel: `v${mod.info.version}`,
-          icon: <UpdateIcon />,
+          longLabel: !isUpdatePossible
+            ? null
+            : isUpdateAvailable
+              ? null
+              : isUpdateChecked
+                ? 'Recheck for Updates'
+                : 'Check for Updates',
+          tooltip: !isUpdatePossible
+            ? null
+            : isUpdateAvailable
+              ? `Download Version ${latestUpdate?.version}`
+              : isUpdateChecked
+                ? 'Recheck for Updates'
+                : 'Check for Updates',
+          icon: <Update />,
+          onClick: !isUpdatePossible
+            ? null
+            : isUpdateAvailable
+              ? onDownloadLatestUpdate
+              : onCheckForUpdates,
         } as Action),
+    mod.info.version == null || downloads.length === 0
+      ? null
+      : {
+          id: 'download',
+          longLabel: 'Download',
+          icon: <Download />,
+          children: downloads.map((download) => ({
+            id: `download-${download.version}`,
+            longLabel: `Version ${download.version}`,
+            onClick: async () => {
+              await onDownloadVersion(download);
+            },
+          })),
+        },
     mod.info.config == null
       ? null
       : ({
@@ -181,7 +239,7 @@ export default function ModListItem({
           shortLabel: 'settings',
           longLabel: 'Open Settings',
           color: isEnabled ? 'primary' : undefined,
-          icon: <SettingsIcon />,
+          icon: <Settings />,
           onClick: onConfigureMod,
         } as Action),
     mod.info.type !== 'data'
@@ -192,7 +250,7 @@ export default function ModListItem({
           color: 'warning',
           tooltip:
             'This mod is a non-D2RMM data mod and may conflict with other mods or game updates.',
-          icon: <WarningIcon />,
+          icon: <Warning />,
           onClick: onOpenWebsite,
         } as Action),
   ].filter<Action>((action: Action | null): action is Action => action != null);
@@ -229,7 +287,7 @@ export default function ModListItem({
               <Typography>{mod.info.name}</Typography>
               {mod.info.description == null ? null : (
                 <Tooltip title={mod.info.description}>
-                  <HelpIcon color="disabled" sx={{ ml: 1 }} />
+                  <Help color="disabled" sx={{ ml: 1 }} />
                 </Tooltip>
               )}
               <Box sx={{ flex: 1 }} />
@@ -237,7 +295,7 @@ export default function ModListItem({
                 <ListChip
                   key={action.id}
                   color={action.color ?? undefined}
-                  icon={action.icon}
+                  icon={action.icon ?? undefined}
                   label={action.shortLabel}
                   onClick={action.onClick ?? undefined}
                   tooltip={action.tooltip ?? undefined}
@@ -247,7 +305,7 @@ export default function ModListItem({
           }
         />
       </ListItemButton>
-      {isReorderEnabled ? <DragIndicatorIcon color="disabled" /> : null}
+      {isReorderEnabled ? <DragIndicator color="disabled" /> : null}
     </ListItem>
   );
 
@@ -276,18 +334,61 @@ export default function ModListItem({
           open={contextMenuAnchor != null}
         >
           {contextActions.map((action) => (
-            <MenuItem
+            <ActionMenuItem
               key={action.id}
-              onClick={() => {
-                onCloseContextMenu();
-                action.onClick?.();
-              }}
-            >
-              {action.longLabel}
-            </MenuItem>
+              action={action}
+              contextMenuAnchor={contextMenuAnchor}
+              onCloseContextMenu={onCloseContextMenu}
+            />
           ))}
         </Menu>
       )}
     </>
+  );
+}
+
+function ActionMenuItem({
+  action,
+  contextMenuAnchor,
+  onCloseContextMenu,
+}: {
+  action: Action;
+  contextMenuAnchor: ContextMenuAnchor | null;
+  onCloseContextMenu: () => void;
+}) {
+  if (action.children == null) {
+    return (
+      <MenuItem
+        key={action.id}
+        onClick={() => {
+          onCloseContextMenu();
+          action.onClick?.();
+        }}
+      >
+        {action.icon && <ListItemIcon>{action.icon}</ListItemIcon>}
+        <ListItemText>{action.longLabel}</ListItemText>
+      </MenuItem>
+    );
+  }
+
+  return (
+    <NestedMenuItem
+      component={MenuItem}
+      delay={250}
+      leftIcon={
+        <ListItemIcon sx={{ marginLeft: 1.5 }}>{action.icon}</ListItemIcon>
+      }
+      parentMenuOpen={contextMenuAnchor != null}
+      renderLabel={() => <ListItemText>{action.longLabel}</ListItemText>}
+    >
+      {action.children.map((childAction) => (
+        <ActionMenuItem
+          key={childAction.id}
+          action={childAction}
+          contextMenuAnchor={contextMenuAnchor}
+          onCloseContextMenu={onCloseContextMenu}
+        />
+      ))}
+    </NestedMenuItem>
   );
 }

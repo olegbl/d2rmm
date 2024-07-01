@@ -206,6 +206,7 @@
     "history": "^5.2.0",
     "json5": "^2.2.0",
     "mui-color-input": "^2.0.3",
+    "mui-nested-menu": "^3.4.0",
     "node-addon-api": "^4.3.0",
     "react": "^18.0.0",
     "react-beautiful-dnd": "^13.1.1",

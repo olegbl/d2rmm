@@ -13,10 +13,12 @@ import UpdaterDialog from './UpdaterDialog';
 import { InstallContextProvider } from './context/InstallContext';
 import { LogsProvider } from './context/LogContext';
 import { ModsContextProvider } from './context/ModsContext';
+import { NexusModsContextProvider } from './context/NexusModsContext';
 import { PreferencesContextProvider } from './context/PreferencesContext';
 import { TabContextProvider, useTabState } from './context/TabContext';
 import ThemeContextProvider from './context/ThemeContext';
 import { ToastContextProvider } from './context/ToastContext';
+import { UpdatesContextProvider } from './context/UpdatesContext';
 import ModList from './modlist/ModList';
 
 function TabPanelBox({
@@ -96,12 +98,16 @@ export default function App() {
                 <ModsContextProvider>
                   <TabContextProvider>
                     <InstallContextProvider>
-                      <Router>
-                        <Routes>
-                          <Route element={<D2RMMRootView />} path="/" />
-                        </Routes>
-                      </Router>
-                      <UpdaterDialog />
+                      <UpdatesContextProvider>
+                        <NexusModsContextProvider>
+                          <Router>
+                            <Routes>
+                              <Route element={<D2RMMRootView />} path="/" />
+                            </Routes>
+                          </Router>
+                          <UpdaterDialog />
+                        </NexusModsContextProvider>
+                      </UpdatesContextProvider>
                     </InstallContextProvider>
                   </TabContextProvider>
                 </ModsContextProvider>

@@ -1,12 +1,16 @@
 import { readFileSync, rmSync } from 'fs';
-import uuid from 'uuid';
-import type { IRequestAPI } from 'bridge/RequestAPI';
+import { v4 as uuidv4 } from 'uuid';
+import type {
+  IRequestAPI,
+  RequestHeaders,
+  ResponseHeaders,
+} from 'bridge/RequestAPI';
 import { EventAPI } from './EventAPI';
 import { consumeAPI } from './IPC';
 
 const NetworkedRequestAPI = consumeAPI<IRequestAPI>('RequestAPI', {});
 
-type OnProgress = (progress: {
+export type OnProgress = (progress: {
   bytesDownloaded: number;
   bytesTotal: number;
 }) => Promise<void>;
@@ -14,36 +18,48 @@ type OnProgress = (progress: {
 type ILocalRequestAPI = {
   downloadToFile(
     url: string,
-    fileName?: string,
-    onProgress?: OnProgress,
-  ): Promise<string>;
-  downloadToBuffer(url: string, onProgress?: OnProgress): Promise<Buffer>;
+    options?: {
+      fileName?: string | null;
+      headers?: RequestHeaders | null;
+      onProgress?: OnProgress | null;
+    } | null,
+  ): Promise<{
+    filePath: string;
+    headers: ResponseHeaders;
+  }>;
+  downloadToBuffer(
+    url: string,
+    options?: {
+      headers?: RequestHeaders | null;
+      onProgress?: OnProgress | null;
+    } | null,
+  ): Promise<{
+    response: Buffer;
+    headers: ResponseHeaders;
+  }>;
 };
 
 export const RequestAPI = {
-  async downloadToFile(
-    url: string,
-    fileName?: string,
-    onProgress?: OnProgress,
-  ): Promise<string> {
-    const eventID = onProgress == null ? null : uuid.v4();
-    if (eventID != null && onProgress != null) {
-      EventAPI.addListener(eventID, onProgress);
+  async downloadToFile(url, options) {
+    const eventID = options?.onProgress == null ? null : uuidv4();
+    if (eventID != null && options?.onProgress != null) {
+      EventAPI.addListener(eventID, options?.onProgress);
     }
-    const filePath = await NetworkedRequestAPI.download(url, fileName, eventID);
-    if (eventID != null && onProgress != null) {
-      EventAPI.removeListener(eventID, onProgress);
+    const { filePath, headers } = await NetworkedRequestAPI.download(url, {
+      eventID,
+      fileName: options?.fileName,
+      headers: options?.headers,
+    });
+    if (eventID != null && options?.onProgress != null) {
+      EventAPI.removeListener(eventID, options?.onProgress);
     }
-    return filePath;
+    return { filePath, headers };
   },
 
-  async downloadToBuffer(
-    url: string,
-    onProgress?: OnProgress,
-  ): Promise<Buffer> {
-    const filePath = await this.downloadToFile(url, undefined, onProgress);
-    const fileData = readFileSync(filePath, { encoding: null });
+  async downloadToBuffer(url, options) {
+    const { filePath, headers } = await RequestAPI.downloadToFile(url, options);
+    const response = readFileSync(filePath, { encoding: null });
     rmSync(filePath);
-    return fileData;
+    return { response, headers };
   },
 } as ILocalRequestAPI;

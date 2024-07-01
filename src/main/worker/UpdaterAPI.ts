@@ -73,14 +73,14 @@ async function getUpdate(): Promise<Update | null> {
 }
 
 async function getLatestRelease(): Promise<Release> {
-  const response = await RequestAPI.downloadToBuffer(
+  const { response } = await RequestAPI.downloadToBuffer(
     'https://api.github.com/repos/olegbl/d2rmm/releases/latest',
   );
   return JSON.parse(response.toString()) as Release;
 }
 
 async function getLatestPrerelease(): Promise<Release | null> {
-  const response = await RequestAPI.downloadToBuffer(
+  const { response } = await RequestAPI.downloadToBuffer(
     'https://api.github.com/repos/olegbl/d2rmm/releases',
   );
   const releases = JSON.parse(response.toString()) as Release[];
@@ -125,17 +125,17 @@ async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
 async function downloadUpdate(config: Config, update: Update): Promise<void> {
   console.log('[Updater] Downloading update');
   await EventAPI.send('updater', { event: 'download' });
-  config.updateZipPath = await RequestAPI.downloadToFile(
-    update.url,
-    'update.zip',
-    async ({ bytesDownloaded, bytesTotal }) => {
+  const { filePath } = await RequestAPI.downloadToFile(update.url, {
+    fileName: 'update.zip',
+    onProgress: async ({ bytesDownloaded, bytesTotal }) => {
       await EventAPI.send('updater', {
         event: 'download-progress',
         bytesDownloaded,
         bytesTotal,
       });
     },
-  );
+  });
+  config.updateZipPath = filePath;
   console.log(`[Updater] Downloaded update to ${config.updateZipPath}`);
 }
 

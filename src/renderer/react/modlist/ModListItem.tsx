@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { IShellAPI } from 'bridge/ShellAPI';
+import { isNotNull } from 'renderer/utils/isNotNull';
 import { consumeAPI } from '../../IPC';
 import { useSelectedMod, useToggleMod } from '../context/ModsContext';
 import { useModUpdater } from './ModUpdater';
@@ -258,7 +259,7 @@ export default function ModListItem({
           icon: <Warning />,
           onClick: onOpenWebsite,
         } as Action),
-  ].filter<Action>((action: Action | null): action is Action => action != null);
+  ].filter<Action>(isNotNull);
 
   const chipActions = actions.filter((action) => action.shortLabel != null);
   const contextActions = actions.filter((action) => action.longLabel != null);

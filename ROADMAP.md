@@ -1,6 +1,5 @@
 # Mod Manager
 
-- Show # enabled mods per section
 - Toggle all button for sections
 - Mod config actions
 - Typeahead config

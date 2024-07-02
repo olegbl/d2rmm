@@ -21,15 +21,17 @@ import {
 } from '../context/ModsContext';
 
 type Props = {
-  count: number;
+  enabledCount: number;
   index: number;
   sectionHeader: ISectionHeader;
+  totalCount: number;
 };
 
 export default function ModListSectionHeader({
-  count,
+  enabledCount,
   index,
   sectionHeader,
+  totalCount,
 }: Props) {
   const theme = useTheme();
 
@@ -134,7 +136,7 @@ export default function ModListSectionHeader({
                       <>
                         <Chip
                           color="default"
-                          label={count}
+                          label={`${enabledCount} / ${totalCount}`}
                           size="small"
                           sx={{ ml: 1 }}
                         />

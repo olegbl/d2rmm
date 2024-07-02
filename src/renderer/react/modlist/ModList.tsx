@@ -86,22 +86,27 @@ export default function ModList(): JSX.Element {
   const renderedItems = useMemo(
     () =>
       filteredItems
-        .map((item, index) =>
-          item.type === 'sectionHeader' ? (
-            <ModListSectionHeader
-              key={item.sectionHeader.id}
-              count={(() => {
-                const realIndex = orderedItems.findIndex(
-                  (i) => i.id === item.id,
-                );
-                const followingItems = orderedItems.slice(realIndex + 1);
-                const count = followingItems.findIndex(isOrderedSectionHeader);
-                return count === -1 ? followingItems.length : count;
-              })()}
-              index={index}
-              sectionHeader={item.sectionHeader}
-            />
-          ) : item.type === 'mod' ? (
+        .map((item, index) => {
+          if (item.type === 'sectionHeader') {
+            const realIndex = orderedItems.findIndex((i) => i.id === item.id);
+            const followingItems = orderedItems.slice(realIndex + 1);
+            const count = followingItems.findIndex(isOrderedSectionHeader);
+            const children =
+              count === -1 ? followingItems : followingItems.slice(0, count);
+            const enabledChildren = children.filter(
+              (child) => enabledMods[child.id],
+            );
+            return (
+              <ModListSectionHeader
+                key={item.sectionHeader.id}
+                enabledCount={enabledChildren.length}
+                index={index}
+                sectionHeader={item.sectionHeader}
+                totalCount={children.length}
+              />
+            );
+          }
+          return (
             <ModListItem
               key={item.mod.id}
               index={index}
@@ -109,8 +114,8 @@ export default function ModList(): JSX.Element {
               isReorderEnabled={isReorderEnabled}
               mod={item.mod}
             />
-          ) : null,
-        )
+          );
+        })
         .filter(Boolean),
     [enabledMods, filteredItems, orderedItems, isReorderEnabled],
   );

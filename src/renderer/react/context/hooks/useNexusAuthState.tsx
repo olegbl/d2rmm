@@ -61,7 +61,6 @@ export default function useNexusAuthState(): {
         const apiKey = response.data.api_key;
         socket.close();
         context.setAuthState({ apiKey });
-        context.validateKey();
       }
     };
   }, [context]);

@@ -215,21 +215,21 @@ export default function ModListItem({
                 : 'Check for Updates',
           tooltip: !isUpdatePossible
             ? null
-            : !isDownloadPossible
-              ? 'Update is Available'
-              : isUpdateAvailable
-                ? `Download Version ${latestUpdate?.version}`
-                : isUpdateChecked
-                  ? 'Recheck for Updates'
-                  : 'Check for Updates',
+            : isUpdateAvailable
+              ? !isDownloadPossible
+                ? 'Update is Available'
+                : `Download Version ${latestUpdate?.version}`
+              : isUpdateChecked
+                ? 'Recheck for Updates'
+                : 'Check for Updates',
           icon: <Update />,
           onClick: !isUpdatePossible
             ? null
-            : !isDownloadPossible
-              ? onOpenWebsite
-              : isUpdateAvailable
-                ? onDownloadLatestUpdate
-                : onCheckForUpdates,
+            : isUpdateAvailable
+              ? !isDownloadPossible
+                ? onOpenWebsite
+                : onDownloadLatestUpdate
+              : onCheckForUpdates,
         } as Action),
     mod.info.version == null || downloads.length === 0 || !isDownloadPossible
       ? null

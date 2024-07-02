@@ -3,17 +3,20 @@ import {
   INexusAuthState,
   ISetNexusAuthState,
 } from 'renderer/react/context/NexusModsContext';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export default function useValidateNexusModsApiKey(
   authState: INexusAuthState,
   setAuthState: ISetNexusAuthState,
 ): () => void {
+  const apiKey = authState.apiKey;
+
   const validateKey = useCallback(() => {
-    if (authState.apiKey == null) {
+    console.log('@@ validateKey', apiKey);
+    if (apiKey == null) {
       return;
     }
-    ModUpdaterAPI.validateNexusApiKey(authState.apiKey)
+    ModUpdaterAPI.validateNexusApiKey(apiKey)
       .then(({ name, email, isValid, isPremium }) => {
         if (!isValid) {
           console.warn(
@@ -30,16 +33,10 @@ export default function useValidateNexusModsApiKey(
         }
       })
       .catch(console.error);
-  }, [authState.apiKey, setAuthState]);
+  }, [apiKey, setAuthState]);
 
-  // we only want to validate the initial cached key - any further changes
-  // will be coming from within the session with a pre-validated key
-  const isCachedKeyValidatedRef = useRef(false);
   useEffect(() => {
-    if (!isCachedKeyValidatedRef.current) {
-      validateKey();
-    }
-    isCachedKeyValidatedRef.current = true;
+    validateKey();
   }, [validateKey]);
 
   return validateKey;

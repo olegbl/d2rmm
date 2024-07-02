@@ -5,11 +5,11 @@ import { consumeAPI } from 'renderer/IPC';
 import { useMods } from '../context/ModsContext';
 import { useNexusAuthState } from '../context/NexusModsContext';
 import {
-  getNexusModID,
   useCheckModForUpdates,
   useModUpdate,
   useUpdateModVersion,
 } from '../context/UpdatesContext';
+import getNexusModID from '../context/utils/getNexusModID';
 
 const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
 

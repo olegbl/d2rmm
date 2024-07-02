@@ -20,6 +20,10 @@ import {
 import useSavedState from '../hooks/useSavedState';
 import useToast from '../hooks/useToast';
 import { useLogger } from './LogContext';
+import useModsContextConfigOverrides, {
+  IModConfigOverrides,
+  ISetModConfigOverrides,
+} from './hooks/useModsContextConfigOverrides';
 
 // inversse of Readonly<T>
 type Mutable<T> = {
@@ -92,6 +96,7 @@ export type IModsContext = {
   enabledMods: IEnabledMods;
   installedMods: IInstalledMods;
   isInstallConfigChanged: boolean;
+  modConfigOverrides: IModConfigOverrides;
   mods: IMods;
   modsToInstall: IOrderedMods;
   orderedItems: IOrderedItems;
@@ -102,6 +107,7 @@ export type IModsContext = {
   setEnabledMods: IEnabledModsMutator;
   setInstalledMods: IInstalledModsMutator;
   setModConfig: IModConfigMutator;
+  setModConfigOverrides: ISetModConfigOverrides;
   setSectionHeaders: ISectionHeadersMutator;
   setSelectedMod: ISelectedModMutator;
 };
@@ -169,7 +175,7 @@ export function ModsContextProvider({
     return mods;
   }, [logger, showToast]);
 
-  const [mods, setMods] = useState<Mod[]>([]);
+  const [modsWithoutOverrides, setMods] = useState<Mod[]>([]);
 
   useEffect(() => {
     getMods().then(setMods).catch(console.error);
@@ -225,6 +231,20 @@ export function ModsContextProvider({
     [] as IItemsOrder,
     (arr) => JSON.stringify(arr),
     (str) => JSON.parse(str),
+  );
+
+  const [modConfigOverrides, setModConfigOverrides] =
+    useModsContextConfigOverrides();
+  const mods = useMemo(
+    () =>
+      modsWithoutOverrides.map((mod) => ({
+        ...mod,
+        info: {
+          ...mod.info,
+          ...modConfigOverrides[mod.id],
+        },
+      })),
+    [modsWithoutOverrides, modConfigOverrides],
   );
 
   const updatedItemsOrder = useMemo(
@@ -355,6 +375,7 @@ export function ModsContextProvider({
       enabledMods,
       installedMods,
       isInstallConfigChanged,
+      modConfigOverrides,
       mods,
       modsToInstall,
       orderedItems,
@@ -365,6 +386,7 @@ export function ModsContextProvider({
       setEnabledMods,
       setInstalledMods,
       setModConfig,
+      setModConfigOverrides,
       setSectionHeaders,
       setSelectedMod,
     }),
@@ -372,6 +394,7 @@ export function ModsContextProvider({
       enabledMods,
       installedMods,
       isInstallConfigChanged,
+      modConfigOverrides,
       mods,
       modsToInstall,
       orderedItems,
@@ -382,6 +405,7 @@ export function ModsContextProvider({
       setEnabledMods,
       setInstalledMods,
       setModConfig,
+      setModConfigOverrides,
       setSectionHeaders,
       setSelectedMod,
     ],

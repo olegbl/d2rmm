@@ -4,14 +4,9 @@ import type { IModUpdaterAPI, ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
 import { consumeAPI } from 'renderer/IPC';
 import { compareVersions } from 'renderer/utils/version';
 import { INexusAuthState } from './NexusModsContext';
+import getNexusModID from './utils/getNexusModID';
 
 const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
-
-export function getNexusModID(mod?: Mod | null): string | null {
-  return (
-    mod?.info?.website?.match(/\/diablo2resurrected\/mods\/(\d+)/)?.[1] ?? null
-  );
-}
 
 function getUpdatesFromDownloads(
   currentVersion: string,
@@ -28,7 +23,9 @@ type IUpdateState = {
   nexusUpdates: ModUpdaterDownload[];
   nexusDownloads: ModUpdaterDownload[];
 };
-type ISetUpdateState = React.Dispatch<React.SetStateAction<IUpdateState>>;
+type ISetUpdateState = React.Dispatch<
+  React.SetStateAction<IUpdateState | null>
+>;
 
 type IUpdates = Map<string, IUpdateState>;
 type ISetUpdates = React.Dispatch<React.SetStateAction<IUpdates>>;
@@ -77,12 +74,16 @@ export function useModUpdate(modID: string): [IUpdateState, ISetUpdateState] {
   const [updates, setUpdates] = useModUpdates();
   const updateState = updates.get(modID) ?? DEFAULT_UPDATE_STATE;
   const setUpdateState = useCallback(
-    (arg: React.SetStateAction<IUpdateState>) =>
+    (arg: React.SetStateAction<IUpdateState | null>) =>
       setUpdates((oldUpdates) => {
         const newUpdates = new Map(oldUpdates);
         const oldState = oldUpdates.get(modID) ?? DEFAULT_UPDATE_STATE;
         const newState = typeof arg === 'function' ? arg(oldState) : arg;
-        newUpdates.set(modID, newState);
+        if (newState == null) {
+          newUpdates.delete(modID);
+        } else {
+          newUpdates.set(modID, newState);
+        }
         return newUpdates;
       }),
     [modID, setUpdates],

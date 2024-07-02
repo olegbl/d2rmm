@@ -28,6 +28,7 @@ import { isNotNull } from 'renderer/utils/isNotNull';
 import { consumeAPI } from '../../IPC';
 import { useSelectedMod, useToggleMod } from '../context/ModsContext';
 import { useModUpdater } from './ModUpdater';
+import useSetNexusModsIDActions from './hooks/useSetNexusModsIDActions';
 
 const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
@@ -115,7 +116,7 @@ function ListChip({
   return chip;
 }
 
-type Action = {
+export type Action = {
   children?: Action[];
   color?: React.ComponentProps<typeof Chip>['color'] | null;
   icon?: React.ComponentProps<typeof Chip>['icon'] | null;
@@ -168,6 +169,9 @@ export default function ModListItem({
       await onDownloadVersion(latestUpdate);
     }
   }, [latestUpdate, onDownloadVersion]);
+
+  const [setNexusModsIDActions, setNexusModsIDDialog] =
+    useSetNexusModsIDActions(mod);
 
   const [contextMenuAnchor, onOpenContextMenu, onCloseContextMenu] =
     useContextMenu();
@@ -238,6 +242,7 @@ export default function ModListItem({
             },
           })),
         },
+    ...setNexusModsIDActions,
     mod.info.config == null
       ? null
       : ({
@@ -349,6 +354,7 @@ export default function ModListItem({
           ))}
         </Menu>
       )}
+      {setNexusModsIDDialog}
     </>
   );
 }

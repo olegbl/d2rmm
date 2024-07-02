@@ -1,8 +1,13 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import type { Mod } from 'bridge/BridgeAPI';
-import type { IModUpdaterAPI, ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
+import type {
+  IModUpdaterAPI,
+  ModUpdaterDownload,
+  ModUpdaterNexusDownload,
+} from 'bridge/ModUpdaterAPI';
 import { consumeAPI } from 'renderer/IPC';
 import { compareVersions } from 'renderer/utils/version';
+import { useMods } from './ModsContext';
 import { INexusAuthState } from './NexusModsContext';
 import getNexusModID from './utils/getNexusModID';
 
@@ -169,4 +174,58 @@ export function useCheckModForUpdates(
     },
     [modOuter, nexusAuthState.apiKey, setUpdates],
   );
+}
+
+export function useCheckModsForUpdates(
+  nexusAuthState: INexusAuthState,
+): () => Promise<void> {
+  const [mods] = useMods();
+  const [, setUpdates] = useModUpdates();
+
+  return useCallback(async (): Promise<void> => {
+    const modsToCheck = mods.filter((mod) => getNexusModID(mod) != null);
+    if (nexusAuthState.apiKey == null || modsToCheck.length === 0) {
+      return;
+    }
+
+    // TODO: handle errors in a better way
+    const results = await Promise.all(
+      modsToCheck.map(
+        async (
+          mod,
+        ): Promise<
+          [Mod, ModUpdaterNexusDownload[], ModUpdaterNexusDownload[]]
+        > => {
+          const currentVersion = mod.info.version ?? '0';
+
+          const nexusDownloads = (
+            await ModUpdaterAPI.getDownloadsViaNexus(
+              nexusAuthState.apiKey as string,
+              getNexusModID(mod) as string,
+            )
+          ).sort((a, b) => compareVersions(a.version, b.version));
+
+          const nexusUpdates = getUpdatesFromDownloads(
+            currentVersion,
+            nexusDownloads,
+          );
+
+          return [mod, nexusDownloads, nexusUpdates];
+        },
+      ),
+    );
+
+    setUpdates((oldUpdates) => {
+      const newUpdates = new Map(oldUpdates);
+      results.forEach(([mod, nexusDownloads, nexusUpdates]) =>
+        newUpdates.set(mod.id, {
+          isUpdateChecked: true,
+          isUpdateAvailable: nexusUpdates.length > 0,
+          nexusUpdates,
+          nexusDownloads,
+        }),
+      );
+      return newUpdates;
+    });
+  }, [mods, nexusAuthState.apiKey, setUpdates]);
 }

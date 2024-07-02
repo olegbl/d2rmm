@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react';
 import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
 import {
   INexusAuthState,
   ISetNexusAuthState,
 } from 'renderer/react/context/NexusModsContext';
+import { useCallback, useEffect, useRef } from 'react';
 
 export default function useValidateNexusModsApiKey(
   authState: INexusAuthState,

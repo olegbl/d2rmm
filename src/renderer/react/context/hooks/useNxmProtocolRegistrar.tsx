@@ -1,3 +1,5 @@
+import NxmProtocolAPI from 'renderer/NxmProtocolAPI';
+import useSavedState from 'renderer/react/hooks/useSavedState';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Button,
@@ -7,8 +9,6 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import NxmProtocolAPI from 'renderer/NxmProtocolAPI';
-import useSavedState from 'renderer/react/hooks/useSavedState';
 
 export default function useNxmProtocolRegistrar(): [
   dialog: JSX.Element,

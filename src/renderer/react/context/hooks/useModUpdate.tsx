@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
 import {
   ISetUpdateState,
   IUpdateState,
 } from 'renderer/react/context/UpdatesContext';
 import useModUpdates from 'renderer/react/context/hooks/useModUpdates';
+import { useCallback } from 'react';
 
 const DEFAULT_UPDATE_STATE = {
   isUpdateChecked: false,

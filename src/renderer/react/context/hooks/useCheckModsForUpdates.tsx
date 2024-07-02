@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModUpdaterNexusDownload } from 'bridge/ModUpdaterAPI';
 import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
@@ -8,6 +7,7 @@ import useModUpdates from 'renderer/react/context/hooks/useModUpdates';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import getUpdatesFromDownloads from 'renderer/react/context/utils/getUpdatesFromDownloads';
 import { compareVersions } from 'renderer/utils/version';
+import { useCallback } from 'react';
 
 export default function useCheckModsForUpdates(
   nexusAuthState: INexusAuthState,

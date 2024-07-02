@@ -1,7 +1,7 @@
+import type { INxmProtocolAPI } from 'bridge/NxmProtocolAPI';
 import { app } from 'electron';
 import path from 'path';
 import { URL } from 'url';
-import type { INxmProtocolAPI } from 'bridge/NxmProtocolAPI';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 

@@ -1,11 +1,11 @@
-import { useCallback, useContext } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import type { NexusModsApiStateEvent } from 'bridge/NexusModsAPI';
 import {
   Context,
   INexusAuthState,
   ISetNexusAuthState,
 } from 'renderer/react/context/NexusModsContext';
+import { v4 as uuidv4 } from 'uuid';
+import { useCallback, useContext } from 'react';
 
 // DEBUG: Using Vortex app id during development
 // TODO: get a real app id from Nexus Mods staff

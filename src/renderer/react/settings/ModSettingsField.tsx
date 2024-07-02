@@ -1,6 +1,3 @@
-import { useCallback } from 'react';
-import { Help, Refresh } from '@mui/icons-material';
-import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigField } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
@@ -11,6 +8,9 @@ import ModSettingsColorSelectorField from 'renderer/react/settings/ModSettingsCo
 import ModSettingsNumberField from 'renderer/react/settings/ModSettingsNumberField';
 import ModSettingsSelectField from 'renderer/react/settings/ModSettingsSelectField';
 import ModSettingsTextField from 'renderer/react/settings/ModSettingsTextField';
+import { useCallback } from 'react';
+import { Help, Refresh } from '@mui/icons-material';
+import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
 
 type Props = {
   field: ModConfigField;

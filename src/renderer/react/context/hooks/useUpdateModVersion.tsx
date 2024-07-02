@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
 import useModUpdates from 'renderer/react/context/hooks/useModUpdates';
 import getUpdatesFromDownloads from 'renderer/react/context/utils/getUpdatesFromDownloads';
+import { useCallback } from 'react';
 
 export function useUpdateModVersion(): (
   modID: string,

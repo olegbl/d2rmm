@@ -1,5 +1,5 @@
-import path from 'path';
 import type { IAppInfoAPI } from 'bridge/AppInfoAPI';
+import path from 'path';
 import { consumeAPI } from './IPC';
 
 export const AppInfoAPI = consumeAPI<IAppInfoAPI>('AppInfoAPI');

@@ -1,6 +1,6 @@
-import path from 'path';
 import type { IBridgeAPI, IInstallModsOptions, Mod } from 'bridge/BridgeAPI';
 import type { ConsoleAPI } from 'bridge/ConsoleAPI';
+import path from 'path';
 import { FileManager } from './FileManager';
 
 export class InstallationRuntime {

@@ -1,10 +1,10 @@
-import { readFileSync, rmSync } from 'fs';
-import { v4 as uuidv4 } from 'uuid';
 import type {
   IRequestAPI,
   RequestHeaders,
   ResponseHeaders,
 } from 'bridge/RequestAPI';
+import { readFileSync, rmSync } from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { EventAPI } from './EventAPI';
 import { consumeAPI } from './IPC';
 

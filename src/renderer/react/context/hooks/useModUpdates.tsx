@@ -1,9 +1,9 @@
-import { useContext } from 'react';
 import {
   Context,
   ISetUpdates,
   IUpdates,
 } from 'renderer/react/context/UpdatesContext';
+import { useContext } from 'react';
 
 export default function useModUpdates(): [IUpdates, ISetUpdates] {
   const context = useContext(Context);

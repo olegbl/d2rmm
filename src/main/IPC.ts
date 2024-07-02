@@ -1,5 +1,3 @@
-import { ChildProcess } from 'child_process';
-import { BrowserWindow, ipcMain } from 'electron';
 import type {
   AnyAsyncSerializableAPIMethod,
   AsAsyncSerializableAPI,
@@ -11,6 +9,8 @@ import type {
   IPCMessageRequest,
   IPCMessageSuccessResponse,
 } from 'bridge/IPC';
+import { ChildProcess } from 'child_process';
+import { BrowserWindow, ipcMain } from 'electron';
 
 const REGISTERED_APIS: Map<
   string,

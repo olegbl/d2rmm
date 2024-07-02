@@ -1,7 +1,7 @@
+import type { IRequestAPI } from 'bridge/RequestAPI';
 import { app, net } from 'electron';
 import { createWriteStream, mkdirSync, rmSync } from 'fs';
 import path from 'path';
-import type { IRequestAPI } from 'bridge/RequestAPI';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 

@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
-import { FormControlLabel, Switch } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldCheckbox } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import { useCallback } from 'react';
+import { FormControlLabel, Switch } from '@mui/material';
 
 type Props = {
   field: ModConfigFieldCheckbox;

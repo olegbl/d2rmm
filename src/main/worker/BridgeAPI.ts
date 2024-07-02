@@ -1,3 +1,14 @@
+import type {
+  CopiedFile,
+  IBridgeAPI,
+  IInstallModsOptions,
+  Mod,
+} from 'bridge/BridgeAPI';
+import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
+import type { JSONData } from 'bridge/JSON';
+import type { ModConfigValue } from 'bridge/ModConfigValue';
+import { Relative } from 'bridge/Relative';
+import type { TSVDataRow } from 'bridge/TSV';
 import { execFile, execFileSync } from 'child_process';
 import {
   copyFileSync,
@@ -21,17 +32,6 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 import ts from 'typescript';
-import type {
-  CopiedFile,
-  IBridgeAPI,
-  IInstallModsOptions,
-  Mod,
-} from 'bridge/BridgeAPI';
-import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
-import type { JSONData } from 'bridge/JSON';
-import type { ModConfigValue } from 'bridge/ModConfigValue';
-import { Relative } from 'bridge/Relative';
-import type { TSVDataRow } from 'bridge/TSV';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getHomePath } from './AppInfoAPI';
 import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';

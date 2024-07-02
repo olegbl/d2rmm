@@ -1,5 +1,5 @@
-import { shell } from 'electron';
 import { IShellAPI } from 'bridge/ShellAPI';
+import { shell } from 'electron';
 import { provideAPI } from './IPC';
 
 export async function initShellAPI(): Promise<void> {

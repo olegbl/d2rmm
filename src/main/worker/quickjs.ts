@@ -1,3 +1,5 @@
+import type { AsAsyncSerializableAPI, AsyncSerializableAPI } from 'bridge/API';
+import releaseAsyncVariant from '@jitl/quickjs-wasmfile-release-asyncify';
 import { readFileSync } from 'fs';
 import path from 'path';
 import {
@@ -8,8 +10,6 @@ import {
   newQuickJSAsyncWASMModuleFromVariant,
   newVariant,
 } from 'quickjs-emscripten-core';
-import releaseAsyncVariant from '@jitl/quickjs-wasmfile-release-asyncify';
-import type { AsAsyncSerializableAPI, AsyncSerializableAPI } from 'bridge/API';
 import { getIsPackaged, getResourcesPath } from './AppInfoAPI';
 
 let loadedQuickJSAsyncWASMModule: QuickJSAsyncWASMModule | null;

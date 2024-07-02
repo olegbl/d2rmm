@@ -1,8 +1,8 @@
-import { ChangeEvent, useCallback } from 'react';
-import { TextField } from '@mui/material';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldText } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import { ChangeEvent, useCallback } from 'react';
+import { TextField } from '@mui/material';
 
 type Props = {
   field: ModConfigFieldText;

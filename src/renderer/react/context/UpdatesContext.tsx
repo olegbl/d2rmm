@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
 import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
+import React, { useMemo, useState } from 'react';
 
 export type IUpdateState = {
   isUpdateChecked: boolean;

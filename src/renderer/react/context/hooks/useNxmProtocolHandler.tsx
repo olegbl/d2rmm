@@ -1,10 +1,10 @@
-import { useCallback } from 'react';
 import { useEventAPIListener } from 'renderer/EventAPI';
 import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
 import { useMods } from 'renderer/react/context/ModsContext';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
+import { useCallback } from 'react';
 
 export default function useNxmProtocolHandler(
   authState: INexusAuthState,

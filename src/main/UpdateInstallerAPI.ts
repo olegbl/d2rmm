@@ -1,6 +1,6 @@
+import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
 import { spawn } from 'child_process';
 import { app } from 'electron';
-import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
 import { provideAPI } from './IPC';
 import { RendererIPCAPI } from './RendererIPCAPI';
 

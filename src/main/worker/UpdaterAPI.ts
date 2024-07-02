@@ -1,8 +1,8 @@
+import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
+import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import decompress from 'decompress';
 import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'fs';
 import path from 'path';
-import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
-import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';

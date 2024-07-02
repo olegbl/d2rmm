@@ -1,6 +1,3 @@
-import decompress from 'decompress';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
-import path from 'path';
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
 import type {
   DownloadLink,
@@ -9,6 +6,9 @@ import type {
   ValidateResult,
 } from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
+import decompress from 'decompress';
+import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
+import path from 'path';
 import { getAppPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';

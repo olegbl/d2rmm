@@ -4,11 +4,13 @@ import { useMods } from 'renderer/react/context/ModsContext';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
+import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
 
 export default function useNxmProtocolHandler(
   authState: INexusAuthState,
 ): void {
+  const showToast = useToast();
   const [, onRefreshMods] = useMods();
   const updateModVersion = useUpdateModVersion();
   const checkModForUpdates = useCheckModForUpdates(authState);
@@ -45,6 +47,11 @@ export default function useNxmProtocolHandler(
                 await checkModForUpdates(mod);
               }
             }
+            showToast({
+              duration: 2000,
+              title: `${mod?.info.name} v${mod.info.version} installed!`,
+              severity: 'success',
+            });
           }
         })()
           .then()
@@ -55,7 +62,13 @@ export default function useNxmProtocolHandler(
         );
       }
     },
-    [authState.apiKey, checkModForUpdates, onRefreshMods, updateModVersion],
+    [
+      authState.apiKey,
+      checkModForUpdates,
+      onRefreshMods,
+      showToast,
+      updateModVersion,
+    ],
   );
 
   useEventAPIListener('nexus-mods-open-url', onOpenNxmUrl);

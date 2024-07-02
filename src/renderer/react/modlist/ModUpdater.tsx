@@ -7,6 +7,7 @@ import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
+import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
 
 const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
@@ -21,6 +22,7 @@ export function useModUpdater(mod: Mod): {
   onCheckForUpdates: () => Promise<void>;
   onDownloadVersion: (download: ModUpdaterDownload) => Promise<void>;
 } {
+  const showToast = useToast();
   const [, onRefreshMods] = useMods();
   const { nexusAuthState } = useNexusAuthState();
   const updateModVersion = useUpdateModVersion();
@@ -28,7 +30,8 @@ export function useModUpdater(mod: Mod): {
   const nexusModID = getNexusModID(mod);
   const isUpdatePossible =
     nexusAuthState != null && mod.info.website != null && nexusModID != null;
-  const isDownloadPossible = nexusAuthState.isPremium ?? false;
+  const isDownloadPossible =
+    isUpdatePossible && (nexusAuthState.isPremium ?? false);
   const [updateState] = useModUpdate(mod.id);
   const latestUpdate = updateState.nexusUpdates[0];
   const isUpdateChecked = updateState.isUpdateChecked;
@@ -54,13 +57,21 @@ export function useModUpdater(mod: Mod): {
       const newVersion = download.version;
       await onRefreshMods();
       await updateModVersion(mod.id, newVersion);
+
+      showToast({
+        duration: 2000,
+        title: `${mod?.info.name} v${newVersion} installed!`,
+        severity: 'success',
+      });
     },
     [
       nexusAuthState.apiKey,
       nexusModID,
       mod.id,
+      mod?.info.name,
       onRefreshMods,
       updateModVersion,
+      showToast,
     ],
   );
 

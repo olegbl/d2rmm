@@ -143,6 +143,11 @@ export async function initModUpdaterAPI(): Promise<void> {
       key,
       expires,
     ) => {
+      console.debug('ModUpdaterAPI', 'installModViaNexus', {
+        modID,
+        nexusModID,
+        nexusFileID,
+      });
       // get link to the zip file on Nexus Mods CDN
       const downloadLink = await NexusModsAPI.getDownloadLink(
         nexusApiKey,
@@ -173,11 +178,25 @@ export async function initModUpdaterAPI(): Promise<void> {
         fileName,
       });
 
+      console.debug('ModUpdaterAPI', 'downloaded zip file', {
+        modID,
+        nexusModID,
+        nexusFileID,
+        downloadFilePath: filePath,
+      });
+
       // extract the zip file
       process.noAsar = true;
       await decompress(filePath, path.dirname(filePath));
       process.noAsar = false;
       rmSync(filePath);
+
+      console.debug('ModUpdaterAPI', 'extracted zip file', {
+        modID,
+        nexusModID,
+        nexusFileID,
+        downloadDirPath: path.dirname(filePath),
+      });
 
       // delete all mod files except mod.config
       const updateDirPath = path.join(path.dirname(filePath), modID);
@@ -195,12 +214,25 @@ export async function initModUpdaterAPI(): Promise<void> {
         rmSync(modDirPath, { force: true, recursive: true });
       }
 
+      console.debug('ModUpdaterAPI', 'cleaned up mod directory', {
+        modID,
+        nexusModID,
+        nexusFileID,
+        modDirPath,
+      });
+
       // copy the new extracted files to the mod directory
       mkdirSync(modDirPath, { recursive: true });
       cpSync(updateDirPath, modDirPath, { recursive: true });
 
       // clean up
       rmSync(updateDirPath, { force: true, recursive: true });
+
+      console.debug('ModUpdaterAPI', 'installed mod', {
+        modID,
+        nexusModID,
+        nexusFileID,
+      });
 
       return modID;
     },

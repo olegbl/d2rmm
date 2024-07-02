@@ -5,6 +5,7 @@ export type Toast = {
   severity: AlertColor;
   title: string;
   description?: string;
+  duration?: number;
 };
 
 export type IToastContext = {
@@ -46,6 +47,7 @@ export function ToastContextProvider({ children }: Props): JSX.Element {
     <ToastContext.Provider value={context}>
       {children}
       <Snackbar
+        autoHideDuration={currentToast?.duration ?? null}
         onClose={popToast}
         open={toasts.length > 0}
         transitionDuration={0}

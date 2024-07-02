@@ -1,46 +1,20 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react';
-import type { Mod } from 'bridge/BridgeAPI';
-import type {
-  IModUpdaterAPI,
-  ModUpdaterDownload,
-  ModUpdaterNexusDownload,
-} from 'bridge/ModUpdaterAPI';
-import { consumeAPI } from 'renderer/IPC';
-import { compareVersions } from 'renderer/utils/version';
-import { useMods } from './ModsContext';
-import { INexusAuthState } from './NexusModsContext';
-import getNexusModID from './utils/getNexusModID';
+import React, { useMemo, useState } from 'react';
+import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
 
-const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
-
-function getUpdatesFromDownloads(
-  currentVersion: string,
-  downloads: ModUpdaterDownload[],
-): ModUpdaterDownload[] {
-  return downloads.filter(
-    (download) => compareVersions(download.version, currentVersion) < 0,
-  );
-}
-
-type IUpdateState = {
+export type IUpdateState = {
   isUpdateChecked: boolean;
   isUpdateAvailable: boolean;
   nexusUpdates: ModUpdaterDownload[];
   nexusDownloads: ModUpdaterDownload[];
 };
-type ISetUpdateState = React.Dispatch<
+
+export type ISetUpdateState = React.Dispatch<
   React.SetStateAction<IUpdateState | null>
 >;
 
-type IUpdates = Map<string, IUpdateState>;
-type ISetUpdates = React.Dispatch<React.SetStateAction<IUpdates>>;
+export type IUpdates = Map<string, IUpdateState>;
 
-const DEFAULT_UPDATE_STATE = {
-  isUpdateChecked: false,
-  isUpdateAvailable: false,
-  nexusUpdates: [],
-  nexusDownloads: [],
-};
+export type ISetUpdates = React.Dispatch<React.SetStateAction<IUpdates>>;
 
 export type IUpdatesContext = {
   updates: IUpdates;
@@ -65,167 +39,4 @@ export function UpdatesContextProvider({
   );
 
   return <Context.Provider value={context}>{children}</Context.Provider>;
-}
-
-export function useModUpdates(): [IUpdates, ISetUpdates] {
-  const context = useContext(Context);
-  if (context == null) {
-    throw new Error('No updates context available.');
-  }
-  return [context.updates, context.setUpdates];
-}
-
-export function useModUpdate(modID: string): [IUpdateState, ISetUpdateState] {
-  const [updates, setUpdates] = useModUpdates();
-  const updateState = updates.get(modID) ?? DEFAULT_UPDATE_STATE;
-  const setUpdateState = useCallback(
-    (arg: React.SetStateAction<IUpdateState | null>) =>
-      setUpdates((oldUpdates) => {
-        const newUpdates = new Map(oldUpdates);
-        const oldState = oldUpdates.get(modID) ?? DEFAULT_UPDATE_STATE;
-        const newState = typeof arg === 'function' ? arg(oldState) : arg;
-        if (newState == null) {
-          newUpdates.delete(modID);
-        } else {
-          newUpdates.set(modID, newState);
-        }
-        return newUpdates;
-      }),
-    [modID, setUpdates],
-  );
-  return [updateState, setUpdateState];
-}
-
-export function useUpdateModVersion(): (
-  modID: string,
-  version: string,
-) => Promise<boolean> {
-  const [, setUpdates] = useModUpdates();
-
-  return useCallback(
-    async (modID: string, newVersion: string): Promise<boolean> => {
-      let isUpdated = false;
-      setUpdates((oldUpdates) => {
-        const oldUpdateState = oldUpdates.get(modID);
-        if (oldUpdateState == null) {
-          isUpdated = false;
-          return oldUpdates;
-        }
-
-        const nexusUpdates = getUpdatesFromDownloads(
-          newVersion,
-          oldUpdateState.nexusDownloads,
-        );
-
-        const newUpdates = new Map(oldUpdates);
-        newUpdates.set(modID, {
-          isUpdateChecked: true,
-          isUpdateAvailable: nexusUpdates.length > 0,
-          nexusUpdates,
-          nexusDownloads: oldUpdateState.nexusDownloads,
-        });
-        isUpdated = true;
-        return newUpdates;
-      });
-      return isUpdated;
-    },
-    [setUpdates],
-  );
-}
-
-export function useCheckModForUpdates(
-  nexusAuthState: INexusAuthState,
-  modOuter?: Mod,
-): (modInner?: Mod) => Promise<void> {
-  const [, setUpdates] = useModUpdates();
-
-  return useCallback(
-    async (modInner?: Mod): Promise<void> => {
-      const mod = modOuter ?? modInner;
-      const nexusModID = getNexusModID(mod);
-      if (nexusAuthState.apiKey == null || nexusModID == null || mod == null) {
-        return;
-      }
-
-      const currentVersion = mod.info.version ?? '0';
-
-      const nexusDownloads = (
-        await ModUpdaterAPI.getDownloadsViaNexus(
-          nexusAuthState.apiKey,
-          nexusModID,
-        )
-      ).sort((a, b) => compareVersions(a.version, b.version));
-
-      const nexusUpdates = getUpdatesFromDownloads(
-        currentVersion,
-        nexusDownloads,
-      );
-
-      setUpdates((oldUpdates) => {
-        const newUpdates = new Map(oldUpdates);
-        newUpdates.set(mod.id, {
-          isUpdateChecked: true,
-          isUpdateAvailable: nexusUpdates.length > 0,
-          nexusUpdates,
-          nexusDownloads,
-        });
-        return newUpdates;
-      });
-    },
-    [modOuter, nexusAuthState.apiKey, setUpdates],
-  );
-}
-
-export function useCheckModsForUpdates(
-  nexusAuthState: INexusAuthState,
-): () => Promise<void> {
-  const [mods] = useMods();
-  const [, setUpdates] = useModUpdates();
-
-  return useCallback(async (): Promise<void> => {
-    const modsToCheck = mods.filter((mod) => getNexusModID(mod) != null);
-    if (nexusAuthState.apiKey == null || modsToCheck.length === 0) {
-      return;
-    }
-
-    // TODO: handle errors in a better way
-    const results = await Promise.all(
-      modsToCheck.map(
-        async (
-          mod,
-        ): Promise<
-          [Mod, ModUpdaterNexusDownload[], ModUpdaterNexusDownload[]]
-        > => {
-          const currentVersion = mod.info.version ?? '0';
-
-          const nexusDownloads = (
-            await ModUpdaterAPI.getDownloadsViaNexus(
-              nexusAuthState.apiKey as string,
-              getNexusModID(mod) as string,
-            )
-          ).sort((a, b) => compareVersions(a.version, b.version));
-
-          const nexusUpdates = getUpdatesFromDownloads(
-            currentVersion,
-            nexusDownloads,
-          );
-
-          return [mod, nexusDownloads, nexusUpdates];
-        },
-      ),
-    );
-
-    setUpdates((oldUpdates) => {
-      const newUpdates = new Map(oldUpdates);
-      results.forEach(([mod, nexusDownloads, nexusUpdates]) =>
-        newUpdates.set(mod.id, {
-          isUpdateChecked: true,
-          isUpdateAvailable: nexusUpdates.length > 0,
-          nexusUpdates,
-          nexusDownloads,
-        }),
-      );
-      return newUpdates;
-    });
-  }, [mods, nexusAuthState.apiKey, setUpdates]);
 }

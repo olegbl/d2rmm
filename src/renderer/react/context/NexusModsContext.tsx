@@ -20,9 +20,10 @@ import type { NexusModsAPIStateEvent as NexusModsApiStateEvent } from 'bridge/Ne
 import type { INxmProtocolAPI } from 'bridge/NxmProtocolAPI';
 import { useEventAPIListener } from 'renderer/EventAPI';
 import { consumeAPI } from 'renderer/IPC';
+import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
+import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
 import useSavedState from '../hooks/useSavedState';
 import { useMods } from './ModsContext';
-import { useCheckModForUpdates, useUpdateModVersion } from './UpdatesContext';
 
 // DEBUG: Using Vortex app id during development
 // TODO: get a real app id from Nexus Mods staff

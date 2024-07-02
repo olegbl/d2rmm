@@ -1,3 +1,8 @@
+import type { Mod } from 'bridge/BridgeAPI';
+import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
+import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
+import getNexusModID from 'renderer/react/context/utils/getNexusModID';
+import type { Action } from 'renderer/react/modlist/ModListItem';
 import { useCallback, useState } from 'react';
 import {
   Button,
@@ -8,11 +13,6 @@ import {
   TextField,
   createSvgIcon,
 } from '@mui/material';
-import type { Mod } from 'bridge/BridgeAPI';
-import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
-import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
-import getNexusModID from 'renderer/react/context/utils/getNexusModID';
-import type { Action } from '../ModListItem';
 
 const NexusMods = createSvgIcon(
   <svg

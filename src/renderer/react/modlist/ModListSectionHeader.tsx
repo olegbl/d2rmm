@@ -1,3 +1,9 @@
+import {
+  ISectionHeader,
+  useRemoveSectionHeader,
+  useRenameSectionHeader,
+  useToggleSectionHeader,
+} from 'renderer/react/context/ModsContext';
 import { MouseEvent, useCallback, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { Close, DragIndicator, Edit, ExpandMore } from '@mui/icons-material';
@@ -13,12 +19,6 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import {
-  ISectionHeader,
-  useRemoveSectionHeader,
-  useRenameSectionHeader,
-  useToggleSectionHeader,
-} from '../context/ModsContext';
 
 type Props = {
   enabledCount: number;

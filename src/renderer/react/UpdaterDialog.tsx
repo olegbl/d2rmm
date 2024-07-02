@@ -1,3 +1,6 @@
+import type { IUpdaterAPI, Update } from 'bridge/Updater';
+import { useEventAPIListener } from 'renderer/EventAPI';
+import { consumeAPI } from 'renderer/IPC';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Button,
@@ -8,9 +11,6 @@ import {
   DialogTitle,
   LinearProgress,
 } from '@mui/material';
-import type { IUpdaterAPI, Update } from 'bridge/Updater';
-import { useEventAPIListener } from '../EventAPI';
-import { consumeAPI } from '../IPC';
 
 const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
 

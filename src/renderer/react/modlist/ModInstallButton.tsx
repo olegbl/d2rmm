@@ -1,19 +1,19 @@
+import BridgeAPI from 'renderer/BridgeAPI';
+import { useIsInstalling } from 'renderer/react/context/InstallContext';
+import { useLogger } from 'renderer/react/context/LogContext';
+import {
+  useInstalledMods,
+  useIsInstallConfigChanged,
+  useModsToInstall,
+} from 'renderer/react/context/ModsContext';
+import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import { useTabState } from 'renderer/react/context/TabContext';
+import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
 import { SaveOutlined } from '@mui/icons-material';
 import Save from '@mui/icons-material/Save';
 import { LoadingButton } from '@mui/lab';
 import { Tooltip } from '@mui/material';
-import BridgeAPI from '../../BridgeAPI';
-import { useIsInstalling } from '../context/InstallContext';
-import { useLogger } from '../context/LogContext';
-import {
-  useInstalledMods,
-  useIsInstallConfigChanged,
-  useModsToInstall,
-} from '../context/ModsContext';
-import { usePreferences } from '../context/PreferencesContext';
-import { useTabState } from '../context/TabContext';
-import useToast from '../hooks/useToast';
 
 type Props = {
   isUninstall?: boolean;

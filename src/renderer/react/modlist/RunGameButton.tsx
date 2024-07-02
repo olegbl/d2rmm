@@ -1,13 +1,13 @@
+import BridgeAPI from 'renderer/BridgeAPI';
+import { useIsInstallConfigChanged } from 'renderer/react/context/ModsContext';
+import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import useGameArgs from 'renderer/react/hooks/useGameArgs';
 import { useCallback, useMemo } from 'react';
 import {
   PlayCircleFilled,
   PlayCircleOutlineOutlined,
 } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
-import BridgeAPI from '../../BridgeAPI';
-import { useIsInstallConfigChanged } from '../context/ModsContext';
-import { usePreferences } from '../context/PreferencesContext';
-import useGameArgs from '../hooks/useGameArgs';
 
 type Props = Record<string, never>;
 

@@ -1,3 +1,11 @@
+import type { Mod } from 'bridge/BridgeAPI';
+import type {
+  ModConfigField,
+  ModConfigFieldOrSection,
+  ModConfigSection,
+} from 'bridge/ModConfig';
+import { useSetModConfig } from 'renderer/react/context/ModsContext';
+import ModSettingsField from 'renderer/react/settings/ModSettingsField';
 import { MouseEvent, useCallback } from 'react';
 import { Refresh, ToggleOff, ToggleOn } from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -12,14 +20,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import type { Mod } from 'bridge/BridgeAPI';
-import type {
-  ModConfigField,
-  ModConfigFieldOrSection,
-  ModConfigSection,
-} from 'bridge/ModConfig';
-import { useSetModConfig } from '../context/ModsContext';
-import ModSettingsField from './ModSettingsField';
 
 const StyledAccordion = styled(Accordion)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,

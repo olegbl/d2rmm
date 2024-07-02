@@ -1,3 +1,13 @@
+import type { Mod } from 'bridge/BridgeAPI';
+import type { IShellAPI } from 'bridge/ShellAPI';
+import { consumeAPI } from 'renderer/IPC';
+import {
+  useSelectedMod,
+  useToggleMod,
+} from 'renderer/react/context/ModsContext';
+import { useModUpdater } from 'renderer/react/modlist/ModUpdater';
+import useSetNexusModsIDActions from 'renderer/react/modlist/hooks/useSetNexusModsIDActions';
+import { isNotNull } from 'renderer/utils/isNotNull';
 import { NestedMenuItem } from 'mui-nested-menu';
 import { useCallback, useMemo, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
@@ -22,13 +32,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Mod } from 'bridge/BridgeAPI';
-import type { IShellAPI } from 'bridge/ShellAPI';
-import { isNotNull } from 'renderer/utils/isNotNull';
-import { consumeAPI } from '../../IPC';
-import { useSelectedMod, useToggleMod } from '../context/ModsContext';
-import { useModUpdater } from './ModUpdater';
-import useSetNexusModsIDActions from './hooks/useSetNexusModsIDActions';
 
 const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 

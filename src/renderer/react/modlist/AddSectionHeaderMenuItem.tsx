@@ -1,7 +1,7 @@
+import { useAddSectionHeader } from 'renderer/react/context/ModsContext';
 import { useCallback } from 'react';
 import { Add } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
-import { useAddSectionHeader } from '../context/ModsContext';
 
 export default function AddSectionHeaderMenuItem({
   onHideMenu,

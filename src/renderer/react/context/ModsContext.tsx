@@ -1,3 +1,22 @@
+import type { Mod } from 'bridge/BridgeAPI';
+import type { ModConfigFieldOrSection } from 'bridge/ModConfig';
+import type {
+  ModConfigSingleValue,
+  ModConfigValue,
+} from 'bridge/ModConfigValue';
+import BridgeAPI from 'renderer/BridgeAPI';
+import {
+  getAbsoluteIndexFromRenderedIndex,
+  getHiddenItemCountForSection,
+  isOrderedMod,
+} from 'renderer/react/ReorderUtils';
+import { useLogger } from 'renderer/react/context/LogContext';
+import useModsContextConfigOverrides, {
+  IModConfigOverrides,
+  ISetModConfigOverrides,
+} from 'renderer/react/context/hooks/useModsContextConfigOverrides';
+import useSavedState from 'renderer/react/hooks/useSavedState';
+import useToast from 'renderer/react/hooks/useToast';
 import React, {
   useCallback,
   useContext,
@@ -5,25 +24,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import type { Mod } from 'bridge/BridgeAPI';
-import type { ModConfigFieldOrSection } from 'bridge/ModConfig';
-import type {
-  ModConfigSingleValue,
-  ModConfigValue,
-} from 'bridge/ModConfigValue';
-import BridgeAPI from '../../BridgeAPI';
-import {
-  getAbsoluteIndexFromRenderedIndex,
-  getHiddenItemCountForSection,
-  isOrderedMod,
-} from '../ReorderUtils';
-import useSavedState from '../hooks/useSavedState';
-import useToast from '../hooks/useToast';
-import { useLogger } from './LogContext';
-import useModsContextConfigOverrides, {
-  IModConfigOverrides,
-  ISetModConfigOverrides,
-} from './hooks/useModsContextConfigOverrides';
 
 // inversse of Readonly<T>
 type Mutable<T> = {

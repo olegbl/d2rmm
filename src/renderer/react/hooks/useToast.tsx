@@ -1,5 +1,5 @@
+import ToastContext, { Toast } from 'renderer/react/context/ToastContext';
 import { useContext } from 'react';
-import ToastContext, { Toast } from '../context/ToastContext';
 
 const emptyFunction = () => {};
 

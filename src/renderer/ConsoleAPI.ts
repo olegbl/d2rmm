@@ -1,5 +1,5 @@
 import type { ConsoleAPI, ConsoleArg, ILogLevel } from 'bridge/ConsoleAPI';
-import { consumeAPI, provideAPI } from './IPC';
+import { consumeAPI, provideAPI } from 'renderer/IPC';
 
 export type ConsoleListener = (level: ILogLevel, args: ConsoleArg[]) => void;
 

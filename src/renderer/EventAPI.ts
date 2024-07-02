@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
 import type {
   EventAPIListener,
   IEventAPI,
   IEventLocalAPI,
   IEventUnifiedAPI,
 } from 'bridge/EventAPI';
-import { consumeAPI, provideAPI } from './IPC';
+import { consumeAPI, provideAPI } from 'renderer/IPC';
+import { useEffect } from 'react';
 
 export const EventAPI: IEventUnifiedAPI = consumeAPI<IEventAPI, IEventLocalAPI>(
   'EventAPI',

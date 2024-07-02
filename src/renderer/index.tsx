@@ -1,8 +1,8 @@
+import { initConsoleAPI } from 'renderer/ConsoleAPI';
+import { initEventAPI } from 'renderer/EventAPI';
+import { initIPC } from 'renderer/IPC';
+import App from 'renderer/react/App';
 import { createRoot } from 'react-dom/client';
-import { initConsoleAPI } from './ConsoleAPI';
-import { initEventAPI } from './EventAPI';
-import { initIPC } from './IPC';
-import App from './react/App';
 
 async function initUI(): Promise<void> {
   const container = document.getElementById('root');

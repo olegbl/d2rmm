@@ -1,9 +1,9 @@
-import { useContext } from 'react';
-import { Context } from '../ModsContext';
+import { Context } from 'renderer/react/context/ModsContext';
 import {
   IModConfigOverrides,
   ISetModConfigOverrides,
-} from './useModsContextConfigOverrides';
+} from 'renderer/react/context/hooks/useModsContextConfigOverrides';
+import { useContext } from 'react';
 
 export default function useModConfigOverrides(): [
   IModConfigOverrides,

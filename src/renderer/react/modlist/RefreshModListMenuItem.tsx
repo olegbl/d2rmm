@@ -1,7 +1,7 @@
+import { useMods } from 'renderer/react/context/ModsContext';
 import { useCallback, useState } from 'react';
 import { Refresh } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
-import { useMods } from '../context/ModsContext';
 
 export default function RefreshModListMenuItem({
   onHideMenu,

@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
 import type { NexusModsApiStateEvent } from 'bridge/NexusModsAPI';
 import useNexusModsApiStateListener from 'renderer/react/context/hooks/useNexusModsApiStateListener';
 import useNxmProtocolHandler from 'renderer/react/context/hooks/useNxmProtocolHandler';
 import useNxmProtocolRegistrar from 'renderer/react/context/hooks/useNxmProtocolRegistrar';
 import useValidateNexusModsApiKey from 'renderer/react/context/hooks/useValidateNexusModsApiKey';
-import useSavedState from '../hooks/useSavedState';
+import useSavedState from 'renderer/react/hooks/useSavedState';
+import React, { useMemo } from 'react';
 
 type IApiKey = string | null;
 

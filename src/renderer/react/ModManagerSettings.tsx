@@ -1,3 +1,8 @@
+import BridgeAPI from 'renderer/BridgeAPI';
+import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
+import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
+import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
 import { useCallback } from 'react';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
@@ -22,11 +27,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
-import BridgeAPI from '../BridgeAPI';
-import { usePreferences } from './context/PreferencesContext';
-import { IThemeMode, useThemeMode } from './context/ThemeContext';
-import { useAsyncMemo } from './hooks/useAsyncMemo';
 
 async function getIsValidGamePath(path: string): Promise<boolean> {
   const files = await BridgeAPI.readDirectory(path);

@@ -3,7 +3,7 @@ import {
   IOrderedItems,
   IOrderedMod,
   IOrderedSectionHeader,
-} from './context/ModsContext';
+} from 'renderer/react/context/ModsContext';
 
 export function isOrderedMod(item: IOrderedItem): item is IOrderedMod {
   return item.type === 'mod';

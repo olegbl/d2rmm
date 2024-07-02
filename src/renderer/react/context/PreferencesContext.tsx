@@ -1,8 +1,8 @@
-import React, { useCallback, useContext, useMemo } from 'react';
 import type { IPreferences } from 'bridge/PreferenceTypes';
-import BridgeAPI from '../../BridgeAPI';
-import { useAsyncMemo } from '../hooks/useAsyncMemo';
-import useSavedState from '../hooks/useSavedState';
+import BridgeAPI from 'renderer/BridgeAPI';
+import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
+import useSavedState from 'renderer/react/hooks/useSavedState';
+import React, { useCallback, useContext, useMemo } from 'react';
 
 export const Context = React.createContext<IPreferences | null>(null);
 

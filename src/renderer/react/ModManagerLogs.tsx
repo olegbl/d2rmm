@@ -1,3 +1,10 @@
+import type { ILogLevel } from 'bridge/ConsoleAPI';
+import { useIsInstalling } from 'renderer/react/context/InstallContext';
+import {
+  useLogLevels,
+  useLogger,
+  useLogs,
+} from 'renderer/react/context/LogContext';
 import {
   MouseEvent,
   useCallback,
@@ -37,9 +44,6 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import type { ILogLevel } from 'bridge/ConsoleAPI';
-import { useIsInstalling } from './context/InstallContext';
-import { useLogLevels, useLogger, useLogs } from './context/LogContext';
 
 const ROW_HEIGHT = 80;
 

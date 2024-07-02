@@ -1,3 +1,15 @@
+import { isOrderedSectionHeader } from 'renderer/react/ReorderUtils';
+import {
+  useEnabledMods,
+  useOrdereredItems,
+} from 'renderer/react/context/ModsContext';
+import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import ModInstallButton from 'renderer/react/modlist/ModInstallButton';
+import ModListItem from 'renderer/react/modlist/ModListItem';
+import ModListSectionHeader from 'renderer/react/modlist/ModListSectionHeader';
+import OverflowActionsButton from 'renderer/react/modlist/OverflowActionsButton';
+import RunGameButton from 'renderer/react/modlist/RunGameButton';
+import ModSettingsDrawer from 'renderer/react/settings/ModSettingsDrawer';
 import {
   ChangeEvent,
   useCallback,
@@ -15,15 +27,6 @@ import {
   List,
   TextField,
 } from '@mui/material';
-import { isOrderedSectionHeader } from '../ReorderUtils';
-import { useEnabledMods, useOrdereredItems } from '../context/ModsContext';
-import { usePreferences } from '../context/PreferencesContext';
-import ModSettingsDrawer from '../settings/ModSettingsDrawer';
-import ModInstallButton from './ModInstallButton';
-import ModListItem from './ModListItem';
-import ModListSectionHeader from './ModListSectionHeader';
-import OverflowActionsButton from './OverflowActionsButton';
-import RunGameButton from './RunGameButton';
 
 export default function ModList(): JSX.Element {
   const [, startTransition] = useTransition();

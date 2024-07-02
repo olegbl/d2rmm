@@ -1,9 +1,9 @@
-import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
-import { useCallback, useMemo, useState, useTransition } from 'react';
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldColor } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
-import debounce from '../../utils/debounce';
+import debounce from 'renderer/utils/debounce';
+import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 
 type Props = {
   field: ModConfigFieldColor;

@@ -1,9 +1,9 @@
+import AddSectionHeaderMenuItem from 'renderer/react/modlist/AddSectionHeaderMenuItem';
+import CheckForAllModUpdatesMenuItem from 'renderer/react/modlist/CheckForAllModUpdatesMenuItem';
+import RefreshModListMenuItem from 'renderer/react/modlist/RefreshModListMenuItem';
 import { useCallback, useState } from 'react';
 import { MoreVert } from '@mui/icons-material';
 import { Button, Menu } from '@mui/material';
-import AddSectionHeaderMenuItem from './AddSectionHeaderMenuItem';
-import CheckForAllModUpdatesMenuItem from './CheckForAllModUpdatesMenuItem';
-import RefreshModListMenuItem from './RefreshModListMenuItem';
 
 type Props = Record<string, never>;
 

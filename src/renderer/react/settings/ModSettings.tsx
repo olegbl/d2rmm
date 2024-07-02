@@ -5,7 +5,7 @@ import type {
   ModConfigFieldOrSection,
   ModConfigSection,
 } from 'bridge/ModConfig';
-import ModSettingsSection from './ModSettingsSection';
+import ModSettingsSection from 'renderer/react/settings/ModSettingsSection';
 
 type Props = {
   mod: Mod;

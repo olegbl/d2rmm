@@ -2,7 +2,7 @@ import { Box, LinearProgress, Tab } from '@mui/material';
 import {
   useInstallationProgress,
   useIsInstalling,
-} from './context/InstallContext';
+} from 'renderer/react/context/InstallContext';
 
 export default function InstallationProgressBar() {
   const [isInstalling] = useIsInstalling();

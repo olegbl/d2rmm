@@ -1,25 +1,28 @@
+import 'renderer/css/App.css';
+import ErrorBoundary from 'renderer/react/ErrorBoundary';
+import InstallationProgressBar from 'renderer/react/InstallationProgressBar';
+import ModManagerLogs from 'renderer/react/ModManagerLogs';
+import ModManagerSettings from 'renderer/react/ModManagerSettings';
+import UpdaterDialog from 'renderer/react/UpdaterDialog';
+import { InstallContextProvider } from 'renderer/react/context/InstallContext';
+import { LogsProvider } from 'renderer/react/context/LogContext';
+import { ModsContextProvider } from 'renderer/react/context/ModsContext';
+import { NexusModsContextProvider } from 'renderer/react/context/NexusModsContext';
+import { PreferencesContextProvider } from 'renderer/react/context/PreferencesContext';
+import {
+  TabContextProvider,
+  useTabState,
+} from 'renderer/react/context/TabContext';
+import ThemeContextProvider from 'renderer/react/context/ThemeContext';
+import { ToastContextProvider } from 'renderer/react/context/ToastContext';
+import { UpdatesContextProvider } from 'renderer/react/context/UpdatesContext';
+import ModList from 'renderer/react/modlist/ModList';
 import { Suspense } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { Box, Divider, Tab } from '@mui/material';
-import '../css/App.css';
-import ErrorBoundary from './ErrorBoundary';
-import InstallationProgressBar from './InstallationProgressBar';
-import ModManagerLogs from './ModManagerLogs';
-import ModManagerSettings from './ModManagerSettings';
-import UpdaterDialog from './UpdaterDialog';
-import { InstallContextProvider } from './context/InstallContext';
-import { LogsProvider } from './context/LogContext';
-import { ModsContextProvider } from './context/ModsContext';
-import { NexusModsContextProvider } from './context/NexusModsContext';
-import { PreferencesContextProvider } from './context/PreferencesContext';
-import { TabContextProvider, useTabState } from './context/TabContext';
-import ThemeContextProvider from './context/ThemeContext';
-import { ToastContextProvider } from './context/ToastContext';
-import { UpdatesContextProvider } from './context/UpdatesContext';
-import ModList from './modlist/ModList';
 
 function TabPanelBox({
   children,

@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
-import useModConfigOverrides from './useModConfigOverrides';
+import useModConfigOverrides from 'renderer/react/context/hooks/useModConfigOverrides';
 import {
   IModConfigOverride,
   ISetModConfigOverride,
-} from './useModsContextConfigOverrides';
+} from 'renderer/react/context/hooks/useModsContextConfigOverrides';
+import { useCallback } from 'react';
 
 export default function useModConfigOverride(
   id: string,

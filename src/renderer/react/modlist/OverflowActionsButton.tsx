@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Add, MoreVert, Refresh } from '@mui/icons-material';
-import { Button, Menu, MenuItem } from '@mui/material';
-import { useAddSectionHeader, useMods } from '../context/ModsContext';
+import { MoreVert } from '@mui/icons-material';
+import { Button, Menu } from '@mui/material';
+import AddSectionHeaderMenuItem from './AddSectionHeaderMenuItem';
+import RefreshModListMenuItem from './RefreshModListMenuItem';
 
 type Props = Record<string, never>;
 
@@ -14,22 +15,6 @@ export default function OverflowActionsButton(_props: Props): JSX.Element {
   const onHideMenu = useCallback(() => {
     setAnchorEl(null);
   }, []);
-
-  const [, onRefreshMods] = useMods();
-  const [, setIsRefreshing] = useState(false);
-  const onRefreshModList = useCallback(async () => {
-    onHideMenu();
-    setIsRefreshing(true);
-    await onRefreshMods();
-    setIsRefreshing(false);
-  }, [onHideMenu, onRefreshMods]);
-
-  const addSectionHeader = useAddSectionHeader();
-  const onAddSectionHeader = useCallback(() => {
-    onHideMenu();
-    addSectionHeader();
-    // TODO: scroll list to end
-  }, [addSectionHeader, onHideMenu]);
 
   return (
     <>
@@ -52,14 +37,8 @@ export default function OverflowActionsButton(_props: Props): JSX.Element {
         onClose={onHideMenu}
         open={isMenuShown}
       >
-        <MenuItem disableRipple={true} onClick={onRefreshModList}>
-          <Refresh sx={{ marginRight: 1 }} />
-          Refresh Mod List
-        </MenuItem>
-        <MenuItem disableRipple={true} onClick={onAddSectionHeader}>
-          <Add sx={{ marginRight: 1 }} />
-          Add Section Header
-        </MenuItem>
+        <RefreshModListMenuItem onHideMenu={onHideMenu} />
+        <AddSectionHeaderMenuItem onHideMenu={onHideMenu} />
       </Menu>
     </>
   );

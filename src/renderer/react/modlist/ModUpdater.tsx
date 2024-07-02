@@ -3,10 +3,10 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { IModUpdaterAPI, ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
 import { consumeAPI } from 'renderer/IPC';
 import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
+import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
 import { useMods } from '../context/ModsContext';
-import { useNexusAuthState } from '../context/NexusModsContext';
 import getNexusModID from '../context/utils/getNexusModID';
 
 const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');

@@ -22,8 +22,8 @@ import {
   Typography,
   styled,
 } from '@mui/material';
+import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import BridgeAPI from '../BridgeAPI';
-import { useNexusAuthState } from './context/NexusModsContext';
 import { usePreferences } from './context/PreferencesContext';
 import { IThemeMode, useThemeMode } from './context/ThemeContext';
 import { useAsyncMemo } from './hooks/useAsyncMemo';

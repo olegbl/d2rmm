@@ -95,7 +95,7 @@ export type ValidateResult = {
   user_id: number;
 };
 
-export type NexusModsAPIStateEvent = {
+export type NexusModsApiStateEvent = {
   dailyLimit: string;
   dailyRemaining: string;
   dailyReset: string;

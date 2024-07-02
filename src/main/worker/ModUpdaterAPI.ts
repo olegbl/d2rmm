@@ -5,7 +5,7 @@ import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
 import type {
   DownloadLink,
   Files,
-  NexusModsAPIStateEvent,
+  NexusModsApiStateEvent,
   ValidateResult,
 } from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
@@ -25,7 +25,7 @@ const NexusModsAPI = {
       hourlyLimit: headers['x-rl-hourly-limit'],
       hourlyRemaining: headers['x-rl-hourly-remaining'],
       hourlyReset: headers['x-rl-hourly-reset'],
-    } as NexusModsAPIStateEvent;
+    } as NexusModsApiStateEvent;
     console.debug('NexusModsAPI', 'publishStatus', status);
     await EventAPI.send('nexus-mods-api-status', status);
   },

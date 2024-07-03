@@ -7,9 +7,8 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { useCallback, useContext } from 'react';
 
-// DEBUG: Using Vortex app id during development
-// TODO: get a real app id from Nexus Mods staff
-const APPLICATION_ID = 'vortex';
+// https://next.nexusmods.com/settings/api-keys
+const APPLICATION_ID = 'd2rmm';
 
 export default function useNexusAuthState(): {
   nexusApiState: NexusModsApiStateEvent | null;

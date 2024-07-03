@@ -44,7 +44,7 @@ let REQUEST_COUNT = 0;
 const PENDING_REQUESTS: {
   [id: string]: {
     resolve: (result: IPCMessageSuccessResponse['result']) => void;
-    reject: (error: IPCMessageErrorResponse['error']) => void;
+    reject: (error: Error) => void;
   };
 } = {};
 
@@ -111,7 +111,11 @@ export function registerWorker(worker: ChildProcess): void {
             if (!broadcast) {
               worker.send({
                 id: message.id,
-                error,
+                error: {
+                  name: error.name,
+                  message: error.message,
+                  stack: error.stack,
+                },
               } as IPCMessageErrorResponse);
             } else {
               console.error(error);
@@ -122,8 +126,12 @@ export function registerWorker(worker: ChildProcess): void {
       const request = PENDING_REQUESTS[message.id];
       if (request != null) {
         delete PENDING_REQUESTS[message.id];
-        if (message.error instanceof Error) {
-          request.reject(message.error);
+        if (message.error != null) {
+          const error = new Error();
+          error.name = message.error.name;
+          error.message = message.error.message;
+          error.stack = message.error.stack;
+          request.reject(error);
         } else {
           request.resolve(message.result);
         }
@@ -171,7 +179,11 @@ export async function initIPC(mainWindow: BrowserWindow): Promise<void> {
                 if (!renderer?.isDestroyed()) {
                   renderer?.send('ipc', {
                     id: message.id,
-                    error,
+                    error: {
+                      name: error.name,
+                      message: error.message,
+                      stack: error.stack,
+                    },
                   } as IPCMessageErrorResponse);
                 }
               } else {
@@ -183,8 +195,12 @@ export async function initIPC(mainWindow: BrowserWindow): Promise<void> {
         const request = PENDING_REQUESTS[message.id];
         if (request != null) {
           delete PENDING_REQUESTS[message.id];
-          if (message.error instanceof Error) {
-            request.reject(message.error);
+          if (message.error != null) {
+            const error = new Error();
+            error.name = message.error.name;
+            error.message = message.error.message;
+            error.stack = message.error.stack;
+            request.reject(error);
           } else {
             request.resolve(message.result);
           }

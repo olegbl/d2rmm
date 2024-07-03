@@ -1,6 +1,6 @@
 import { SerializableType } from './Serializable';
 
-type IPCMessageRequest = {
+export type IPCMessageRequest = {
   id: string;
   namespace: string;
   api: string;
@@ -9,7 +9,7 @@ type IPCMessageRequest = {
   error?: never;
 };
 
-type IPCMessageSuccessResponse = {
+export type IPCMessageSuccessResponse = {
   id: string;
   namespace?: never;
   api?: never;
@@ -18,13 +18,17 @@ type IPCMessageSuccessResponse = {
   error?: never;
 };
 
-type IPCMessageErrorResponse = {
+export type IPCMessageErrorResponse = {
   id: string;
   namespace?: never;
   api?: never;
   args?: never;
   result?: never;
-  error: Error;
+  error: {
+    name: string;
+    message: string;
+    stack: string | undefined;
+  };
 };
 
 export type IPCMessageResponse =

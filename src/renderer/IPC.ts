@@ -53,7 +53,7 @@ let REQUEST_COUNT = 0;
 const PENDING_REQUESTS: {
   [id: string]: {
     resolve: (result: IPCMessageSuccessResponse['result']) => void;
-    reject: (error: IPCMessageErrorResponse['error']) => void;
+    reject: (error: Error) => void;
   };
 } = {};
 
@@ -75,7 +75,11 @@ const listener = (_event: Electron.IpcRendererEvent, message: IPCMessage) => {
           if (!broadcast) {
             IPCBridge.send({
               id: message.id,
-              error,
+              error: {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              },
             } as IPCMessageErrorResponse);
           } else {
             console.error(error);
@@ -86,8 +90,13 @@ const listener = (_event: Electron.IpcRendererEvent, message: IPCMessage) => {
     const request = PENDING_REQUESTS[message.id];
     if (request != null) {
       delete PENDING_REQUESTS[message.id];
-      if (message.error instanceof Error) {
-        request.reject(message.error);
+      if (message.error != null) {
+        console.debug('IPC:Renderer:Response:Error', message.id, message.error);
+        const error = new Error();
+        error.name = message.error.name;
+        error.message = message.error.message;
+        error.stack = message.error.stack;
+        request.reject(error);
       } else {
         request.resolve(message.result);
       }

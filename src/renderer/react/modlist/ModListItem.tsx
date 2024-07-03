@@ -180,11 +180,21 @@ export default function ModListItem({
     useContextMenu();
 
   const actions = [
+    mod.info.config == null
+      ? null
+      : ({
+          id: 'settings',
+          shortLabel: 'settings',
+          longLabel: 'Open Settings',
+          tooltip: 'Configure Mod Settings',
+          color: isEnabled ? 'primary' : undefined,
+          icon: <Settings />,
+          onClick: onConfigureMod,
+        } as Action),
     mod.info.website == null
       ? null
       : ({
           id: 'site',
-          shortLabel: 'site',
           longLabel: 'Visit Website',
           icon: <Link />,
           onClick: onOpenWebsite,
@@ -246,16 +256,6 @@ export default function ModListItem({
           })),
         },
     ...setNexusModsIDActions,
-    mod.info.config == null
-      ? null
-      : ({
-          id: 'settings',
-          shortLabel: 'settings',
-          longLabel: 'Open Settings',
-          color: isEnabled ? 'primary' : undefined,
-          icon: <Settings />,
-          onClick: onConfigureMod,
-        } as Action),
     mod.info.type !== 'data'
       ? null
       : ({

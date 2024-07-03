@@ -12,7 +12,6 @@ export default function useValidateNexusModsApiKey(
   const apiKey = authState.apiKey;
 
   const validateKey = useCallback(() => {
-    console.log('@@ validateKey', apiKey);
     if (apiKey == null) {
       return;
     }

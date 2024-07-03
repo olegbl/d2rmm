@@ -57,9 +57,12 @@ export default function useNxmProtocolHandler(
           .then()
           .catch(console.error);
       } else {
-        console.warn(
-          `Couldn't handle nxm:// url for file ${nexusFileID} in mod ${nexusModID} because Nexus Mods is not authenticated.`,
-        );
+        const message = `Couldn't handle nxm:// url for file ${nexusFileID} in mod ${nexusModID} because Nexus Mods is not authenticated.`;
+        console.warn(message);
+        showToast({
+          title: message,
+          severity: 'warning',
+        });
       }
     },
     [

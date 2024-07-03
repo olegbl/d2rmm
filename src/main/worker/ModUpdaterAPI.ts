@@ -7,7 +7,14 @@ import type {
 } from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
 import decompress from 'decompress';
-import { cpSync, existsSync, mkdirSync, rmSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from 'fs';
 import path from 'path';
 import { getAppPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
@@ -186,8 +193,9 @@ export async function initModUpdaterAPI(): Promise<void> {
       });
 
       // extract the zip file
+      const downloadDirPath = path.join(path.dirname(filePath), modID);
       process.noAsar = true;
-      await decompress(filePath, path.dirname(filePath));
+      await decompress(filePath, downloadDirPath);
       process.noAsar = false;
       rmSync(filePath);
 
@@ -195,20 +203,45 @@ export async function initModUpdaterAPI(): Promise<void> {
         modID,
         nexusModID,
         nexusFileID,
-        downloadDirPath: path.dirname(filePath),
+        downloadDirPath,
+      });
+
+      // check that the extracted files have the expected structure
+      function findModInfo(dirPath: string): string | null {
+        if (existsSync(path.join(dirPath, 'mod.json'))) {
+          return dirPath;
+        }
+        const files = readdirSync(downloadDirPath, { encoding: null });
+        for (const fileName of files) {
+          const filePath = path.join(dirPath, fileName);
+          if (statSync(filePath).isDirectory()) {
+            const result = findModInfo(filePath);
+            if (result != null) {
+              return result;
+            }
+          }
+        }
+        return null;
+      }
+      const extractedModDirPath = findModInfo(downloadDirPath);
+      if (extractedModDirPath == null) {
+        throw new Error(
+          `Mod has an unexpected file structure. Expected to find "mod.json" file somewhere in downloaded .zip file.`,
+        );
+      }
+
+      console.debug('ModUpdaterAPI', 'validated extracted files', {
+        modID,
+        nexusModID,
+        nexusFileID,
+        extractedModDirPath,
       });
 
       // delete all mod files except mod.config
-      const updateDirPath = path.join(path.dirname(filePath), modID);
-      if (!existsSync(updateDirPath)) {
-        throw new Error(
-          `Mod has an unexpected file structure. Expected to find directory ${modID} in downloaded .zip file.`,
-        );
-      }
       const modDirPath = path.join(getAppPath(), 'mods', modID);
       const configFilePath = path.join(modDirPath, 'config.json');
       if (existsSync(configFilePath)) {
-        cpSync(configFilePath, path.join(updateDirPath, 'config.json'));
+        cpSync(configFilePath, path.join(extractedModDirPath, 'config.json'));
       }
       if (existsSync(modDirPath)) {
         rmSync(modDirPath, { force: true, recursive: true });
@@ -223,10 +256,10 @@ export async function initModUpdaterAPI(): Promise<void> {
 
       // copy the new extracted files to the mod directory
       mkdirSync(modDirPath, { recursive: true });
-      cpSync(updateDirPath, modDirPath, { recursive: true });
+      cpSync(extractedModDirPath, modDirPath, { recursive: true });
 
       // clean up
-      rmSync(updateDirPath, { force: true, recursive: true });
+      rmSync(downloadDirPath, { force: true, recursive: true });
 
       console.debug('ModUpdaterAPI', 'installed mod', {
         modID,

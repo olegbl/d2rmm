@@ -91,7 +91,6 @@ const listener = (_event: Electron.IpcRendererEvent, message: IPCMessage) => {
     if (request != null) {
       delete PENDING_REQUESTS[message.id];
       if (message.error != null) {
-        console.debug('IPC:Renderer:Response:Error', message.id, message.error);
         const error = new Error();
         error.name = message.error.name;
         error.message = message.error.message;

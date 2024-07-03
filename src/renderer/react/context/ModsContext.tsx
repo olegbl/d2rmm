@@ -145,7 +145,12 @@ export function ModsContextProvider({
     const mods: Mod[] = [];
     for (const modID of modIDs) {
       try {
-        const info = await BridgeAPI.readModInfo(modID);
+        let info;
+        try {
+          info = await BridgeAPI.readModInfo(modID);
+        } catch {
+          continue;
+        }
 
         if (info == null) {
           // ignore folder as it may not be a mod

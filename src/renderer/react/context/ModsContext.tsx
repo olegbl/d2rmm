@@ -32,7 +32,7 @@ type Mutable<T> = {
 
 type IMods = Mod[];
 
-type IModsRefresher = () => Promise<IMods>;
+type IModsRefresher = (ids?: string[]) => Promise<IMods>;
 
 type IEnabledMods = { [id: string]: boolean };
 
@@ -140,45 +140,49 @@ export function ModsContextProvider({
   const logger = useLogger();
   const showToast = useToast();
 
-  const getMods = useCallback(async (): Promise<Mod[]> => {
-    const modIDs = await BridgeAPI.readModDirectory();
-    const mods: Mod[] = [];
-    for (const modID of modIDs) {
-      try {
-        let info;
+  const getMods = useCallback(
+    async (ids?: string[]): Promise<Mod[]> => {
+      const modIDs = ids ?? (await BridgeAPI.readModDirectory());
+      const mods: Mod[] = [];
+      for (const modID of modIDs) {
         try {
-          info = await BridgeAPI.readModInfo(modID);
-        } catch {
-          continue;
+          let info;
+          try {
+            info = await BridgeAPI.readModInfo(modID);
+          } catch {
+            // ignore folder as it may not be a mod
+            continue;
+          }
+
+          if (info == null) {
+            // ignore folder as it may not be a mod
+            continue;
+          }
+
+          const config = (await BridgeAPI.readModConfig(
+            modID,
+          )) as unknown as ModConfigValue;
+
+          const defaultConfig = getDefaultConfig(info.config);
+
+          mods.push({
+            id: modID,
+            info,
+            config: { ...defaultConfig, ...config },
+          });
+        } catch (error) {
+          logger.error('Failed to load mod', modID, error as Error);
+          showToast({
+            severity: 'error',
+            title: `Failed to load mod ${modID}`,
+            description: String(error),
+          });
         }
-
-        if (info == null) {
-          // ignore folder as it may not be a mod
-          continue;
-        }
-
-        const config = (await BridgeAPI.readModConfig(
-          modID,
-        )) as unknown as ModConfigValue;
-
-        const defaultConfig = getDefaultConfig(info.config);
-
-        mods.push({
-          id: modID,
-          info,
-          config: { ...defaultConfig, ...config },
-        });
-      } catch (error) {
-        logger.error('Failed to load mod', modID, error as Error);
-        showToast({
-          severity: 'error',
-          title: `Failed to load mod ${modID}`,
-          description: String(error),
-        });
       }
-    }
-    return mods;
-  }, [logger, showToast]);
+      return mods;
+    },
+    [logger, showToast],
+  );
 
   const [modsWithoutOverrides, setMods] = useState<Mod[]>([]);
 
@@ -203,12 +207,28 @@ export function ModsContextProvider({
     [],
   );
 
-  const refreshMods = useCallback(async (): Promise<IMods> => {
-    // manually refresh mods
-    const mods = await getMods();
-    setMods(mods);
-    return mods;
-  }, [getMods]);
+  const refreshMods = useCallback(
+    async (ids?: string[]): Promise<IMods> => {
+      // manually refresh mods
+      const mods = await getMods(ids);
+      if (ids != null) {
+        // partial update
+        setMods((oldMods) =>
+          oldMods
+            .map((oldMod) => mods.find((mod) => mod.id === oldMod.id) ?? oldMod)
+            .concat(
+              mods.filter(
+                (mod) => !oldMods.some((oldMod) => oldMod.id === mod.id),
+              ),
+            ),
+        );
+      } else {
+        setMods(mods);
+      }
+      return mods;
+    },
+    [getMods],
+  );
 
   const [installedMods, setInstalledMods] = useSavedState(
     'installed-mods',

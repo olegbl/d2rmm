@@ -1,18 +1,13 @@
 import type { Mod } from 'bridge/BridgeAPI';
-import type { IModUpdaterAPI, ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
-import { consumeAPI } from 'renderer/IPC';
-import { useMods } from 'renderer/react/context/ModsContext';
+import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
+import useModInstaller from 'renderer/react/context/hooks/useModInstaller';
 import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
-import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
-import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
 
-const ModUpdaterAPI = consumeAPI<IModUpdaterAPI>('ModUpdaterAPI');
-
-export function useModUpdater(mod: Mod): {
+export default function useModUpdater(mod: Mod): {
   isUpdatePossible: boolean;
   isDownloadPossible: boolean;
   isUpdateChecked: boolean;
@@ -22,10 +17,8 @@ export function useModUpdater(mod: Mod): {
   onCheckForUpdates: () => Promise<void>;
   onDownloadVersion: (download: ModUpdaterDownload) => Promise<void>;
 } {
-  const showToast = useToast();
-  const [, onRefreshMods] = useMods();
   const { nexusAuthState } = useNexusAuthState();
-  const updateModVersion = useUpdateModVersion();
+  const installMod = useModInstaller(nexusAuthState);
   const checkModForUpdates = useCheckModForUpdates(nexusAuthState);
   const nexusModID = getNexusModID(mod);
   const isUpdatePossible =
@@ -47,32 +40,14 @@ export function useModUpdater(mod: Mod): {
         return;
       }
 
-      await ModUpdaterAPI.installModViaNexus(
-        mod.id,
-        nexusAuthState.apiKey,
+      await installMod({
+        modID: mod.id,
         nexusModID,
-        download.fileID,
-      );
-
-      const newVersion = download.version;
-      await onRefreshMods();
-      await updateModVersion(mod.id, newVersion);
-
-      showToast({
-        duration: 2000,
-        title: `${mod?.info.name} v${newVersion} installed!`,
-        severity: 'success',
+        nexusFileID: download.fileID,
+        version: download.version,
       });
     },
-    [
-      nexusAuthState.apiKey,
-      nexusModID,
-      mod.id,
-      mod?.info.name,
-      onRefreshMods,
-      updateModVersion,
-      showToast,
-    ],
+    [nexusAuthState.apiKey, nexusModID, installMod, mod.id],
   );
 
   return {

@@ -5,7 +5,7 @@ import {
   useSelectedMod,
   useToggleMod,
 } from 'renderer/react/context/ModsContext';
-import { useModUpdater } from 'renderer/react/modlist/ModUpdater';
+import useModUpdater from 'renderer/react/modlist/hooks/useModUpdater';
 import useSetNexusModsIDActions from 'renderer/react/modlist/hooks/useSetNexusModsIDActions';
 import { isNotNull } from 'renderer/utils/isNotNull';
 import { NestedMenuItem } from 'mui-nested-menu';

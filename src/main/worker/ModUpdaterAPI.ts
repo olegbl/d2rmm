@@ -171,6 +171,7 @@ export async function initModUpdaterAPI(): Promise<void> {
       }
 
       if (modID == null) {
+        // TODO: should this use the name of the mod on Nexus instead?
         const file = await NexusModsAPI.getFile(
           nexusApiKey,
           nexusModID,

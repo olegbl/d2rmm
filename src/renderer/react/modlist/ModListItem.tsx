@@ -3,6 +3,7 @@ import { DialogContextProvider } from 'renderer/react/context/DialogContext';
 import { useToggleMod } from 'renderer/react/context/ModsContext';
 import { ModListAuthorChip } from 'renderer/react/modlist/ModListAuthorAction';
 import { ModListDataModChip } from 'renderer/react/modlist/ModListDataModAction';
+import { ModListDeleteMenuItem } from 'renderer/react/modlist/ModListDeleteAction';
 import ModListMenu from 'renderer/react/modlist/ModListMenu';
 import ModListNexusIDMenuItem from 'renderer/react/modlist/ModListNexusIDAction';
 import { ModListRenameMenuItem } from 'renderer/react/modlist/ModListRenameAction';
@@ -84,6 +85,7 @@ export default function ModListItem({
           <ModListDownloadMenuItem mod={mod} />
           <ModListNexusIDMenuItem mod={mod} />
           <ModListRenameMenuItem mod={mod} />
+          <ModListDeleteMenuItem mod={mod} />
         </ModListMenu>
       </DialogContextProvider>
     </MenuListMenuContextProvider>

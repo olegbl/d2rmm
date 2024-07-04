@@ -215,7 +215,17 @@ export function ModsContextProvider({
         // partial update
         setMods((oldMods) =>
           oldMods
+            // remove deleted mods
+            .filter(
+              (oldMod) =>
+                // either we're not updating this mod
+                !ids.some((id) => id === oldMod.id) ||
+                // or the mod still exists
+                mods.some((mod) => mod.id === oldMod.id),
+            )
+            // update existing mods
             .map((oldMod) => mods.find((mod) => mod.id === oldMod.id) ?? oldMod)
+            // add new mods
             .concat(
               mods.filter(
                 (mod) => !oldMods.some((oldMod) => oldMod.id === mod.id),

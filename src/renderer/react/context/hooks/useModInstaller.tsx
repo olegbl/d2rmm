@@ -49,32 +49,24 @@ export default function useModInstaller(authState: INexusAuthState) {
       );
       const mod = (await refreshMods([modID])).find((m) => m.id === modID);
       if (mod != null) {
-        // if the downloaded mod doesn't specify a website
-        // we can override the website field
-        if (mod.info.website == null) {
-          setModConfigOverrides((oldOverrides) => ({
-            ...oldOverrides,
-            [modID]: {
-              ...oldOverrides[modID],
-              website: `https://www.nexusmods.com/diablo2resurrected/mods/${nexusModID}`,
-            },
-          }));
-        }
-
-        // if the downloaded mod doesn't specify a version
-        // but we know what version we were going to install
-        // we can override the version
-        if (mod.info.version == null && version != null) {
-          setModConfigOverrides((oldOverrides) => ({
-            ...oldOverrides,
-            [modID]: {
-              ...oldOverrides[modID],
-              version,
-            },
-          }));
-        }
-
         const installedVersion = mod.info.version ?? version;
+
+        setModConfigOverrides((oldOverrides) => {
+          const override = { ...oldOverrides[modID] };
+          // clear old overrides
+          delete override.version;
+          delete override.website;
+          // override website if mod doesn't specify it since we know where the mod came from
+          if (mod.info.website == null) {
+            override.website = `https://www.nexusmods.com/diablo2resurrected/mods/${nexusModID}`;
+          }
+          // override version if mod doesn't specify it since we know what version we were going to install
+          if (mod.info.version == null && installedVersion != null) {
+            override.version = installedVersion;
+          }
+          return { ...oldOverrides, [modID]: override };
+        });
+
         if (installedVersion != null) {
           const isUpdated = await updateModVersion(modID, installedVersion);
           // if we didn't find a mod with cached version update information

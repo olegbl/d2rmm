@@ -1,8 +1,12 @@
 import type { Mod } from 'bridge/BridgeAPI';
+import {
+  usePersistentDialog,
+  usePersistentDialogContext,
+} from 'renderer/react/context/DialogContext';
 import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
 import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
-import type { Action } from 'renderer/react/modlist/ModListItem';
+import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback, useState } from 'react';
 import {
   Button,
@@ -85,39 +89,92 @@ const NexusMods = createSvgIcon(
   'NexusMods',
 );
 
-export default function useSetNexusModsIDActions(
-  mod: Mod,
-): [Action[], React.ReactNode] {
-  const [isShown, setIsShown] = useState(false);
-  const [newID, setNewID] = useState<number | null>(null);
+function ChangeIDDialog({
+  initialID,
+  isClearable,
+  onClear: onClearFromProps,
+  onSubmit: onSubmitFromProps,
+}: {
+  initialID: string;
+  isClearable: boolean;
+  onClear: () => void;
+  onSubmit: (id: string) => void;
+}) {
+  const { close: onClose } = usePersistentDialogContext();
 
-  const [, setModUpdate] = useModUpdate(mod.id);
+  const [id, setID] = useState(initialID);
+
+  const onChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setID(event.target.value);
+  }, []);
+
+  const onSubmit = useCallback(() => {
+    onSubmitFromProps(id);
+    onClose();
+  }, [id, onClose, onSubmitFromProps]);
+
+  const onClear = useCallback(() => {
+    onClearFromProps();
+    onClose();
+  }, [onClearFromProps, onClose]);
+
+  return (
+    <Dialog fullWidth={true} onClose={onClose} open={true}>
+      <DialogContent>
+        <TextField
+          autoFocus={true}
+          fullWidth={true}
+          label="Nexus Mods ID"
+          onChange={onChange}
+          sx={{ marginTop: 1 }}
+          type="number"
+          value={id}
+          variant="outlined"
+        />
+        <DialogContentText sx={{ marginTop: 1 }} variant="caption">
+          This ID can be found in the URL of the mod's Nexus Mods page.
+        </DialogContentText>
+        <DialogActions>
+          {isClearable && <Button onClick={onClear}>Clear</Button>}
+          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onSubmit} variant="contained">
+            Save
+          </Button>
+        </DialogActions>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type Props = {
+  mod: Mod;
+};
+
+export default function ModListNexusIDMenuItem({
+  mod,
+}: Props): JSX.Element | null {
   const [modConfigOverride, setModConfigOverride] = useModConfigOverride(
     mod.id,
   );
+  const [, setModUpdate] = useModUpdate(mod.id);
 
   const nexusModID = getNexusModID(mod);
-
   const isOverriden = modConfigOverride?.website != null;
   const isOverridable =
     mod.info.type === 'd2rmm' && (nexusModID == null || isOverriden);
 
-  const onShow = useCallback(() => {
-    setIsShown(true);
-  }, []);
-
-  const onHide = useCallback(() => {
-    setNewID(null);
-    setIsShown(false);
-  }, []);
-
-  const onSubmit = useCallback(() => {
-    setModConfigOverride((oldOverride) => ({
-      ...oldOverride,
-      website: `https://www.nexusmods.com/diablo2resurrected/mods/${newID}`,
-    }));
-    onHide();
-  }, [newID, onHide, setModConfigOverride]);
+  const onSubmit = useCallback(
+    (id: string) => {
+      if (id == '') {
+        return;
+      }
+      setModConfigOverride((oldOverride) => ({
+        ...oldOverride,
+        website: `https://www.nexusmods.com/diablo2resurrected/mods/${id}`,
+      }));
+    },
+    [setModConfigOverride],
+  );
 
   const onClear = useCallback(() => {
     setModConfigOverride((oldOverride) => {
@@ -125,57 +182,28 @@ export default function useSetNexusModsIDActions(
       delete newOverride.website;
       return newOverride;
     });
+    // clear mod update state since we no longer know where to fetch updates from
     setModUpdate(null);
   }, [setModConfigOverride, setModUpdate]);
 
-  const onChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setNewID(e.target.value === '' ? null : parseInt(e.target.value, 10));
-    },
-    [setNewID],
+  const [onOpenDialog] = usePersistentDialog(
+    <ChangeIDDialog
+      initialID={nexusModID ?? ''}
+      isClearable={isOverriden}
+      onClear={onClear}
+      onSubmit={onSubmit}
+    />,
   );
 
   if (!isOverridable) {
-    return [[], null];
+    return null;
   }
 
-  return [
-    [
-      isOverriden
-        ? {
-            id: 'clear-override-nexus-mods-id',
-            longLabel: 'Clear Nexus ID',
-            icon: <NexusMods />,
-            onClick: onClear,
-          }
-        : {
-            id: 'set-override-nexus-mods-id',
-            longLabel: 'Set Nexus ID',
-            icon: <NexusMods />,
-            onClick: onShow,
-          },
-    ],
-    <Dialog onClose={onHide} open={isShown}>
-      <DialogContent>
-        <TextField
-          fullWidth={true}
-          label="Nexus Mods ID"
-          onChange={onChange}
-          sx={{ marginTop: 1 }}
-          type="number"
-          value={newID ?? ''}
-          variant="outlined"
-        />
-        <DialogContentText variant="caption">
-          This ID can be found in the URL of the mod's Nexus Mods page.
-        </DialogContentText>
-        <DialogActions>
-          <Button onClick={onHide}>Cancel</Button>
-          <Button autoFocus={true} onClick={onSubmit}>
-            Submit
-          </Button>
-        </DialogActions>
-      </DialogContent>
-    </Dialog>,
-  ];
+  return (
+    <ModListMenuItem
+      icon={<NexusMods />}
+      label="Nexus ID"
+      onClick={onOpenDialog}
+    />
+  );
 }

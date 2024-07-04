@@ -4,6 +4,7 @@ import InstallationProgressBar from 'renderer/react/InstallationProgressBar';
 import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
 import UpdaterDialog from 'renderer/react/UpdaterDialog';
+import { DialogContextProvider } from 'renderer/react/context/DialogContext';
 import { InstallContextProvider } from 'renderer/react/context/InstallContext';
 import { LogsProvider } from 'renderer/react/context/LogContext';
 import { ModsContextProvider } from 'renderer/react/context/ModsContext';
@@ -95,28 +96,30 @@ export default function App() {
     <ErrorBoundary>
       <Suspense fallback={null}>
         <ThemeContextProvider>
-          <ToastContextProvider>
-            <LogsProvider>
-              <PreferencesContextProvider>
-                <ModsContextProvider>
-                  <TabContextProvider>
-                    <InstallContextProvider>
-                      <UpdatesContextProvider>
-                        <NexusModsContextProvider>
-                          <Router>
-                            <Routes>
-                              <Route element={<D2RMMRootView />} path="/" />
-                            </Routes>
-                          </Router>
-                          <UpdaterDialog />
-                        </NexusModsContextProvider>
-                      </UpdatesContextProvider>
-                    </InstallContextProvider>
-                  </TabContextProvider>
-                </ModsContextProvider>
-              </PreferencesContextProvider>
-            </LogsProvider>
-          </ToastContextProvider>
+          <DialogContextProvider>
+            <ToastContextProvider>
+              <LogsProvider>
+                <PreferencesContextProvider>
+                  <ModsContextProvider>
+                    <TabContextProvider>
+                      <InstallContextProvider>
+                        <UpdatesContextProvider>
+                          <NexusModsContextProvider>
+                            <Router>
+                              <Routes>
+                                <Route element={<D2RMMRootView />} path="/" />
+                              </Routes>
+                            </Router>
+                            <UpdaterDialog />
+                          </NexusModsContextProvider>
+                        </UpdatesContextProvider>
+                      </InstallContextProvider>
+                    </TabContextProvider>
+                  </ModsContextProvider>
+                </PreferencesContextProvider>
+              </LogsProvider>
+            </ToastContextProvider>
+          </DialogContextProvider>
         </ThemeContextProvider>
       </Suspense>
     </ErrorBoundary>

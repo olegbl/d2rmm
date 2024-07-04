@@ -4,14 +4,7 @@
 - Mod config actions
 - Typeahead config
 - Add min D2RMM version for APIs in docs
-- Check for mod updates via GitHub
-  - Check mod version via https://raw.githubusercontent.com/olegbl/d2rmm.mods/main/DisableBattleNet/mod.json
-  - Download entire repo as zip from https://api.github.com/repos/olegbl/d2rmm.mods/zipball/main
-  - Shouldn't cost any API rate limit to check, and 1 request per mod to download update. GH limit is 60/hr by default.
-- Check for mod updates via Nexus Mods
-  - Requires D2RMM to register as mod manager with Nexus Mods
-  - Requires using Nexus Mods authentication API
-- Download mod updates for premium Nexus Mods users
+- Modlists (CSV of Nexus mod ids, downloadable as a pack)
 
 # Mods
 

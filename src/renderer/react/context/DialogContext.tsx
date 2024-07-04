@@ -7,124 +7,125 @@ import React, {
   useState,
 } from 'react';
 
-export type IDialogContext = {
-  addDialog: (dialog: React.ReactNode) => string;
-  removeDialog: (id: string) => void;
+export type Dialog = React.ReactNode;
+
+export type IDialogManagerContext = {
+  hideDialog: (id: string) => void;
+  showDialog: (dialog: Dialog) => string;
 };
 
-const DialogContext = React.createContext<IDialogContext | null>(null);
+const DialogManagerContext = React.createContext<IDialogManagerContext | null>(
+  null,
+);
 
-export default DialogContext;
-
-type IPersistentDialogContext = {
-  id: string;
-  close: () => void;
-};
-
-const PersistentDialogContext =
-  React.createContext<IPersistentDialogContext | null>(null);
+export default DialogManagerContext;
 
 type Props = {
   children: React.ReactNode;
 };
 
-export function DialogContextProvider({ children }: Props): JSX.Element {
-  const [dialogs, setDialogs] = useState<Map<string, React.ReactNode>>(
-    new Map(),
-  );
+export function DialogManagerContextProvider({ children }: Props): JSX.Element {
+  const [dialogs, setDialogs] = useState<[string, Dialog][]>([]);
 
-  const addDialog = useCallback((dialog: React.ReactNode): string => {
+  const showDialog = useCallback((dialog: Dialog): string => {
     const id = uuidv4();
-    setDialogs((oldDialogs) => new Map(oldDialogs.set(id, dialog)));
+    setDialogs((oldDialogs) => [...oldDialogs, [id, dialog]]);
     return id;
   }, []);
 
-  const removeDialog = useCallback((id: string): void => {
-    setDialogs((oldDialogs) => {
-      const newDialogs = new Map(oldDialogs);
-      newDialogs.delete(id);
-      return newDialogs;
-    });
+  const hideDialog = useCallback((id: string): void => {
+    setDialogs((oldDialogs) =>
+      oldDialogs.filter(([oldDialogID]) => oldDialogID !== id),
+    );
   }, []);
 
   const context = useMemo(
     () => ({
-      addDialog,
-      removeDialog,
+      hideDialog,
+      showDialog,
     }),
-    [addDialog, removeDialog],
+    [hideDialog, showDialog],
   );
 
   return (
-    <DialogContext.Provider value={context}>
+    <DialogManagerContext.Provider value={context}>
       {children}
-      {Array.from(dialogs.entries()).map(([id, dialog]) => (
-        <PersistentDialogContextProvider
+      {dialogs.map(([id, dialog], index) => (
+        <DialogContextProvider
           key={id}
+          hideDialog={hideDialog}
           id={id}
-          removeDialog={removeDialog}
+          isOpen={index === dialogs.length - 1}
         >
           {dialog}
-        </PersistentDialogContextProvider>
+        </DialogContextProvider>
       ))}
-    </DialogContext.Provider>
+    </DialogManagerContext.Provider>
   );
 }
 
-function PersistentDialogContextProvider({
+type IDialogContext = {
+  id: string;
+  isOpen: boolean;
+  close: () => void;
+};
+
+const DialogContext = React.createContext<IDialogContext | null>(null);
+
+function DialogContextProvider({
   children,
+  hideDialog,
   id,
-  removeDialog,
+  isOpen,
 }: {
   children: React.ReactNode;
+  hideDialog: (id: string) => void;
   id: string;
-  removeDialog: (id: string) => void;
+  isOpen: boolean;
 }): JSX.Element {
   const close = useCallback(() => {
-    removeDialog(id);
-  }, [id, removeDialog]);
+    hideDialog(id);
+  }, [id, hideDialog]);
 
-  const context = useMemo(() => ({ id, close }), [id, close]);
+  const context = useMemo(() => ({ id, isOpen, close }), [id, isOpen, close]);
 
   return (
-    <PersistentDialogContext.Provider value={context}>
-      {children}
-    </PersistentDialogContext.Provider>
+    <DialogContext.Provider value={context}>{children}</DialogContext.Provider>
   );
 }
 
-export function usePersistentDialog(
+export function useDialog(
   dialog: React.ReactNode,
 ): [open: () => void, close: () => void] {
-  const context = useContext(DialogContext);
+  const context = useContext(DialogManagerContext);
   if (context == null) {
     throw new Error(
-      'usePersistentDialog must be used within a DialogContextProvider',
+      'useDialog must be used within a DialogManagerContextProvider',
     );
   }
-  const { addDialog, removeDialog } = context;
+  const { showDialog, hideDialog } = context;
 
   const idRef = useRef<string | null>(null);
 
   const close = useCallback(() => {
     if (idRef.current != null) {
-      removeDialog(idRef.current);
+      hideDialog(idRef.current);
     }
-  }, [removeDialog]);
+  }, [hideDialog]);
 
   const open = useCallback(() => {
     close();
-    idRef.current = addDialog(dialog);
-  }, [addDialog, close, dialog]);
+    idRef.current = showDialog(dialog);
+  }, [showDialog, close, dialog]);
 
   return [open, close];
 }
 
-export function usePersistentDialogContext(): IPersistentDialogContext {
-  const context = useContext(PersistentDialogContext);
+export function useDialogContext(): IDialogContext {
+  const context = useContext(DialogContext);
   if (context == null) {
     throw new Error(
-      'usePersistentDialogContext must be used within a dialog mounted using usePersistentDialog',
+      'useDialogContext must be used within a DialogContextProvider',
     );
   }
   return context;

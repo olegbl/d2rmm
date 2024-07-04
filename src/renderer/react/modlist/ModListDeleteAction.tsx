@@ -1,8 +1,8 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import {
-  usePersistentDialog,
-  usePersistentDialogContext,
+  useDialog,
+  useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import { useMods } from 'renderer/react/context/ModsContext';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
@@ -23,7 +23,7 @@ function DeleteDialog({
   mod: Mod;
   onDelete: () => void;
 }) {
-  const { close: onClose } = usePersistentDialogContext();
+  const { close: onClose, isOpen } = useDialogContext();
 
   const onDelete = useCallback(() => {
     onDeleteFromProps();
@@ -31,7 +31,7 @@ function DeleteDialog({
   }, [onClose, onDeleteFromProps]);
 
   return (
-    <Dialog fullWidth={true} onClose={onClose} open={true}>
+    <Dialog fullWidth={true} onClose={onClose} open={isOpen}>
       <DialogContent>
         <DialogContentText>
           Are you sure you want to delete <strong>{mod.info.name}</strong>?
@@ -59,7 +59,7 @@ export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
     await refreshMods([mod.id]);
   }, [mod.id, mod.info.name, refreshMods]);
 
-  const [onOpenDialog] = usePersistentDialog(
+  const [onOpenDialog] = useDialog(
     <DeleteDialog mod={mod} onDelete={onDelete} />,
   );
 

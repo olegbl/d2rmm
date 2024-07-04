@@ -1,7 +1,7 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import {
-  usePersistentDialog,
-  usePersistentDialogContext,
+  useDialog,
+  useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
 import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
@@ -100,7 +100,7 @@ function ChangeIDDialog({
   onClear: () => void;
   onSubmit: (id: string) => void;
 }) {
-  const { close: onClose } = usePersistentDialogContext();
+  const { close: onClose, isOpen } = useDialogContext();
 
   const [id, setID] = useState(initialID);
 
@@ -119,7 +119,7 @@ function ChangeIDDialog({
   }, [onClearFromProps, onClose]);
 
   return (
-    <Dialog fullWidth={true} onClose={onClose} open={true}>
+    <Dialog fullWidth={true} onClose={onClose} open={isOpen}>
       <DialogContent>
         <TextField
           autoFocus={true}
@@ -186,7 +186,7 @@ export default function ModListNexusIDMenuItem({
     setModUpdate(null);
   }, [setModConfigOverride, setModUpdate]);
 
-  const [onOpenDialog] = usePersistentDialog(
+  const [onOpenDialog] = useDialog(
     <ChangeIDDialog
       initialID={nexusModID ?? ''}
       isClearable={isOverriden}

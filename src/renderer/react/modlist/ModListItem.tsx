@@ -1,5 +1,5 @@
 import type { Mod } from 'bridge/BridgeAPI';
-import { DialogContextProvider } from 'renderer/react/context/DialogContext';
+import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
 import { useToggleMod } from 'renderer/react/context/ModsContext';
 import { ModListAuthorChip } from 'renderer/react/modlist/ModListAuthorAction';
 import { ModListDataModChip } from 'renderer/react/modlist/ModListDataModAction';
@@ -62,7 +62,7 @@ export default function ModListItem({
 
   return (
     <MenuListMenuContextProvider>
-      <DialogContextProvider>
+      <DialogManagerContextProvider>
         {isReorderEnabled ? (
           <Draggable draggableId={mod.id} index={index}>
             {(providedDraggable) => (
@@ -87,7 +87,7 @@ export default function ModListItem({
           <ModListRenameMenuItem mod={mod} />
           <ModListDeleteMenuItem mod={mod} />
         </ModListMenu>
-      </DialogContextProvider>
+      </DialogManagerContextProvider>
     </MenuListMenuContextProvider>
   );
 }

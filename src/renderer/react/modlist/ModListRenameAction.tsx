@@ -1,7 +1,7 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import {
-  usePersistentDialog,
-  usePersistentDialogContext,
+  useDialog,
+  useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
@@ -26,7 +26,7 @@ function RenameDialog({
   onClear: () => void;
   onSubmit: (value: string) => void;
 }) {
-  const { close: onClose } = usePersistentDialogContext();
+  const { close: onClose, isOpen } = useDialogContext();
 
   const [name, setName] = useState(initialName);
 
@@ -45,7 +45,7 @@ function RenameDialog({
   }, [onClearFromProps, onClose]);
 
   return (
-    <Dialog fullWidth={true} onClose={onClose} open={true}>
+    <Dialog fullWidth={true} onClose={onClose} open={isOpen}>
       <DialogContent>
         <TextField
           autoFocus={true}
@@ -88,7 +88,7 @@ export function ModListRenameMenuItem({ mod }: { mod: Mod }) {
     [setModConfigOverride],
   );
 
-  const [onOpenDialog] = usePersistentDialog(
+  const [onOpenDialog] = useDialog(
     <RenameDialog
       initialName={modConfigOverride?.name ?? mod.info.name}
       isClearable={modConfigOverride?.name != null}

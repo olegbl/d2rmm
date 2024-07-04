@@ -4,7 +4,7 @@ import InstallationProgressBar from 'renderer/react/InstallationProgressBar';
 import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
 import UpdaterDialog from 'renderer/react/UpdaterDialog';
-import { DialogContextProvider } from 'renderer/react/context/DialogContext';
+import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
 import { InstallContextProvider } from 'renderer/react/context/InstallContext';
 import { LogsProvider } from 'renderer/react/context/LogContext';
 import { ModsContextProvider } from 'renderer/react/context/ModsContext';
@@ -96,7 +96,7 @@ export default function App() {
     <ErrorBoundary>
       <Suspense fallback={null}>
         <ThemeContextProvider>
-          <DialogContextProvider>
+          <DialogManagerContextProvider>
             <ToastContextProvider>
               <LogsProvider>
                 <PreferencesContextProvider>
@@ -119,7 +119,7 @@ export default function App() {
                 </PreferencesContextProvider>
               </LogsProvider>
             </ToastContextProvider>
-          </DialogContextProvider>
+          </DialogManagerContextProvider>
         </ThemeContextProvider>
       </Suspense>
     </ErrorBoundary>

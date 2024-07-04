@@ -3,7 +3,7 @@ import { usePreferences } from 'renderer/react/context/PreferencesContext';
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -110,7 +110,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       sx={{ width: '100%', flex: 1, overflow: 'auto', border: 'none' }}
     >
       <StyledAccordion
-        defaultExpanded={!isValidGamePath || !isValidPreExtractedDataPath}
+        defaultExpanded={
+          useRef(!isValidGamePath || !isValidPreExtractedDataPath).current
+        }
         disableGutters={true}
         elevation={0}
         square={true}
@@ -223,7 +225,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         </StyledAccordionDetails>
       </StyledAccordion>
       <StyledAccordion
-        defaultExpanded={isDirectMode}
+        defaultExpanded={useRef(isDirectMode).current}
         disableGutters={true}
         elevation={0}
         square={true}

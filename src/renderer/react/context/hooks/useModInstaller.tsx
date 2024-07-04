@@ -3,6 +3,7 @@ import { useMods } from 'renderer/react/context/ModsContext';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import useModConfigOverrides from 'renderer/react/context/hooks/useModConfigOverrides';
 import { useUpdateModVersion } from 'renderer/react/context/hooks/useUpdateModVersion';
+import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
 import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
@@ -57,7 +58,7 @@ export default function useModInstaller(authState: INexusAuthState) {
           delete override.version;
           delete override.website;
           // override website if mod doesn't specify it since we know where the mod came from
-          if (mod.info.website == null) {
+          if (getNexusModID(mod) == null) {
             override.website = `https://www.nexusmods.com/diablo2resurrected/mods/${nexusModID}`;
           }
           // override version if mod doesn't specify it since we know what version we were going to install

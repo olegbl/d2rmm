@@ -19,7 +19,7 @@ import { useCallback } from 'react';
 
 export default function useInstallMods(
   isUninstall: boolean = false,
-): () => boolean {
+): () => Promise<boolean> {
   const showToast = useToast();
   const dataPath = useDataPath();
   const gamePath = useSanitizedGamePath();

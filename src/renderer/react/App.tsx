@@ -5,6 +5,7 @@ import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
 import UpdaterDialog from 'renderer/react/UpdaterDialog';
 import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
+import { InstallBeforeRunContextProvider } from 'renderer/react/context/InstallBeforeRunContext';
 import { InstallContextProvider } from 'renderer/react/context/InstallContext';
 import { LogsProvider } from 'renderer/react/context/LogContext';
 import { ModsContextProvider } from 'renderer/react/context/ModsContext';
@@ -106,15 +107,22 @@ function Content() {
 
 // from inner to outer
 const CONTEXT_PROVIDERS = [
+  // installation & updates
   NexusModsContextProvider,
   UpdatesContextProvider,
   InstallContextProvider,
+  // ui
   TabContextProvider,
+  // mod data
   ModsContextProvider,
+  // preferences
+  InstallBeforeRunContextProvider,
   PreferencesContextProvider,
-  LogsProvider,
+  // modals
   ToastContextProvider,
   DialogManagerContextProvider,
+  // infrastructure
+  LogsProvider,
   ThemeContextProvider,
 ];
 

@@ -1,8 +1,11 @@
 import BridgeAPI from 'renderer/BridgeAPI';
+import { useInstallBeforeRun } from 'renderer/react/context/InstallBeforeRunContext';
 import { useIsInstallConfigChanged } from 'renderer/react/context/ModsContext';
 import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useGameArgs from 'renderer/react/hooks/useGameArgs';
-import { useCallback, useMemo } from 'react';
+import useInstallMods from 'renderer/react/modlist/hooks/useInstallMods';
+import { useMemo } from 'react';
 import {
   PlayCircleFilled,
   PlayCircleOutlineOutlined,
@@ -21,16 +24,23 @@ export default function RunGameButton(_props: Props): JSX.Element {
   const args = useGameArgs();
   const command = useMemo(() => ['D2R.exe'].concat(args).join(' '), [args]);
 
-  const onRunGame = useCallback(() => {
-    BridgeAPI.execute(`${gamePath}\\D2R.exe`, args).catch(console.error);
-  }, [args, gamePath]);
+  const [isInstallBeforeRunEnabled] = useInstallBeforeRun();
+
+  const onInstallMods = useInstallMods();
+
+  const onPress = useAsyncCallback(async () => {
+    if (isInstallBeforeRunEnabled) {
+      await onInstallMods();
+    }
+    await BridgeAPI.execute(`${gamePath}\\D2R.exe`, args);
+  }, [isInstallBeforeRunEnabled, onInstallMods, args, gamePath]);
 
   return (
     <Tooltip
       title={`Run Diablo II: Resurrected by launching "${command}".${warning}`}
     >
       <Button
-        onClick={onRunGame}
+        onClick={onPress}
         startIcon={
           !isInstallConfigChanged ? (
             <PlayCircleFilled />

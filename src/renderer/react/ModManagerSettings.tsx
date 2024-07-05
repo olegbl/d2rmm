@@ -3,6 +3,7 @@ import { usePreferences } from 'renderer/react/context/PreferencesContext';
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
+import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
 import { useCallback, useRef } from 'react';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
@@ -222,6 +223,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               </Typography>
             </>
           ) : null}
+          <InstallBeforeRunSettings />
         </StyledAccordionDetails>
       </StyledAccordion>
       <StyledAccordion

@@ -51,7 +51,7 @@ function TabPanelBox({
   );
 }
 
-function D2RMMRootView() {
+function RootRoute() {
   const [tab, setTab] = useTabState();
 
   return (
@@ -91,36 +91,43 @@ function D2RMMRootView() {
   );
 }
 
+function Content() {
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route element={<RootRoute />} path="/" />
+        </Routes>
+      </Router>
+      <UpdaterDialog />
+    </>
+  );
+}
+
+// from inner to outer
+const CONTEXT_PROVIDERS = [
+  NexusModsContextProvider,
+  UpdatesContextProvider,
+  InstallContextProvider,
+  TabContextProvider,
+  ModsContextProvider,
+  PreferencesContextProvider,
+  LogsProvider,
+  ToastContextProvider,
+  DialogManagerContextProvider,
+  ThemeContextProvider,
+];
+
 export default function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={null}>
-        <ThemeContextProvider>
-          <DialogManagerContextProvider>
-            <ToastContextProvider>
-              <LogsProvider>
-                <PreferencesContextProvider>
-                  <ModsContextProvider>
-                    <TabContextProvider>
-                      <InstallContextProvider>
-                        <UpdatesContextProvider>
-                          <NexusModsContextProvider>
-                            <Router>
-                              <Routes>
-                                <Route element={<D2RMMRootView />} path="/" />
-                              </Routes>
-                            </Router>
-                            <UpdaterDialog />
-                          </NexusModsContextProvider>
-                        </UpdatesContextProvider>
-                      </InstallContextProvider>
-                    </TabContextProvider>
-                  </ModsContextProvider>
-                </PreferencesContextProvider>
-              </LogsProvider>
-            </ToastContextProvider>
-          </DialogManagerContextProvider>
-        </ThemeContextProvider>
+        {CONTEXT_PROVIDERS.reduce(
+          (children, Provider) => (
+            <Provider>{children}</Provider>
+          ),
+          <Content />,
+        )}
       </Suspense>
     </ErrorBoundary>
   );

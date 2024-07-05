@@ -1,9 +1,9 @@
 import { isOrderedSectionHeader } from 'renderer/react/ReorderUtils';
+import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
 import {
   useEnabledMods,
   useOrdereredItems,
 } from 'renderer/react/context/ModsContext';
-import { usePreferences } from 'renderer/react/context/PreferencesContext';
 import ModInstallButton from 'renderer/react/modlist/ModInstallButton';
 import ModListItem from 'renderer/react/modlist/ModListItem';
 import ModListSectionHeader from 'renderer/react/modlist/ModListSectionHeader';
@@ -32,7 +32,7 @@ export default function ModList(): JSX.Element {
   const [, startTransition] = useTransition();
   const [orderedItems, reorderItems] = useOrdereredItems();
   const [enabledMods] = useEnabledMods();
-  const { isDirectMode } = usePreferences();
+  const [isDirectMode] = useIsDirectMode();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('');

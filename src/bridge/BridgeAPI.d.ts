@@ -1,11 +1,19 @@
 import type { JSONData } from './JSON';
 import type { ModConfig } from './ModConfig';
 import type { ModConfigValue } from './ModConfigValue';
-import type { IReadOnlyPreferences } from './PreferenceTypes';
 import type { Relative } from './Relative';
 import type { TSVData } from './TSV';
 
-export type IInstallModsOptions = IReadOnlyPreferences & { isDryRun: boolean };
+export type IInstallModsOptions = {
+  dataPath: string;
+  gamePath: string;
+  isDirectMode: boolean;
+  isDryRun: boolean;
+  isPreExtractedData: boolean;
+  mergedPath: string;
+  outputModName: string;
+  preExtractedDataPath: string;
+};
 
 export type Mod = {
   id: string;

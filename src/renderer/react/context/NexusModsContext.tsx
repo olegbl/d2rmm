@@ -46,7 +46,6 @@ export function NexusModsContextProvider({
   const apiState = useNexusModsApiStateListener();
 
   const [
-    nxmRegistrarDialog,
     isRegisteredAsNxmProtocolHandler,
     registerAsNxmProtocolHandler,
     unregisterAsNxmProtocolHandler,
@@ -77,10 +76,5 @@ export function NexusModsContextProvider({
     ],
   );
 
-  return (
-    <Context.Provider value={context}>
-      {children}
-      {nxmRegistrarDialog}
-    </Context.Provider>
-  );
+  return <Context.Provider value={context}>{children}</Context.Provider>;
 }

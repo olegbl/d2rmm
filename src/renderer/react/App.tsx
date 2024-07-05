@@ -4,13 +4,20 @@ import InstallationProgressBar from 'renderer/react/InstallationProgressBar';
 import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
 import UpdaterDialog from 'renderer/react/UpdaterDialog';
+import { DataPathContextProvider } from 'renderer/react/context/DataPathContext';
 import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
+import { ExtraGameLaunchArgsContextProvider } from 'renderer/react/context/ExtraGameLaunchArgsContext';
+import { GamePathContextProvider } from 'renderer/react/context/GamePathContext';
 import { InstallBeforeRunContextProvider } from 'renderer/react/context/InstallBeforeRunContext';
 import { InstallContextProvider } from 'renderer/react/context/InstallContext';
+import { IsDirectModeContextProvider } from 'renderer/react/context/IsDirectModeContext';
+import { IsPreExtractedDataContextProvider } from 'renderer/react/context/IsPreExtractedDataContext';
 import { LogsProvider } from 'renderer/react/context/LogContext';
 import { ModsContextProvider } from 'renderer/react/context/ModsContext';
 import { NexusModsContextProvider } from 'renderer/react/context/NexusModsContext';
-import { PreferencesContextProvider } from 'renderer/react/context/PreferencesContext';
+import { OutputModNameContextProvider } from 'renderer/react/context/OutputModNameContext';
+import { OutputPathContextProvider } from 'renderer/react/context/OutputPathContext';
+import { PreExtractedDataPathContextProvider } from 'renderer/react/context/PreExtractedDataPathContext';
 import {
   TabContextProvider,
   useTabState,
@@ -117,7 +124,14 @@ const CONTEXT_PROVIDERS = [
   ModsContextProvider,
   // preferences
   InstallBeforeRunContextProvider,
-  PreferencesContextProvider,
+  OutputPathContextProvider,
+  DataPathContextProvider,
+  ExtraGameLaunchArgsContextProvider,
+  IsDirectModeContextProvider,
+  OutputModNameContextProvider,
+  IsPreExtractedDataContextProvider,
+  PreExtractedDataPathContextProvider,
+  GamePathContextProvider,
   // modals
   ToastContextProvider,
   DialogManagerContextProvider,

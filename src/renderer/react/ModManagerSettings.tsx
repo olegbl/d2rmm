@@ -1,5 +1,14 @@
 import BridgeAPI from 'renderer/BridgeAPI';
-import { usePreferences } from 'renderer/react/context/PreferencesContext';
+import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
+import {
+  useGamePath,
+  useSanitizedGamePath,
+} from 'renderer/react/context/GamePathContext';
+import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
+import { useIsPreExtractedData } from 'renderer/react/context/IsPreExtractedDataContext';
+import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
+import { useOutputPath } from 'renderer/react/context/OutputPathContext';
+import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedDataPathContext';
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
@@ -59,22 +68,15 @@ const StyledAccordionDetails = styled(AccordionDetails)(() => ({}));
 type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
-  const {
-    extraArgs,
-    gamePath,
-    isDirectMode,
-    isPreExtractedData,
-    mergedPath,
-    outputModName,
-    preExtractedDataPath,
-    rawGamePath,
-    setExtraArgs,
-    setIsDirectMode,
-    setIsPreExtractedData,
-    setOutputModName,
-    setPreExtractedDataPath,
-    setRawGamePath,
-  } = usePreferences();
+  const [extraArgs, setExtraArgs] = useExtraGameLaunchArgs();
+  const [rawGamePath, setRawGamePath] = useGamePath();
+  const gamePath = useSanitizedGamePath();
+  const [isDirectMode, setIsDirectMode] = useIsDirectMode();
+  const [isPreExtractedData, setIsPreExtractedData] = useIsPreExtractedData();
+  const [preExtractedDataPath, setPreExtractedDataPath] =
+    usePreExtractedDataPath();
+  const [outputModName, setOutputModName] = useOutputModName();
+  const mergedPath = useOutputPath();
 
   const [themeMode, setThemeMode] = useThemeMode();
 

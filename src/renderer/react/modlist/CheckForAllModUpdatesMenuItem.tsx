@@ -1,6 +1,6 @@
 import useCheckModsForUpdates from 'renderer/react/context/hooks/useCheckModsForUpdates';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
-import { useCallback } from 'react';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import { Update } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
 
@@ -12,7 +12,7 @@ export default function CheckForAllModUpdatesMenuItem({
   const { nexusAuthState } = useNexusAuthState();
   const checkModsForUpdates = useCheckModsForUpdates(nexusAuthState);
 
-  const onCheckForUpdates = useCallback(async () => {
+  const onCheckForUpdates = useAsyncCallback(async () => {
     onHideMenu();
     await checkModsForUpdates();
   }, [checkModsForUpdates, onHideMenu]);

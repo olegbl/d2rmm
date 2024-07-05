@@ -1,5 +1,6 @@
 import { useMods } from 'renderer/react/context/ModsContext';
-import { useCallback, useState } from 'react';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
+import { useState } from 'react';
 import { Refresh } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
 
@@ -10,7 +11,7 @@ export default function RefreshModListMenuItem({
 }): JSX.Element {
   const [, onRefreshMods] = useMods();
   const [, setIsRefreshing] = useState(false);
-  const onRefreshModList = useCallback(async () => {
+  const onRefreshModList = useAsyncCallback(async () => {
     onHideMenu();
     setIsRefreshing(true);
     await onRefreshMods();

@@ -5,6 +5,7 @@ import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useCheckModForUpdates from 'renderer/react/context/utils/useCheckModForUpdates';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import { useCallback } from 'react';
 
 export default function useModUpdater(mod: Mod): {
@@ -30,7 +31,7 @@ export default function useModUpdater(mod: Mod): {
   const isUpdateChecked = updateState.isUpdateChecked;
   const isUpdateAvailable = updateState.isUpdateAvailable;
 
-  const onCheckForUpdates = useCallback(async () => {
+  const onCheckForUpdates = useAsyncCallback(async () => {
     await checkModForUpdates(mod);
   }, [checkModForUpdates, mod]);
 

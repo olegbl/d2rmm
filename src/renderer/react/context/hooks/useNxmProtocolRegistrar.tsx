@@ -1,4 +1,5 @@
 import NxmProtocolAPI from 'renderer/NxmProtocolAPI';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useSavedState from 'renderer/react/hooks/useSavedState';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -52,7 +53,7 @@ export default function useNxmProtocolRegistrar(): [
       .catch(console.error);
   }, [isRejected, onShow]);
 
-  const onRegister = useCallback(async () => {
+  const onRegister = useAsyncCallback(async () => {
     setIsRejected(false);
     const success = await NxmProtocolAPI.register();
     setIsRegistered(success);
@@ -61,7 +62,7 @@ export default function useNxmProtocolRegistrar(): [
     }
   }, [setIsRejected]);
 
-  const onUnregister = useCallback(async () => {
+  const onUnregister = useAsyncCallback(async () => {
     setIsRejected(false);
     const success = await NxmProtocolAPI.unregister();
     setIsRegistered(!success);
@@ -70,7 +71,7 @@ export default function useNxmProtocolRegistrar(): [
     }
   }, [setIsRejected]);
 
-  const onAgree = useCallback(async () => {
+  const onAgree = useAsyncCallback(async () => {
     setIsRejected(false);
     onHide();
     await onRegister();

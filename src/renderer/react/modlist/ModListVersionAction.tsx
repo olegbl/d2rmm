@@ -2,6 +2,7 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
 import type { IShellAPI } from 'bridge/ShellAPI';
 import { consumeAPI } from 'renderer/IPC';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import useModUpdater from 'renderer/react/modlist/hooks/useModUpdater';
@@ -22,7 +23,7 @@ function useDownloadLatestUpdate(
   latestUpdate: ModUpdaterDownload | null,
   onDownloadVersion: (download: ModUpdaterDownload) => Promise<void>,
 ): () => void {
-  return useCallback(async () => {
+  return useAsyncCallback(async () => {
     if (latestUpdate != null) {
       await onDownloadVersion(latestUpdate);
     }

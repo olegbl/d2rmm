@@ -6,8 +6,8 @@ import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import useModUpdates from 'renderer/react/context/hooks/useModUpdates';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import getUpdatesFromDownloads from 'renderer/react/context/utils/getUpdatesFromDownloads';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import { compareVersions } from 'renderer/utils/version';
-import { useCallback } from 'react';
 
 export default function useCheckModsForUpdates(
   nexusAuthState: INexusAuthState,
@@ -15,7 +15,7 @@ export default function useCheckModsForUpdates(
   const [mods] = useMods();
   const [, setUpdates] = useModUpdates();
 
-  return useCallback(async (): Promise<void> => {
+  return useAsyncCallback(async (): Promise<void> => {
     const modsToCheck = mods.filter((mod) => getNexusModID(mod) != null);
     if (nexusAuthState.apiKey == null || modsToCheck.length === 0) {
       return;

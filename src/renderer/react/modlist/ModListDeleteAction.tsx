@@ -5,6 +5,7 @@ import {
   useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import { useMods } from 'renderer/react/context/ModsContext';
+import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback } from 'react';
 import { Delete } from '@mui/icons-material';
@@ -54,7 +55,7 @@ function DeleteDialog({
 export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
   const [, refreshMods] = useMods();
 
-  const onDelete = useCallback(async () => {
+  const onDelete = useAsyncCallback(async () => {
     await BridgeAPI.deleteFile(`mods/${mod.info.name}`, 'App');
     await refreshMods([mod.id]);
   }, [mod.id, mod.info.name, refreshMods]);

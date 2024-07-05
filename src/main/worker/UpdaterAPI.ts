@@ -40,12 +40,12 @@ async function getUpdate(): Promise<Update | null> {
   }
 
   const appDirectoryPath = path.dirname(getExecutablePath());
-  const isPreleaseEnabled = existsSync(
-    path.join(appDirectoryPath, 'ENABLE_PRE_RELEASE_UPDATES'),
-  );
-  const isSameVersionUpdateEnabled = existsSync(
-    path.join(appDirectoryPath, 'ENABLE_SAME_VERSION_UPDATES'),
-  );
+  const isPreleaseEnabled =
+    existsSync(path.join(appDirectoryPath, 'ENABLE_PRE_RELEASE_UPDATES')) ??
+    true;
+  const isSameVersionUpdateEnabled =
+    existsSync(path.join(appDirectoryPath, 'ENABLE_SAME_VERSION_UPDATES')) ??
+    true;
 
   const release =
     (isPreleaseEnabled ? await getLatestPrerelease() : null) ??

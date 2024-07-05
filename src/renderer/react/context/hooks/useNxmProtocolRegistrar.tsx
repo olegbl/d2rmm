@@ -1,4 +1,8 @@
 import NxmProtocolAPI from 'renderer/NxmProtocolAPI';
+import {
+  useDialog,
+  useDialogContext,
+} from 'renderer/react/context/DialogContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useSavedState from 'renderer/react/hooks/useSavedState';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,8 +15,39 @@ import {
   DialogTitle,
 } from '@mui/material';
 
+function RegistrarDialog({
+  onAgree,
+  onDisagree: onDiagreeFromProps,
+}: {
+  onAgree: () => void;
+  onDisagree: () => void;
+}) {
+  const { close: onClose, isOpen } = useDialogContext();
+
+  const onDisagree = useCallback(() => {
+    onDiagreeFromProps();
+    onClose();
+  }, [onClose, onDiagreeFromProps]);
+
+  return (
+    <Dialog onClose={onClose} open={isOpen}>
+      <DialogTitle>Nexus Mods Handler</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Would you like to set D2RMM as the default handler for nxm:// links?
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onDisagree}>Disagree</Button>
+        <Button autoFocus={true} onClick={onAgree}>
+          Agree
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 export default function useNxmProtocolRegistrar(): [
-  dialog: JSX.Element,
   isRegistered: boolean,
   register: () => void,
   unregister: () => void,
@@ -25,33 +60,6 @@ export default function useNxmProtocolRegistrar(): [
   );
 
   const [isRegistered, setIsRegistered] = useState(false);
-
-  const [isShown, setIsShown] = useState(false);
-
-  const onShow = useCallback(() => {
-    setIsShown(true);
-  }, []);
-
-  const onHide = useCallback(() => {
-    setIsShown(false);
-  }, []);
-
-  const isInitialCheckDone = useRef(false);
-  useEffect(() => {
-    if (isInitialCheckDone.current) {
-      return;
-    }
-    isInitialCheckDone.current = true;
-    (async () => {
-      const isRegisteredNew = await NxmProtocolAPI.getIsRegistered();
-      setIsRegistered(isRegisteredNew);
-      if (!isRejected && !isRegisteredNew) {
-        onShow();
-      }
-    })()
-      .then()
-      .catch(console.error);
-  }, [isRejected, onShow]);
 
   const onRegister = useAsyncCallback(async () => {
     setIsRejected(false);
@@ -73,32 +81,33 @@ export default function useNxmProtocolRegistrar(): [
 
   const onAgree = useAsyncCallback(async () => {
     setIsRejected(false);
-    onHide();
     await onRegister();
-  }, [onHide, onRegister, setIsRejected]);
+  }, [onRegister, setIsRejected]);
 
   const onDisagree = useCallback(() => {
     setIsRejected(true);
-    onHide();
-  }, [onHide, setIsRejected]);
+  }, [setIsRejected]);
 
-  return [
-    <Dialog onClose={onHide} open={isShown}>
-      <DialogTitle>Nexus Mods Handler</DialogTitle>
-      <DialogContent>
-        <DialogContentText>
-          Would you like to set D2RMM as the default handler for nxm:// links?
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onDisagree}>Disagree</Button>
-        <Button autoFocus={true} onClick={onAgree}>
-          Agree
-        </Button>
-      </DialogActions>
-    </Dialog>,
-    isRegistered,
-    onRegister,
-    onUnregister,
-  ];
+  const [showRegistrarDialog] = useDialog(
+    <RegistrarDialog onAgree={onAgree} onDisagree={onDisagree} />,
+  );
+
+  const isInitialCheckDone = useRef(false);
+  useEffect(() => {
+    if (isInitialCheckDone.current) {
+      return;
+    }
+    isInitialCheckDone.current = true;
+    (async () => {
+      const isRegisteredNew = await NxmProtocolAPI.getIsRegistered();
+      setIsRegistered(isRegisteredNew);
+      if (!isRejected && !isRegisteredNew) {
+        showRegistrarDialog();
+      }
+    })()
+      .then()
+      .catch(console.error);
+  }, [isRejected, showRegistrarDialog]);
+
+  return [isRegistered, onRegister, onUnregister];
 }

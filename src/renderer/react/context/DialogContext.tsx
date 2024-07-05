@@ -1,17 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import React, {
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
 
 export type Dialog = React.ReactNode;
 
 export type IDialogManagerContext = {
   hideDialog: (id: string) => void;
-  showDialog: (dialog: Dialog) => string;
+  showDialog: (id: string, dialog: Dialog) => void;
 };
 
 const DialogManagerContext = React.createContext<IDialogManagerContext | null>(
@@ -27,16 +21,32 @@ type Props = {
 export function DialogManagerContextProvider({ children }: Props): JSX.Element {
   const [dialogs, setDialogs] = useState<[string, Dialog][]>([]);
 
-  const showDialog = useCallback((dialog: Dialog): string => {
-    const id = uuidv4();
-    setDialogs((oldDialogs) => [...oldDialogs, [id, dialog]]);
-    return id;
+  const showDialog = useCallback((id: string, dialog: Dialog): void => {
+    setDialogs((oldDialogs) => {
+      const newDialogs = [...oldDialogs];
+      const index = newDialogs.findIndex(([oldDialogID]) => oldDialogID === id);
+      if (index !== -1) {
+        // updating
+        if (newDialogs[index][1] === dialog) {
+          // unchanged
+          return oldDialogs;
+        }
+        newDialogs[index] = [id, dialog];
+      } else {
+        // adding
+        newDialogs.push([id, dialog]);
+      }
+      return newDialogs;
+    });
   }, []);
 
   const hideDialog = useCallback((id: string): void => {
-    setDialogs((oldDialogs) =>
-      oldDialogs.filter(([oldDialogID]) => oldDialogID !== id),
-    );
+    setDialogs((oldDialogs) => {
+      const newDialogs = oldDialogs.filter(
+        ([oldDialogID]) => oldDialogID !== id,
+      );
+      return newDialogs.length === oldDialogs.length ? oldDialogs : newDialogs;
+    });
   }, []);
 
   const context = useMemo(
@@ -62,6 +72,16 @@ export function DialogManagerContextProvider({ children }: Props): JSX.Element {
       ))}
     </DialogManagerContext.Provider>
   );
+}
+
+function useDialogManagerContext(): IDialogManagerContext {
+  const context = useContext(DialogManagerContext);
+  if (context == null) {
+    throw new Error(
+      'useDialogManagerContext must be used within a DialogManagerContextProvider',
+    );
+  }
+  return context;
 }
 
 type IDialogContext = {
@@ -96,29 +116,19 @@ function DialogContextProvider({
 
 export function useDialog(
   dialog: React.ReactNode,
-): [open: () => void, close: () => void] {
-  const context = useContext(DialogManagerContext);
-  if (context == null) {
-    throw new Error(
-      'useDialog must be used within a DialogManagerContextProvider',
-    );
-  }
-  const { showDialog, hideDialog } = context;
+): [show: () => void, hide: () => void] {
+  const id = useMemo(() => uuidv4(), []);
+  const { showDialog, hideDialog } = useDialogManagerContext();
 
-  const idRef = useRef<string | null>(null);
+  const hide = useCallback(() => {
+    hideDialog(id);
+  }, [hideDialog, id]);
 
-  const close = useCallback(() => {
-    if (idRef.current != null) {
-      hideDialog(idRef.current);
-    }
-  }, [hideDialog]);
+  const show = useCallback(() => {
+    showDialog(id, dialog);
+  }, [id, showDialog, dialog]);
 
-  const open = useCallback(() => {
-    close();
-    idRef.current = showDialog(dialog);
-  }, [showDialog, close, dialog]);
-
-  return [open, close];
+  return [show, hide];
 }
 
 export function useDialogContext(): IDialogContext {

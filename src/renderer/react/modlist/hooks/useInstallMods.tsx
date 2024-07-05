@@ -19,7 +19,7 @@ import { useCallback } from 'react';
 
 export default function useInstallMods(
   isUninstall: boolean = false,
-): () => void {
+): () => boolean {
   const showToast = useToast();
   const dataPath = useDataPath();
   const gamePath = useSanitizedGamePath();
@@ -37,7 +37,7 @@ export default function useInstallMods(
 
   const [, setTab] = useTabState();
 
-  return useCallback(async (): Promise<void> => {
+  return useCallback(async (): Promise<boolean> => {
     try {
       logger.clear();
       setIsInstalling(true);
@@ -73,6 +73,7 @@ export default function useInstallMods(
           title: `${modsInstalled.length}/${modsToInstall.length} Mods ${label}ed`,
         });
       }
+      return true;
     } catch (error) {
       console.error(String(error));
       showToast({
@@ -82,6 +83,7 @@ export default function useInstallMods(
       });
       // switch to the logs tab so user can see what happened
       setTab('logs');
+      return false;
     }
   }, [
     dataPath,

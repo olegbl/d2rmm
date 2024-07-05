@@ -30,7 +30,9 @@ export default function RunGameButton(_props: Props): JSX.Element {
 
   const onPress = useAsyncCallback(async () => {
     if (isInstallBeforeRunEnabled) {
-      await onInstallMods();
+      if (!(await onInstallMods())) {
+        return;
+      }
     }
     await BridgeAPI.execute(`${gamePath}\\D2R.exe`, args);
   }, [isInstallBeforeRunEnabled, onInstallMods, args, gamePath]);

@@ -4,6 +4,7 @@ import ref from 'ref-napi';
 import { getAppPath } from './AppInfoAPI';
 
 // http://www.zezula.net/en/casc/casclib.html
+// https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
 export type ICascLib = {
   CascCloseFile: ffi.ForeignFunction<boolean, [ref.Pointer<void>]>;
   CascCloseStorage: ffi.ForeignFunction<boolean, [ref.Pointer<void>]>;
@@ -19,7 +20,7 @@ export type ICascLib = {
     boolean,
     [ref.Pointer<void>, ref.Pointer<void>, number, ref.Pointer<number>]
   >;
-  GetLastError: ffi.ForeignFunction<number, []>;
+  GetCascError: ffi.ForeignFunction<number, []>;
 };
 
 export const voidPtr = ref.refType(ref.types.void);
@@ -35,7 +36,7 @@ export async function initCascLib(): Promise<void> {
     CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],
     CascOpenStorage: ['bool', ['string', 'int', voidPtrPtr]],
     CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
-    GetLastError: ['int', []],
+    GetCascError: ['int', []],
   });
 }
 
@@ -43,7 +44,7 @@ export function getCascLib(): ICascLib {
   return CASC_LIB;
 }
 
-// CascLib Error Codes for GetLastError()
+// CascLib Error Codes for GetCascError()
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascPort.h#L230
 // https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
 const KnownWindowsErrorCodes: { [code: number]: string } = {
@@ -293,14 +294,12 @@ const KnownWindowsErrorCodes: { [code: number]: string } = {
   487: 'ERROR_INVALID_ADDRESS: Attempt to access invalid address.',
 };
 
-export function processErrorCode(errorCodeArg: string | number): string | null {
-  let errorCode = errorCodeArg;
+export function getLastCascLibError(): string {
+  let errorCode = getCascLib().GetCascError();
   if (typeof errorCode === 'string') {
     errorCode = parseInt(errorCode, 10);
   }
-  const knownCodeDescription = KnownWindowsErrorCodes[errorCode];
-  if (knownCodeDescription != null) {
-    return `${errorCode}: ${knownCodeDescription}`;
-  }
-  return null;
+
+  const message = KnownWindowsErrorCodes[errorCode] ?? `UNKNOWN ERROR`;
+  return `CascLib error code ${errorCode}: ${message}`;
 }

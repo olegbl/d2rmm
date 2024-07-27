@@ -34,7 +34,12 @@ import {
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getHomePath } from './AppInfoAPI';
-import { dwordPtr, getCascLib, processErrorCode, voidPtrPtr } from './CascLib';
+import {
+  dwordPtr,
+  getCascLib,
+  getLastCascLibError,
+  voidPtrPtr,
+} from './CascLib';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
@@ -133,14 +138,10 @@ function copyDirSync(src: string, dest: string) {
 function createError(
   method: string,
   message: string,
-  errorCodeArg?: unknown,
+  errorCode?: unknown,
 ): Error {
   const prefix = `${method}: ${message}`;
-  let errorCode = errorCodeArg;
   if (errorCode != null) {
-    if (typeof errorCode === 'string' || typeof errorCode === 'number') {
-      errorCode = processErrorCode(errorCode) ?? errorCode;
-    }
     return new Error(`${prefix}: ${String(errorCode)}`);
   }
   return new Error(prefix);
@@ -211,18 +212,21 @@ export const BridgeAPI: IBridgeAPI = {
   openStorage: async (gamePath: string) => {
     console.debug('BridgeAPI.openStorage', { gamePath });
 
+    // what do these mean? who knows!
+    const PATHS = [`${gamePath}:osi`, `${gamePath}:`, `${gamePath}`];
+
     if (!cascStorageIsOpen) {
-      if (getCascLib().CascOpenStorage(`${gamePath}:osi`, 0, cascStoragePtr)) {
-        cascStorageIsOpen = true;
-      } else if (
-        getCascLib().CascOpenStorage(`${gamePath}:`, 0, cascStoragePtr)
-      ) {
-        cascStorageIsOpen = true;
-      } else {
+      for (const path of PATHS) {
+        if (getCascLib().CascOpenStorage(path, 0, cascStoragePtr)) {
+          cascStorageIsOpen = true;
+          break;
+        }
+      }
+      if (!cascStorageIsOpen) {
         throw createError(
           'API.openStorage',
           'Failed to open CASC storage',
-          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
+          getLastCascLibError(),
         );
       }
     }
@@ -241,7 +245,7 @@ export const BridgeAPI: IBridgeAPI = {
         throw createError(
           'API.closeStorage',
           'Failed to close CASC storage',
-          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
+          getLastCascLibError(),
         );
       }
     }
@@ -310,7 +314,7 @@ export const BridgeAPI: IBridgeAPI = {
         throw createError(
           'API.extractFile',
           `Failed to open file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
+          getLastCascLibError(),
         );
       }
 
@@ -333,7 +337,7 @@ export const BridgeAPI: IBridgeAPI = {
         throw createError(
           'API.extractFile',
           `Failed to read file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
+          getLastCascLibError(),
         );
       }
 
@@ -341,7 +345,7 @@ export const BridgeAPI: IBridgeAPI = {
         throw createError(
           'API.extractFile',
           `Failed to close file in CASC storage (${filePath})`,
-          `(CascLib Error Code: ${getCascLib().GetLastError()})`,
+          getLastCascLibError(),
         );
       }
     } catch (e) {

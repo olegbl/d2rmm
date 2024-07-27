@@ -75,6 +75,7 @@ export default function useInstallMods(
       }
       return true;
     } catch (error) {
+      setIsInstalling(false);
       console.error(String(error));
       showToast({
         severity: 'error',

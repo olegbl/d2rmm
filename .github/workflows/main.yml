@@ -39,6 +39,9 @@ jobs:
           node-version: 16
           architecture: 'x64'
 
+      - name: Install Yarn
+        run: npm install -g yarn
+
       - name: Install dependencies
         run: yarn install
 

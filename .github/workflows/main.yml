@@ -39,14 +39,15 @@ jobs:
           node-version: 16
           architecture: 'x64'
 
-      - name: Install Yarn
-        run: npm install -g yarn
+      # GitHub dependencies don't work in GitHub Action workflows...
+      - name: Remove CascLib dependency
+        run: npm remove CascLib
 
       - name: Install dependencies
-        run: yarn install
+        run: npm install
 
       - name: Build package
-        run: yarn run package
+        run: npm run package
 
       - name: Delete release
         uses: actions/github-script@v6
@@ -130,7 +131,7 @@ jobs:
           preRelease: false
 
       - name: Generate documentation
-        run: yarn run docs
+        run: npm run docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

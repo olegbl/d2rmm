@@ -40,10 +40,10 @@ jobs:
           architecture: 'x64'
 
       - name: Install dependencies
-        run: npm install
+        run: yarn install
 
       - name: Build package
-        run: npm run package
+        run: yarn run package
 
       - name: Delete release
         uses: actions/github-script@v6
@@ -127,7 +127,7 @@ jobs:
           preRelease: false
 
       - name: Generate documentation
-        run: npm run docs
+        run: yarn run docs
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

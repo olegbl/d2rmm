@@ -6,6 +6,7 @@ import {
   useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
+import useSavedState from 'renderer/react/hooks/useSavedState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
@@ -135,13 +136,18 @@ function ProgressDialog({
 }
 
 export default function UpdaterDialog() {
-  const [isUpdateIgnored, setIsUpdateIgnored] = useState<boolean>(false);
+  const [ignoredUpdateVersion, setIgnoredUpdateVersion] = useSavedState<
+    string | void
+  >('ignored-update', undefined);
   const [update] = useUpdate();
   const updaterState = useUpdaterState();
 
+  const isUpdateIgnored =
+    update != null && update.version === ignoredUpdateVersion;
+
   const onIgnore = useCallback(() => {
-    setIsUpdateIgnored(true);
-  }, []);
+    setIgnoredUpdateVersion(update?.version);
+  }, [setIgnoredUpdateVersion, update?.version]);
 
   const onInstall = useAsyncCallback(async () => {
     if (update != null) {

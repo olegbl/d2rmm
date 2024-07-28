@@ -178,7 +178,11 @@ export const BridgeAPI: IBridgeAPI = {
       const regKey =
         'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
       const result = await regedit.promisified.list([regKey]);
-      return result[regKey].values.InstallLocation.value.toString();
+      const value = result[regKey].values.InstallLocation.value;
+      if (value == null) {
+        return null;
+      }
+      return value.toString();
     } catch (error) {
       // useful for debugging, but not useful to expose to user
       console.debug(

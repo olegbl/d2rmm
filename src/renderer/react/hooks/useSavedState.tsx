@@ -5,6 +5,18 @@ function serializeImplicit<T>(value: T): string {
 }
 
 function deserializeImplicit<T>(value: string): T {
+  // TODO: just use JSON.stringify / JSON.parse for all saved state
+  //       but needs a migration path for existing users
+
+  // hack around stringified null and undefined values since the string
+  // versions of these values aren't actually valid for any existing use case
+  if (value === 'null') {
+    return null as unknown as T;
+  }
+  if (value === 'undefined') {
+    return undefined as unknown as T;
+  }
+
   return value as unknown as T;
 }
 

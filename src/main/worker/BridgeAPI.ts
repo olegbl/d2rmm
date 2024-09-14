@@ -61,9 +61,10 @@ export function getRuntime(): InstallationRuntime | null {
 function getSavesPath(): string {
   return path.join(
     process.env.USERPROFILE ?? path.join(getHomePath(), '../'),
-    `Saved Games/Diablo II Resurrected/mods/${
-      runtime?.options.outputModName ?? 'D2RMM'
-    }/`,
+    'Saved Games/Diablo II Resurrected/',
+    runtime!.options.isDirectMode
+      ? ''
+      : `mods/${runtime?.options.outputModName ?? 'D2RMM'}/`,
   );
 }
 

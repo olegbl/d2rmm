@@ -167,11 +167,31 @@ async function applyUpdate(
   );
 
   const updateScriptContent = `
-    Echo "Waiting for D2RMM to exit..."
+    Write-Host "Waiting for D2RMM to exit..."
     Start-Sleep -Seconds 1
-    Echo "Copying files..."
-    Copy-Item -Path "${updateDirectoryPath}\\*" -Destination "${appDirectoryPath}" -Recurse -Force
-    Echo "Restarting D2RMM..."
+
+    $retries = 3
+    $success = $false
+
+    for ($i = 0; $i -lt $retries; $i++) {
+        Write-Host "Copying files..."
+        try {
+            Copy-Item -Path "${updateDirectoryPath}\\*" -Destination "${appDirectoryPath}" -Recurse -Force -ErrorAction Stop
+            $success = $true
+            break
+        } catch {
+            Write-Host "Failed to copy files. Retrying in 5 seconds..."
+            Start-Sleep -Seconds 5
+        }
+    }
+
+    if (-not $success) {
+        Write-Host "Failed to copy new files to D2RMM's directory. You may need to update manually."
+        Read-Host "Press Enter to exit..."
+        exit 1
+    }
+
+    Write-Host "Restarting D2RMM..."
     Start-Sleep -Seconds 1
     Start-Process -FilePath "${appExecutablePath}"
   `;

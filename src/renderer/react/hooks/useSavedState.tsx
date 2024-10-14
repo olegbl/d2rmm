@@ -27,12 +27,21 @@ export default function useSavedState<T>(
   deserialize: (value: string) => T = deserializeImplicit,
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {
-    const savedValue = localStorage.getItem(key);
-    return savedValue != null ? deserialize(savedValue) : initialValue;
+    try {
+      const savedValue = localStorage.getItem(key);
+      return savedValue != null ? deserialize(savedValue) : initialValue;
+    } catch (e) {
+      console.error(e);
+      return initialValue;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem(key, serialize(value));
+    try {
+      localStorage.setItem(key, serialize(value));
+    } catch (e) {
+      console.error(e);
+    }
   }, [key, value, serialize]);
 
   return [value, setValue];

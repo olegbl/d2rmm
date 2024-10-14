@@ -1,4 +1,5 @@
 import BridgeAPI from 'renderer/BridgeAPI';
+import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
 import {
   useGamePath,
@@ -77,6 +78,8 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     usePreExtractedDataPath();
   const [outputModName, setOutputModName] = useOutputModName();
   const mergedPath = useOutputPath();
+  const dataPath = useDataPath();
+  const outputPath = isDirectMode ? dataPath : mergedPath;
 
   const [themeMode, setThemeMode] = useThemeMode();
 
@@ -97,6 +100,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       ),
     ) ?? true;
 
+  const isIdenticalInputAndOutput =
+    preExtractedDataPath.toLowerCase() === outputPath.toLowerCase();
+
   const {
     nexusApiState,
     nexusAuthState,
@@ -107,6 +113,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     unregisterAsNxmProtocolHandler,
   } = useNexusAuthState();
 
+  console.log(
+    'DEBUG',
+    preExtractedDataPath.toLowerCase(),
+    outputPath.toLowerCase(),
+  );
+
   return (
     <List
       disablePadding={true}
@@ -114,7 +126,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     >
       <StyledAccordion
         defaultExpanded={
-          useRef(!isValidGamePath || !isValidPreExtractedDataPath).current
+          useRef(
+            !isValidGamePath ||
+              !isValidPreExtractedDataPath ||
+              isIdenticalInputAndOutput,
+          ).current
         }
         disableGutters={true}
         elevation={0}
@@ -185,15 +201,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 value={preExtractedDataPath}
                 variant="filled"
               />
-              {isDirectMode &&
-              preExtractedDataPath === `${rawGamePath}\\data` ? (
-                <Alert severity="warning">
-                  It looks like you are using direct mode and are setting the
-                  source Data Directory to the &quot;data&quot; folder in the
-                  game&apos;s installation directory. Are you{' '}
-                  <strong>sure</strong> you want to do this? You will be reading
-                  the vanilla state of the game&apos;s files from the same
-                  directory that D2RMM will install mods to.
+              {isIdenticalInputAndOutput ? (
+                <Alert severity="error">
+                  It looks like you are reading pre-extracted game data from the
+                  same directory that D2RMM will generate output modded files
+                  into ("{outputPath}"). Are you <strong>sure</strong> you want
+                  to do this? This will most likely lead to completely broken
+                  behavior.
                 </Alert>
               ) : null}
             </>
@@ -217,7 +231,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 variant="filled"
               />
               <Typography color="text.secondary" variant="subtitle2">
-                Generated files will be located in &ldquo;{mergedPath}\&rdquo;.
+                Generated files will be located in &ldquo;{outputPath}\&rdquo;.
               </Typography>
               <Typography color="text.secondary" variant="subtitle2">
                 Save game files will be located in &ldquo;%UserProfile%\Saved
@@ -272,7 +286,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           </ListItemButton>
           {!isDirectMode ? null : (
             <Typography color="text.secondary" variant="subtitle2">
-              Generated files will be located in &ldquo;{gamePath}\data\&rdquo;.
+              Generated files will be located in &ldquo;{outputPath}\&rdquo;.
             </Typography>
           )}
           <Alert severity="warning">

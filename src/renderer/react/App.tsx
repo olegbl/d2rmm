@@ -1,9 +1,10 @@
 import 'renderer/css/App.css';
+import AppUpdaterDialog from 'renderer/react/AppUpdaterDialog';
 import ErrorBoundary from 'renderer/react/ErrorBoundary';
 import InstallationProgressBar from 'renderer/react/InstallationProgressBar';
 import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
-import UpdaterDialog from 'renderer/react/UpdaterDialog';
+import { AppUpdaterContextProvider } from 'renderer/react/context/AppUpdaterContext';
 import { DataPathContextProvider } from 'renderer/react/context/DataPathContext';
 import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
 import { ExtraGameLaunchArgsContextProvider } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -107,7 +108,7 @@ function Content() {
           <Route element={<RootRoute />} path="/" />
         </Routes>
       </Router>
-      <UpdaterDialog />
+      <AppUpdaterDialog />
     </>
   );
 }
@@ -115,6 +116,7 @@ function Content() {
 // from inner to outer
 const CONTEXT_PROVIDERS = [
   // installation & updates
+  AppUpdaterContextProvider,
   NexusModsContextProvider,
   UpdatesContextProvider,
   InstallContextProvider,

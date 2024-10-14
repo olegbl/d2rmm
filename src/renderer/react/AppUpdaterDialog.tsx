@@ -1,12 +1,9 @@
-import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import { useEventAPIListener } from 'renderer/EventAPI';
-import { consumeAPI } from 'renderer/IPC';
+import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import {
   useDialog,
   useDialogContext,
 } from 'renderer/react/context/DialogContext';
-import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
-import useSavedState from 'renderer/react/hooks/useSavedState';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
@@ -17,21 +14,6 @@ import {
   DialogTitle,
   LinearProgress,
 } from '@mui/material';
-
-const UpdaterAPI = consumeAPI<IUpdaterAPI>('UpdaterAPI');
-
-function useUpdate(): [Update | null, () => void] {
-  const [update, setUpdate] = useState<Update | null>(null);
-  const onCheckForUpdates = useCallback(() => {
-    UpdaterAPI.getLatestUpdate()
-      .then((update) => {
-        setUpdate(update);
-      })
-      .catch(console.error);
-  }, []);
-  useEffect(onCheckForUpdates, [onCheckForUpdates]);
-  return [update, onCheckForUpdates];
-}
 
 type UpdaterState =
   | { event: 'cleanup' }
@@ -135,36 +117,29 @@ function ProgressDialog({
   );
 }
 
-export default function UpdaterDialog() {
-  const [ignoredUpdateVersion, setIgnoredUpdateVersion] = useSavedState<
-    string | void
-  >('ignored-update', undefined);
-  const [update] = useUpdate();
+export default function AppUpdaterDialog() {
+  const {
+    isDialogEnabled,
+    update,
+    ignoredUpdateVersion,
+    onIgnoreUpdate,
+    onInstallUpdate,
+  } = useAppUpdaterContext();
   const updaterState = useUpdaterState();
 
   const isUpdateIgnored =
     update != null && update.version === ignoredUpdateVersion;
 
-  const onIgnore = useCallback(() => {
-    setIgnoredUpdateVersion(update?.version);
-  }, [setIgnoredUpdateVersion, update?.version]);
-
-  const onInstall = useAsyncCallback(async () => {
-    if (update != null) {
-      await UpdaterAPI.installUpdate(update);
-    }
-  }, [update]);
-
   const [showNotificationDialog] = useDialog(
     useMemo(
       () => (
         <NotificationDialog
-          onIgnore={onIgnore}
-          onInstall={onInstall}
+          onIgnore={onIgnoreUpdate}
+          onInstall={onInstallUpdate}
           version={update?.version ?? ''}
         />
       ),
-      [onIgnore, onInstall, update?.version],
+      [onIgnoreUpdate, onInstallUpdate, update?.version],
     ),
   );
 
@@ -176,7 +151,7 @@ export default function UpdaterDialog() {
   );
 
   useEffect(() => {
-    if (update == null || isUpdateIgnored) {
+    if (update == null || isUpdateIgnored || !isDialogEnabled) {
       return;
     }
 
@@ -187,6 +162,7 @@ export default function UpdaterDialog() {
 
     showNotificationDialog();
   }, [
+    isDialogEnabled,
     isUpdateIgnored,
     showNotificationDialog,
     showProgressDialog,

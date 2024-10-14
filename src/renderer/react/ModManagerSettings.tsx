@@ -1,4 +1,5 @@
 import BridgeAPI from 'renderer/BridgeAPI';
+import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
 import {
@@ -113,11 +114,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     unregisterAsNxmProtocolHandler,
   } = useNexusAuthState();
 
-  console.log(
-    'DEBUG',
-    preExtractedDataPath.toLowerCase(),
-    outputPath.toLowerCase(),
-  );
+  const {
+    update,
+    onInstallUpdate,
+    isDialogEnabled: isAppUpdaterDialogEnabled,
+    setIsDialogEnabled: setIsAppUpdaterDialogEnabled,
+  } = useAppUpdaterContext();
 
   return (
     <List
@@ -497,6 +499,59 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               </Alert>
             )}
           </Stack>
+        </StyledAccordionDetails>
+      </StyledAccordion>
+      <StyledAccordion
+        defaultExpanded={false}
+        disableGutters={true}
+        elevation={0}
+        square={true}
+      >
+        <StyledAccordionSummary
+          aria-controls="updates-content"
+          expandIcon={<ExpandMore />}
+          id="updates-header"
+        >
+          <Typography sx={{ marginLeft: 1 }}>Updates</Typography>
+        </StyledAccordionSummary>
+        <StyledAccordionDetails id="updates-content">
+          <ListItemButton
+            onClick={() => {
+              setIsAppUpdaterDialogEnabled(!isAppUpdaterDialogEnabled);
+            }}
+          >
+            <ListItemIcon>
+              <Checkbox
+                checked={isAppUpdaterDialogEnabled}
+                disableRipple={true}
+                edge="start"
+                inputProps={{
+                  'aria-labelledby': 'enable-app-updater-dialog',
+                }}
+                tabIndex={-1}
+              />
+            </ListItemIcon>
+            <ListItemText
+              id="enable-app-updater-dialog"
+              primary="Enable D2RMM Update Notifications"
+            />
+          </ListItemButton>
+          {update == null ? null : (
+            <Alert severity="warning">
+              <Typography>
+                <strong>New Update Available</strong> Do you want to update to
+                version {update!.version} of D2RMM?
+              </Typography>
+              <Button
+                color="warning"
+                onClick={onInstallUpdate}
+                sx={{ marginTop: 1 }}
+                variant="contained"
+              >
+                Update
+              </Button>
+            </Alert>
+          )}
         </StyledAccordionDetails>
       </StyledAccordion>
     </List>

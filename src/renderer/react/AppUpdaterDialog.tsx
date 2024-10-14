@@ -151,7 +151,7 @@ export default function AppUpdaterDialog() {
   );
 
   useEffect(() => {
-    if (update == null || isUpdateIgnored || !isDialogEnabled) {
+    if (update == null) {
       return;
     }
 
@@ -160,7 +160,9 @@ export default function AppUpdaterDialog() {
       return;
     }
 
-    showNotificationDialog();
+    if (isDialogEnabled && !isUpdateIgnored) {
+      showNotificationDialog();
+    }
   }, [
     isDialogEnabled,
     isUpdateIgnored,

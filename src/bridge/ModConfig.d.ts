@@ -69,6 +69,11 @@ export interface ModConfigBase {
    * The unique identifier of the configuration element.
    */
   id: string;
+
+  /**
+   * Determines if the field is visible or not.
+   */
+  visible?: Binding<boolean>;
 }
 
 /**
@@ -110,11 +115,6 @@ export interface ModConfigFieldBase extends ModConfigBase {
    * The name of the field.
    */
   name: string;
-
-  /**
-   * Determines if the field is visible or not.
-   */
-  visible?: Binding<boolean>;
 }
 
 /**

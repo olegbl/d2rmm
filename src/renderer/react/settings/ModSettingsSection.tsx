@@ -4,6 +4,7 @@ import type {
   ModConfigFieldOrSection,
   ModConfigSection,
 } from 'bridge/ModConfig';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import { useSetModConfig } from 'renderer/react/context/ModsContext';
 import ModSettingsField from 'renderer/react/settings/ModSettingsField';
 import { MouseEvent, useCallback } from 'react';
@@ -93,8 +94,13 @@ export default function ModSettingsSection({
     [descendants, mod.config, mod.id, setModConfig],
   );
 
+  const isShown =
+    section.visible == null ||
+    parseBinding<boolean>(section.visible, mod.config);
+
   const areAllDescendantsCheckboxes =
-    descendants.every((child) => child.type === 'checkbox') ?? false;
+    descendants.length > 0 &&
+    (descendants.every((child) => child.type === 'checkbox') ?? false);
 
   const areAllDescendantsChecked =
     areAllDescendantsCheckboxes &&
@@ -117,6 +123,10 @@ export default function ModSettingsSection({
     },
     [setModConfig, mod.id, mod.config, descendants, areAllDescendantsChecked],
   );
+
+  if (!isShown) {
+    return null;
+  }
 
   return (
     <StyledAccordion

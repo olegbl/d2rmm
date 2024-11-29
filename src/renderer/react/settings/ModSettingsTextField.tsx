@@ -1,13 +1,13 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldText } from 'bridge/ModConfig';
-import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import { ChangeEvent, useCallback } from 'react';
 import { TextField } from '@mui/material';
 
 type Props = {
   field: ModConfigFieldText;
   mod: Mod;
-  onChange: (fieldID: string, value: ModConfigSingleValue) => unknown;
+  onChange: (fieldID: string, value: string) => unknown;
 };
 
 export default function ModSettingsTextField({
@@ -15,6 +15,11 @@ export default function ModSettingsTextField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const overrideValue =
+    field.overrideValue == null
+      ? null
+      : parseBinding<string | null>(field.overrideValue, mod.config) ?? null;
+
   const value = mod.config[field.id] as string;
 
   const onChange = useCallback(
@@ -24,5 +29,12 @@ export default function ModSettingsTextField({
     [field, onChangeFromProps],
   );
 
-  return <TextField onChange={onChange} value={value} variant="outlined" />;
+  return (
+    <TextField
+      disabled={overrideValue != null}
+      onChange={onChange}
+      value={overrideValue ?? value}
+      variant="outlined"
+    />
+  );
 }

@@ -2,6 +2,7 @@
  * Represents the valid value of any single configuration field.
  */
 export type ModConfigSingleValue =
+  | null
   | string
   | number
   | boolean

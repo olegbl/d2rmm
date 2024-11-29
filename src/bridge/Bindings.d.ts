@@ -70,7 +70,7 @@ export type BindingConditional<T> = [
 export type BindingNot = [operator: 'not', binding: Binding<boolean>];
 
 /**
- * Checks if both the first parameters (`boolean`) and the second parameter (`boolean`) are both true.
+ * Checks if all of the parameters (`boolean`) are true.
  * @example
  * ```
  * {
@@ -87,14 +87,10 @@ export type BindingNot = [operator: 'not', binding: Binding<boolean>];
  * },
  * ```
  */
-export type BindingAnd = [
-  operator: 'and',
-  binding1: Binding<boolean>,
-  binding2: Binding<boolean>,
-];
+export type BindingAnd = [operator: 'and', ...bindings: Binding<boolean>[]];
 
 /**
- * Checks if either the first parameters (`boolean`) or the second parameter (`boolean`) is true.
+ * Checks if any of the parameters (`boolean`) are true.
  * @example
  * ```
  * {
@@ -111,11 +107,7 @@ export type BindingAnd = [
  * },
  * ```
  */
-export type BindingOr = [
-  operator: 'or',
-  binding1: Binding<boolean>,
-  binding2: Binding<boolean>,
-];
+export type BindingOr = [operator: 'or', ...bindings: Binding<boolean>[]];
 
 /**
  * Checks if the first parameter (`T`) is equal to the second parameter (`T`).

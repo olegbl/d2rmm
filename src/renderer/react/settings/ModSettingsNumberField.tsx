@@ -1,5 +1,6 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldNumber } from 'bridge/ModConfig';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { TextField } from '@mui/material';
 
@@ -27,8 +28,15 @@ export default function ModSettingsNumberField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const overrideValue =
+    field.overrideValue == null
+      ? null
+      : parseBinding<number | null>(field.overrideValue, mod.config) ?? null;
+
   const value = mod.config[field.id] as number;
+
   const [valueString, setValueString] = useState(String(value));
+
   const [isFocused, onFocus, onBlur] = useIsFocused();
 
   const onChange = useCallback(
@@ -58,8 +66,6 @@ export default function ModSettingsNumberField({
         newValue = Math.min(newValue, field.maxValue);
       }
 
-      console.log('set value', event.target.value, newValue);
-
       setValueString(event.target.value);
       onChangeFromProps(field.id, newValue);
     },
@@ -80,6 +86,7 @@ export default function ModSettingsNumberField({
 
   return (
     <TextField
+      disabled={overrideValue != null}
       inputProps={{
         inputMode: 'numeric',
         pattern: PATTERN,
@@ -87,7 +94,7 @@ export default function ModSettingsNumberField({
       onBlur={onBlur}
       onChange={onChange}
       onFocus={onFocus}
-      value={valueString}
+      value={overrideValue != null ? String(overrideValue) : valueString}
       variant="outlined"
     />
   );

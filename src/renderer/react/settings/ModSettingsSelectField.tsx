@@ -1,6 +1,7 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldSelect } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import { useCallback } from 'react';
 import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 
@@ -15,6 +16,14 @@ export default function ModSettingsSelectField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const overrideValue =
+    field.overrideValue == null
+      ? null
+      : parseBinding<ModConfigSingleValue | null>(
+          field.overrideValue,
+          mod.config,
+        ) ?? null;
+
   const value = mod.config[field.id] as string;
 
   const onChange = useCallback(
@@ -28,7 +37,11 @@ export default function ModSettingsSelectField({
   );
 
   return (
-    <Select onChange={onChange} value={value}>
+    <Select
+      disabled={overrideValue != null}
+      onChange={onChange}
+      value={overrideValue ?? value}
+    >
       {field.options.map((option) => (
         <MenuItem
           key={option.label}

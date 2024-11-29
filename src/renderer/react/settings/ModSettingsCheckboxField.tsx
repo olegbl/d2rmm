@@ -1,6 +1,7 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldCheckbox } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import { useCallback } from 'react';
 import { FormControlLabel, Switch } from '@mui/material';
 
@@ -15,6 +16,11 @@ export default function ModSettingsCheckboxField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const overrideValue =
+    field.overrideValue == null
+      ? null
+      : parseBinding<boolean | null>(field.overrideValue, mod.config) ?? null;
+
   const value = Boolean(mod.config[field.id]);
 
   const onChange = useCallback(
@@ -26,8 +32,15 @@ export default function ModSettingsCheckboxField({
 
   return (
     <FormControlLabel
-      control={<Switch checked={value} name={field.name} onChange={onChange} />}
-      label={value ? 'On' : 'Off'}
+      control={
+        <Switch
+          checked={overrideValue ?? value}
+          name={field.name}
+          onChange={onChange}
+        />
+      }
+      disabled={overrideValue != null}
+      label={overrideValue ?? value ? 'On' : 'Off'}
     />
   );
 }

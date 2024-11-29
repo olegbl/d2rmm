@@ -32,17 +32,15 @@ export function parseBinding<T extends ModConfigSingleValue>(
       }
     }
     if (op === 'and' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
-      if (typeof arg1 === 'boolean' && typeof arg2 === 'boolean') {
-        return (arg1 && arg2) as T;
+      const args = value.slice(1).map((arg) => parseBinding(arg, config));
+      if (args.every((arg) => typeof arg === 'boolean')) {
+        return args.every((arg) => arg) as T;
       }
     }
-    if (op === 'or' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
-      if (typeof arg1 === 'boolean' && typeof arg2 === 'boolean') {
-        return (arg1 || arg2) as T;
+    if (op === 'or' && value.length >= 3) {
+      const args = value.slice(1).map((arg) => parseBinding(arg, config));
+      if (args.every((arg) => typeof arg === 'boolean')) {
+        return args.some((arg) => arg) as T;
       }
     }
     if (op === 'eq' && value.length === 3) {

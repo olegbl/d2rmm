@@ -131,6 +131,13 @@ export interface ModConfigFieldCheckbox extends ModConfigFieldBase {
    * The default value of the checkbox field.
    */
   defaultValue: boolean;
+
+  /**
+   * The override value of the checkbox field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   */
+  overrideValue?: Binding<null | boolean>;
 }
 
 /**
@@ -157,6 +164,13 @@ export interface ModConfigFieldNumber extends ModConfigFieldBase {
    * The maximum value that the user can input.
    */
   maxValue?: number;
+
+  /**
+   * The override value of the number field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   */
+  overrideValue?: Binding<null | number>;
 }
 
 /**
@@ -173,6 +187,13 @@ export interface ModConfigFieldText extends ModConfigFieldBase {
    * The default value of the text field.
    */
   defaultValue: string;
+
+  /**
+   * The override value of the text field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   */
+  overrideValue?: Binding<null | string>;
 }
 
 /**
@@ -189,6 +210,13 @@ export interface ModConfigFieldSelect extends ModConfigFieldBase {
    * The default value of the select field.
    */
   defaultValue: ModConfigSingleValue;
+
+  /**
+   * The override value of the select field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   */
+  overrideValue?: Binding<null | ModConfigSingleValue>;
 
   /**
    * The options that the user can select from.
@@ -225,6 +253,13 @@ export interface ModConfigFieldColor extends ModConfigFieldBase {
    * The default value of the color in RGBA format (`[0, 255]`, `[0, 255]`, `[0, 255]`, `[0.0, 1.0]`).
    */
   defaultValue: [number, number, number, number];
+
+  /**
+   * The override value of the color field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   */
+  overrideValue?: Binding<null | [number, number, number, number]>;
 
   /**
    * Whether the alpha channel should be hidden in the color picker.

@@ -111,7 +111,7 @@ export default function ModSettingsField({
           )}
           {field.description == null ? null : (
             <Tooltip title={field.description}>
-              <Help color="disabled" fontSize="small" />
+              <Help color="action" fontSize="small" />
             </Tooltip>
           )}
         </Box>

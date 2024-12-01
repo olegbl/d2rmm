@@ -187,7 +187,7 @@ export default function ModSettingsSection({
             )}
             {section.description == null ? null : (
               <Tooltip title={section.description}>
-                <Help color="disabled" fontSize="small" />
+                <Help color="action" fontSize="small" />
               </Tooltip>
             )}
           </Box>

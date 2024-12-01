@@ -88,7 +88,7 @@ export interface ModConfigSection extends ModConfigBase {
   /**
    * The description for the section that appears in a help tooltip.
    */
-  description: string;
+  description?: string;
 
   /**
    * Determines if the section is visible or not.
@@ -112,14 +112,14 @@ export interface ModConfigSection extends ModConfigBase {
  */
 export interface ModConfigFieldBase extends ModConfigBase {
   /**
-   * The description for the field that appears in a help tooltip.
-   */
-  description: string;
-
-  /**
    * The name of the field.
    */
   name: string;
+
+  /**
+   * The description for the field that appears in a help tooltip.
+   */
+  description?: string;
 
   /**
    * Determines if the field is visible or not.

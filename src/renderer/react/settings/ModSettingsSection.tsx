@@ -8,7 +8,13 @@ import { parseBinding } from 'renderer/react/BindingsParser';
 import { useSetModConfig } from 'renderer/react/context/ModsContext';
 import ModSettingsField from 'renderer/react/settings/ModSettingsField';
 import { MouseEvent, useCallback } from 'react';
-import { Help, Refresh, ToggleOff, ToggleOn } from '@mui/icons-material';
+import {
+  CheckBox,
+  CheckBoxOutlineBlank,
+  Help,
+  IndeterminateCheckBox,
+  Refresh,
+} from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -106,6 +112,10 @@ export default function ModSettingsSection({
     areAllDescendantsCheckboxes &&
     (descendants.every((child) => mod.config[child.id] === true) ?? false);
 
+  const areSomeDsescendantsChecked =
+    areAllDescendantsCheckboxes &&
+    (descendants.some((child) => mod.config[child.id] === true) ?? false);
+
   const onToggle = useCallback(
     (event: MouseEvent<HTMLButtonElement>): void => {
       event.preventDefault();
@@ -161,9 +171,17 @@ export default function ModSettingsSection({
               </Tooltip>
             )}
             {!areAllDescendantsCheckboxes ? null : (
-              <Tooltip title="Toggle All Checkboxes">
+              <Tooltip
+                title={areAllDescendantsChecked ? 'Disable All' : 'Enable All'}
+              >
                 <IconButton onClick={onToggle} size="small">
-                  {areAllDescendantsChecked ? <ToggleOff /> : <ToggleOn />}
+                  {areAllDescendantsChecked ? (
+                    <CheckBox />
+                  ) : areSomeDsescendantsChecked ? (
+                    <IndeterminateCheckBox />
+                  ) : (
+                    <CheckBoxOutlineBlank />
+                  )}
                 </IconButton>
               </Tooltip>
             )}

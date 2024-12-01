@@ -21,6 +21,14 @@ export default function ModSettingsField({
   field,
   mod,
 }: Props): JSX.Element | null {
+  const overrideValue =
+    field.overrideValue == null
+      ? null
+      : parseBinding<ModConfigSingleValue | null>(
+          field.overrideValue,
+          mod.config,
+        ) ?? null;
+
   const setModConfig = useSetModConfig();
 
   const onChangeConfig = useCallback(
@@ -102,7 +110,8 @@ export default function ModSettingsField({
           }}
         >
           {JSON.stringify(mod.config[field.id]) ===
-          JSON.stringify(field.defaultValue) ? null : (
+            JSON.stringify(field.defaultValue) ||
+          overrideValue != null ? null : (
             <Tooltip title="Revert to Default">
               <IconButton onClick={onReset} size="small">
                 <Refresh />

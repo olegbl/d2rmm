@@ -153,17 +153,17 @@ export default function ModSettingsSection({
               height: 24,
             }}
           >
-            {!areAllDescendantsCheckboxes ? null : (
-              <Tooltip title="Toggle All Checkboxes">
-                <IconButton onClick={onToggle} size="small">
-                  {areAllDescendantsChecked ? <ToggleOff /> : <ToggleOn />}
-                </IconButton>
-              </Tooltip>
-            )}
             {!areAnyDescendantsModified ? null : (
               <Tooltip title="Revert to Default">
                 <IconButton onClick={onReset} size="small">
                   <Refresh />
+                </IconButton>
+              </Tooltip>
+            )}
+            {!areAllDescendantsCheckboxes ? null : (
+              <Tooltip title="Toggle All Checkboxes">
+                <IconButton onClick={onToggle} size="small">
+                  {areAllDescendantsChecked ? <ToggleOff /> : <ToggleOn />}
                 </IconButton>
               </Tooltip>
             )}

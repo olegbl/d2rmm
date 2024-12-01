@@ -8,7 +8,7 @@ import { parseBinding } from 'renderer/react/BindingsParser';
 import { useSetModConfig } from 'renderer/react/context/ModsContext';
 import ModSettingsField from 'renderer/react/settings/ModSettingsField';
 import { MouseEvent, useCallback } from 'react';
-import { Refresh, ToggleOff, ToggleOn } from '@mui/icons-material';
+import { Help, Refresh, ToggleOff, ToggleOn } from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -143,12 +143,14 @@ export default function ModSettingsSection({
           id="general-header"
         >
           <Typography>{section.name}</Typography>
+          <Box sx={{ flex: 1 }} />
           <Box
             sx={{
+              display: 'flex',
+              alignItems: 'center',
               flexDirection: 'row',
-              position: 'absolute',
-              right: 36,
-              transform: 'translateY(-4px)',
+              flex: 0,
+              height: 24,
             }}
           >
             {!areAllDescendantsCheckboxes ? null : (
@@ -163,6 +165,11 @@ export default function ModSettingsSection({
                 <IconButton onClick={onReset} size="small">
                   <Refresh />
                 </IconButton>
+              </Tooltip>
+            )}
+            {section.description == null ? null : (
+              <Tooltip title={section.description}>
+                <Help color="disabled" fontSize="small" />
               </Tooltip>
             )}
           </Box>

@@ -69,11 +69,6 @@ export interface ModConfigBase {
    * The unique identifier of the configuration element.
    */
   id: string;
-
-  /**
-   * Determines if the field is visible or not.
-   */
-  visible?: Binding<boolean>;
 }
 
 /**
@@ -89,6 +84,16 @@ export interface ModConfigSection extends ModConfigBase {
    * The name of the section.
    */
   name: string;
+
+  /**
+   * The description for the section that appears in a help tooltip.
+   */
+  description: string;
+
+  /**
+   * Determines if the section is visible or not.
+   */
+  visible?: Binding<boolean>;
 
   /**
    * Whether the section should be expanded by default.
@@ -115,6 +120,11 @@ export interface ModConfigFieldBase extends ModConfigBase {
    * The name of the field.
    */
   name: string;
+
+  /**
+   * Determines if the field is visible or not.
+   */
+  visible?: Binding<boolean>;
 }
 
 /**

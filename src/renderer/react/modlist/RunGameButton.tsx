@@ -11,6 +11,7 @@ import {
   PlayCircleOutlineOutlined,
 } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
+import { resolvePath } from 'react-router-dom';
 
 type Props = Record<string, never>;
 
@@ -34,7 +35,8 @@ export default function RunGameButton(_props: Props): JSX.Element {
         return;
       }
     }
-    await BridgeAPI.execute(`${gamePath}\\D2R.exe`, args);
+    const pathD2rExe = resolvePath(gamePath, 'D2R.exe');
+    await BridgeAPI.execute(pathD2rExe, args);
   }, [isInstallBeforeRunEnabled, onInstallMods, args, gamePath]);
 
   return (

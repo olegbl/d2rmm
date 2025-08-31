@@ -30,7 +30,23 @@ export const dwordPtr = ref.refType(ref.types.uint32);
 let CASC_LIB: ICascLib;
 
 export async function initCascLib(): Promise<void> {
-  CASC_LIB = ffi.Library(path.join(getAppPath(), 'tools', 'CascLib.dll'), {
+  let libName: string;
+
+  switch (process.platform) {
+    case 'win32':
+      libName = 'CascLib.dll';
+      break;
+    case 'darwin':
+      libName = 'CascLib';
+      break;
+    case 'linux':
+      throw new Error('CascLib hasn\'t been compiled for Linux.');
+    default:
+      throw new Error(`Unsupported platform: ${process.platform}`);
+  }
+
+  const pathLibrary = path.resolve(getAppPath(), 'tools', libName);
+  CASC_LIB = ffi.Library(pathLibrary, {
     CascCloseFile: ['bool', [voidPtr]],
     CascCloseStorage: ['bool', [voidPtr]],
     CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],

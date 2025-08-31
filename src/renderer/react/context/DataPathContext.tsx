@@ -1,5 +1,6 @@
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import React, { useContext, useMemo } from 'react';
+import resolvePath from 'renderer/utils/resolvePath';
 
 type IPath = string;
 
@@ -25,7 +26,7 @@ type Props = {
 
 export function DataPathContextProvider({ children }: Props): JSX.Element {
   const gamePath = useSanitizedGamePath();
-  const path = `${gamePath}\\data`;
+  const path = resolvePath(gamePath, 'data');
 
   const context = useMemo(
     (): IDataPathContext => ({

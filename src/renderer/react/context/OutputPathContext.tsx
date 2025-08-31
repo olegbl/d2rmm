@@ -1,6 +1,7 @@
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
 import React, { useContext, useMemo } from 'react';
+import resolvePath from 'renderer/utils/resolvePath';
 
 type IPath = string;
 
@@ -27,7 +28,7 @@ type Props = {
 export function OutputPathContextProvider({ children }: Props): JSX.Element {
   const gamePath = useSanitizedGamePath();
   const [outputModName] = useOutputModName();
-  const path = `${gamePath}\\mods\\${outputModName}\\${outputModName}.mpq\\data`;
+  const path = resolvePath(gamePath, 'mods', outputModName, `${outputModName}.mpq`, 'data');
 
   const context = useMemo(
     (): IOutputPathContext => ({

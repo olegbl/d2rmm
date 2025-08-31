@@ -278,7 +278,7 @@ export const BridgeAPI: IBridgeAPI = {
       if (
         !getCascLib().CascOpenFile(
           storage,
-          `data:data\\${filePath}`,
+          path.join('data:data', filePath),
           0,
           0,
           filePtr,
@@ -314,7 +314,7 @@ export const BridgeAPI: IBridgeAPI = {
       if (
         !getCascLib().CascOpenFile(
           storage,
-          `data:data\\${filePath}`,
+          path.join('data:data', filePath),
           0,
           0,
           filePtr,
@@ -606,12 +606,12 @@ export const BridgeAPI: IBridgeAPI = {
       id,
     });
 
-    const result = await BridgeAPI.readFile(`mods\\${id}\\mod.json`, 'App');
+    const result = await BridgeAPI.readFile(path.resolve('mods', id, 'mod.json'), 'App');
 
     if (result == null) {
       // check if this is a data mod
       try {
-        if (statSync(resolvePath(`mods\\${id}\\data`, 'App')).isDirectory()) {
+        if (statSync(resolvePath(path.resolve('mods', id,'data'), 'App')).isDirectory()) {
           return {
             type: 'data',
             name: id,
@@ -646,7 +646,7 @@ export const BridgeAPI: IBridgeAPI = {
       id,
     });
 
-    const filePath = `mods\\${id}\\config.json`;
+    const filePath = path.resolve('mods', id, 'config.json');
     const result = await BridgeAPI.readFile(filePath, 'App');
 
     if (result != null) {
@@ -662,7 +662,7 @@ export const BridgeAPI: IBridgeAPI = {
       value,
     });
 
-    const filePath = `mods\\${id}\\config.json`;
+    const filePath = path.resolve('mods', id, 'config.json');
     return await BridgeAPI.writeFile(filePath, 'App', JSON.stringify(value));
   },
 
@@ -673,8 +673,8 @@ export const BridgeAPI: IBridgeAPI = {
 
     // javascript support
     {
-      const relativeFilePath = `mods\\${id}\\mod.js`;
-      const absoluteFilePath = path.join(getAppPath(), relativeFilePath);
+      const relativeFilePath = path.join('mods', id, 'mod.js');
+      const absoluteFilePath = path.resolve(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
         const result = await BridgeAPI.readFile(relativeFilePath, 'App');
         if (typeof result !== 'string') {
@@ -688,7 +688,7 @@ export const BridgeAPI: IBridgeAPI = {
         const code = `(function(){\nconst config = JSON.parse(D2RMM.getConfigJSON());\n${result}\n})()`;
 
         const sourceMapGenerator = new SourceMapGenerator({
-          file: `mods\\${id}\\mod.gen.js`,
+          file: path.resolve('mods', id, 'mod.gen.js'),
           sourceRoot: '',
         });
 
@@ -705,7 +705,7 @@ export const BridgeAPI: IBridgeAPI = {
     }
 
     // typescript support
-    if (existsSync(path.join(getAppPath(), `mods\\${id}\\mod.ts`))) {
+    if (existsSync(path.join(getAppPath(), 'mods', id, 'mod.ts'))) {
       try {
         type Module = {
           id: string;
@@ -766,7 +766,7 @@ export const BridgeAPI: IBridgeAPI = {
           }
           modulesProcessed.push(module.id);
 
-          const relativeFilePath = `mods\\${id}\\${module.id}.ts`;
+          const relativeFilePath = path.resolve('mods', id, `${module.id}.ts`);
           const sourceCode = await BridgeAPI.readFile(relativeFilePath, 'App');
           if (typeof sourceCode !== 'string') {
             throw createError(
@@ -796,7 +796,7 @@ export const BridgeAPI: IBridgeAPI = {
         }
 
         const sourceMapGenerator = new SourceMapGenerator({
-          file: `mods\\${id}\\mod.gen.js`,
+          file: path.resolve('mods', id, 'mod.gen.js'),
           sourceRoot: '',
         });
 
@@ -871,8 +871,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             const suffix = '});';
             const sourceMapConsumer = module.sourceMapConsumer;
             if (sourceMapConsumer != null) {
-              const modulePath = `${module.id.replace(/\//g, '\\')}.ts`;
-              const source = `mods\\${id}\\${modulePath}`;
+              const pathSeparator = process.platform === 'win32' ? '\\' : '/';
+              const modulePath = `${module.id.replace(/\//g, pathSeparator)}.ts`;
+              const source = path.resolve('mods', id, modulePath);
               const offset = agg.split('\n').length + prefix.split('\n').length;
               sourceMapConsumer.eachMapping((mapping) => {
                 sourceMapGenerator.addMapping({
@@ -1024,10 +1025,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     if (!runtime.options.isDirectMode) {
-      await BridgeAPI.deleteFile(`${runtime.options.mergedPath}\\..`, 'None');
+      await BridgeAPI.deleteFile(path.resolve(runtime.options.mergedPath, '..'), 'None');
       await BridgeAPI.createDirectory(runtime.options.mergedPath);
       await BridgeAPI.writeJson(
-        `${runtime.options.mergedPath}\\..\\modinfo.json`,
+        path.resolve(runtime.options.mergedPath, '..', 'modinfo.json'),
         {
           name: runtime.options.outputModName,
           savepath: `${runtime.options.outputModName}/`,
@@ -1111,7 +1112,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             message = applySourceMapToStackTrace(
               error.stack
                 ?.replace(/\s*at <eval>[\s\S]*/m, '')
-                ?.replace(/eval.js/g, `mods\\${runtime.mod.id}\\mod.gen.js`),
+                ?.replace(/eval.js/g, path.resolve('mods', runtime.mod.id, 'mod.gen.js')),
               sourceMapConsumer,
             );
             sourceMapConsumer.destroy();

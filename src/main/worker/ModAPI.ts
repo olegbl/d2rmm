@@ -170,7 +170,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
     getNextStringID: async () => {
       console.debug('D2RMM.getNextStringID');
 
-      const filePath = 'local\\lng\\next_string_id.txt';
+      const filePath = path.resolve('local', 'lng', 'next_string_id.txt');
 
       if (nextStringIDRaw == null) {
         await tryExtractFile(filePath);

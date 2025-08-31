@@ -34,7 +34,7 @@ export class InstallationRuntime {
   }
 
   public getPreExtractedSourceFilePath(filePath: string): string {
-    return `${this.options.preExtractedDataPath}\\${filePath}`;
+    return path.resolve(this.options.preExtractedDataPath, filePath);
   }
 
   public async getModSourceFilePath(filePath: string): Promise<string> {

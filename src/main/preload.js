@@ -15,3 +15,7 @@ contextBridge.exposeInMainWorld('IPCBridge', {
     ipcRenderer.removeAllListeners();
   },
 });
+
+contextBridge.exposeInMainWorld('env', {
+  platform: process.platform,
+});

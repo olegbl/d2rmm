@@ -174,6 +174,10 @@ export const BridgeAPI: IBridgeAPI = {
   getGamePath: async () => {
     console.debug('BridgeAPI.getGamePath');
 
+    if (process.platform !== 'win32') {
+      return null
+    }
+
     try {
       regedit.setExternalVBSLocation(path.join(getAppPath(), 'tools'));
       const regKey =

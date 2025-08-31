@@ -317,7 +317,7 @@ export const BridgeAPI: IBridgeAPI = {
         )
       ) {
         throw createError(
-          'API.extractFile',
+          'BridgeAPI.extractFile',
           `Failed to open file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );
@@ -340,7 +340,7 @@ export const BridgeAPI: IBridgeAPI = {
         });
       } else {
         throw createError(
-          'API.extractFile',
+          'BridgeAPI.extractFile',
           `Failed to read file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );
@@ -348,7 +348,7 @@ export const BridgeAPI: IBridgeAPI = {
 
       if (!getCascLib().CascCloseFile(file)) {
         throw createError(
-          'API.extractFile',
+          'BridgeAPI.extractFile',
           `Failed to close file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );

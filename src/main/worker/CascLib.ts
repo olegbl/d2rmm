@@ -37,7 +37,7 @@ export async function initCascLib(): Promise<void> {
       libName = 'CascLib.dll';
       break;
     case 'darwin':
-      libName = 'CascLib';
+      libName = 'CascLib.dylib';
       break;
     case 'linux':
       throw new Error('CascLib hasn\'t been compiled for Linux.');

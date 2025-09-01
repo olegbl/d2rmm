@@ -1,6 +1,7 @@
 import type { CopiedFile } from 'bridge/BridgeAPI';
 import type { AsyncModAPI } from 'bridge/ModAPI';
 import { InstallationRuntime } from './InstallationRuntime';
+import path from 'path';
 
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;
@@ -198,7 +199,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
     getNextStringID: async () => {
       console.debug('D2RMM.getNextStringID');
 
-      const filePath = path.resolve('local', 'lng', 'next_string_id.txt');
+      const filePath = path.join('local', 'lng', 'next_string_id.txt');
 
       if (nextStringIDRaw == null) {
         await tryExtractFile(filePath);

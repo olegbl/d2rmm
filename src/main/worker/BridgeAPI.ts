@@ -175,7 +175,7 @@ export const BridgeAPI: IBridgeAPI = {
     console.debug('BridgeAPI.getGamePath');
 
     if (process.platform !== 'win32') {
-      return null
+      return null;
     }
 
     try {
@@ -233,7 +233,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
       if (!cascStorageIsOpen) {
         throw createError(
-          'API.openStorage',
+          'BridgeAPI.openStorage',
           'Failed to open CASC storage',
           getLastCascLibError(),
         );
@@ -252,7 +252,7 @@ export const BridgeAPI: IBridgeAPI = {
         cascStorageIsOpen = false;
       } else {
         throw createError(
-          'API.closeStorage',
+          'BridgeAPI.closeStorage',
           'Failed to close CASC storage',
           getLastCascLibError(),
         );
@@ -288,7 +288,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
     } catch (e) {
       throw createError(
-        'API.isGameFile',
+        'BridgeAPI.isGameFile',
         'Failed to check if a file exists in CASC storage',
         String(e),
       );
@@ -606,12 +606,19 @@ export const BridgeAPI: IBridgeAPI = {
       id,
     });
 
-    const result = await BridgeAPI.readFile(path.join('mods', id, 'mod.json'), 'App');
+    const result = await BridgeAPI.readFile(
+      path.join('mods', id, 'mod.json'),
+      'App',
+    );
 
     if (result == null) {
       // check if this is a data mod
       try {
-        if (statSync(resolvePath(path.join('mods', id,'data'), 'App')).isDirectory()) {
+        if (
+          statSync(
+            resolvePath(path.join('mods', id, 'data'), 'App'),
+          ).isDirectory()
+        ) {
           return {
             type: 'data',
             name: id,
@@ -1025,7 +1032,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     if (!runtime.options.isDirectMode) {
-      await BridgeAPI.deleteFile(path.join(runtime.options.mergedPath, '..'), 'None');
+      await BridgeAPI.deleteFile(
+        path.join(runtime.options.mergedPath, '..'),
+        'None',
+      );
       await BridgeAPI.createDirectory(runtime.options.mergedPath);
       await BridgeAPI.writeJson(
         path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
@@ -1112,7 +1122,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             message = applySourceMapToStackTrace(
               error.stack
                 ?.replace(/\s*at <eval>[\s\S]*/m, '')
-                ?.replace(/eval.js/g, path.join('mods', runtime.mod.id, 'mod.gen.js')),
+                ?.replace(
+                  /eval.js/g,
+                  path.join('mods', runtime.mod.id, 'mod.gen.js'),
+                ),
               sourceMapConsumer,
             );
             sourceMapConsumer.destroy();

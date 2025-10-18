@@ -358,7 +358,11 @@ export const BridgeAPI: IBridgeAPI = {
         );
       }
     } catch (e) {
-      throw createError('API.extractFile', 'Failed to extract file', String(e));
+      throw createError(
+        'BridgeAPI.extractFile',
+        'Failed to extract file',
+        String(e),
+      );
     }
 
     return true;
@@ -374,7 +378,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
     } catch (e) {
       throw createError(
-        'API.createDirectory',
+        'BridgeAPI.createDirectory',
         'Failed to create directory',
         String(e),
       );
@@ -397,7 +401,7 @@ export const BridgeAPI: IBridgeAPI = {
       return [];
     } catch (e) {
       throw createError(
-        'API.readDirectory',
+        'BridgeAPI.readDirectory',
         'Failed to read directory',
         String(e),
       );
@@ -418,7 +422,7 @@ export const BridgeAPI: IBridgeAPI = {
       return [];
     } catch (e) {
       throw createError(
-        'API.readModDirectory',
+        'BridgeAPI.readModDirectory',
         'Failed to read directory',
         String(e),
       );

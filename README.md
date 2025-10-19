@@ -17,6 +17,7 @@ You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](ht
 - `yarn install`
 - `npm start` to debug
 - `npm run package` to build release
+- `npm run docs` to build documentation
 
 ## Experimental support for macOS
 

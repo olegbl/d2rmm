@@ -5,13 +5,13 @@ import { useIsInstallConfigChanged } from 'renderer/react/context/ModsContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
 import useInstallMods from 'renderer/react/modlist/hooks/useInstallMods';
+import resolvePath from 'renderer/utils/resolvePath';
 import { useMemo } from 'react';
 import {
   PlayCircleFilled,
   PlayCircleOutlineOutlined,
 } from '@mui/icons-material';
 import { Button, Tooltip } from '@mui/material';
-import { resolvePath } from 'react-router-dom';
 
 type Props = Record<string, never>;
 

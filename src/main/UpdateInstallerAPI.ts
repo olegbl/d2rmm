@@ -6,23 +6,17 @@ import { RendererIPCAPI } from './RendererIPCAPI';
 
 export async function initUpdateInstallerAPI(): Promise<void> {
   provideAPI('UpdateInstallerAPI', {
-    quitAndRun: async (powerShellScriptFilePath: string) => {
+    quitAndRun: async (executablePath: string, args: string[]) => {
       // prepare to quit the app
       // the renderer might be busy with a ton of IPCs
       // so we need to make sure that it can actually be closed
       await RendererIPCAPI.disconnect();
 
-      // spawn the script
-      const child = spawn(
-        'powershell.exe',
-        ['-File', powerShellScriptFilePath],
-        {
-          shell: true,
-          detached: true,
-          stdio: 'ignore',
-        },
-      );
-      child.unref();
+      // spawn the executable
+      spawn(executablePath, args, {
+        detached: true,
+        stdio: 'ignore',
+      }).unref();
 
       // quit the app
       app.quit();

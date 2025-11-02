@@ -1,6 +1,6 @@
 export type IUpdateInstallerAPI = {
   /**
-   * Quits the app and runs the provided script.
+   * Quits the app and runs the provided executable and args.
    */
-  quitAndRun: (powerShellScriptFilePath: string) => void;
+  quitAndRun: (executablePath: string, args: string[]) => void;
 };

@@ -1,7 +1,7 @@
 import type { IUpdateInstallerAPI } from 'bridge/UpdateInstallerAPI';
 import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import decompress from 'decompress';
-import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, statSync } from 'fs';
 import path from 'path';
 import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
@@ -99,18 +99,15 @@ type Config = {
   tempDirPath: string;
   updateZipPath: string;
   updateDirPath: string;
-  updateScriptPath: string;
 };
 
 async function getConfig(): Promise<Config> {
   const tempDirPath = path.join(getTempPath(), 'D2RMM', 'Updater');
   const updateDirPath = path.join(tempDirPath, 'update');
-  const updateScriptPath = path.join(tempDirPath, 'update.ps1');
   return {
     tempDirPath,
     updateZipPath: '',
     updateDirPath,
-    updateScriptPath,
   };
 }
 
@@ -154,7 +151,7 @@ async function extractUpdate({
 }
 
 async function applyUpdate(
-  { updateDirPath, updateScriptPath }: Config,
+  { updateDirPath }: Config,
   update: Update,
 ): Promise<void> {
   console.log('[Updater] Applying update');
@@ -165,40 +162,14 @@ async function applyUpdate(
     updateDirPath,
     `D2RMM ${update.version}`,
   );
-
-  const updateScriptContent = `
-    Write-Host "Waiting for D2RMM to exit..."
-    Start-Sleep -Seconds 1
-
-    $retries = 3
-    $success = $false
-
-    for ($i = 0; $i -lt $retries; $i++) {
-        Write-Host "Copying files..."
-        try {
-            Copy-Item -Path "${updateDirectoryPath}\\*" -Destination "${appDirectoryPath}" -Recurse -Force -ErrorAction Stop
-            $success = $true
-            break
-        } catch {
-            Write-Host "Failed to copy files. Retrying in 5 seconds..."
-            Start-Sleep -Seconds 5
-        }
-    }
-
-    if (-not $success) {
-        Write-Host "Failed to copy new files to D2RMM's directory. You may need to update manually."
-        Read-Host "Press Enter to exit..."
-        exit 1
-    }
-
-    Write-Host "Restarting D2RMM..."
-    Start-Sleep -Seconds 1
-    Start-Process -FilePath "${appExecutablePath}"
-  `;
-
-  writeFileSync(updateScriptPath, updateScriptContent, {
-    encoding: 'utf8',
-  });
-
-  await UpdateInstallerAPI.quitAndRun(updateScriptPath);
+  const updaterExecutablePath = path.join(
+    updateDirectoryPath,
+    'tools',
+    process.platform === 'darwin' ? 'updater' : 'updater.exe',
+  );
+  await UpdateInstallerAPI.quitAndRun(updaterExecutablePath, [
+    updateDirectoryPath,
+    appDirectoryPath,
+    appExecutablePath,
+  ]);
 }

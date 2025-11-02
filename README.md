@@ -18,6 +18,7 @@ You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](ht
 - `npm start` to debug
 - `npm run package` to build release
 - `npm run docs` to build documentation
+- `npm run build:updater` to build auto-updater exe
 
 ## Experimental support for macOS
 

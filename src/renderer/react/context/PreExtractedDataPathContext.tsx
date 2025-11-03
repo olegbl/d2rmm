@@ -1,7 +1,7 @@
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import useSavedState from 'renderer/react/hooks/useSavedState';
-import React, { useContext, useMemo } from 'react';
 import resolvePath from 'renderer/utils/resolvePath';
+import React, { useContext, useMemo } from 'react';
 
 type IPath = string;
 type ISetPath = React.Dispatch<React.SetStateAction<IPath>>;

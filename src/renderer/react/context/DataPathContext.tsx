@@ -1,6 +1,6 @@
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
-import React, { useContext, useMemo } from 'react';
 import resolvePath from 'renderer/utils/resolvePath';
+import React, { useContext, useMemo } from 'react';
 
 type IPath = string;
 

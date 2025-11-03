@@ -1,7 +1,7 @@
 import type { CopiedFile } from 'bridge/BridgeAPI';
 import type { AsyncModAPI } from 'bridge/ModAPI';
-import { InstallationRuntime } from './InstallationRuntime';
 import path from 'path';
+import { InstallationRuntime } from './InstallationRuntime';
 
 let nextStringIDRaw: string | null = null;
 let nextStringID: number = 0;

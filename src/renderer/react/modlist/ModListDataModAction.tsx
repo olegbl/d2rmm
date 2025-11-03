@@ -16,7 +16,7 @@ export function ModListDataModChip({ mod }: Props): JSX.Element | null {
       color="warning"
       icon={<Warning />}
       label="data mod"
-      tooltip="This mod is a non-D2RMM data mod and may conflict with other mods or game updates."
+      tooltip="This mod is a non-D2RMM data mod and may conflict with other mods or game updates. It is recommended to put it as high in the mod load order as possible."
     />
   );
 }

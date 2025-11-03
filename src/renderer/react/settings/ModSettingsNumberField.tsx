@@ -41,6 +41,9 @@ export default function ModSettingsNumberField({
 
   const onChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>): void => {
+      // let the user type freely - we'll revert any invalid input on blur
+      setValueString(event.target.value);
+
       let newValue = parseFloat(event.target.value);
 
       if (
@@ -66,7 +69,6 @@ export default function ModSettingsNumberField({
         newValue = Math.min(newValue, field.maxValue);
       }
 
-      setValueString(event.target.value);
       onChangeFromProps(field.id, newValue);
     },
     [

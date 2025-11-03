@@ -555,6 +555,7 @@ export const BridgeAPI: IBridgeAPI = {
     fromPath: string,
     toPath: string,
     overwrite: boolean = false,
+    isDryRun: boolean = false,
     outCopiedFiles?: CopiedFile[],
   ) => {
     console.debug('BridgeAPI.copyFile', {
@@ -593,8 +594,10 @@ export const BridgeAPI: IBridgeAPI = {
           directories.shift();
         }
       } else {
-        mkdirSync(path.dirname(toPath), { recursive: true });
-        copyFileSync(fromPath, toPath);
+        if (!isDryRun) {
+          mkdirSync(path.dirname(toPath), { recursive: true });
+          copyFileSync(fromPath, toPath);
+        }
         outCopiedFiles?.push({ fromPath, toPath });
       }
     } catch (e) {

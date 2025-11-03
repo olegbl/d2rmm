@@ -32,6 +32,7 @@ export type IBridgeAPI = {
     fromPath: string,
     toPath: string,
     overwrite?: boolean,
+    isDryRun?: boolean,
     outCopiedFiles?: CopiedFile[],
   ) => Promise<number>;
   createDirectory: (filePath: string) => Promise<boolean>;

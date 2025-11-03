@@ -136,19 +136,24 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
         dst = dst.replace(/\\/g, '/');
       }
       console.debug('D2RMM.copyFile', src, dst);
-      if (!runtime.options.isDryRun) {
-        const copiedFiles: CopiedFile[] = [];
-        await runtime.BridgeAPI.copyFile(
-          await runtime.getModSourceFilePath(src),
-          runtime.getDestinationFilePath(dst),
-          overwrite,
-          copiedFiles,
-        );
-        for (const { toPath } of copiedFiles) {
-          await runtime.fileManager.write(
-            runtime.getRelativeFilePathFromDestinationFilePath(toPath),
-            runtime.mod.id,
-          );
+      const copiedFiles: CopiedFile[] = [];
+      await runtime.BridgeAPI.copyFile(
+        await runtime.getModSourceFilePath(src),
+        runtime.getDestinationFilePath(dst),
+        overwrite,
+        runtime.options.isDryRun,
+        copiedFiles,
+      );
+      for (const { toPath } of copiedFiles) {
+        const filePath =
+          runtime.getRelativeFilePathFromDestinationFilePath(toPath);
+        // when uninstalling via direct mode, we need to revert the changes
+        // made by copying game files over without extracting them at all
+        if (runtime.options.isDryRun && runtime.options.isDirectMode) {
+          await tryExtractFile(filePath);
+        }
+        if (!runtime.options.isDryRun) {
+          await runtime.fileManager.write(filePath, runtime.mod.id);
         }
       }
     },
@@ -222,10 +227,9 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
             runtime.getDestinationFilePath(filePath),
             nextStringIDRaw.replace(/[0-9]+/, String(nextStringID)),
           );
+          await runtime.fileManager.write(filePath, runtime.mod.id);
         }
       }
-
-      await runtime.fileManager.write(filePath, runtime.mod.id);
 
       return stringID;
     },

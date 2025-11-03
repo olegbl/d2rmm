@@ -17,10 +17,13 @@ import { initPreferences } from './preferences';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
 
-const isSingleInstance = app.requestSingleInstanceLock();
-if (!isSingleInstance) {
-  app.quit();
-} else {
+(async () => {
+  const isSingleInstance = app.requestSingleInstanceLock();
+  if (!isSingleInstance) {
+    app.quit();
+    return;
+  }
+
   log.initialize();
   log.transports.file.resolvePathFn = () =>
     path.join(
@@ -194,4 +197,6 @@ if (!isSingleInstance) {
       });
     })
     .catch(console.error);
-}
+})()
+  .then()
+  .catch(console.error);

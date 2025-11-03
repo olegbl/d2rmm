@@ -11,7 +11,7 @@ function useIsFocused(): [
 ] {
   const [isFocused, setIsFocused] = useState(false);
   const onFocus = useCallback(() => setIsFocused(true), []);
-  const onBlur = useCallback(() => setIsFocused(true), []);
+  const onBlur = useCallback(() => setIsFocused(false), []);
   return [isFocused, onFocus, onBlur];
 }
 

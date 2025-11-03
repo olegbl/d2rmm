@@ -209,10 +209,15 @@ export async function initModUpdaterAPI(): Promise<void> {
 
       // check that the extracted files have the expected structure
       function findModInfo(dirPath: string): string | null {
+        // if mod.json exists, this is a D2RMM mod
         if (existsSync(path.join(dirPath, 'mod.json'))) {
           return dirPath;
         }
-        const files = readdirSync(downloadDirPath, { encoding: null });
+        // if modinfo.json exists, this is a non-D2RMM data mod
+        if (existsSync(path.join(dirPath, 'modinfo.json'))) {
+          return dirPath;
+        }
+        const files = readdirSync(dirPath, { encoding: null });
         for (const fileName of files) {
           const filePath = path.join(dirPath, fileName);
           if (statSync(filePath).isDirectory()) {
@@ -227,7 +232,7 @@ export async function initModUpdaterAPI(): Promise<void> {
       const extractedModDirPath = findModInfo(downloadDirPath);
       if (extractedModDirPath == null) {
         throw new Error(
-          `Mod has an unexpected file structure. Expected to find "mod.json" file somewhere in downloaded .zip file.`,
+          `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the downloaded .zip file.`,
         );
       }
 

@@ -56,9 +56,9 @@ export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
   const [, refreshMods] = useMods();
 
   const onDelete = useAsyncCallback(async () => {
-    await BridgeAPI.deleteFile(`mods/${mod.info.name}`, 'App');
+    await BridgeAPI.deleteFile(`mods/${mod.id}`, 'App');
     await refreshMods([mod.id]);
-  }, [mod.id, mod.info.name, refreshMods]);
+  }, [mod.id, refreshMods]);
 
   const [onOpenDialog] = useDialog(
     <DeleteDialog mod={mod} onDelete={onDelete} />,

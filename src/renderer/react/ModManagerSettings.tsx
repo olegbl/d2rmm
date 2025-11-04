@@ -1,4 +1,7 @@
+import type { IShellAPI } from 'bridge/ShellAPI';
+import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
+import { consumeAPI } from 'renderer/IPC';
 import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -11,9 +14,15 @@ import { useIsPreExtractedData } from 'renderer/react/context/IsPreExtractedData
 import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
 import { useOutputPath } from 'renderer/react/context/OutputPathContext';
 import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedDataPathContext';
+import {
+  useDefaultSavesPath,
+  useFinalSavesPath,
+  useSavesPath,
+} from 'renderer/react/context/SavesPathContext';
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
+import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
 import { useCallback, useRef } from 'react';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -28,6 +37,7 @@ import {
   Chip,
   Divider,
   LinearProgress,
+  Link,
   List,
   ListItemButton,
   ListItemIcon,
@@ -39,6 +49,8 @@ import {
   Typography,
   styled,
 } from '@mui/material';
+
+const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
 async function getIsValidGamePath(path: string): Promise<boolean> {
   const files = await BridgeAPI.readDirectory(path);
@@ -81,6 +93,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const mergedPath = useOutputPath();
   const dataPath = useDataPath();
   const outputPath = isDirectMode ? dataPath : mergedPath;
+  const [savesPath, setSavesPath] = useSavesPath();
+  const baseSavesPath = getBaseSavesPath();
+  const defaultSavesPath = useDefaultSavesPath();
+  const finalSavesPath = useFinalSavesPath();
+  const [isSavesPathFocused, onSavesPathFocus, onSavesPathBlur] =
+    useIsFocused();
 
   const [themeMode, setThemeMode] = useThemeMode();
 
@@ -232,15 +250,72 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 value={outputModName}
                 variant="filled"
               />
-              <Typography color="text.secondary" variant="subtitle2">
-                Generated files will be located in &ldquo;{outputPath}\&rdquo;.
-              </Typography>
-              <Typography color="text.secondary" variant="subtitle2">
-                Save game files will be located in &ldquo;%UserProfile%\Saved
-                Games\Diablo II Resurrected\mods\{outputModName}\&rdquo;.
-              </Typography>
             </>
           ) : null}
+          <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
+          <Typography color="text.secondary" variant="subtitle2">
+            Specify where D2RMM should read save files from when installing
+            mods.
+          </Typography>
+          <TextField
+            fullWidth={true}
+            label="Save Data Path"
+            onBlur={onSavesPathBlur}
+            onChange={(event) => setSavesPath(event.target.value)}
+            onFocus={onSavesPathFocus}
+            placeholder={defaultSavesPath}
+            value={isSavesPathFocused ? savesPath : finalSavesPath}
+            variant="filled"
+          />
+          {!finalSavesPath.startsWith(baseSavesPath) ? (
+            <Alert severity="warning">
+              <Typography>
+                Your save path is not within &ldquo;
+                <Link
+                  href="#"
+                  onClick={() => {
+                    ShellAPI.showItemInFolder(baseSavesPath).catch(
+                      console.error,
+                    );
+                  }}
+                >
+                  {baseSavesPath}\
+                </Link>
+                &rdquo;. Are you sure this is right?
+              </Typography>
+            </Alert>
+          ) : null}
+          <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
+          <Alert severity="info" sx={{ marginTop: 2 }}>
+            <Typography color="text.secondary" variant="subtitle2">
+              Generated files will be located in &ldquo;
+              <Link
+                href="#"
+                onClick={() => {
+                  ShellAPI.showItemInFolder(outputPath).catch(console.error);
+                }}
+              >
+                {outputPath}\
+              </Link>
+              &rdquo;.
+            </Typography>
+          </Alert>
+          <Alert severity="info" sx={{ marginTop: 1 }}>
+            <Typography color="text.secondary" variant="subtitle2">
+              Save game files and user preferences will be located in &ldquo;
+              <Link
+                href="#"
+                onClick={() => {
+                  ShellAPI.showItemInFolder(finalSavesPath).catch(
+                    console.error,
+                  );
+                }}
+              >
+                {finalSavesPath}\
+              </Link>
+              &rdquo;.
+            </Typography>
+          </Alert>
           <InstallBeforeRunSettings />
         </StyledAccordionDetails>
       </StyledAccordion>

@@ -5,4 +5,5 @@ export type IAppInfoAPI = {
   getPath(name: GetPathParams): Promise<string>;
   getResourcesPath(): Promise<string>;
   getDirname(): Promise<string>;
+  getBaseSavesPath(): Promise<string>;
 };

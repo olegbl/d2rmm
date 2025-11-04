@@ -1,3 +1,4 @@
+import { initAppInfoAPI } from 'renderer/AppInfoAPI';
 import { initConsoleAPI } from 'renderer/ConsoleAPI';
 import { initEventAPI } from 'renderer/EventAPI';
 import { initIPC } from 'renderer/IPC';
@@ -18,6 +19,8 @@ async function start(): Promise<void> {
   await initEventAPI();
   console.debug('[renderer] Initializing ConsoleAPI...');
   await initConsoleAPI();
+  console.debug('[renderer] Initializing AppInfoAPI...');
+  await initAppInfoAPI();
   console.debug('[renderer] Initializing UI...');
   await initUI();
   console.debug('[renderer] Initialized');

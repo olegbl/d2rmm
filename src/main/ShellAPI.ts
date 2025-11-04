@@ -7,5 +7,8 @@ export async function initShellAPI(): Promise<void> {
     openExternal: async (url) => {
       return shell.openExternal(url);
     },
+    showItemInFolder: async (path) => {
+      return shell.showItemInFolder(path);
+    },
   } as IShellAPI);
 }

@@ -19,6 +19,7 @@ import { NexusModsContextProvider } from 'renderer/react/context/NexusModsContex
 import { OutputModNameContextProvider } from 'renderer/react/context/OutputModNameContext';
 import { OutputPathContextProvider } from 'renderer/react/context/OutputPathContext';
 import { PreExtractedDataPathContextProvider } from 'renderer/react/context/PreExtractedDataPathContext';
+import { SavesPathContextProvider } from 'renderer/react/context/SavesPathContext';
 import {
   TabContextProvider,
   useTabState,
@@ -126,6 +127,7 @@ const CONTEXT_PROVIDERS = [
   ModsContextProvider,
   // preferences
   InstallBeforeRunContextProvider,
+  SavesPathContextProvider,
   OutputPathContextProvider,
   DataPathContextProvider,
   ExtraGameLaunchArgsContextProvider,

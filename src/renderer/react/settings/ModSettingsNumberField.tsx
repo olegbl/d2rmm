@@ -1,19 +1,9 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldNumber } from 'bridge/ModConfig';
 import { parseBinding } from 'renderer/react/BindingsParser';
+import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { TextField } from '@mui/material';
-
-function useIsFocused(): [
-  isFocused: boolean,
-  onFocus: () => void,
-  onBlur: () => void,
-] {
-  const [isFocused, setIsFocused] = useState(false);
-  const onFocus = useCallback(() => setIsFocused(true), []);
-  const onBlur = useCallback(() => setIsFocused(false), []);
-  return [isFocused, onFocus, onBlur];
-}
 
 const PATTERN = '^[0-9]*(.[0-9]*)?$';
 

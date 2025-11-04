@@ -33,7 +33,7 @@ import {
 } from 'source-map';
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
-import { getAppPath, getHomePath } from './AppInfoAPI';
+import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import {
   dwordPtr,
   getCascLib,
@@ -59,13 +59,7 @@ export function getRuntime(): InstallationRuntime | null {
 }
 
 function getSavesPath(): string {
-  return path.join(
-    process.env.USERPROFILE ?? path.join(getHomePath(), '../'),
-    'Saved Games/Diablo II Resurrected/',
-    runtime!.options.isDirectMode
-      ? ''
-      : `mods/${runtime?.options.outputModName ?? 'D2RMM'}/`,
-  );
+  return path.resolve(runtime!.options.savesPath);
 }
 
 function getOutputPath(): string {
@@ -1044,11 +1038,17 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         'None',
       );
       await BridgeAPI.createDirectory(runtime.options.mergedPath);
+      const baseSavesPath = path.resolve(getBaseSavesPath());
+      const modsSavesPath = path.resolve(baseSavesPath, 'mods');
+      const savesPath = getSavesPath();
       await BridgeAPI.writeJson(
         path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
         {
           name: runtime.options.outputModName,
-          savepath: `${runtime.options.outputModName}/`,
+          // use a relative path if possible - but allow an absolute path
+          savepath: savesPath.startsWith(baseSavesPath)
+            ? path.relative(modsSavesPath, savesPath)
+            : savesPath,
         },
       );
     }

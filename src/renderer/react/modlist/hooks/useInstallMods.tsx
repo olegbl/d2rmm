@@ -13,6 +13,7 @@ import {
 import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
 import { useOutputPath } from 'renderer/react/context/OutputPathContext';
 import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedDataPathContext';
+import { useFinalSavesPath } from 'renderer/react/context/SavesPathContext';
 import { useTabState } from 'renderer/react/context/TabContext';
 import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
@@ -32,6 +33,7 @@ export default function useInstallMods(
   const modsToInstall = useModsToInstall();
   const [, setInstalledMods] = useInstalledMods();
   const [, setIsInstalling] = useIsInstalling();
+  const savesPath = useFinalSavesPath();
 
   const label = isUninstall ? 'Uninstall' : 'Install';
 
@@ -51,6 +53,7 @@ export default function useInstallMods(
         mergedPath: outputPath,
         outputModName,
         preExtractedDataPath,
+        savesPath,
       };
 
       console.debug(`Installing mods...`, options);
@@ -98,6 +101,7 @@ export default function useInstallMods(
     outputModName,
     outputPath,
     preExtractedDataPath,
+    savesPath,
     setInstalledMods,
     setIsInstalling,
     setTab,

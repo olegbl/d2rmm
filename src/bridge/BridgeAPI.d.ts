@@ -13,6 +13,7 @@ export type IInstallModsOptions = {
   mergedPath: string;
   outputModName: string;
   preExtractedDataPath: string;
+  savesPath: string;
 };
 
 export type Mod = {

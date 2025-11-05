@@ -24,5 +24,10 @@ export async function initAppInfoAPI(): Promise<void> {
         'Diablo II Resurrected',
       );
     },
+    getAppPath: async () => {
+      return app.isPackaged
+        ? path.resolve(process.resourcesPath, '..')
+        : path.resolve(__dirname, '..', '..');
+    },
   } as IAppInfoAPI);
 }

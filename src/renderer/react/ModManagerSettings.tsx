@@ -1,7 +1,6 @@
-import type { IShellAPI } from 'bridge/ShellAPI';
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
-import { consumeAPI } from 'renderer/IPC';
+import ShellAPI from 'renderer/ShellAPI';
 import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -49,8 +48,6 @@ import {
   Typography,
   styled,
 } from '@mui/material';
-
-const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
 async function getIsValidGamePath(path: string): Promise<boolean> {
   const files = await BridgeAPI.readDirectory(path);

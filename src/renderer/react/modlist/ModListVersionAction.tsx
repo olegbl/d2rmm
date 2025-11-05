@@ -1,15 +1,12 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModUpdaterDownload } from 'bridge/ModUpdaterAPI';
-import type { IShellAPI } from 'bridge/ShellAPI';
-import { consumeAPI } from 'renderer/IPC';
+import ShellAPI from 'renderer/ShellAPI';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import useModUpdater from 'renderer/react/modlist/hooks/useModUpdater';
 import { useCallback } from 'react';
 import { Download, Update } from '@mui/icons-material';
-
-const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
 function useOpenWebsite(mod: Mod): () => void {
   return useCallback((): void => {

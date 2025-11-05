@@ -6,6 +6,7 @@ import { ModListDataModChip } from 'renderer/react/modlist/ModListDataModAction'
 import { ModListDeleteMenuItem } from 'renderer/react/modlist/ModListDeleteAction';
 import ModListMenu from 'renderer/react/modlist/ModListMenu';
 import ModListNexusIDMenuItem from 'renderer/react/modlist/ModListNexusIDAction';
+import { ModListOpenMenuItem } from 'renderer/react/modlist/ModListOpenAction';
 import { ModListRenameMenuItem } from 'renderer/react/modlist/ModListRenameAction';
 import {
   ModListSettingsChip,
@@ -85,6 +86,7 @@ export default function ModListItem({
           <ModListDownloadMenuItem mod={mod} />
           <ModListNexusIDMenuItem mod={mod} />
           <ModListRenameMenuItem mod={mod} />
+          <ModListOpenMenuItem mod={mod} />
           <ModListDeleteMenuItem mod={mod} />
         </ModListMenu>
       </DialogManagerContextProvider>

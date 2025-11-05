@@ -7,6 +7,7 @@ import {
 import { useMods } from 'renderer/react/context/ModsContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
+import resolvePath from 'renderer/utils/resolvePath';
 import { useCallback } from 'react';
 import { Delete } from '@mui/icons-material';
 import {
@@ -56,7 +57,7 @@ export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
   const [, refreshMods] = useMods();
 
   const onDelete = useAsyncCallback(async () => {
-    await BridgeAPI.deleteFile(`mods/${mod.id}`, 'App');
+    await BridgeAPI.deleteFile(resolvePath('mods', mod.id), 'App');
     await refreshMods([mod.id]);
   }, [mod.id, refreshMods]);
 

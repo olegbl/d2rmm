@@ -1,12 +1,9 @@
 import type { Mod } from 'bridge/BridgeAPI';
-import type { IShellAPI } from 'bridge/ShellAPI';
-import { consumeAPI } from 'renderer/IPC';
+import ShellAPI from 'renderer/ShellAPI';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback } from 'react';
 import { Link } from '@mui/icons-material';
-
-const ShellAPI = consumeAPI<IShellAPI>('ShellAPI');
 
 function useOpenWebsite(mod: Mod): () => void {
   return useCallback((): void => {

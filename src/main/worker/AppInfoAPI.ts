@@ -1,5 +1,4 @@
 import type { IAppInfoAPI } from 'bridge/AppInfoAPI';
-import path from 'path';
 import { consumeAPI } from './IPC';
 
 export const AppInfoAPI = consumeAPI<IAppInfoAPI>('AppInfoAPI');
@@ -23,12 +22,9 @@ export async function initAppInfoAPI(): Promise<void> {
   const userDataPath = await AppInfoAPI.getPath('userData');
   const tempPath = await AppInfoAPI.getPath('temp');
   const executablePath = await AppInfoAPI.getPath('exe');
-  const dirname = await AppInfoAPI.getDirname();
   const resourcesPath = await AppInfoAPI.getResourcesPath();
   const baseSavesPath = await AppInfoAPI.getBaseSavesPath();
-  const appPath = isPackaged
-    ? path.join(resourcesPath, '..')
-    : path.join(dirname, '..', '..');
+  const appPath = await AppInfoAPI.getAppPath();
 
   CACHED_APP_INFO = {
     appPath,

@@ -410,7 +410,12 @@ export const BridgeAPI: IBridgeAPI = {
       if (existsSync(filePath)) {
         const entries = readdirSync(filePath, { withFileTypes: true });
         return entries
-          .filter((entry) => entry.isDirectory())
+          .filter(
+            (entry) =>
+              entry.isDirectory() ||
+              (entry.isSymbolicLink() &&
+                statSync(path.join(filePath, entry.name)).isDirectory()),
+          )
           .map((entry) => entry.name);
       }
       return [];

@@ -12,7 +12,7 @@ exports.default = async function afterSign(context) {
     fs
       .readFileSync(sourceFilePath, 'utf-8')
       .replace(/^import .*? from .*?;$/gm, ''),
-    'utf-8'
+    'utf-8',
   );
 
   // wrap the generated app in a "D2RMM X.X.X" versioned folder

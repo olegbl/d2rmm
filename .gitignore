@@ -3,6 +3,9 @@ release/*.zip
 CHANGELOG.md
 /docs/
 
+# Mods
+mods
+
 # Logs
 logs
 *.log

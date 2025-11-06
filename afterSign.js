@@ -3,15 +3,14 @@ const path = require('path');
 
 exports.default = async function afterSign(context) {
   // move the generated types.d.ts file into the app output directory
-  // and remove any imports that got left behind
   const sourceFilePath = path.join(context.outDir, 'types.d.ts');
   const targetFilePath = path.join(context.appOutDir, 'types.d.ts');
-  // fs.moveSync(sourceFilePath, targetFilePath);
   fs.writeFileSync(
     targetFilePath,
     fs
       .readFileSync(sourceFilePath, 'utf-8')
-      .replace(/^import .*? from .*?;$/gm, ''),
+      // remove any import statements that got left behind
+      .replace(/^import (.|[\n\r])*? from .*?;$/gm, ''),
     'utf-8',
   );
 

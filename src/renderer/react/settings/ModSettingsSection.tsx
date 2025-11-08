@@ -102,9 +102,11 @@ export default function ModSettingsSection({
     [descendants, mod.config, mod.id, setModConfig],
   );
 
-  const isShown =
-    section.visible == null ||
-    parseBinding<boolean>(section.visible, mod.config, expandedSections);
+  const isShown = parseBinding<boolean>(
+    section.visible ?? true,
+    mod.config,
+    expandedSections,
+  );
 
   const isExpanded = expandedSections[section.id] ?? false;
 
@@ -112,6 +114,12 @@ export default function ModSettingsSection({
     (isExpanded: boolean) =>
       setExpandedSections((value) => ({ ...value, [section.id]: isExpanded })),
     [section.id, setExpandedSections],
+  );
+
+  const allowToggleAll = parseBinding<boolean>(
+    section.allowToggleAll ?? true,
+    mod.config,
+    expandedSections,
   );
 
   const areAllDescendantsCheckboxes =
@@ -182,7 +190,7 @@ export default function ModSettingsSection({
                 </IconButton>
               </Tooltip>
             )}
-            {!areAllDescendantsCheckboxes ? null : (
+            {!allowToggleAll || !areAllDescendantsCheckboxes ? null : (
               <Tooltip
                 title={areAllDescendantsChecked ? 'Disable All' : 'Enable All'}
               >

@@ -106,6 +106,13 @@ export interface ModConfigSection extends ModConfigBase {
   defaultExpanded?: boolean;
 
   /**
+   * Whether the "toggle all" button can appear in this section.
+   * Note that this button will only appear if all the children
+   * of this section are checkboxes.
+   */
+  allowToggleAll?: Binding<boolean>;
+
+  /**
    * The fields or sections that are contained within this section.
    */
   children?: readonly ModConfigFieldOrSection[];

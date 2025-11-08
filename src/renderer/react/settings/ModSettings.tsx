@@ -3,6 +3,7 @@ import type {
   ModConfigFieldOrSection,
   ModConfigSection,
 } from 'bridge/ModConfig';
+import { ModSettingsContextProvider } from 'renderer/react/settings/ModSettingsContext';
 import ModSettingsSection from 'renderer/react/settings/ModSettingsSection';
 import { Close } from '@mui/icons-material';
 import { Box, Divider, FormGroup, IconButton, Typography } from '@mui/material';
@@ -23,60 +24,72 @@ export default function ModSettings({
   }
 
   return (
-    <FormGroup sx={{ minWidth: 360 }}>
-      <Box
-        sx={{
-          paddingLeft: 2,
-          paddingRight: 2,
-          paddingTop: 1,
-          paddingBottom: 1,
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        <Typography color="text.secondary" variant="h6">
-          {mod.info.name}
-        </Typography>
-        <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
-        <IconButton color="default" onClick={onClose}>
-          <Close />
-        </IconButton>
-      </Box>
-      {mod.info.config[0]?.type === 'section' ? <Divider /> : null}
-      {
-        // convert legacy "flat" sections into modern nested sections
-        mod.info.config
-          .reduce((agg: ModConfigSection[], field: ModConfigFieldOrSection) => {
-            // handle top level fields outside and above of any section
-            // by appending them to a generic default section
-            if (agg.length === 0 && field.type !== 'section') {
-              return [
-                {
-                  id: 'default-section',
-                  type: 'section',
-                  name: '',
-                  children: [field],
-                } as ModConfigSection,
-              ];
-            }
-            // handle top level fields outside of any section
-            // by appending them to the preceding section
-            if (field.type !== 'section') {
-              return [
-                ...agg.slice(0, -1),
-                {
-                  ...agg[agg.length - 1],
-                  children: [...(agg[agg.length - 1].children ?? []), field],
-                },
-              ];
-            }
-            // the rest should be sections
-            return [...agg, field];
-          }, [])
-          .map((section) => (
-            <ModSettingsSection key={section.id} mod={mod} section={section} />
-          ))
-      }
-    </FormGroup>
+    <ModSettingsContextProvider>
+      <FormGroup sx={{ minWidth: 360 }}>
+        <Box
+          sx={{
+            paddingLeft: 2,
+            paddingRight: 2,
+            paddingTop: 1,
+            paddingBottom: 1,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <Typography color="text.secondary" variant="h6">
+            {mod.info.name}
+          </Typography>
+          <Box sx={{ flexGrow: 1, flexShrink: 1 }} />
+          <IconButton color="default" onClick={onClose}>
+            <Close />
+          </IconButton>
+        </Box>
+        {mod.info.config[0]?.type === 'section' ? <Divider /> : null}
+        {
+          // convert legacy "flat" sections into modern nested sections
+          mod.info.config
+            .reduce(
+              (agg: ModConfigSection[], field: ModConfigFieldOrSection) => {
+                // handle top level fields outside and above of any section
+                // by appending them to a generic default section
+                if (agg.length === 0 && field.type !== 'section') {
+                  return [
+                    {
+                      id: 'default-section',
+                      type: 'section',
+                      name: '',
+                      children: [field],
+                    } as ModConfigSection,
+                  ];
+                }
+                // handle top level fields outside of any section
+                // by appending them to the preceding section
+                if (field.type !== 'section') {
+                  return [
+                    ...agg.slice(0, -1),
+                    {
+                      ...agg[agg.length - 1],
+                      children: [
+                        ...(agg[agg.length - 1].children ?? []),
+                        field,
+                      ],
+                    },
+                  ];
+                }
+                // the rest should be sections
+                return [...agg, field];
+              },
+              [],
+            )
+            .map((section) => (
+              <ModSettingsSection
+                key={section.id}
+                mod={mod}
+                section={section}
+              />
+            ))
+        }
+      </FormGroup>
+    </ModSettingsContextProvider>
   );
 }

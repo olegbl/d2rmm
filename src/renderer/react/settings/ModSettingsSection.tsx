@@ -6,6 +6,7 @@ import type {
 } from 'bridge/ModConfig';
 import { parseBinding } from 'renderer/react/BindingsParser';
 import { useSetModConfig } from 'renderer/react/context/ModsContext';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import ModSettingsField from 'renderer/react/settings/ModSettingsField';
 import { MouseEvent, useCallback } from 'react';
 import {
@@ -72,6 +73,7 @@ export default function ModSettingsSection({
   section,
   mod,
 }: Props): JSX.Element | null {
+  const { expandedSections, setExpandedSections } = useModSettingsContext();
   const setModConfig = useSetModConfig();
 
   const descendants = getRecursiveFieldDescendants(section);
@@ -102,7 +104,15 @@ export default function ModSettingsSection({
 
   const isShown =
     section.visible == null ||
-    parseBinding<boolean>(section.visible, mod.config);
+    parseBinding<boolean>(section.visible, mod.config, expandedSections);
+
+  const isExpanded = expandedSections[section.id] ?? false;
+
+  const setIsExpanded = useCallback(
+    (isExpanded: boolean) =>
+      setExpandedSections((value) => ({ ...value, [section.id]: isExpanded })),
+    [section.id, setExpandedSections],
+  );
 
   const areAllDescendantsCheckboxes =
     descendants.length > 0 &&
@@ -144,6 +154,8 @@ export default function ModSettingsSection({
       defaultExpanded={section.defaultExpanded ?? true}
       disableGutters={true}
       elevation={0}
+      expanded={isExpanded}
+      onChange={(_event, isExpanded) => setIsExpanded(isExpanded)}
       square={true}
     >
       {section.name === '' ? null : (

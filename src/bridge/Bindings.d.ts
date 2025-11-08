@@ -13,7 +13,7 @@ import { ModConfigSingleValue } from './ModConfigValue';
 export type BindingLiteralValue<T> = T;
 
 /**
- * Returns the value of a configuration field.
+ * Returns the value of the configuration field whose id matches the first parameter (`string`).
  * @example
  * ```
  * {
@@ -29,6 +29,21 @@ export type BindingConfigValue<_T extends ModConfigSingleValue> = [
   operator: 'value',
   id: string,
 ];
+
+/**
+ * Returns whether the configuration section whose id matches the first parameter (`string`) is currently expanded.
+ * @example
+ * ```
+ * {
+ *   "id": "MyConfigSection",
+ *   "type": "section",
+ * },
+ * {
+ *   // ...
+ *   "visible": ["expanded", "MyConfigSection"],
+ * },
+ */
+export type BindingSectionExpanded = [operator: 'expanded', id: string];
 
 /**
  * If the first parameter (`boolean`) is true, returns the second parameter (`T`), otherwise returns the third parameter (`T`).

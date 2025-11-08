@@ -2,6 +2,7 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldSelect } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
 import { parseBinding } from 'renderer/react/BindingsParser';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import { useCallback } from 'react';
 import { Box, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 
@@ -16,12 +17,15 @@ export default function ModSettingsSelectField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const { expandedSections } = useModSettingsContext();
+
   const overrideValue =
     field.overrideValue == null
       ? null
       : parseBinding<ModConfigSingleValue | null>(
           field.overrideValue,
           mod.config,
+          expandedSections,
         ) ?? null;
 
   const value = mod.config[field.id] as string;

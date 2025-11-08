@@ -2,6 +2,7 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldCheckbox } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
 import { parseBinding } from 'renderer/react/BindingsParser';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import { useCallback } from 'react';
 import { FormControlLabel, Switch } from '@mui/material';
 
@@ -16,10 +17,16 @@ export default function ModSettingsCheckboxField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const { expandedSections } = useModSettingsContext();
+
   const overrideValue =
     field.overrideValue == null
       ? null
-      : parseBinding<boolean | null>(field.overrideValue, mod.config) ?? null;
+      : parseBinding<boolean | null>(
+          field.overrideValue,
+          mod.config,
+          expandedSections,
+        ) ?? null;
 
   const value = Boolean(mod.config[field.id]);
 

@@ -2,6 +2,7 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldColor } from 'bridge/ModConfig';
 import type { ModConfigSingleValue } from 'bridge/ModConfigValue';
 import { parseBinding } from 'renderer/react/BindingsParser';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import debounce from 'renderer/utils/debounce';
 import { MuiColorInput, MuiColorInputColors } from 'mui-color-input';
 import { useCallback, useMemo, useState, useTransition } from 'react';
@@ -45,6 +46,8 @@ export default function ModSettingsColorSelectorField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const { expandedSections } = useModSettingsContext();
+
   const [_isTransitioning, startTransition] = useTransition();
 
   const overrideValue =
@@ -53,6 +56,7 @@ export default function ModSettingsColorSelectorField({
       : parseBinding<[number, number, number, number] | null>(
           field.overrideValue,
           mod.config,
+          expandedSections,
         ) ?? null;
 
   const [value, setValue] = useState(() =>

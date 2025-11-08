@@ -2,6 +2,7 @@ import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldNumber } from 'bridge/ModConfig';
 import { parseBinding } from 'renderer/react/BindingsParser';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { TextField } from '@mui/material';
 
@@ -18,10 +19,16 @@ export default function ModSettingsNumberField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const { expandedSections } = useModSettingsContext();
+
   const overrideValue =
     field.overrideValue == null
       ? null
-      : parseBinding<number | null>(field.overrideValue, mod.config) ?? null;
+      : parseBinding<number | null>(
+          field.overrideValue,
+          mod.config,
+          expandedSections,
+        ) ?? null;
 
   const value = mod.config[field.id] as number;
 

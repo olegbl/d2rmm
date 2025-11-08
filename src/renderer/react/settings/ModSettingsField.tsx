@@ -5,6 +5,7 @@ import { parseBinding } from 'renderer/react/BindingsParser';
 import { useSetModConfig } from 'renderer/react/context/ModsContext';
 import ModSettingsCheckboxField from 'renderer/react/settings/ModSettingsCheckboxField';
 import ModSettingsColorSelectorField from 'renderer/react/settings/ModSettingsColorSelectorField';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import ModSettingsNumberField from 'renderer/react/settings/ModSettingsNumberField';
 import ModSettingsSelectField from 'renderer/react/settings/ModSettingsSelectField';
 import ModSettingsTextField from 'renderer/react/settings/ModSettingsTextField';
@@ -21,12 +22,15 @@ export default function ModSettingsField({
   field,
   mod,
 }: Props): JSX.Element | null {
+  const { expandedSections } = useModSettingsContext();
+
   const overrideValue =
     field.overrideValue == null
       ? null
       : parseBinding<ModConfigSingleValue | null>(
           field.overrideValue,
           mod.config,
+          expandedSections,
         ) ?? null;
 
   const setModConfig = useSetModConfig();
@@ -43,7 +47,8 @@ export default function ModSettingsField({
   }, [field, onChangeConfig]);
 
   const isShown =
-    field.visible == null || parseBinding<boolean>(field.visible, mod.config);
+    field.visible == null ||
+    parseBinding<boolean>(field.visible, mod.config, expandedSections);
 
   let result = null;
 

@@ -1,9 +1,11 @@
 import { Binding } from 'bridge/Bindings';
 import { ModConfigSingleValue, ModConfigValue } from 'bridge/ModConfigValue';
+import { IModSettingsExpandedSections } from 'renderer/react/settings/ModSettingsContext';
 
 export function parseBinding<T extends ModConfigSingleValue>(
   value: Binding<T>,
   config: ModConfigValue,
+  expandedSections: IModSettingsExpandedSections,
 ): T {
   if (
     Array.isArray(value) &&
@@ -16,74 +18,84 @@ export function parseBinding<T extends ModConfigSingleValue>(
         return config[value[1]] as T; // no way to validate correct type of JSON parsed data
       }
     }
+    if (op === 'expanded' && value.length === 2) {
+      if (typeof value[1] === 'string') {
+        return (expandedSections[value[1]] ?? false) as T;
+      }
+    }
     if (op === 'if' && value.length === 4) {
-      const condition = parseBinding(value[1], config);
+      const condition = parseBinding(value[1], config, expandedSections);
       if (typeof condition === 'boolean') {
         return parseBinding(
           (condition ? value[2] : value[3]) as Binding<T>,
           config,
+          expandedSections,
         );
       }
     }
     if (op === 'not' && value.length === 2) {
-      const arg1 = parseBinding(value[1], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
       if (typeof arg1 === 'boolean') {
         return !arg1 as T;
       }
     }
     if (op === 'and' && value.length === 3) {
-      const args = value.slice(1).map((arg) => parseBinding(arg, config));
+      const args = value
+        .slice(1)
+        .map((arg) => parseBinding(arg, config, expandedSections));
       if (args.every((arg) => typeof arg === 'boolean')) {
         return args.every((arg) => arg) as T;
       }
     }
     if (op === 'or' && value.length >= 3) {
-      const args = value.slice(1).map((arg) => parseBinding(arg, config));
+      const args = value
+        .slice(1)
+        .map((arg) => parseBinding(arg, config, expandedSections));
       if (args.every((arg) => typeof arg === 'boolean')) {
         return args.some((arg) => arg) as T;
       }
     }
     if (op === 'eq' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       return (arg1 === arg2) as T;
     }
     if (op === 'neq' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       return (arg1 !== arg2) as T;
     }
     if (op === 'lt' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 < arg2) as T;
       }
     }
     if (op === 'lte' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 <= arg2) as T;
       }
     }
     if (op === 'gt' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 > arg2) as T;
       }
     }
     if (op === 'gte' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       if (typeof arg1 === 'number' && typeof arg2 === 'number') {
         return (arg1 >= arg2) as T;
       }
     }
     if (op === 'in' && value.length === 3) {
-      const arg1 = parseBinding(value[1], config);
-      const arg2 = parseBinding(value[2], config);
+      const arg1 = parseBinding(value[1], config, expandedSections);
+      const arg2 = parseBinding(value[2], config, expandedSections);
       if (
         typeof arg1 === 'string' &&
         Array.isArray(arg2) &&

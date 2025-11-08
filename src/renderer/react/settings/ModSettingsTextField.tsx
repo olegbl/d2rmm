@@ -1,6 +1,7 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import type { ModConfigFieldText } from 'bridge/ModConfig';
 import { parseBinding } from 'renderer/react/BindingsParser';
+import { useModSettingsContext } from 'renderer/react/settings/ModSettingsContext';
 import { ChangeEvent, useCallback } from 'react';
 import { TextField } from '@mui/material';
 
@@ -15,10 +16,16 @@ export default function ModSettingsTextField({
   mod,
   onChange: onChangeFromProps,
 }: Props): JSX.Element {
+  const { expandedSections } = useModSettingsContext();
+
   const overrideValue =
     field.overrideValue == null
       ? null
-      : parseBinding<string | null>(field.overrideValue, mod.config) ?? null;
+      : parseBinding<string | null>(
+          field.overrideValue,
+          mod.config,
+          expandedSections,
+        ) ?? null;
 
   const value = mod.config[field.id] as string;
 

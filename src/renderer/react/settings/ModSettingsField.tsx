@@ -11,7 +11,7 @@ import ModSettingsSelectField from 'renderer/react/settings/ModSettingsSelectFie
 import ModSettingsTextField from 'renderer/react/settings/ModSettingsTextField';
 import { useCallback } from 'react';
 import { Help, Refresh } from '@mui/icons-material';
-import { Box, FormLabel, IconButton, Tooltip } from '@mui/material';
+import { Box, FormLabel, IconButton, Tooltip, Typography } from '@mui/material';
 
 type Props = {
   field: ModConfigField;
@@ -101,34 +101,27 @@ export default function ModSettingsField({
           alignItems: 'center',
           display: 'flex',
           justifyContent: 'space-between',
-          paddingBottom: 1,
-          paddingTop: 1,
+          marginTop: 1,
+          height: 32,
         }}
       >
-        <FormLabel component="legend">{field.name}</FormLabel>
-        <Box
-          sx={{
-            alignItems: 'center',
-            display: 'flex',
-            marginTop: -1,
-            marginBottom: -1,
-          }}
-        >
-          {JSON.stringify(mod.config[field.id]) ===
-            JSON.stringify(field.defaultValue) ||
-          overrideValue != null ? null : (
-            <Tooltip title="Revert to Default">
-              <IconButton onClick={onReset} size="small">
-                <Refresh />
-              </IconButton>
-            </Tooltip>
-          )}
-          {field.description == null ? null : (
-            <Tooltip title={field.description}>
-              <Help color="action" fontSize="small" />
-            </Tooltip>
-          )}
-        </Box>
+        <FormLabel component="legend">
+          <Typography>{field.name}</Typography>
+        </FormLabel>
+        {field.description == null ? null : (
+          <Tooltip title={field.description}>
+            <Help color="disabled" fontSize="small" sx={{ marginLeft: 1 }} />
+          </Tooltip>
+        )}
+        <Box sx={{ flex: '1 1 0' }} />
+        {JSON.stringify(mod.config[field.id]) ===
+          JSON.stringify(field.defaultValue) || overrideValue != null ? null : (
+          <Tooltip title="Revert to Default">
+            <IconButton onClick={onReset} size="small">
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
       {result}
     </>

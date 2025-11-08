@@ -201,7 +201,7 @@ export default function ModSettingsSection({
               display: 'flex',
               alignItems: 'center',
               flexDirection: 'row',
-              flex: 0,
+              flex: '0 0 auto',
               height: 24,
             }}
           >
@@ -220,14 +220,33 @@ export default function ModSettingsSection({
               </IconButton>
             )}
           </Box>
-          <Typography>{section.name}</Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'row',
+              flex: '0 0 auto',
+              height: 24,
+            }}
+          >
+            <Typography>{section.name}</Typography>
+            {section.description == null ? null : (
+              <Tooltip title={section.description}>
+                <Help
+                  color="disabled"
+                  fontSize="small"
+                  sx={{ marginLeft: 1 }}
+                />
+              </Tooltip>
+            )}
+          </Box>
           <Box sx={{ flex: 1 }} />
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               flexDirection: 'row',
-              flex: 0,
+              flex: '0 0 auto',
               height: 24,
             }}
           >
@@ -253,11 +272,6 @@ export default function ModSettingsSection({
                 </IconButton>
               </Tooltip>
             )}
-            {section.description == null ? null : (
-              <Tooltip title={section.description}>
-                <Help color="action" fontSize="small" />
-              </Tooltip>
-            )}
           </Box>
         </StyledAccordionSummary>
       )}
@@ -266,6 +280,8 @@ export default function ModSettingsSection({
         sx={{
           display: 'flex',
           flexDirection: 'column',
+          paddingTop: 0,
+          paddingBottom: 1,
         }}
       >
         {section.children?.reduce(

@@ -152,6 +152,30 @@ export default function ModSettingsSection({
     [setModConfig, mod.id, mod.config, descendants, areAllDescendantsChecked],
   );
 
+  const overrideValue =
+    section.overrideValue == null
+      ? null
+      : parseBinding<boolean | null>(
+          section.overrideValue,
+          mod.config,
+          expandedSections,
+        ) ?? null;
+
+  const value =
+    mod.config[section.id] == null ? null : Boolean(mod.config[section.id]);
+
+  const onToggleValue = useCallback(
+    (event: MouseEvent<HTMLButtonElement>): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      setModConfig(mod.id, (oldConfig) => ({
+        ...oldConfig,
+        [section.id]: !(oldConfig[section.id] ?? false),
+      }));
+    },
+    [mod.id, section.id, setModConfig],
+  );
+
   if (!isShown) {
     return null;
   }
@@ -172,6 +196,30 @@ export default function ModSettingsSection({
           expandIcon={<ExpandMoreIcon />}
           id="general-header"
         >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'row',
+              flex: 0,
+              height: 24,
+            }}
+          >
+            {value == null ? null : (
+              <IconButton
+                disabled={overrideValue != null}
+                onClick={onToggleValue}
+                size="small"
+                sx={{ marginRight: 1 }}
+              >
+                {overrideValue ?? value ? (
+                  <CheckBox />
+                ) : (
+                  <CheckBoxOutlineBlank />
+                )}
+              </IconButton>
+            )}
+          </Box>
           <Typography>{section.name}</Typography>
           <Box sx={{ flex: 1 }} />
           <Box

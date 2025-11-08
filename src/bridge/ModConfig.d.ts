@@ -116,6 +116,21 @@ export interface ModConfigSection extends ModConfigBase {
    * The fields or sections that are contained within this section.
    */
   children?: readonly ModConfigFieldOrSection[];
+
+  /**
+   * If this value is anything other than `null`, the section will have a
+   * checkbox on the left hand side that will set this section's `value`
+   * the same way as it would work for a checkbox field.
+   */
+  defaultValue?: null | boolean;
+
+  /**
+   * The override value of the section field.
+   * If this value is anything other than `null`, it will override the current value.
+   * If the value is overridden, it will also be read only.
+   * This needs to be used in unison with `defaultValue`.
+   */
+  overrideValue?: Binding<null | boolean>;
 }
 
 /**

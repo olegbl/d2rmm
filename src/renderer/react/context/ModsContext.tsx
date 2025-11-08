@@ -122,11 +122,10 @@ function getDefaultConfig(
   }
   const defaultConfig: Mutable<ModConfigValue> = {};
   for (const field of fields) {
+    defaultConfig[field.id] =
+      field.defaultValue as unknown as ModConfigSingleValue;
     if (field.type === 'section') {
       Object.assign(defaultConfig, getDefaultConfig(field.children));
-    } else {
-      defaultConfig[field.id] =
-        field.defaultValue as unknown as ModConfigSingleValue;
     }
   }
   return defaultConfig;

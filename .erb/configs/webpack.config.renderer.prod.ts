@@ -3,7 +3,7 @@
  */
 import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 import DtsBundleWebpack from 'dts-bundle-webpack';
-import { writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
@@ -42,6 +42,7 @@ class GenerateJsonSchemaPlugin {
         noExtraProps: true,
         aliasRef: true,
       });
+      mkdirSync(path.dirname(outFile));
       writeFileSync(outFile, JSON.stringify(schema, null, 2));
     });
   }

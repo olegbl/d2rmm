@@ -35,12 +35,13 @@ if (config.isBarEnabled) {
 
 ## Configuration
 
-The configuration file of any D2RMM mod (`mod.json`) follows the format defined by [`ModConfig`](interfaces/ModConfig.ModConfig.html).
+The configuration file of any D2RMM mod (`mod.json`) follows the format defined by [`ModConfig`](interfaces/ModConfig.ModConfig.html). You can include a "$schema" field to have your IDE validate your schema for you using the include "config.json" file.
 
 ### Example `mod.json`:
 
 ```
 {
+  "$schema": "../config-schema.json",
   "name": "My New Mod",
   "description": "Best mod ever. Does great things! This is a terrible description.",
   "author": "myname",

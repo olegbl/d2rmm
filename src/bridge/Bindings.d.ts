@@ -10,7 +10,7 @@ import { ModConfigSingleValue } from './ModConfigValue';
  * },
  * ```
  */
-export type BindingLiteralValue<T> = T;
+export type BindingLiteralValue<T extends ModConfigSingleValue> = T;
 
 /**
  * Returns the value of the configuration field whose id matches the first parameter (`string`).
@@ -61,7 +61,7 @@ export type BindingSectionExpanded = [operator: 'expanded', id: string];
  * },
  * ```
  */
-export type BindingConditional<T> = [
+export type BindingConditional<T extends ModConfigSingleValue> = [
   operator: 'if',
   condition: Binding<boolean>,
   thenBinding: Binding<T>,
@@ -138,7 +138,7 @@ export type BindingOr = [operator: 'or', ...bindings: Binding<boolean>[]];
  * },
  * ```
  */
-export type BindingEquals<T> = [
+export type BindingEquals<T extends ModConfigSingleValue> = [
   operator: 'eq',
   binding1: Binding<T>,
   binding2: Binding<T>,
@@ -158,7 +158,7 @@ export type BindingEquals<T> = [
  * },
  * ```
  */
-export type BindingNotEquals<T> = [
+export type BindingNotEquals<T extends ModConfigSingleValue> = [
   operator: 'neq',
   binding1: Binding<T>,
   binding2: Binding<T>,
@@ -258,7 +258,7 @@ export type BindingGreaterThanOrEqual = [
  * },
  * ```
  */
-export type BindingIncludes<T> = [
+export type BindingIncludes<T extends ModConfigSingleValue> = [
   operator: 'in',
   binding1: Binding<T>,
   binding2: T extends string
@@ -269,28 +269,37 @@ export type BindingIncludes<T> = [
 ];
 
 /**
+ * A binding that can be dynamically evaluated to a `null` value.
+ */
+type NullBinding<T extends null = null> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingConditional<T>;
+
+/**
  * A binding that can be dynamically evaluated to a `string` value.
  */
-type StringBinding =
-  | BindingLiteralValue<string>
-  | BindingConfigValue<string>
-  | BindingConditional<boolean>;
+type StringBinding<T extends null | string = string> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingConditional<T>;
 
 /**
  * A binding that can be dynamically evaluated to a `number` value.
  */
-type NumberBinding =
-  | BindingLiteralValue<number>
-  | BindingConfigValue<number>
-  | BindingConditional<boolean>;
+type NumberBinding<T extends null | number = number> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingConditional<T>;
 
 /**
  * A binding that can be dynamically evaluated to a `boolean` value.
  */
-type BooleanBinding =
-  | BindingLiteralValue<boolean>
-  | BindingConfigValue<boolean>
-  | BindingConditional<boolean>
+type BooleanBinding<T extends null | boolean = boolean> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingSectionExpanded
+  | BindingConditional<T>
   | BindingNot
   | BindingAnd
   | BindingOr
@@ -310,18 +319,18 @@ type BooleanBinding =
 /**
  * A binding that can be dynamically evaluated to a `string[]` value.
  */
-type StringArrayBinding =
-  | BindingLiteralValue<string[]>
-  | BindingConfigValue<string[]>
-  | BindingConditional<boolean>;
+type StringArrayBinding<T extends null | string[] = string[]> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingConditional<T>;
 
 /**
  * A binding that can be dynamically evaluated to a `number[]` value.
  */
-type NumberArrayBinding =
-  | BindingLiteralValue<number[]>
-  | BindingConfigValue<number[]>
-  | BindingConditional<boolean>;
+type NumberArrayBinding<T extends null | number[] = number[]> =
+  | BindingLiteralValue<T>
+  | BindingConfigValue<T>
+  | BindingConditional<T>;
 
 /**
  * A binding that can be dynamically evaluated to a value.
@@ -337,16 +346,30 @@ type NumberArrayBinding =
  * },
  * ```
  */
-export type Binding<T> =
+export type Binding<T extends ModConfigSingleValue> =
   // check type of T and return appropriate Binding type
-  T extends string
-    ? StringBinding
-    : T extends number
-      ? NumberBinding
-      : T extends boolean
-        ? BooleanBinding
-        : T extends string[]
-          ? StringArrayBinding
-          : T extends number[]
-            ? NumberArrayBinding
-            : BindingLiteralValue<T>;
+  T extends null
+    ? NullBinding
+    : T extends string | null
+      ? StringBinding<string | null>
+      : T extends string
+        ? StringBinding
+        : T extends number | null
+          ? NumberBinding<number | null>
+          : T extends number
+            ? NumberBinding
+            : T extends boolean | null
+              ? BooleanBinding<boolean | null>
+              : T extends boolean
+                ? BooleanBinding
+                : T extends string[] | null
+                  ? StringArrayBinding<string[] | null>
+                  : T extends string[]
+                    ? StringArrayBinding
+                    : T extends number[] | null
+                      ? NumberArrayBinding<number[] | null>
+                      : T extends number[]
+                        ? NumberArrayBinding
+                        : never;
+
+type Foo = Binding<null | boolean>;

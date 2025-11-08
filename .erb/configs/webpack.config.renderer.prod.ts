@@ -1,20 +1,51 @@
 /**
  * Build config for electron renderer process
  */
-
+import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
 import DtsBundleWebpack from 'dts-bundle-webpack';
-import path from 'path';
-import webpack from 'webpack';
+import { writeFileSync } from 'fs';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
-import CssMinimizerPlugin from 'css-minimizer-webpack-plugin';
-import { merge } from 'webpack-merge';
+import path from 'path';
 import TerserPlugin from 'terser-webpack-plugin';
-import baseConfig from './webpack.config.base';
-import webpackPaths from './webpack.paths';
+import * as TJS from 'typescript-json-schema';
+import webpack from 'webpack';
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+import { merge } from 'webpack-merge';
 import checkNodeEnv from '../scripts/check-node-env';
 import deleteSourceMaps from '../scripts/delete-source-maps';
+import baseConfig from './webpack.config.base';
+import webpackPaths from './webpack.paths';
+
+class GenerateJsonSchemaPlugin {
+  constructor(
+    private options: {
+      inFile: string;
+      outFile: string;
+      type: string;
+      workingDirectory: string;
+    },
+  ) {}
+
+  apply(compiler: any) {
+    compiler.hooks.beforeCompile.tap('GenerateJsonSchemaPlugin', () => {
+      const { inFile, outFile, type, workingDirectory } = this.options;
+      const program = TJS.getProgramFromFiles(
+        [inFile],
+        {
+          strictNullChecks: true,
+        },
+        workingDirectory,
+      );
+      const schema = TJS.generateSchema(program, type, {
+        required: true,
+        noExtraProps: true,
+        aliasRef: true,
+      });
+      writeFileSync(outFile, JSON.stringify(schema, null, 2));
+    });
+  }
+}
 
 checkNodeEnv('production');
 deleteSourceMaps();
@@ -135,6 +166,17 @@ const configuration: webpack.Configuration = {
       baseDir: path.join(webpackPaths.releasePath, 'build'),
       verbose: false,
       externals: true,
+    }),
+
+    new GenerateJsonSchemaPlugin({
+      inFile: path.join(webpackPaths.srcPath, 'bridge/ModConfig.d.ts'),
+      outFile: path.join(
+        webpackPaths.releasePath,
+        'build',
+        'config-schema.json',
+      ),
+      type: 'ModConfig',
+      workingDirectory: path.resolve(webpackPaths.rootPath),
     }),
   ],
 };

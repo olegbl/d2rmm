@@ -9,6 +9,7 @@
     "build:updater": "concurrently \"npm run build:updater:win\" \"npm run build:updater:mac\"",
     "build:updater:win": "pkg -t node16-win-x64 -o tools/updater.exe src/updater/main.js",
     "build:updater:mac": "pkg -t node16-macos-x64 -o tools/updater src/updater/main.js",
+    "build:config-schema": "npx typescript-json-schema --strictNullChecks --require --noExtraProps --aliasRefs --out \"mods/config-schema.json\" \"src/bridge/ModConfig.d.ts\" \"ModConfig\"",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "lint": "cross-env NODE_ENV=development eslint ./src/ --ext .js,.jsx,.ts,.tsx --cache --cache-strategy metadata",
     "package": "ts-node ./.erb/scripts/clean.js dist && npm run build --no-warnings && electron-builder build --publish never",

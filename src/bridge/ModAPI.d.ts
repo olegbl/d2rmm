@@ -35,6 +35,7 @@ export interface ModAPI {
    * const version = D2RMM.getVersion(); // 1.5
    * ```
    * @returns The version including the major and the minor number.
+   * @since D2RMM v1.4.0
    */
   getVersion: () => number;
 
@@ -46,6 +47,7 @@ export interface ModAPI {
    * const [major, minor, patch] = D2RMM.getFullVersion();
    * ```
    * @returns The version including the major, minor, and patch numbers.
+   * @since D2RMM v1.7.0
    */
   getFullVersion: () => [number, number, number];
 
@@ -64,6 +66,7 @@ export interface ModAPI {
    * });
    * ```
    * @returns The list of installed mods.
+   * @since D2RMM v1.7.0
    */
   getModList: () => {
     id: Mod['id'];
@@ -87,6 +90,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The parsed JSON data.
+   * @since D2RMM v1.0.0
    */
   readJson: (filePath: string) => JSONData;
 
@@ -101,6 +105,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The JSON data to write.
+   * @since D2RMM v1.0.0
    */
   writeJson: (filePath: string, data: JSONData) => void;
 
@@ -117,6 +122,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The parsed TSV data.
+   * @since D2RMM v1.0.0
    */
   readTsv: (filePath: string) => TSVData;
 
@@ -135,6 +141,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The TSV data to write.
+   * @since D2RMM v1.0.0
    */
   writeTsv: (filePath: string, data: TSVData) => void;
 
@@ -149,6 +156,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to read, relative to the data directory.
    * @returns The raw text data.
+   * @since D2RMM v1.4.0
    */
   readTxt: (filePath: string) => string;
 
@@ -164,6 +172,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The raw text data to write.
+   * @since D2RMM v1.4.0
    */
   writeTxt: (filePath: string, data: string) => void;
 
@@ -176,6 +185,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the save file to read, relative to the saves directory.
    * @returns The binary data of the save file.
+   * @since D2RMM v1.7.0
    */
   readSaveFile: (filePath: string) => number[] | null;
 
@@ -190,6 +200,7 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the save file to write, relative to the saves directory.
    * @param data - The binary data of the save file to write as an array of bytes.
+   * @since D2RMM v1.7.0
    */
   writeSaveFile: (filePath: string, data: number[]) => void;
 
@@ -212,6 +223,7 @@ export interface ModAPI {
    *   true // overwrite any conflicts
    * );
    * ```
+   * @since D2RMM v1.0.0
    */
   copyFile: (src: string, dst: string, overwrite?: boolean) => void;
 
@@ -219,6 +231,7 @@ export interface ModAPI {
    * Produces the next valid string ID to use as an identifier in D2R's data files.
    * The ID is read from `next_string_id.txt`, and then incremented within that file.
    * @returns The next valid string ID.
+   * @since D2RMM v1.4.0
    */
   getNextStringID: () => number;
 
@@ -231,6 +244,7 @@ export interface ModAPI {
    * D2RMM.error('Something went wrong!');
    * D2RMM.error(new Error('Something went wrong!'));
    * ```
+   * @since D2RMM v1.0.0
    */
   error: (message: string | Error) => void;
 }

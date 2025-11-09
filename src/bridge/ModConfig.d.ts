@@ -3,10 +3,14 @@ import { ModConfigSingleValue } from './ModConfigValue';
 
 /**
  * The structure of the "mod.json" file that D2RMM mods should provide.
+ *
+ * @since D2RMM v1.0.0
  */
 export interface ModConfig {
   /**
    * The JSON schema used to validate the file.
+   *
+   * @since D2RMM v1.8.0
    */
   ['$schema']?: string;
 
@@ -18,38 +22,51 @@ export interface ModConfig {
 
   /**
    * The name of the mod.
+   *
+   * @since D2RMM v1.0.0
    */
   name: string;
 
   /**
    * A short description of the mod.
+   *
+   * @since D2RMM v1.0.0
    */
   description?: string;
 
   /**
    * The author of the mod.
+   *
+   * @since D2RMM v1.0.0
    */
   author?: string;
 
   /**
    * The website of the mod. Ideally, this should link to the Nexus Mods page for the mod.
+   *
+   * @since D2RMM v1.0.0
    */
   website?: string;
 
   /**
    * The version of the mod.
+   *
+   * @since D2RMM v1.0.0
    */
   version?: string;
 
   /**
    * The configuration for the mod. This allows the mod to set up a custom configuration UI
    * that the user can interact with to customize the behavior of the mod.
-   *  @see {@link ModConfigSection}
-   *  @see {@link ModConfigFieldCheckbox}
-   *  @see {@link ModConfigFieldColor}
-   *  @see {@link ModConfigFieldNumber}
-   *  @see {@link ModConfigFieldSelect}
-   *  @see {@link ModConfigFieldText}
+   *
+   * @see {@link ModConfigSection}
+   * @see {@link ModConfigFieldCheckbox}
+   * @see {@link ModConfigFieldNumber}
+   * @see {@link ModConfigFieldText}
+   * @see {@link ModConfigFieldSelect}
+   * @see {@link ModConfigFieldColor}
+   *
+   * @since D2RMM v1.0.0
    */
   config?: readonly ModConfigFieldOrSection[];
 }
@@ -78,30 +95,42 @@ export interface ModConfigBase {
 
 /**
  * A section in the configuration UI that can contain other fields or sections.
+ *
+ * @since D2RMM v1.6.0
  */
 export interface ModConfigSection extends ModConfigBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.6.0
    */
   type: 'section';
 
   /**
    * The name of the section.
+   *
+   * @since D2RMM v1.6.0
    */
   name: string;
 
   /**
    * The description for the section that appears in a help tooltip.
+   *
+   * @since D2RMM v1.8.0
    */
   description?: string;
 
   /**
    * Determines if the section is visible or not.
+   *
+   * @since D2RMM v1.8.0
    */
   visible?: Binding<boolean>;
 
   /**
    * Whether the section should be expanded by default.
+   *
+   * @since D2RMM v1.6.0
    */
   defaultExpanded?: boolean;
 
@@ -109,11 +138,15 @@ export interface ModConfigSection extends ModConfigBase {
    * Whether the "toggle all" button can appear in this section.
    * Note that this button will only appear if all the children
    * of this section are checkboxes.
+   *
+   * @since D2RMM v1.8.0
    */
   allowToggleAll?: Binding<boolean>;
 
   /**
    * The fields or sections that are contained within this section.
+   *
+   * @since D2RMM v1.6.0
    */
   children?: readonly ModConfigFieldOrSection[];
 
@@ -121,6 +154,8 @@ export interface ModConfigSection extends ModConfigBase {
    * If this value is anything other than `null`, the section will have a
    * checkbox on the left hand side that will set this section's `value`
    * the same way as it would work for a checkbox field.
+   *
+   * @since D2RMM v1.8.0
    */
   defaultValue?: null | boolean;
 
@@ -129,6 +164,8 @@ export interface ModConfigSection extends ModConfigBase {
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
    * This needs to be used in unison with `defaultValue`.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | boolean>;
 }
@@ -140,16 +177,22 @@ export interface ModConfigSection extends ModConfigBase {
 export interface ModConfigFieldBase extends ModConfigBase {
   /**
    * The name of the field.
+   *
+   * @since D2RMM v1.0.0
    */
   name: string;
 
   /**
    * The description for the field that appears in a help tooltip.
+   *
+   * @since D2RMM v1.0.0
    */
   description?: string;
 
   /**
    * Determines if the field is visible or not.
+   *
+   * @since D2RMM v1.8.0
    */
   visible?: Binding<boolean>;
 }
@@ -157,15 +200,21 @@ export interface ModConfigFieldBase extends ModConfigBase {
 /**
  * Represents a boolean (true/false) configuration field that will be represented
  * as a checkbox or toggle element in the configuration UI.
+ *
+ * @since D2RMM v1.0.0
  */
 export interface ModConfigFieldCheckbox extends ModConfigFieldBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.0.0
    */
   type: 'checkbox';
 
   /**
    * The default value of the checkbox field.
+   *
+   * @since D2RMM v1.0.0
    */
   defaultValue: boolean;
 
@@ -173,6 +222,8 @@ export interface ModConfigFieldCheckbox extends ModConfigFieldBase {
    * The override value of the checkbox field.
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | boolean>;
 }
@@ -180,25 +231,35 @@ export interface ModConfigFieldCheckbox extends ModConfigFieldBase {
 /**
  * Represents a number configuration field that will be represented as a number
  * input in the configuration UI.
+ *
+ * @since D2RMM v1.0.0
  */
 export interface ModConfigFieldNumber extends ModConfigFieldBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.0.0
    */
   type: 'number';
 
   /**
    * The default value of the number field.
+   *
+   * @since D2RMM v1.0.0
    */
   defaultValue: number;
 
   /**
    * The minimum value that the user can input.
+   *
+   * @since D2RMM v1.0.0
    */
   minValue?: number;
 
   /**
    * The maximum value that the user can input.
+   *
+   * @since D2RMM v1.0.0
    */
   maxValue?: number;
 
@@ -206,6 +267,8 @@ export interface ModConfigFieldNumber extends ModConfigFieldBase {
    * The override value of the number field.
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | number>;
 }
@@ -213,15 +276,21 @@ export interface ModConfigFieldNumber extends ModConfigFieldBase {
 /**
  * Represents a text configuration field that will be represented as a text input
  * in the configuration UI.
+ *
+ * @since D2RMM v1.4.0
  */
 export interface ModConfigFieldText extends ModConfigFieldBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.4.0
    */
   type: 'text';
 
   /**
    * The default value of the text field.
+   *
+   * @since D2RMM v1.4.0
    */
   defaultValue: string;
 
@@ -229,6 +298,8 @@ export interface ModConfigFieldText extends ModConfigFieldBase {
    * The override value of the text field.
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | string>;
 }
@@ -236,15 +307,21 @@ export interface ModConfigFieldText extends ModConfigFieldBase {
 /**
  * Represents a select configuration field that will be represented as a dropdown
  * select element in the configuration UI.
+ *
+ * @since D2RMM v1.3.0
  */
 export interface ModConfigFieldSelect extends ModConfigFieldBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.3.0
    */
   type: 'select';
 
   /**
    * The default value of the select field.
+   *
+   * @since D2RMM v1.3.0
    */
   defaultValue: ModConfigSingleValue;
 
@@ -252,25 +329,35 @@ export interface ModConfigFieldSelect extends ModConfigFieldBase {
    * The override value of the select field.
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | ModConfigSingleValue>;
 
   /**
    * The options that the user can select from.
+   *
+   * @since D2RMM v1.3.0
    */
   options: {
     /**
      * The description of the option that appears underneath the label in the dropdown.
+     *
+     * @since D2RMM v1.3.0
      */
     description?: string;
 
     /**
      * The label of the option that will be displayed in the dropdown.
+     *
+     * @since D2RMM v1.3.0
      */
     label: string;
 
     /**
      * The value of the option that will be used when the user selects it.
+     *
+     * @since D2RMM v1.3.0
      */
     value: ModConfigSingleValue;
   }[];
@@ -279,15 +366,21 @@ export interface ModConfigFieldSelect extends ModConfigFieldBase {
 /**
  * Represents a color configuration field that will be represented as a color picker
  * element in the configuration UI.
+ *
+ * @since D2RMM v1.6.0
  */
 export interface ModConfigFieldColor extends ModConfigFieldBase {
   /**
    * The type of the configuration element.
+   *
+   * @since D2RMM v1.6.0
    */
   type: 'color';
 
   /**
    * The default value of the color in RGBA format (`[0, 255]`, `[0, 255]`, `[0, 255]`, `[0.0, 1.0]`).
+   *
+   * @since D2RMM v1.6.0
    */
   defaultValue: [number, number, number, number];
 
@@ -295,11 +388,15 @@ export interface ModConfigFieldColor extends ModConfigFieldBase {
    * The override value of the color field.
    * If this value is anything other than `null`, it will override the current value.
    * If the value is overridden, it will also be read only.
+   *
+   * @since D2RMM v1.8.0
    */
   overrideValue?: Binding<null | [number, number, number, number]>;
 
   /**
    * Whether the alpha channel should be hidden in the color picker.
+   *
+   * @since D2RMM v1.6.0
    */
   isAlphaHidden?: boolean;
 }

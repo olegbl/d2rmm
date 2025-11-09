@@ -9,6 +9,8 @@ import { ModConfigSingleValue } from './ModConfigValue';
  *   "visible": true,
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingLiteralValue<T extends ModConfigSingleValue> = T;
 
@@ -24,6 +26,9 @@ export type BindingLiteralValue<T extends ModConfigSingleValue> = T;
  *   // ...
  *   "visible": ["value", "MyConfigField"],
  * },
+ * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingConfigValue<_T extends ModConfigSingleValue> = [
   operator: 'value',
@@ -42,6 +47,9 @@ export type BindingConfigValue<_T extends ModConfigSingleValue> = [
  *   // ...
  *   "visible": ["expanded", "MyConfigSection"],
  * },
+ * ```
+ *
+ * @since D2RMM v1.8.0
  */
 export type BindingSectionExpanded = [operator: 'expanded', id: string];
 
@@ -60,6 +68,8 @@ export type BindingSectionExpanded = [operator: 'expanded', id: string];
  *   "visible": ["if", ["value", "MyConfigField"], true, false],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingConditional<T extends ModConfigSingleValue> = [
   operator: 'if',
@@ -81,6 +91,8 @@ export type BindingConditional<T extends ModConfigSingleValue> = [
  *   "visible": ["not", ["value", "MyConfigField"]],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingNot = [operator: 'not', binding: Binding<boolean>];
 
@@ -101,6 +113,8 @@ export type BindingNot = [operator: 'not', binding: Binding<boolean>];
  *   "visible": ["and", ["value", "MyConfigField1"], ["value", "MyConfigField2"]],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingAnd = [operator: 'and', ...bindings: Binding<boolean>[]];
 
@@ -121,6 +135,8 @@ export type BindingAnd = [operator: 'and', ...bindings: Binding<boolean>[]];
  *   "visible": ["or", ["value", "MyConfigField1"], ["value", "MyConfigField2"]],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingOr = [operator: 'or', ...bindings: Binding<boolean>[]];
 
@@ -137,6 +153,8 @@ export type BindingOr = [operator: 'or', ...bindings: Binding<boolean>[]];
  *   "visible": ["eq", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingEquals<T extends ModConfigSingleValue> = [
   operator: 'eq',
@@ -157,6 +175,8 @@ export type BindingEquals<T extends ModConfigSingleValue> = [
  *   "visible": ["neq", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingNotEquals<T extends ModConfigSingleValue> = [
   operator: 'neq',
@@ -177,6 +197,8 @@ export type BindingNotEquals<T extends ModConfigSingleValue> = [
  *   "visible": ["lt", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingLessThan = [
   operator: 'lt',
@@ -197,6 +219,8 @@ export type BindingLessThan = [
  *   "visible": ["lte", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingLessThanOrEqual = [
   operator: 'lte',
@@ -217,6 +241,8 @@ export type BindingLessThanOrEqual = [
  *   "visible": ["gt", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingGreaterThan = [
   operator: 'gt',
@@ -237,6 +263,8 @@ export type BindingGreaterThan = [
  *   "visible": ["gte", ["value", "MyConfigField"], 123],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingGreaterThanOrEqual = [
   operator: 'gte',
@@ -257,6 +285,8 @@ export type BindingGreaterThanOrEqual = [
  *   "visible": ["in", "foo", ["value", "MyConfigField"]],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type BindingIncludes<T extends ModConfigSingleValue> = [
   operator: 'in',
@@ -270,6 +300,8 @@ export type BindingIncludes<T extends ModConfigSingleValue> = [
 
 /**
  * A binding that can be dynamically evaluated to a `null` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type NullBinding<T extends null = null> =
   | BindingLiteralValue<T>
@@ -278,6 +310,8 @@ type NullBinding<T extends null = null> =
 
 /**
  * A binding that can be dynamically evaluated to a `string` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type StringBinding<T extends null | string = string> =
   | BindingLiteralValue<T>
@@ -286,6 +320,8 @@ type StringBinding<T extends null | string = string> =
 
 /**
  * A binding that can be dynamically evaluated to a `number` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type NumberBinding<T extends null | number = number> =
   | BindingLiteralValue<T>
@@ -294,6 +330,8 @@ type NumberBinding<T extends null | number = number> =
 
 /**
  * A binding that can be dynamically evaluated to a `boolean` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type BooleanBinding<T extends null | boolean = boolean> =
   | BindingLiteralValue<T>
@@ -318,6 +356,8 @@ type BooleanBinding<T extends null | boolean = boolean> =
 
 /**
  * A binding that can be dynamically evaluated to a `string[]` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type StringArrayBinding<T extends null | string[] = string[]> =
   | BindingLiteralValue<T>
@@ -326,6 +366,8 @@ type StringArrayBinding<T extends null | string[] = string[]> =
 
 /**
  * A binding that can be dynamically evaluated to a `number[]` value.
+ *
+ * @since D2RMM v1.6.0
  */
 type NumberArrayBinding<T extends null | number[] = number[]> =
   | BindingLiteralValue<T>
@@ -345,6 +387,8 @@ type NumberArrayBinding<T extends null | number[] = number[]> =
  *   "visible": ["value", "MyConfigField"],
  * },
  * ```
+ *
+ * @since D2RMM v1.6.0
  */
 export type Binding<T extends ModConfigSingleValue> =
   // check type of T and return appropriate Binding type

@@ -371,5 +371,3 @@ export type Binding<T extends ModConfigSingleValue> =
                       : T extends number[]
                         ? NumberArrayBinding
                         : never;
-
-type Foo = Binding<null | boolean>;

@@ -108,7 +108,7 @@ export default function ModSettingsSection({
     expandedSections,
   );
 
-  const isExpanded = expandedSections[section.id] ?? true;
+  const isExpanded = expandedSections[section.id] ?? section.defaultExpanded ?? true;
 
   const setIsExpanded = useCallback(
     (isExpanded: boolean) =>
@@ -183,7 +183,6 @@ export default function ModSettingsSection({
   return (
     <StyledAccordion
       key={section.id ?? 'default'}
-      defaultExpanded={section.defaultExpanded ?? true}
       disableGutters={true}
       elevation={0}
       expanded={isExpanded}

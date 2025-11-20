@@ -108,7 +108,7 @@ export default function ModSettingsSection({
     expandedSections,
   );
 
-  const isExpanded = expandedSections[section.id] ?? false;
+  const isExpanded = expandedSections[section.id] ?? true;
 
   const setIsExpanded = useCallback(
     (isExpanded: boolean) =>

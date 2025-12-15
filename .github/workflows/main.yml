@@ -41,7 +41,7 @@ jobs:
 
       # GitHub dependencies don't work in GitHub Action workflows...
       - name: Remove CascLib dependency
-        run: npm remove CascLib
+        run: npm remove CascLib --force
 
       - name: Install MSBuild
         uses: microsoft/setup-msbuild@v1.3.1

@@ -231,7 +231,7 @@ export default function ED2R(): React.ReactNode {
                       file.type === 'character'
                         ? file.character.header.name
                         : file.type === 'stash'
-                          ? file.stash.hardcore
+                          ? file.fileName.includes('HardCore')
                             ? 'Stash (Hardcore)'
                             : 'Stash (Softcore)'
                           : 'Unknown'
@@ -463,7 +463,6 @@ function Stash({
 function StashTab({
   file,
   index,
-  onChange,
 }: {
   file: StashFile;
   index: number;
@@ -662,7 +661,6 @@ function Character({
 
 function CharacterEquipmentTab({
   file,
-  onChange,
 }: {
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
@@ -952,7 +950,6 @@ function CharacterEquipmentTab({
 
 function CharacterInventoryTab({
   file,
-  onChange,
 }: {
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
@@ -996,7 +993,6 @@ function CharacterInventoryTab({
 
 function CharacterStashTab({
   file,
-  onChange,
 }: {
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
@@ -1037,7 +1033,6 @@ function CharacterStashTab({
 
 function CharacterCubeTab({
   file,
-  onChange,
 }: {
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;

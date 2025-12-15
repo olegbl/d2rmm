@@ -20,6 +20,7 @@ import { OutputModNameContextProvider } from 'renderer/react/context/OutputModNa
 import { OutputPathContextProvider } from 'renderer/react/context/OutputPathContext';
 import { PreExtractedDataPathContextProvider } from 'renderer/react/context/PreExtractedDataPathContext';
 import { SavesPathContextProvider } from 'renderer/react/context/SavesPathContext';
+import { SessionContextProvider } from 'renderer/react/context/SessionContext';
 import {
   TabContextProvider,
   useTabState,
@@ -27,6 +28,11 @@ import {
 import ThemeContextProvider from 'renderer/react/context/ThemeContext';
 import { ToastContextProvider } from 'renderer/react/context/ToastContext';
 import { UpdatesContextProvider } from 'renderer/react/context/UpdatesContext';
+import ED2R from 'renderer/react/ed2r/ED2R';
+import { GameFilesContextProvider } from 'renderer/react/ed2r/ED2RGameFilesContext';
+import { ItemDragContextProvider } from 'renderer/react/ed2r/ED2RItemDragContext';
+import { SaveFilesContextProvider } from 'renderer/react/ed2r/ED2RSaveFilesContext';
+import { SelectedFileContextProvider } from 'renderer/react/ed2r/ED2RSelectedFileContext';
 import ModList from 'renderer/react/modlist/ModList';
 import { Suspense } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
@@ -80,6 +86,7 @@ function RootRoute() {
         >
           <TabList onChange={(_event, value) => setTab(value)}>
             <Tab label="Mods" value="mods" />
+            <Tab label="Saves" value="ed2r" />
             <Tab label="Settings" value="settings" />
             <Tab label="Logs" value="logs" />
           </TabList>
@@ -89,6 +96,9 @@ function RootRoute() {
         <Divider />
         <TabPanelBox value="mods">
           <ModList />
+        </TabPanelBox>
+        <TabPanelBox value="ed2r">
+          <ED2R />
         </TabPanelBox>
         <TabPanelBox value="settings">
           <ModManagerSettings />
@@ -123,6 +133,11 @@ const CONTEXT_PROVIDERS = [
   InstallContextProvider,
   // ui
   TabContextProvider,
+  // save editor
+  ItemDragContextProvider,
+  SelectedFileContextProvider,
+  SaveFilesContextProvider,
+  GameFilesContextProvider,
   // mod data
   ModsContextProvider,
   // preferences
@@ -136,6 +151,7 @@ const CONTEXT_PROVIDERS = [
   IsPreExtractedDataContextProvider,
   PreExtractedDataPathContextProvider,
   GamePathContextProvider,
+  SessionContextProvider,
   // modals
   ToastContextProvider,
   DialogManagerContextProvider,

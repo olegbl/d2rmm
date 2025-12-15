@@ -39,7 +39,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
           );
         }
       } else {
-        await runtime.BridgeAPI.extractFile(
+        await runtime.BridgeAPI.extractFileToDisk(
           filePath,
           runtime.getDestinationFilePath(filePath),
         );
@@ -88,6 +88,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const result = await runtime.BridgeAPI.readTsv(
         runtime.getDestinationFilePath(filePath),
+        'None',
       );
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
@@ -100,6 +101,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       if (!runtime.options.isDryRun) {
         await runtime.BridgeAPI.writeTsv(
           runtime.getDestinationFilePath(filePath),
+          'None',
           data,
         );
         await runtime.fileManager.write(filePath, runtime.mod.id);
@@ -113,6 +115,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const result = await runtime.BridgeAPI.readJson(
         runtime.getDestinationFilePath(filePath),
+        'None',
       );
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
@@ -125,6 +128,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       if (!runtime.options.isDryRun) {
         await runtime.BridgeAPI.writeJson(
           runtime.getDestinationFilePath(filePath),
+          'None',
           data,
         );
         await runtime.fileManager.write(filePath, runtime.mod.id);
@@ -165,6 +169,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const result = await runtime.BridgeAPI.readTxt(
         runtime.getDestinationFilePath(filePath),
+        'None',
       );
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
@@ -177,6 +182,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       if (!runtime.options.isDryRun) {
         await runtime.BridgeAPI.writeTxt(
           runtime.getDestinationFilePath(filePath),
+          'None',
           data,
         );
         await runtime.fileManager.write(filePath, runtime.mod.id);
@@ -210,6 +216,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
         await tryExtractFile(filePath);
         nextStringIDRaw = await runtime.BridgeAPI.readTxt(
           runtime.getDestinationFilePath(filePath),
+          'None',
         );
         nextStringID = parseInt(
           nextStringIDRaw?.match(/[0-9]+/)?.[0] ?? '0',
@@ -225,6 +232,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
         if (!runtime.options.isDryRun) {
           await runtime.BridgeAPI.writeTxt(
             runtime.getDestinationFilePath(filePath),
+            'None',
             nextStringIDRaw.replace(/[0-9]+/, String(nextStringID)),
           );
           await runtime.fileManager.write(filePath, runtime.mod.id);

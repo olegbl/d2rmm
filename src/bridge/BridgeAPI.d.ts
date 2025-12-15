@@ -3,6 +3,7 @@ import type { ModConfig } from './ModConfig';
 import type { ModConfigValue } from './ModConfigValue';
 import type { Relative } from './Relative';
 import type { TSVData } from './TSV';
+import type { ID2S, IStash } from './third-party/d2s/d2/types';
 
 export type IInstallModsOptions = {
   dataPath: string;
@@ -44,10 +45,21 @@ export type IBridgeAPI = {
     sync?: boolean,
   ) => Promise<number>;
   isGameFile: (filePath: string) => Promise<boolean>;
-  extractFile: (filePath: string, targetPath: string) => Promise<boolean>;
+  extractFileToMemory: (filePath: string) => Promise<Buffer>;
+  extractFileToDisk: (filePath: string, targetPath: string) => Promise<boolean>;
   getAppPath: () => Promise<string>;
   getGamePath: () => Promise<string | null>;
   getVersion: () => Promise<[number, number, number]>;
+  readD2SData: (options: IInstallModsOptions) => Promise<{
+    characters: { [fileName: string]: ID2S };
+    stashes: { [fileName: string]: IStash };
+    gameFiles: { [filePath: string]: TSVData | JSONData | string };
+  }>;
+  writeSaveFile: (
+    options: IInstallModsOptions,
+    fileName: string,
+    data: ID2S | IStash,
+  ) => Promise<number>;
   installMods: (
     modsToInstall: Mod[],
     options: IInstallModsOptions,
@@ -56,19 +68,28 @@ export type IBridgeAPI = {
   readDirectory: (
     filePath: string,
   ) => Promise<{ name: string; isDirectory: boolean }[]>;
-  readFile: (filePath: string, relative: Relative) => Promise<string | null>;
+  readFile: (filePath: string, relative: Relative) => Promise<Buffer | null>;
+  readTextFile: (
+    filePath: string,
+    relative: Relative,
+  ) => Promise<string | null>;
   readBinaryFile: (
     filePath: string,
     relative: Relative,
   ) => Promise<number[] | null>;
-  readJson: (filePath: string) => Promise<JSONData>;
+  readJson: (filePath: string, relative: Relative) => Promise<JSONData>;
   readModCode: (id: string) => Promise<[string, string]>;
   readModConfig: (id: string) => Promise<JSONData>;
   readModDirectory: () => Promise<string[]>;
   readModInfo: (id: string) => Promise<ModConfig>;
-  readTsv: (filePath: string) => Promise<TSVData>;
-  readTxt: (filePath: string) => Promise<string>;
+  readTsv: (filePath: string, relative: Relative) => Promise<TSVData>;
+  readTxt: (filePath: string, relative: Relative) => Promise<string>;
   writeFile: (
+    inputPath: string,
+    relative: Relative,
+    data: Buffer,
+  ) => Promise<number>;
+  writeTextFile: (
     inputPath: string,
     relative: Relative,
     data: string,
@@ -78,8 +99,20 @@ export type IBridgeAPI = {
     relative: Relative,
     data: number[],
   ) => Promise<number>;
-  writeJson: (filePath: string, data: JSONData) => Promise<number>;
+  writeJson: (
+    filePath: string,
+    relative: Relative,
+    data: JSONData,
+  ) => Promise<number>;
   writeModConfig: (id: string, value: ModConfigValue) => Promise<number>;
-  writeTsv: (filePath: string, data: TSVData) => Promise<number>;
-  writeTxt: (filePath: string, data: string) => Promise<number>;
+  writeTsv: (
+    filePath: string,
+    relative: Relative,
+    data: TSVData,
+  ) => Promise<number>;
+  writeTxt: (
+    filePath: string,
+    relative: Relative,
+    data: string,
+  ) => Promise<number>;
 };

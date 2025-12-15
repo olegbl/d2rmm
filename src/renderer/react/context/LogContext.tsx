@@ -81,8 +81,10 @@ export function LogsProvider({ children }: Props): JSX.Element {
       timestamp: Date.now(),
       data: args,
     };
-    startTransition(() => {
-      setLogs((logs) => [...logs, newLog]);
+    setTimeout(() => {
+      startTransition(() => {
+        setLogs((logs) => [...logs, newLog]);
+      });
     });
   }, []);
 

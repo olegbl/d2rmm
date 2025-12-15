@@ -8,7 +8,7 @@ import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
 import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import { Relative } from 'bridge/Relative';
-import type { TSVDataRow } from 'bridge/TSV';
+import type { ID2S, IStash } from 'bridge/third-party/d2s/d2/types';
 import { execFile, execFileSync } from 'child_process';
 import {
   copyFileSync,
@@ -20,7 +20,6 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
-import json5 from 'json5';
 import path from 'path';
 import { Scope } from 'quickjs-emscripten';
 import ref from 'ref-napi';
@@ -43,14 +42,14 @@ import {
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
+import { encodeJson, parseJson } from './JSONParser';
 import { getModAPI } from './ModAPI';
+import { parseSprite } from './SpriteParser';
+import { encodeTsv, parseTsv } from './TSVParser';
 import './asar';
 import { datamod } from './datamod';
 import { getQuickJSProxyAPI, getQuickJS } from './quickjs';
-
-function notNull<TValue>(value: TValue | null | undefined): value is TValue {
-  return value !== null && value !== undefined;
-}
+import * as d2s from './third-party/d2s/index';
 
 let runtime: InstallationRuntime | null = null;
 
@@ -291,15 +290,16 @@ export const BridgeAPI: IBridgeAPI = {
     return true;
   },
 
-  extractFile: async (filePath: string, targetPath: string) => {
-    console.debug('BridgeAPI.extractFile', {
-      filePath,
-      targetPath,
-    });
+  extractFileToMemory: async (filePath) => {
+    console.debug('BridgeAPI.extractFileToMemory', { filePath });
+    let output: null | Buffer = null;
 
     try {
       if (!cascStorageIsOpen) {
-        throw createError('BridgeAPI.extractFile', 'CASC storage is not open');
+        throw createError(
+          'BridgeAPI.extractFileToMemory',
+          'CASC storage is not open',
+        );
       }
 
       const storage = cascStoragePtr.deref();
@@ -315,7 +315,7 @@ export const BridgeAPI: IBridgeAPI = {
         )
       ) {
         throw createError(
-          'BridgeAPI.extractFile',
+          'BridgeAPI.extractFileToMemory',
           `Failed to open file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );
@@ -330,15 +330,10 @@ export const BridgeAPI: IBridgeAPI = {
       buffer.type = ref.types.void;
 
       if (getCascLib().CascReadFile(file, buffer, size, bytesReadPtr)) {
-        const data = buffer.readCString();
-        mkdirSync(path.dirname(targetPath), { recursive: true });
-        writeFileSync(targetPath, data, {
-          encoding: 'utf-8',
-          flag: 'w',
-        });
+        output = Buffer.from(buffer.buffer);
       } else {
         throw createError(
-          'BridgeAPI.extractFile',
+          'BridgeAPI.extractFileToMemory',
           `Failed to read file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );
@@ -346,14 +341,34 @@ export const BridgeAPI: IBridgeAPI = {
 
       if (!getCascLib().CascCloseFile(file)) {
         throw createError(
-          'BridgeAPI.extractFile',
+          'BridgeAPI.extractFileToMemory',
           `Failed to close file in CASC storage (${filePath})`,
           getLastCascLibError(),
         );
       }
     } catch (e) {
       throw createError(
-        'BridgeAPI.extractFile',
+        'BridgeAPI.extractFileToMemory',
+        'Failed to extract file',
+        String(e),
+      );
+    }
+
+    return output;
+  },
+
+  extractFileToDisk: async (filePath, targetPath) => {
+    console.debug('BridgeAPI.extractFileToDisk', {
+      filePath,
+      targetPath,
+    });
+
+    try {
+      const buffer = await BridgeAPI.extractFileToMemory(filePath);
+      await BridgeAPI.writeFile(targetPath, 'None', buffer);
+    } catch (e) {
+      throw createError(
+        'BridgeAPI.extractFileToDisk',
         'Failed to extract file',
         String(e),
       );
@@ -428,17 +443,19 @@ export const BridgeAPI: IBridgeAPI = {
     }
   },
 
-  readFile: async (inputPath: string, relative: Relative) => {
-    console.debug('BridgeAPI.readFile', { inputPath, relative });
+  readFile: async (inputPath, relative) => {
+    console.debug('BridgeAPI.readFile', {
+      inputPath,
+      relative,
+    });
 
     try {
       const filePath = resolvePath(inputPath, relative);
       if (existsSync(filePath)) {
-        const result = readFileSync(filePath, {
-          encoding: 'utf-8',
+        return readFileSync(filePath, {
+          encoding: null, // binary
           flag: 'r',
         });
-        return result;
       }
     } catch (e) {
       throw createError('BridgeAPI.readFile', 'Failed to read file', String(e));
@@ -447,14 +464,14 @@ export const BridgeAPI: IBridgeAPI = {
     return null;
   },
 
-  writeFile: async (inputPath: string, relative: Relative, data: string) => {
+  writeFile: async (inputPath: string, relative: Relative, data: Buffer) => {
     console.debug('BridgeAPI.writeFile', { inputPath, relative });
 
     try {
       const filePath = resolvePath(inputPath, relative);
       mkdirSync(path.dirname(filePath), { recursive: true });
       writeFileSync(filePath, data, {
-        encoding: 'utf-8',
+        encoding: null, // binary
         flag: 'w',
       });
     } catch (e) {
@@ -468,21 +485,54 @@ export const BridgeAPI: IBridgeAPI = {
     return 0;
   },
 
-  readBinaryFile: async (inputPath: string, relative: Relative) => {
+  readTextFile: async (inputPath: string, relative: Relative) => {
+    console.debug('BridgeAPI.readTextFile', { inputPath, relative });
+
+    try {
+      const buffer = await BridgeAPI.readFile(inputPath, relative);
+      if (buffer != null) {
+        return buffer.readCString();
+      }
+    } catch (e) {
+      throw createError(
+        'BridgeAPI.readTextFile',
+        'Failed to read file',
+        String(e),
+      );
+    }
+
+    return null;
+  },
+
+  writeTextFile: async (
+    inputPath: string,
+    relative: Relative,
+    data: string,
+  ) => {
+    console.debug('BridgeAPI.writeTextFile', { inputPath, relative });
+
+    try {
+      const buffer = Buffer.from(data, 'utf-8');
+      return await BridgeAPI.writeFile(inputPath, relative, buffer);
+    } catch (e) {
+      throw createError(
+        'BridgeAPI.writeTextFile',
+        'Failed to write file',
+        String(e),
+      );
+    }
+  },
+
+  readBinaryFile: async (inputPath, relative) => {
     console.debug('BridgeAPI.readBinaryFile', {
       inputPath,
       relative,
     });
 
     try {
-      const filePath = resolvePath(inputPath, relative);
-      if (existsSync(filePath)) {
-        return [
-          ...readFileSync(filePath, {
-            encoding: null, // binary
-            flag: 'r',
-          }).values(),
-        ];
+      const buffer = await BridgeAPI.readFile(inputPath, relative);
+      if (buffer != null) {
+        return [...buffer.values()];
       }
     } catch (e) {
       throw createError(
@@ -495,23 +545,15 @@ export const BridgeAPI: IBridgeAPI = {
     return null;
   },
 
-  writeBinaryFile: async (
-    inputPath: string,
-    relative: Relative,
-    data: number[],
-  ) => {
+  writeBinaryFile: async (inputPath, relative, data) => {
     console.debug('BridgeAPI.writeBinaryFile', {
       inputPath,
       relative,
     });
 
     try {
-      const filePath = resolvePath(inputPath, relative);
-      mkdirSync(path.dirname(filePath), { recursive: true });
-      writeFileSync(filePath, Buffer.from(data), {
-        encoding: null,
-        flag: 'w',
-      });
+      const buffer = Buffer.from(data);
+      return await BridgeAPI.writeFile(inputPath, relative, buffer);
     } catch (e) {
       throw createError(
         'BridgeAPI.writeBinaryFile',
@@ -519,8 +561,56 @@ export const BridgeAPI: IBridgeAPI = {
         String(e),
       );
     }
+  },
 
-    return 0;
+  readTsv: async (filePath, relative) => {
+    console.debug('BridgeAPI.readTsv', { filePath });
+    const textData = await BridgeAPI.readTextFile(filePath, relative);
+    try {
+      return parseTsv(textData);
+    } catch (e) {
+      throw createError(
+        'BridgeAPI.readTsv',
+        'Failed to parse file',
+        e instanceof Error ? e.toString() : String(e),
+      );
+    }
+  },
+
+  writeTsv: async (filePath, relative, data) => {
+    console.debug('BridgeAPI.writeTsv', { filePath });
+    const textData = encodeTsv(data);
+    return await BridgeAPI.writeTextFile(filePath, relative, textData);
+  },
+
+  readJson: async (filePath, relative) => {
+    console.debug('BridgeAPI.readJson', { filePath });
+    const textData = await BridgeAPI.readTextFile(filePath, relative);
+    try {
+      return parseJson(textData);
+    } catch (e) {
+      throw createError(
+        'BridgeAPI.readJson',
+        'Failed to parse file',
+        e instanceof Error ? e.toString() : String(e),
+      );
+    }
+  },
+
+  writeJson: async (filePath, relative, data) => {
+    console.debug('BridgeAPI.writeJson', { filePath });
+    const textData = encodeJson(data);
+    return await BridgeAPI.writeTextFile(filePath, relative, textData);
+  },
+
+  readTxt: async (filePath, relative) => {
+    console.debug('BridgeAPI.readTxt', { filePath });
+    return (await BridgeAPI.readTextFile(filePath, relative)) ?? '';
+  },
+
+  writeTxt: async (filePath, relative, data) => {
+    console.debug('BridgeAPI.writeTxt', { filePath });
+    return await BridgeAPI.writeTextFile(filePath, relative, data);
   },
 
   deleteFile: async (inputPath: string, relative: Relative) => {
@@ -612,7 +702,7 @@ export const BridgeAPI: IBridgeAPI = {
       id,
     });
 
-    const result = await BridgeAPI.readFile(
+    const result = await BridgeAPI.readTextFile(
       path.join('mods', id, 'mod.json'),
       'App',
     );
@@ -660,7 +750,7 @@ export const BridgeAPI: IBridgeAPI = {
     });
 
     const filePath = path.join('mods', id, 'config.json');
-    const result = await BridgeAPI.readFile(filePath, 'App');
+    const result = await BridgeAPI.readTextFile(filePath, 'App');
 
     if (result != null) {
       return JSON.parse(result);
@@ -676,7 +766,11 @@ export const BridgeAPI: IBridgeAPI = {
     });
 
     const filePath = path.join('mods', id, 'config.json');
-    return await BridgeAPI.writeFile(filePath, 'App', JSON.stringify(value));
+    return await BridgeAPI.writeTextFile(
+      filePath,
+      'App',
+      JSON.stringify(value),
+    );
   },
 
   readModCode: async (id: string) => {
@@ -689,7 +783,7 @@ export const BridgeAPI: IBridgeAPI = {
       const relativeFilePath = path.join('mods', id, 'mod.js');
       const absoluteFilePath = path.resolve(getAppPath(), relativeFilePath);
       if (existsSync(absoluteFilePath)) {
-        const result = await BridgeAPI.readFile(relativeFilePath, 'App');
+        const result = await BridgeAPI.readTextFile(relativeFilePath, 'App');
         if (typeof result !== 'string') {
           throw createError(
             'BridgeAPI.readModCode',
@@ -780,7 +874,10 @@ export const BridgeAPI: IBridgeAPI = {
           modulesProcessed.push(module.id);
 
           const relativeFilePath = path.join('mods', id, `${module.id}.ts`);
-          const sourceCode = await BridgeAPI.readFile(relativeFilePath, 'App');
+          const sourceCode = await BridgeAPI.readTextFile(
+            relativeFilePath,
+            'App',
+          );
           if (typeof sourceCode !== 'string') {
             throw createError(
               'BridgeAPI.readModCode',
@@ -924,103 +1021,383 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     );
   },
 
-  readTsv: async (filePath: string) => {
-    console.debug('BridgeAPI.readTsv', {
-      filePath,
+  // TODO: improve API signatures for ED2R APIs
+
+  writeSaveFile: async (
+    options: IInstallModsOptions,
+    fileName: string,
+    parsedData: ID2S | IStash,
+  ) => {
+    console.debug('BridgeAPI.writeSaveFile', {
+      fileName,
     });
 
-    const result = await BridgeAPI.readFile(filePath, 'None');
+    runtime = new InstallationRuntime(BridgeAPI, console, options, []);
 
-    if (result == null) {
-      return { headers: [], rows: [] };
-    }
-
-    const [headersRaw, ...rowsRaw] = result.split('\n');
-    const headers = headersRaw.split('\t');
-    const rows: TSVDataRow[] = rowsRaw
-      .map((row) => {
-        if (row === '') {
-          return null;
-        }
-        const rowRaw = row.split('\t');
-        return rowRaw.reduce((agg, value, index) => {
-          agg[headers[index]] = value;
-          return agg;
-        }, {} as TSVDataRow);
-      })
-      .filter(notNull);
-    return { headers, rows };
-  },
-
-  writeTsv: async (filePath, data) => {
-    console.debug('BridgeAPI.writeTsv', {
-      filePath,
-    });
-
-    const { headers, rows } = data;
-    const headersRaw = headers.join('\t');
-    const rowsRaw = rows.map((row) =>
-      headers.map((header) => row[header] ?? '').join('\t'),
-    );
-    const content = [headersRaw, ...rowsRaw, ''].join('\n');
-    return await BridgeAPI.writeFile(filePath, 'None', content);
-  },
-
-  readJson: async (filePath) => {
-    console.debug('BridgeAPI.readJson', { filePath });
-
-    const result = await BridgeAPI.readFile(filePath, 'None');
-
-    if (result == null) {
-      console.warn('BridgeAPI.readJson', 'file not found');
-      return {};
-    }
-
-    const cleanContent = result
-      // remove byte order mark
-      .replace(/^\uFEFF/, '');
     try {
-      return json5.parse<JSONData>(cleanContent);
-    } catch (e) {
+      const rawData = fileName.endsWith('.d2s')
+        ? await d2s.write(parsedData as ID2S)
+        : fileName.endsWith('.d2i')
+          ? await d2s.stash.write(parsedData as IStash)
+          : null;
+
+      if (rawData == null) {
+        throw createError(
+          'BridgeAPI.writeSaveFile',
+          'Invalid file name (does not end in d2s or d2i).',
+        );
+      }
+
+      // TODO: base this off of when the file was first read instead
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, -5)
+        .replace(/[T:]/g, '-');
+
+      const originalRawData = await BridgeAPI.readBinaryFile(fileName, 'Saves');
+      if (originalRawData != null) {
+        await BridgeAPI.writeBinaryFile(
+          `${fileName}.bak-${timestamp}`,
+          'Saves',
+          Array.from(originalRawData),
+        );
+      }
+
+      return await BridgeAPI.writeBinaryFile(
+        fileName,
+        'Saves',
+        Array.from(rawData),
+      );
+    } finally {
+      runtime = null;
+    }
+  },
+
+  readD2SData: async (options: IInstallModsOptions) => {
+    console.debug('BridgeAPI.readD2SData', {
+      options,
+    });
+
+    runtime = new InstallationRuntime(BridgeAPI, console, options, []);
+
+    if (!runtime.options.isPreExtractedData) {
+      await BridgeAPI.openStorage(runtime.options.gamePath);
+    }
+
+    const d2sFiles = [
+      path.join('local', 'lng', 'strings', 'item-gems.json'),
+      path.join('local', 'lng', 'strings', 'item-modifiers.json'),
+      path.join('local', 'lng', 'strings', 'item-nameaffixes.json'),
+      path.join('local', 'lng', 'strings', 'item-names.json'),
+      path.join('local', 'lng', 'strings', 'item-runes.json'),
+      path.join('local', 'lng', 'strings', 'skills.json'),
+      path.join('global', 'excel', 'charstats.txt'),
+      path.join('global', 'excel', 'playerclass.txt'),
+      path.join('global', 'excel', 'skilldesc.txt'),
+      path.join('global', 'excel', 'skills.txt'),
+      path.join('global', 'excel', 'raresuffix.txt'),
+      path.join('global', 'excel', 'rareprefix.txt'),
+      path.join('global', 'excel', 'magicprefix.txt'),
+      path.join('global', 'excel', 'magicsuffix.txt'),
+      path.join('global', 'excel', 'properties.txt'),
+      path.join('global', 'excel', 'itemstatcost.txt'),
+      path.join('global', 'excel', 'runes.txt'),
+      path.join('global', 'excel', 'setitems.txt'),
+      path.join('global', 'excel', 'uniqueitems.txt'),
+      path.join('global', 'excel', 'itemtypes.txt'),
+      path.join('global', 'excel', 'armor.txt'),
+      path.join('global', 'excel', 'weapons.txt'),
+      path.join('global', 'excel', 'misc.txt'),
+      path.join('global', 'excel', 'gems.txt'),
+    ];
+
+    async function getGameFile(filePath: string): Promise<Buffer> {
+      // check if the file exists in the generated MPQ mod
+      if (existsSync(runtime!.getDestinationFilePath(filePath))) {
+        const buffer = await BridgeAPI.readFile(
+          runtime!.getDestinationFilePath(filePath),
+          'None',
+        );
+        if (buffer == null) {
+          throw createError(
+            'BridgeAPI.readD2SData',
+            'Failed to read file',
+            runtime!.getDestinationFilePath(filePath),
+          );
+        }
+        return buffer;
+      } else {
+        if (runtime!.options.isDirectMode) {
+          throw createError(
+            'BridgeAPI.readD2SData',
+            'Failed to find file',
+            runtime!.getDestinationFilePath(filePath),
+          );
+        }
+      }
+
+      // read file from pre-extracted data
+      if (runtime!.options.isPreExtractedData) {
+        if (existsSync(runtime!.getPreExtractedSourceFilePath(filePath))) {
+          const buffer = await BridgeAPI.readFile(
+            runtime!.getPreExtractedSourceFilePath(filePath),
+            'None',
+          );
+          if (buffer == null) {
+            throw createError(
+              'BridgeAPI.readD2SData',
+              'Failed to read file',
+              runtime!.getPreExtractedSourceFilePath(filePath),
+            );
+          }
+          return buffer;
+        } else {
+          throw createError(
+            'BridgeAPI.readD2SData',
+            'Failed to find file',
+            runtime!.getPreExtractedSourceFilePath(filePath),
+          );
+        }
+      }
+      // read file from Casc archive
+      else if (!runtime!.options.isDirectMode) {
+        const buffer = await BridgeAPI.extractFileToMemory(path.join(filePath));
+        return buffer;
+      }
+
       throw createError(
-        'BridgeAPI.readJson',
-        'Failed to parse file',
-        e instanceof Error ? e.toString() : String(e),
+        'BridgeAPI.readD2SData',
+        'Failed to find file',
+        filePath,
       );
     }
-  },
 
-  writeJson: async (filePath, data) => {
-    console.debug('BridgeAPI.writeJson', { filePath });
-
-    const content = JSON.stringify(data); // we don't use json5 here so that keys are still wrapped in quotes
-    const result = await BridgeAPI.writeFile(
-      filePath,
-      'None',
-      // add byte order mark (not every vanilla file has one but D2R doesn't seem to mind when it's added)
-      `\uFEFF${content}`,
-    );
-
-    return result;
-  },
-
-  readTxt: async (filePath) => {
-    console.debug('BridgeAPI.readTxt', { filePath });
-
-    const result = await BridgeAPI.readFile(filePath, 'None');
-
-    if (result == null) {
-      console.warn('BridgeAPI.readTxt', 'file not found');
-      return '';
+    const buffers: { [key: string]: string } = {};
+    for (const filePath of d2sFiles) {
+      buffers[path.basename(filePath)] = (
+        await getGameFile(filePath)
+      ).readCString();
     }
 
-    return result;
-  },
+    const gameData = d2s.readConstantData(buffers as d2s.Buffers);
+    d2s.setConstantData(96, gameData);
+    d2s.setConstantData(97, gameData);
+    d2s.setConstantData(98, gameData);
+    d2s.setConstantData(99, gameData);
 
-  writeTxt: async (filePath, data) => {
-    console.debug('BridgeAPI.writeTxt', { filePath });
+    const saveFiles = await BridgeAPI.readDirectory(getSavesPath());
 
-    return await BridgeAPI.writeFile(filePath, 'None', data);
+    const characterFiles = saveFiles.filter(
+      (file) => !file.isDirectory && file.name.endsWith('.d2s'),
+    );
+    const characterFilesData: [string, ID2S][] = [];
+    for (const file of characterFiles) {
+      try {
+        const rawData = await BridgeAPI.readBinaryFile(file.name, 'Saves');
+        if (rawData == null) {
+          throw new Error(`File content could not be read.`);
+        }
+        const parsedData = await d2s.read(new Uint8Array(rawData));
+        characterFilesData.push([file.name, parsedData]);
+      } catch (e) {
+        console.error(
+          `Failed to read character save data from "${file.name}".`,
+          (e as Error).message,
+        );
+        continue;
+      }
+    }
+    const characters = Object.fromEntries(characterFilesData);
+
+    const stashFiles = saveFiles.filter(
+      (file) => !file.isDirectory && file.name.endsWith('.d2i'),
+    );
+    const stashFilesData: [string, IStash][] = [];
+    for (const file of stashFiles) {
+      try {
+        const rawData = await BridgeAPI.readBinaryFile(file.name, 'Saves');
+        if (rawData == null) {
+          throw new Error(`File content could not be read.`);
+        }
+        const parsedData = await d2s.stash.read(new Uint8Array(rawData));
+        stashFilesData.push([file.name, parsedData]);
+      } catch (e) {
+        console.error(
+          `Failed to read character save data from "${file.name}".`,
+          (e as Error).message,
+        );
+        continue;
+      }
+    }
+    const stashes = Object.fromEntries(stashFilesData);
+
+    // TODO: .d2x offline stash files
+    // const offlineStashFiles = saveFiles.filter(
+    //   (file) => !file.isDirectory && file.name.endsWith('.d2x'),
+    // );
+
+    // game files that the UI will need to render the save files
+    const gameFiles: { [filePath: string]: TSVData | JSONData | string } = {};
+
+    // JSON
+    for (const filePath of [
+      'global/ui/layouts/_profilehd.json',
+      'hd/items/items.json',
+      'hd/items/sets.json',
+      'hd/items/uniques.json',
+    ]) {
+      gameFiles[filePath] = parseJson(
+        (await getGameFile(filePath)).readCString(),
+      );
+    }
+
+    // TSV
+    for (const filePath of [
+      'global/excel/itemtypes.txt',
+      'global/excel/weapons.txt',
+      'global/excel/armor.txt',
+      'global/excel/misc.txt',
+      'global/excel/uniqueitems.txt',
+      'global/excel/setitems.txt',
+      'global/excel/inventory.txt',
+    ]) {
+      gameFiles[filePath] = parseTsv(
+        (await getGameFile(filePath)).readCString(),
+      );
+    }
+
+    const itemCodeToCategory: { [code: string]: string } = {};
+    const itemCodeToItemRow: { [code: string]: TSVDataRow } = {};
+    for (const [filePath, category] of [
+      ['global/excel/weapons.txt', 'weapon'], // thanks, D2
+      ['global/excel/armor.txt', 'armor'],
+      ['global/excel/misc.txt', 'misc'],
+    ]) {
+      for (const row of (gameFiles[filePath] as TSVData).rows) {
+        if ((row.code ?? '') === '') {
+          continue;
+        }
+        itemCodeToCategory[row.code] = category;
+        itemCodeToItemRow[row.code] = row;
+      }
+    }
+
+    const itemTypeToItemTypesRow: { [code: string]: TSVDataRow } = {};
+    const itemsTypes = gameFiles['global/excel/itemtypes.txt'] as TSVData;
+    for (const row of itemsTypes.rows) {
+      itemTypeToItemTypesRow[row.Code] = row;
+    }
+
+    function getAssetCodeFromIndex(index: string): string {
+      return index.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
+    }
+    const assetIDToItemCodes: { [assetID: string]: string } = {};
+    const setItems = gameFiles['global/excel/setitems.txt'] as TSVData;
+    for (const setItem of setItems.rows) {
+      const assetID = getAssetCodeFromIndex(setItem.index);
+      assetIDToItemCodes[assetID] = setItem.code;
+    }
+    const uniqueItems = gameFiles['global/excel/uniqueitems.txt'] as TSVData;
+    for (const uniqueItem of uniqueItems.rows) {
+      const assetID = getAssetCodeFromIndex(uniqueItem.index);
+      assetIDToItemCodes[assetID] = uniqueItem.code;
+    }
+
+    async function extractSprite(
+      itemCode: string,
+      asset: string,
+    ): Promise<void> {
+      try {
+        const category = itemCodeToCategory[itemCode];
+        if (category == null) {
+          console.warn(`Could not find category for item code "${itemCode}".`);
+          return;
+        }
+        const filePath = `hd/global/ui/items/${category}/${asset}.lowend.sprite`;
+        if (gameFiles[filePath] != null) {
+          // file already fetched
+          return;
+        }
+        const dataURI = parseSprite(await getGameFile(filePath));
+        if (dataURI == null) {
+          console.warn(
+            `Could not convert sprite file to data URI for item code "${itemCode}".`,
+          );
+          return;
+        }
+        gameFiles[filePath] = dataURI;
+      } catch (e) {
+        console.error(
+          `Could not get sprite data for item code "${itemCode}"`,
+          (e as Error).stack,
+        );
+      }
+    }
+
+    async function extractSpriteWithAlternatives(
+      itemCode: string,
+      asset: string,
+    ): Promise<void> {
+      await extractSprite(itemCode, asset);
+
+      // items can have alternative graphics
+      const itemRow = itemCodeToItemRow[itemCode];
+      if (itemRow != null) {
+        const itemType = itemRow.type;
+        const itemTypesRow = itemTypeToItemTypesRow[itemType];
+        if (itemTypesRow != null) {
+          const numGraphics = +itemTypesRow.VarInvGfx;
+          if (numGraphics > 0) {
+            for (let i = 1; i <= numGraphics; i++) {
+              await extractSprite(itemCode, asset + i);
+            }
+          }
+        }
+      }
+    }
+
+    for (const entry of gameFiles['hd/items/items.json'] as {
+      [assetID: string]: { asset: string };
+    }[]) {
+      for (const assetID in entry) {
+        const itemCode = assetID;
+        await extractSpriteWithAlternatives(itemCode, entry[assetID].asset);
+      }
+    }
+
+    for (const item of gameFiles['hd/items/sets.json'] as {
+      [assetID: string]: { normal: string; uber: string; ultra: string };
+    }[]) {
+      for (const assetID in item) {
+        const itemCode = assetIDToItemCodes[assetID];
+        if (itemCode != null) {
+          await extractSpriteWithAlternatives(itemCode, item[assetID].normal);
+          await extractSpriteWithAlternatives(itemCode, item[assetID].uber);
+          await extractSpriteWithAlternatives(itemCode, item[assetID].ultra);
+        }
+      }
+    }
+
+    for (const item of gameFiles['hd/items/uniques.json'] as {
+      [assetID: string]: { normal: string; uber: string; ultra: string };
+    }[]) {
+      for (const assetID in item) {
+        const itemCode = assetIDToItemCodes[assetID];
+        if (itemCode != null) {
+          await extractSpriteWithAlternatives(itemCode, item[assetID].normal);
+          await extractSpriteWithAlternatives(itemCode, item[assetID].uber);
+          await extractSpriteWithAlternatives(itemCode, item[assetID].ultra);
+        }
+      }
+    }
+
+    if (!runtime!.options.isPreExtractedData) {
+      await BridgeAPI.closeStorage();
+    }
+
+    runtime = null;
+
+    return { characters, stashes, gameFiles };
   },
 
   installMods: async (modsToInstall: Mod[], options: IInstallModsOptions) => {
@@ -1048,6 +1425,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       const savesPath = getSavesPath();
       await BridgeAPI.writeJson(
         path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
+        'None',
         {
           name: runtime.options.outputModName,
           // use a relative path if possible - but allow an absolute path

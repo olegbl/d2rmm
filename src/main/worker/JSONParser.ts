@@ -16,8 +16,10 @@ export function parseJson(data: null | string): JSONData {
 export function encodeJson(data: JSONData): string {
   // we don't use json5 here so that keys are still wrapped in quotes
   const textData = JSON.stringify(data);
-  // add byte order mark (BOM)
-  // not every vanilla file has one but D2R doesn't seem to mind when it's added
-  const dataWithBOM = `\uFEFF${textData}`;
-  return dataWithBOM;
+
+  // we don't add BOM since it's not part of the JSON spec
+  // and D2R doesn't actually care if it's there or not
+
+  // we add a newline at the end of the file
+  return `${textData}\n`;
 }

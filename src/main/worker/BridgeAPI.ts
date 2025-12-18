@@ -365,7 +365,13 @@ export const BridgeAPI: IBridgeAPI = {
 
     try {
       const buffer = await BridgeAPI.extractFileToMemory(filePath);
-      await BridgeAPI.writeFile(targetPath, 'None', buffer);
+      // there's some weird shenanigans with 0-byte-terminated
+      // buffers when reading file via Casc lib + ffi, but we
+      // *currently* don't support binary file reading in mods
+      // anyway (only in save editor), so just work around it
+      // here for now, but this needs a proper fix later on
+      const dataStr = buffer.readCString();
+      await BridgeAPI.writeTextFile(targetPath, 'None', dataStr);
     } catch (e) {
       throw createError(
         'BridgeAPI.extractFileToDisk',
@@ -491,7 +497,7 @@ export const BridgeAPI: IBridgeAPI = {
     try {
       const buffer = await BridgeAPI.readFile(inputPath, relative);
       if (buffer != null) {
-        return buffer.readCString();
+        return buffer.toString('utf-8');
       }
     } catch (e) {
       throw createError(

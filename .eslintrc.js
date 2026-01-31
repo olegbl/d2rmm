@@ -71,6 +71,7 @@ module.exports = {
     './mods.empty/**',
     './release/**',
     './.erb/dll/**',
+    '**/third-party/**',
   ],
   settings: {
     'import/resolver': {

@@ -2242,7 +2242,6 @@ function CharacterSkillsTab({
 
 function CharacterMercenaryTab({
   file,
-  onChange,
 }: {
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
@@ -2258,12 +2257,6 @@ function CharacterMercenaryTab({
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
       item.equipped_id === EquippedID.RIGHT_HAND &&
-      notDragging(item),
-  );
-  const rightHandItem2 = mercItems.find(
-    (item) =>
-      item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.ALT_RIGHT_HAND &&
       notDragging(item),
   );
   const handsItem = mercItems.find(
@@ -2290,23 +2283,12 @@ function CharacterMercenaryTab({
       item.equipped_id === EquippedID.LEFT_HAND &&
       notDragging(item),
   );
-  const leftHandItem2 = mercItems.find(
-    (item) =>
-      item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.ALT_LEFT_HAND &&
-      notDragging(item),
-  );
   const feetItem = mercItems.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
       item.equipped_id === EquippedID.FEET &&
       notDragging(item),
   );
-
-  const removeItem = (index: number) => {
-    const next = mercItems.filter((_, i) => i !== index);
-    onChange({ ...file, character: { ...file.character, merc_items: next } });
-  };
 
   return (
     <TabPanelBox sx={{ overflow: 'auto' }} value="mercenary">

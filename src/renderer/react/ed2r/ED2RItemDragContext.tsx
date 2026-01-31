@@ -25,6 +25,7 @@ export type IItemPosition = Readonly<{
   height: number;
   isValid: boolean;
   locationID: LocationID;
+  isMerc?: boolean;
   overlappingItem?: IItem | null;
   stashTabIndex: number;
   width: number;
@@ -89,6 +90,9 @@ export function ItemDragContextProvider({
           {
             const file = newFromFile;
             if (file.type === 'character') {
+              const removeID = draggedItemRef.current
+                ? getUniqueItemID(draggedItemRef.current)
+                : null;
               newFromFile = {
                 ...file,
                 character: {
@@ -97,9 +101,13 @@ export function ItemDragContextProvider({
                     // remove dragged item
                     .filter(
                       (item) =>
-                        draggedItemRef.current == null ||
-                        getUniqueItemID(item) !=
-                          getUniqueItemID(draggedItemRef.current),
+                        removeID == null || getUniqueItemID(item) !== removeID,
+                    ),
+                  merc_items: file.character.merc_items
+                    // remove dragged item
+                    ?.filter(
+                      (item) =>
+                        removeID == null || getUniqueItemID(item) !== removeID,
                     ),
                 },
                 edited: true,
@@ -149,16 +157,29 @@ export function ItemDragContextProvider({
               position_y: y,
             };
             if (file.type === 'character') {
-              newToFile = {
-                ...file,
-                character: {
-                  ...file.character,
-                  items: file.character.items
-                    // add dropped item
-                    .concat([droppedItem]),
-                },
-                edited: true,
-              };
+              if (hoveredPositionRef.current.isMerc) {
+                newToFile = {
+                  ...file,
+                  character: {
+                    ...file.character,
+                    merc_items: (file.character.merc_items ?? [])
+                      // add dropped item
+                      .concat([droppedItem]),
+                  },
+                  edited: true,
+                };
+              } else {
+                newToFile = {
+                  ...file,
+                  character: {
+                    ...file.character,
+                    items: file.character.items
+                      // add dropped item
+                      .concat([droppedItem]),
+                  },
+                  edited: true,
+                };
+              }
             } else if (file.type === 'stash') {
               newToFile = {
                 ...file,
@@ -281,7 +302,9 @@ export function ItemDragContextProvider({
           // find other items that are in the same general area
           let conflictingItems: IItem[] = (
             overItemPosition.file.type === 'character'
-              ? overItemPosition.file.character.items
+              ? overItemPosition.isMerc
+                ? overItemPosition.file.character.merc_items ?? []
+                : overItemPosition.file.character.items
               : overItemPosition.file.type === 'stash'
                 ? overItemPosition.file.stash.pages[
                     overItemPosition.stashTabIndex

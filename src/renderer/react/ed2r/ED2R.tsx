@@ -65,6 +65,7 @@ import {
   ButtonGroup,
   Checkbox,
   Divider,
+  TextField,
   FormControlLabel,
   FormGroup,
   FormLabel,
@@ -580,14 +581,14 @@ function Character({
           </TabList>
         </Box>
         <Divider />
-        <TabPanelBox value="basic">TODO</TabPanelBox>
-        <TabPanelBox value="skills">TODO</TabPanelBox>
+        <CharacterBasicTab file={file} onChange={onChange} />
+        <CharacterSkillsTab file={file} onChange={onChange} />
         <CharacterEquipmentTab file={file} onChange={onChange} />
         <CharacterWaypointsTab file={file} onChange={onChange} />
         <CharacterInventoryTab file={file} onChange={onChange} />
         <CharacterStashTab file={file} onChange={onChange} />
         <CharacterCubeTab file={file} onChange={onChange} />
-        <TabPanelBox value="mercenary">TODO</TabPanelBox>
+        <CharacterMercenaryTab file={file} onChange={onChange} />
         <TabPanelBox value="raw">
           <textarea
             readOnly={true}
@@ -670,78 +671,95 @@ function CharacterEquipmentTab({
   const width = 4;
   const height = 4;
 
+  const { draggedItem } = useItemDragContext();
+  const draggedItemID = draggedItem ? getUniqueItemID(draggedItem) : null;
+  const notDragging = (item: IItem) =>
+    draggedItemID == null || getUniqueItemID(item) !== draggedItemID;
+
   const rightHandItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.RIGHT_HAND,
+      item.equipped_id === EquippedID.RIGHT_HAND &&
+      notDragging(item),
   );
 
   const rightHandItem2 = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.ALT_RIGHT_HAND,
+      item.equipped_id === EquippedID.ALT_RIGHT_HAND &&
+      notDragging(item),
   );
 
   const handsItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.HANDS,
+      item.equipped_id === EquippedID.HANDS &&
+      notDragging(item),
   );
 
   const rightFingerItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.RIGHT_FINGER,
+      item.equipped_id === EquippedID.RIGHT_FINGER &&
+      notDragging(item),
   );
 
   const headItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.HEAD,
+      item.equipped_id === EquippedID.HEAD &&
+      notDragging(item),
   );
 
   const torsoItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.TORSO,
+      item.equipped_id === EquippedID.TORSO &&
+      notDragging(item),
   );
 
   const waistItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.WAIST,
+      item.equipped_id === EquippedID.WAIST &&
+      notDragging(item),
   );
 
   const neckItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.NECK,
+      item.equipped_id === EquippedID.NECK &&
+      notDragging(item),
   );
 
   const leftFingerItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.LEFT_FINGER,
+      item.equipped_id === EquippedID.LEFT_FINGER &&
+      notDragging(item),
   );
 
   const leftHandItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
       item.equipped_id === EquippedID.LEFT_HAND &&
-      item !== rightHandItem,
+      item !== rightHandItem &&
+      notDragging(item),
   );
 
   const leftHandItem2 = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
       item.equipped_id === EquippedID.ALT_LEFT_HAND &&
-      item !== rightHandItem2,
+      item !== rightHandItem2 &&
+      notDragging(item),
   );
 
   const feetItem = file.character.items.find(
     (item) =>
       item.location_id === LocationID.EQUIPPED &&
-      item.equipped_id === EquippedID.FEET,
+      item.equipped_id === EquippedID.FEET &&
+      notDragging(item),
   );
 
   return (
@@ -1357,25 +1375,28 @@ function InventoryGridItem({
 }): React.ReactNode {
   const { selectedFile: file } = useSelectedFileContext();
   const stashTabIndex = useStashTabIndex();
-
-  const itemPosition: IItemPosition | null = useMemo(
-    () =>
-      item == null || file == null
-        ? null
-        : {
-            altPositionID: item.alt_position_id,
-            equippedID: item.equipped_id,
-            file,
-            height: item.inv_height,
-            isValid: true,
-            locationID: item.location_id,
-            stashTabIndex,
-            width: item.inv_width,
-            x: item.position_x,
-            y: item.position_y,
-          },
-    [item, file, stashTabIndex],
-  );
+  const itemPosition: IItemPosition | null = useMemo(() => {
+    if (item == null || file == null) return null;
+    const isMercItem =
+      file.type === 'character' &&
+      Array.isArray(file.character.merc_items) &&
+      file.character.merc_items.some(
+        (mi) => getUniqueItemID(mi) === getUniqueItemID(item),
+      );
+    return {
+      altPositionID: item.alt_position_id,
+      equippedID: item.equipped_id,
+      file,
+      height: item.inv_height,
+      isValid: true,
+      locationID: item.location_id,
+      isMerc: isMercItem,
+      stashTabIndex,
+      width: item.inv_width,
+      x: item.position_x,
+      y: item.position_y,
+    } as IItemPosition;
+  }, [item, file, stashTabIndex]);
 
   const itemPositionID =
     itemPosition == null ? 'invalid' : getUniqueItemPositionID(itemPosition);
@@ -1498,6 +1519,7 @@ function InventoryGrid({
   children,
   equippedID = EquippedID.NONE,
   height,
+  isMerc = false,
   locationID = LocationID.NONE,
   sx,
   width,
@@ -1521,6 +1543,7 @@ function InventoryGrid({
     altPositionID,
     equippedID,
     file,
+    isMerc,
     locationID,
     stashTabIndex,
     // these properties are placeholders for grids
@@ -1807,5 +1830,633 @@ function Waypoint({
       }
       label={label}
     />
+  );
+}
+
+function CharacterBasicTab({
+  file,
+  onChange,
+}: {
+  file: CharacterFile;
+  onChange: (newValue: CharacterFile) => unknown;
+}): React.ReactNode {
+  const header = file.character.header;
+  const attributes = file.character.attributes || {};
+
+  const prettyAttributeLabel = (key: string) => {
+    const MAP: { [k: string]: string } = {
+      strength: 'Strength',
+      dexterity: 'Dexterity',
+      vitality: 'Vitality',
+      energy: 'Energy',
+      max_stamina: 'Max Stamina',
+      max_hp: 'Max Life',
+      max_mana: 'Max Mana',
+      unused_stats: 'Unallocated Stat Points',
+      unused_skill_points: 'Unallocated Skill Points',
+      experience: 'Experience',
+      gold: 'Gold',
+      stashed_gold: 'Stashed Gold',
+    };
+    if (MAP[key]) return MAP[key];
+    return key
+      .replace(/_/g, ' ')
+      .replace(/(^| )[a-z]/g, (s) => s.toUpperCase());
+  };
+
+  return (
+    <TabPanelBox value="basic">
+      <Box sx={{ padding: 2, overflowY: 'auto' }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TextField
+            label="Name"
+            onChange={(e) =>
+              onChange({
+                ...file,
+                character: {
+                  ...file.character,
+                  header: { ...header, name: e.target.value },
+                },
+              })
+            }
+            size="small"
+            value={header.name}
+          />
+          <TextField
+            disabled={true}
+            label="Class"
+            size="small"
+            value={header.class}
+          />
+        </Box>
+
+        <Box
+          sx={{ display: 'flex', gap: 2, alignItems: 'center', marginTop: 2 }}
+        >
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <TextField
+              label="Level"
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    header: { ...header, level: Number(e.target.value) },
+                  },
+                })
+              }
+              size="small"
+              type="number"
+              value={String(header.level ?? 0)}
+            />
+            <TextField
+              label="Experience"
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      experience: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              type="number"
+              value={String(attributes.experience ?? 0)}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(header.status?.expansion)}
+                  onChange={(_e, checked) =>
+                    onChange({
+                      ...file,
+                      character: {
+                        ...file.character,
+                        header: {
+                          ...header,
+                          status: {
+                            ...(header.status || {}),
+                            expansion: checked,
+                          },
+                        },
+                      },
+                    })
+                  }
+                />
+              }
+              label="Expansion"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(header.status?.hardcore)}
+                  onChange={(_e, checked) =>
+                    onChange({
+                      ...file,
+                      character: {
+                        ...file.character,
+                        header: {
+                          ...header,
+                          status: {
+                            ...(header.status || {}),
+                            hardcore: checked,
+                          },
+                        },
+                      },
+                    })
+                  }
+                />
+              }
+              label="Hardcore"
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ my: 2 }} />
+
+        <Box>
+          <FormLabel component="legend">Attributes</FormLabel>
+          <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
+            <TextField
+              label={prettyAttributeLabel('strength')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      strength: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.strength ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('dexterity')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      dexterity: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.dexterity ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('vitality')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      vitality: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.vitality ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('energy')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      energy: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.energy ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('unused_stats')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      unused_stats: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.unused_stats ?? 0)}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ my: 2 }} />
+
+        <Box>
+          <FormLabel component="legend">Stats</FormLabel>
+          <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
+            <TextField
+              label={prettyAttributeLabel('max_hp')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      max_hp: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.max_hp ?? attributes.max_life ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('max_mana')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      max_mana: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.max_mana ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('max_stamina')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      max_stamina: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.max_stamina ?? 0)}
+            />
+          </Box>
+        </Box>
+
+        <Box sx={{ my: 2 }} />
+
+        <Box>
+          <FormLabel component="legend">Gold</FormLabel>
+          <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
+            <TextField
+              label={prettyAttributeLabel('gold')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      gold: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.gold ?? 0)}
+            />
+            <TextField
+              label={prettyAttributeLabel('stashed_gold')}
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      stashed_gold: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              value={String(attributes.stashed_gold ?? 0)}
+            />
+          </Box>
+        </Box>
+      </Box>
+    </TabPanelBox>
+  );
+}
+
+function CharacterSkillsTab({
+  file,
+  onChange,
+}: {
+  file: CharacterFile;
+  onChange: (newValue: CharacterFile) => unknown;
+}): React.ReactNode {
+  const skills = file.character.skills || [];
+  const attributes = file.character.attributes || {};
+
+  const setSkillPoints = (index: number, points: number) => {
+    const next = skills.map((s, i) => (i === index ? { ...s, points } : s));
+    onChange({ ...file, character: { ...file.character, skills: next } });
+  };
+
+  return (
+    <TabPanelBox value="skills">
+      <Box sx={{ padding: 2, overflowY: 'auto' }}>
+        <List>
+          <ListItem sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <ListItemText primary="Unallocated Skill Points" />
+            <TextField
+              label="Points"
+              onChange={(e) =>
+                onChange({
+                  ...file,
+                  character: {
+                    ...file.character,
+                    attributes: {
+                      ...file.character.attributes,
+                      unused_skill_points: Number(e.target.value),
+                    },
+                  },
+                })
+              }
+              size="small"
+              sx={{ width: 100 }}
+              type="number"
+              value={String(attributes.unused_skill_points ?? 0)}
+            />
+          </ListItem>
+          {skills.map((skill, i) => (
+            <ListItem
+              key={skill.id}
+              sx={{ display: 'flex', gap: 2, alignItems: 'center' }}
+            >
+              <ListItemText primary={skill.name ?? `#${skill.id}`} />
+              <TextField
+                label="Points"
+                onChange={(e) => setSkillPoints(i, Number(e.target.value))}
+                size="small"
+                sx={{ width: 100 }}
+                type="number"
+                value={String(skill.points ?? 0)}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </TabPanelBox>
+  );
+}
+
+function CharacterMercenaryTab({
+  file,
+  onChange,
+}: {
+  file: CharacterFile;
+  onChange: (newValue: CharacterFile) => unknown;
+}): React.ReactNode {
+  const mercItems = file.character.merc_items || [];
+
+  const { draggedItem } = useItemDragContext();
+  const draggedItemID = draggedItem ? getUniqueItemID(draggedItem) : null;
+  const notDragging = (item: IItem) =>
+    draggedItemID == null || getUniqueItemID(item) !== draggedItemID;
+
+  const rightHandItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.RIGHT_HAND &&
+      notDragging(item),
+  );
+  const rightHandItem2 = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.ALT_RIGHT_HAND &&
+      notDragging(item),
+  );
+  const handsItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.HANDS &&
+      notDragging(item),
+  );
+  const headItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.HEAD &&
+      notDragging(item),
+  );
+  const torsoItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.TORSO &&
+      notDragging(item),
+  );
+  const leftHandItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.LEFT_HAND &&
+      notDragging(item),
+  );
+  const leftHandItem2 = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.ALT_LEFT_HAND &&
+      notDragging(item),
+  );
+  const feetItem = mercItems.find(
+    (item) =>
+      item.location_id === LocationID.EQUIPPED &&
+      item.equipped_id === EquippedID.FEET &&
+      notDragging(item),
+  );
+
+  const removeItem = (index: number) => {
+    const next = mercItems.filter((_, i) => i !== index);
+    onChange({ ...file, character: { ...file.character, merc_items: next } });
+  };
+
+  return (
+    <TabPanelBox sx={{ overflow: 'auto' }} value="mercenary">
+      <InventoryGrid
+        equippedID={EquippedID.RIGHT_HAND}
+        file={file}
+        height={4}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={0}
+        y={0.25}
+      >
+        <InventoryGridItem
+          height={4}
+          item={rightHandItem}
+          width={2}
+          x={0}
+          y={0}
+        />
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.HANDS}
+        file={file}
+        height={2}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={0}
+        y={4.5}
+      >
+        <InventoryGridItem height={2} item={handsItem} width={2} x={0} y={0} />
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.RIGHT_FINGER}
+        file={file}
+        height={1}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={1}
+        x={2.25}
+        y={5.5}
+      >
+        {/* mercs rarely have rings but keep slot */}
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.HEAD}
+        file={file}
+        height={2}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={3.5}
+        y={0}
+      >
+        <InventoryGridItem height={2} item={headItem} width={2} x={0} y={0} />
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.TORSO}
+        file={file}
+        height={3}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={3.5}
+        y={2.25}
+      >
+        <InventoryGridItem height={3} item={torsoItem} width={2} x={0} y={0} />
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.WAIST}
+        file={file}
+        height={1}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={3.5}
+        y={5.5}
+      />
+
+      <InventoryGrid
+        equippedID={EquippedID.NECK}
+        file={file}
+        height={1}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={1}
+        x={5.75}
+        y={2.25}
+      >
+        {/* mercary amulets */}
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.LEFT_FINGER}
+        file={file}
+        height={1}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={1}
+        x={5.75}
+        y={5.5}
+      />
+
+      <InventoryGrid
+        equippedID={EquippedID.LEFT_HAND}
+        file={file}
+        height={4}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={7}
+        y={0.25}
+      >
+        <InventoryGridItem
+          height={4}
+          item={leftHandItem}
+          width={2}
+          x={0}
+          y={0}
+        />
+      </InventoryGrid>
+
+      <InventoryGrid
+        equippedID={EquippedID.FEET}
+        file={file}
+        height={2}
+        isMerc={true}
+        isSingleItemGrid={true}
+        locationID={LocationID.EQUIPPED}
+        width={2}
+        x={7}
+        y={4.5}
+      >
+        <InventoryGridItem height={2} item={feetItem} width={2} x={0} y={0} />
+      </InventoryGrid>
+    </TabPanelBox>
   );
 }

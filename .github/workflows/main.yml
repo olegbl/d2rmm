@@ -33,6 +33,11 @@ jobs:
           "Previous Version = $previous_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
 
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install Node
         uses: actions/setup-node@v3
         with:

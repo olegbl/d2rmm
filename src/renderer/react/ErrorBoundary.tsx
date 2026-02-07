@@ -27,7 +27,9 @@ class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.error != null) {
       return (
         this.props.fallback?.(this.state.error) ?? (
-          <div>{this.state.error.toString()}</div>
+          <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>
+            {this.state.error.stack ?? this.state.error.toString()}
+          </pre>
         )
       );
     }

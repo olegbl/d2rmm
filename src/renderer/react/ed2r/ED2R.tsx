@@ -6,6 +6,7 @@ import type {
 } from 'bridge/third-party/d2s/d2/types';
 import BridgeAPI from 'renderer/BridgeAPI';
 import ShellAPI from 'renderer/ShellAPI';
+import ErrorBoundary from 'renderer/react/ErrorBoundary';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
@@ -330,7 +331,7 @@ function TabPanelBox({
           ...sx,
         }}
       >
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </Box>
     </TabPanel>
   );

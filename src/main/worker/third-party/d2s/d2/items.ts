@@ -813,19 +813,17 @@ export function _readMagicProperties(
   while (id != 0x1ff) {
     const values = [];
     if (constants.magical_properties[id] == null) {
-      console.warn(
+      throw new Error(
         `itemstatcost.txt is missing stat with id "${id}" used in save file at position ${reader.offset - 9}`,
       );
-      break;
     }
     const num_of_properties = constants.magical_properties[id].np || 1;
     for (let i = 0; i < num_of_properties; i++) {
       const prop = constants.magical_properties[id + i];
       if (prop == null) {
-        console.warn(
+        throw new Error(
           `itemstatcost.txt is missing stat with id "${id + i}" used in save file at position ${reader.offset}`,
         );
-        continue;
       }
       if (prop.sP) {
         let param = reader.ReadUInt16(prop.sP);
@@ -853,10 +851,9 @@ export function _readMagicProperties(
         values.push(param);
       }
       if (!prop.sB) {
-        console.warn(
+        throw new Error(
           `itemstatcost.txt is missing field "Save Bits" for stat "${prop.s}" (${id}) used in save file at position ${reader.offset}`,
         );
-        prop.sB = 0;
       }
       let v = reader.ReadUInt16(prop.sB);
       if (prop.sA) {

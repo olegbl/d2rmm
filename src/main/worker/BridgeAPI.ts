@@ -1333,7 +1333,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         }
         gameFiles[filePath] = dataURI;
       } catch (e) {
-        console.error(
+        console.debug(
           `Could not get sprite data for item code "${itemCode}"`,
           (e as Error).stack,
         );

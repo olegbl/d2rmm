@@ -1190,6 +1190,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     d2s.setConstantData(97, gameData);
     d2s.setConstantData(98, gameData);
     d2s.setConstantData(99, gameData);
+    d2s.setConstantData(105, gameData);
 
     const saveFiles = await BridgeAPI.readDirectory(getSavesPath());
 

@@ -1,18 +1,23 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
+import { wrapParsingError } from './errors';
 
 export async function readHeader(char: types.ID2S, reader: BitReader) {
-  char.header = {} as types.IHeader;
-  //0x0000
-  char.header.identifier = reader.ReadUInt32().toString(16).padStart(8, '0');
-  if (char.header.identifier != 'aa55aa55') {
-    throw new Error(
-      `D2S identifier 'aa55aa55' not found at position ${reader.offset - 4 * 8}`,
-    );
+  try {
+    char.header = {} as types.IHeader;
+    //0x0000
+    char.header.identifier = reader.ReadUInt32().toString(16).padStart(8, '0');
+    if (char.header.identifier != 'aa55aa55') {
+      throw new Error(
+        `Invalid D2S file identifier '0x${char.header.identifier}' (expected 'aa55aa55'). This may not be a valid Diablo II save file.`,
+      );
+    }
+    //0x0004
+    char.header.version = reader.ReadUInt32();
+  } catch (error) {
+    throw wrapParsingError(error, 'Failed to read D2S file header');
   }
-  //0x0004
-  char.header.version = reader.ReadUInt32();
 }
 
 export async function readHeaderData(
@@ -20,11 +25,20 @@ export async function readHeaderData(
   reader: BitReader,
   constants: types.IConstantData,
 ) {
-  const v = await _versionSpecificHeader(char.header.version);
-  if (v == null) {
-    throw new Error(`Cannot parse version: ${char.header.version}`);
+  try {
+    const v = await _versionSpecificHeader(char.header.version);
+    if (v == null) {
+      throw new Error(
+        `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this parser.`,
+      );
+    }
+    v.readHeader(char, reader, constants);
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to read header data for version ${char.header.version}`,
+    );
   }
-  v.readHeader(char, reader, constants);
 }
 
 export async function writeHeader(char: types.ID2S): Promise<Uint8Array> {
@@ -40,14 +54,23 @@ export async function writeHeaderData(
   char: types.ID2S,
   constants: types.IConstantData,
 ): Promise<Uint8Array> {
-  const writer = new BitWriter();
-  const v = await _versionSpecificHeader(char.header.version);
-  if (v == null) {
-    throw new Error(`Cannot parse version: ${char.header.version}`);
-  }
-  v.writeHeader(char, writer, constants);
+  try {
+    const writer = new BitWriter();
+    const v = await _versionSpecificHeader(char.header.version);
+    if (v == null) {
+      throw new Error(
+        `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this writer.`,
+      );
+    }
+    v.writeHeader(char, writer, constants);
 
-  return writer.ToArray();
+    return writer.ToArray();
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to write header data for version ${char.header.version}`,
+    );
+  }
 }
 
 export async function fixHeader(writer: BitWriter) {

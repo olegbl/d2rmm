@@ -19,10 +19,24 @@ export class BitReader {
   }
 
   public ReadBit(): number {
+    if (this.offset >= this.bits.length) {
+      const byteOffset = Math.floor(this.offset / 8);
+      throw new Error(
+        `Attempted to read beyond end of buffer at byte offset ${byteOffset} (bit offset ${this.offset}). Buffer size: ${this.bits.length / 8} bytes.`,
+      );
+    }
     return this.bits[this.offset++];
   }
 
   public ReadBitArray(count: number): Uint8Array {
+    if (this.offset + count > this.bits.length) {
+      const byteOffset = Math.floor(this.offset / 8);
+      const bytesNeeded = Math.ceil(count / 8);
+      const bytesAvailable = Math.floor((this.bits.length - this.offset) / 8);
+      throw new Error(
+        `Attempted to read ${count} bits (${bytesNeeded} bytes) starting at byte offset ${byteOffset}, but only ${bytesAvailable} bytes available.`,
+      );
+    }
     const bits = new Uint8Array(count);
     for (let i = 0; i < count; i++) {
       bits[i] = this.bits[this.offset++];
@@ -81,8 +95,15 @@ export class BitReader {
   }
 
   public ReadString(bytes: number): string {
-    const buffer = this.ReadBytes(bytes).buffer;
-    return new TextDecoder().decode(buffer);
+    try {
+      const buffer = this.ReadBytes(bytes).buffer;
+      return new TextDecoder().decode(buffer);
+    } catch (error) {
+      const byteOffset = Math.floor(this.offset / 8);
+      throw new Error(
+        `Failed to read ${bytes}-byte string at byte offset ${byteOffset}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   public ReadNullTerminatedString(): string {

@@ -1,6 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
+import { wrapParsingError, formatItemContext, formatCharContext } from './errors';
 
 enum ItemType {
   Armor = 0x01,
@@ -59,25 +60,33 @@ export async function readMercItems(
   constants: types.IConstantData,
   config: types.IConfig,
 ) {
-  char.merc_items = [] as types.IItem[];
-  const header = reader.ReadString(2); //0x0000 [merc item list header = "jf"]
-  if (header !== 'jf') {
-    // header is not present in first save after char is created
-    if (char?.header.level === 1) {
-      return;
-    }
+  try {
+    char.merc_items = [] as types.IItem[];
+    const header = reader.ReadString(2); //0x0000 [merc item list header = "jf"]
+    if (header !== 'jf') {
+      // header is not present in first save after char is created
+      if (char?.header.level === 1) {
+        return;
+      }
 
-    throw new Error(
-      `Mercenary header 'jf' not found at position ${reader.offset - 2 * 8}`,
-    );
-  }
-  if (char.header.merc_id && parseInt(char.header.merc_id, 16) !== 0) {
-    char.merc_items = await readItems(
-      reader,
-      char.header.version,
-      constants,
-      config,
-      char,
+      const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
+      throw new Error(
+        `Mercenary item list header 'jf' not found (found '${header}' instead) at byte offset ${byteOffset}`,
+      );
+    }
+    if (char.header.merc_id && parseInt(char.header.merc_id, 16) !== 0) {
+      char.merc_items = await readItems(
+        reader,
+        char.header.version,
+        constants,
+        config,
+        char,
+      );
+    }
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to read mercenary items for ${formatCharContext(char)}`,
     );
   }
 }
@@ -104,24 +113,32 @@ export async function readGolemItems(
   constants: types.IConstantData,
   config: types.IConfig,
 ) {
-  const header = reader.ReadString(2); //0x0000 [golem item list header = "kf"]
-  if (header !== 'kf') {
-    // header is not present in first save after char is created
-    if (char?.header.level === 1) {
-      return;
-    }
+  try {
+    const header = reader.ReadString(2); //0x0000 [golem item list header = "kf"]
+    if (header !== 'kf') {
+      // header is not present in first save after char is created
+      if (char?.header.level === 1) {
+        return;
+      }
 
-    throw new Error(
-      `Golem header 'kf' not found at position ${reader.offset - 2 * 8}`,
-    );
-  }
-  const has_golem = reader.ReadUInt8();
-  if (has_golem === 1) {
-    char.golem_item = await readItem(
-      reader,
-      char.header.version,
-      constants,
-      config,
+      const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
+      throw new Error(
+        `Golem item header 'kf' not found (found '${header}' instead) at byte offset ${byteOffset}`,
+      );
+    }
+    const has_golem = reader.ReadUInt8();
+    if (has_golem === 1) {
+      char.golem_item = await readItem(
+        reader,
+        char.header.version,
+        constants,
+        config,
+      );
+    }
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to read golem item for ${formatCharContext(char)}`,
     );
   }
 }
@@ -150,24 +167,36 @@ export async function readCorpseItems(
   constants: types.IConstantData,
   config: types.IConfig,
 ) {
-  char.corpse_items = [] as types.IItem[];
-  const header = reader.ReadString(2); //0x0000 [item list header = 0x4a, 0x4d "JM"]
-  if (header !== 'JM') {
-    // header is not present in first save after char is created
-    if (char.header.level === 1) {
-      char.is_dead = 0;
-      return;
-    }
+  try {
+    char.corpse_items = [] as types.IItem[];
+    const header = reader.ReadString(2); //0x0000 [item list header = 0x4a, 0x4d "JM"]
+    if (header !== 'JM') {
+      // header is not present in first save after char is created
+      if (char.header.level === 1) {
+        char.is_dead = 0;
+        return;
+      }
 
-    throw new Error(
-      `Corpse header 'JM' not found at position ${reader.offset - 2 * 8}`,
-    );
-  }
-  char.is_dead = reader.ReadUInt16(); //0x0002 [corpse count]
-  for (let i = 0; i < char.is_dead; i++) {
-    reader.SkipBytes(12); //0x0004 [unk4, x_pos, y_pos]
-    char.corpse_items = char.corpse_items.concat(
-      await readItems(reader, char.header.version, constants, config, char),
+      const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
+      throw new Error(
+        `Corpse item list header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
+      );
+    }
+    char.is_dead = reader.ReadUInt16(); //0x0002 [corpse count]
+    for (let i = 0; i < char.is_dead; i++) {
+      try {
+        reader.SkipBytes(12); //0x0004 [unk4, x_pos, y_pos]
+        char.corpse_items = char.corpse_items.concat(
+          await readItems(reader, char.header.version, constants, config, char),
+        );
+      } catch (error) {
+        throw wrapParsingError(error, `Failed to read corpse ${i + 1} of ${char.is_dead}`);
+      }
+    }
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to read corpse items for ${formatCharContext(char)}`,
     );
   }
 }
@@ -211,14 +240,22 @@ export async function readItems(
       return []; // TODO: return starter items based on class
     }
 
+    const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
     throw new Error(
-      `Item list header 'JM' not found at position ${reader.offset - 2 * 8}`,
+      `Item list header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
     );
   }
   const count = reader.ReadUInt16(); //0x0002
 
   for (let i = 0; i < count; i++) {
-    items.push(await readItem(reader, version, constants, config));
+    try {
+      items.push(await readItem(reader, version, constants, config));
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to read item ${i + 1} of ${count}`,
+      );
+    }
   }
   return items;
 }
@@ -245,20 +282,32 @@ export async function readItem(
   config: types.IConfig,
   _parent?: types.IItem,
 ): Promise<types.IItem> {
-  if (version <= 0x60) {
-    const header = reader.ReadString(2); //0x0000 [item header = 0x4a, 0x4d "JM"]
-    if (header !== 'JM') {
-      throw new Error(
-        `Item header 'JM' not found at position ${reader.offset - 2 * 8}`,
+  const itemStartOffset = reader.offset;
+  const item = {
+    offset: itemStartOffset,
+  } as types.IItem;
+
+  try {
+    if (version <= 0x60) {
+      const header = reader.ReadString(2); //0x0000 [item header = 0x4a, 0x4d "JM"]
+      if (header !== 'JM') {
+        const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
+        throw new Error(
+          `Item header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
+        );
+      }
+    }
+    const constants = originalConstants;
+
+    try {
+      _readSimpleBits(item, reader, version, constants, config);
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to read item flags and basic properties at byte offset ${Math.floor(itemStartOffset / 8)}`,
       );
     }
-  }
-  const constants = originalConstants;
-  const item = {
-    offset: reader.offset,
-  } as types.IItem;
-  _readSimpleBits(item, reader, version, constants, config);
-  if (!item.simple_item) {
+    if (!item.simple_item) {
     item.id = reader.ReadUInt32(32);
     item.level = reader.ReadUInt8(7);
     item.quality = reader.ReadUInt8(4);
@@ -270,76 +319,87 @@ export async function readItem(
     if (item.class_specific) {
       item.auto_affix_id = reader.ReadUInt16(11);
     }
-    switch (item.quality) {
-      case Quality.Low:
-        item.low_quality_id = reader.ReadUInt8(3);
-        break;
-      case Quality.Normal:
-        {
-          // sometimes normal items have 12 bits here...
-          // maybe when they have magical properties?
-          const bits = reader.ReadUInt16(12);
-          // TODO: I have no idea if this is always 0
-          if (bits === 0) {
-            item.normal_12_bits = bits;
-          } else {
-            // assume these are properties instead
-            item.normal_12_bits = null;
-            reader.SkipBits(-12);
+
+    // Parse quality-specific data
+    try {
+      switch (item.quality) {
+        case Quality.Low:
+          item.low_quality_id = reader.ReadUInt8(3);
+          break;
+        case Quality.Normal:
+          {
+            // sometimes normal items have 12 bits here...
+            // maybe when they have magical properties?
+            const bits = reader.ReadUInt16(12);
+            // TODO: I have no idea if this is always 0
+            if (bits === 0) {
+              item.normal_12_bits = bits;
+            } else {
+              // assume these are properties instead
+              item.normal_12_bits = null;
+              reader.SkipBits(-12);
+            }
           }
-        }
-        break;
-      case Quality.Superior:
-        item.file_index = reader.ReadUInt8(3);
-        break;
-      case Quality.Magic:
-        item.magic_prefix = reader.ReadUInt16(11);
-        if (item.magic_prefix)
-          item.magic_prefix_name = constants.magic_prefixes[item.magic_prefix]
-            ? constants.magic_prefixes[item.magic_prefix].n
+          break;
+        case Quality.Superior:
+          item.file_index = reader.ReadUInt8(3);
+          break;
+        case Quality.Magic:
+          item.magic_prefix = reader.ReadUInt16(11);
+          if (item.magic_prefix)
+            item.magic_prefix_name = constants.magic_prefixes[item.magic_prefix]
+              ? constants.magic_prefixes[item.magic_prefix].n
+              : null;
+          item.magic_suffix = reader.ReadUInt16(11);
+          if (item.magic_suffix)
+            item.magic_suffix_name = constants.magic_suffixes[item.magic_suffix]
+              ? constants.magic_suffixes[item.magic_suffix].n
+              : null;
+          break;
+        case Quality.Set:
+          item.set_id = reader.ReadUInt16(12);
+          item.set_name = constants.set_items[item.set_id]
+            ? constants.set_items[item.set_id].n
             : null;
-        item.magic_suffix = reader.ReadUInt16(11);
-        if (item.magic_suffix)
-          item.magic_suffix_name = constants.magic_suffixes[item.magic_suffix]
-            ? constants.magic_suffixes[item.magic_suffix].n
+          break;
+        case Quality.Unique:
+          item.unique_id = reader.ReadUInt16(12);
+          item.unique_name = constants.unq_items[item.unique_id]
+            ? constants.unq_items[item.unique_id].n
             : null;
-        break;
-      case Quality.Set:
-        item.set_id = reader.ReadUInt16(12);
-        item.set_name = constants.set_items[item.set_id]
-          ? constants.set_items[item.set_id].n
-          : null;
-        break;
-      case Quality.Unique:
-        item.unique_id = reader.ReadUInt16(12);
-        item.unique_name = constants.unq_items[item.unique_id]
-          ? constants.unq_items[item.unique_id].n
-          : null;
-        break;
-      case Quality.Rare:
-      case Quality.Crafted:
-        item.rare_name_id = reader.ReadUInt8(8);
-        if (item.rare_name_id)
-          item.rare_name = constants.rare_names[item.rare_name_id]
-            ? constants.rare_names[item.rare_name_id].n
-            : null;
-        item.rare_name_id2 = reader.ReadUInt8(8);
-        if (item.rare_name_id2)
-          item.rare_name2 = constants.rare_names[item.rare_name_id2]
-            ? constants.rare_names[item.rare_name_id2].n
-            : null;
-        item.magical_name_ids = [];
-        for (let i = 0; i < 6; i++) {
-          const prefix = reader.ReadBit();
-          if (prefix === 1) {
-            item.magical_name_ids[i] = reader.ReadUInt16(11);
-          } else {
-            item.magical_name_ids[i] = null;
+          break;
+        case Quality.Rare:
+        case Quality.Crafted:
+          item.rare_name_id = reader.ReadUInt8(8);
+          if (item.rare_name_id)
+            item.rare_name = constants.rare_names[item.rare_name_id]
+              ? constants.rare_names[item.rare_name_id].n
+              : null;
+          item.rare_name_id2 = reader.ReadUInt8(8);
+          if (item.rare_name_id2)
+            item.rare_name2 = constants.rare_names[item.rare_name_id2]
+              ? constants.rare_names[item.rare_name_id2].n
+              : null;
+          item.magical_name_ids = [];
+          for (let i = 0; i < 6; i++) {
+            const prefix = reader.ReadBit();
+            if (prefix === 1) {
+              item.magical_name_ids[i] = reader.ReadUInt16(11);
+            } else {
+              item.magical_name_ids[i] = null;
+            }
           }
-        }
-        break;
-      default:
-        break;
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      const qualityNames = ['Unknown', 'Low', 'Normal', 'Superior', 'Magic', 'Set', 'Rare', 'Unique', 'Crafted'];
+      const qualityName = qualityNames[item.quality] || `Unknown(${item.quality})`;
+      throw wrapParsingError(
+        error,
+        `Failed to read quality-specific data for ${qualityName} quality item`,
+      );
     }
     if (item.given_runeword) {
       item.runeword_id = reader.ReadUInt16(12);
@@ -419,41 +479,61 @@ export async function readItem(
       item._unknown_data.plist_flag = plist_flag;
     }
 
-    //magical properties
-    let magic_attributes = _readMagicProperties(reader, constants);
-    item.magic_attributes = magic_attributes;
+      //magical properties
+      try {
+        let magic_attributes = _readMagicProperties(reader, constants);
+        item.magic_attributes = magic_attributes;
 
-    while (plist_flag > 0) {
-      if (plist_flag & 1) {
-        item.set_list_count += 1;
-        magic_attributes = _readMagicProperties(reader, constants);
-        if (item.set_attributes) {
-          item.set_attributes.push(magic_attributes);
-        } else {
-          item.set_attributes = [magic_attributes];
+        while (plist_flag > 0) {
+          if (plist_flag & 1) {
+            item.set_list_count += 1;
+            magic_attributes = _readMagicProperties(reader, constants);
+            if (item.set_attributes) {
+              item.set_attributes.push(magic_attributes);
+            } else {
+              item.set_attributes = [magic_attributes];
+            }
+          }
+          plist_flag >>>= 1;
+        }
+
+        if (item.given_runeword === 1) {
+          magic_attributes = _readMagicProperties(reader, constants);
+          if (magic_attributes && magic_attributes.length > 0) {
+            item.runeword_attributes = magic_attributes;
+          }
+        }
+      } catch (error) {
+        throw wrapParsingError(
+          error,
+          `Failed to read magical properties for ${formatItemContext(item)}`,
+        );
+      }
+    }
+    reader.Align();
+
+    if (item.nr_of_items_in_sockets > 0 && item.simple_item === 0) {
+      item.socketed_items = [];
+      for (let i = 0; i < item.nr_of_items_in_sockets; i++) {
+        try {
+          item.socketed_items.push(
+            await readItem(reader, version, constants, config, item),
+          );
+        } catch (error) {
+          throw wrapParsingError(
+            error,
+            `Failed to read socketed item ${i + 1} of ${item.nr_of_items_in_sockets} in ${formatItemContext(item)}`,
+          );
         }
       }
-      plist_flag >>>= 1;
     }
-
-    if (item.given_runeword === 1) {
-      magic_attributes = _readMagicProperties(reader, constants);
-      if (magic_attributes && magic_attributes.length > 0) {
-        item.runeword_attributes = magic_attributes;
-      }
-    }
+    return item;
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to parse ${formatItemContext(item)}`,
+    );
   }
-  reader.Align();
-
-  if (item.nr_of_items_in_sockets > 0 && item.simple_item === 0) {
-    item.socketed_items = [];
-    for (let i = 0; i < item.nr_of_items_in_sockets; i++) {
-      item.socketed_items.push(
-        await readItem(reader, version, constants, config, item),
-      );
-    }
-  }
-  return item;
 }
 
 export async function writeItem(
@@ -812,68 +892,81 @@ export function _readMagicProperties(
   const magic_attributes = [];
   while (id != 0x1ff) {
     const values = [];
+    const propertyStartOffset = reader.offset - 9;
+    const byteOffset = Math.floor(propertyStartOffset / 8);
+
     if (constants.magical_properties[id] == null) {
       throw new Error(
-        `itemstatcost.txt is missing stat with id "${id}" used in save file at position ${reader.offset - 9}`,
+        `Stat ID ${id} is not defined in itemstatcost.txt (attempted to read at byte offset ${byteOffset}). This may indicate corrupted save data or unsupported game version.`,
       );
     }
-    const num_of_properties = constants.magical_properties[id].np || 1;
-    for (let i = 0; i < num_of_properties; i++) {
-      const prop = constants.magical_properties[id + i];
-      if (prop == null) {
-        throw new Error(
-          `itemstatcost.txt is missing stat with id "${id + i}" used in save file at position ${reader.offset}`,
-        );
-      }
-      if (prop.sP) {
-        let param = reader.ReadUInt16(prop.sP);
-        switch (prop.dF) {
-          case 14: //+skill to skilltab
-            values.push(param & 0x7);
-            param = (param >> 3) & 0x1fff;
-            break;
-          default:
-            break;
+
+    try {
+      const num_of_properties = constants.magical_properties[id].np || 1;
+      for (let i = 0; i < num_of_properties; i++) {
+        const prop = constants.magical_properties[id + i];
+        if (prop == null) {
+          const currentByteOffset = Math.floor(reader.offset / 8);
+          throw new Error(
+            `Stat ID ${id + i} is not defined in itemstatcost.txt (property ${i + 1} of ${num_of_properties} for stat ${id} at byte offset ${currentByteOffset})`,
+          );
         }
-        //encode
+        if (prop.sP) {
+          let param = reader.ReadUInt16(prop.sP);
+          switch (prop.dF) {
+            case 14: //+skill to skilltab
+              values.push(param & 0x7);
+              param = (param >> 3) & 0x1fff;
+              break;
+            default:
+              break;
+          }
+          //encode
+          switch (prop.e) {
+            case 1:
+              //throw new Error(`Unimplemented encoding: ${prop.encode}`);
+              break;
+            case 2: //chance to cast
+            case 3: //charges
+              values.push(param & 0x3f); //skill level
+              param = (param >> 6) & 0x3ff; //skll id
+              break;
+            default:
+              break;
+          }
+          values.push(param);
+        }
+        if (!prop.sB) {
+          throw new Error(
+            `Stat "${prop.s}" (ID: ${id}) is missing "Save Bits" field in itemstatcost.txt. This indicates corrupted or incomplete game data.`,
+          );
+        }
+        let v = reader.ReadUInt16(prop.sB);
+        if (prop.sA) {
+          v -= prop.sA;
+        }
         switch (prop.e) {
-          case 1:
-            //throw new Error(`Unimplemented encoding: ${prop.encode}`);
-            break;
-          case 2: //chance to cast
-          case 3: //charges
-            values.push(param & 0x3f); //skill level
-            param = (param >> 6) & 0x3ff; //skll id
+          case 3:
+            values.push(v & 0xff); // current charges
+            values.push((v >> 8) & 0xff); //max charges
             break;
           default:
+            values.push(v);
             break;
         }
-        values.push(param);
       }
-      if (!prop.sB) {
-        throw new Error(
-          `itemstatcost.txt is missing field "Save Bits" for stat "${prop.s}" (${id}) used in save file at position ${reader.offset}`,
-        );
-      }
-      let v = reader.ReadUInt16(prop.sB);
-      if (prop.sA) {
-        v -= prop.sA;
-      }
-      switch (prop.e) {
-        case 3:
-          values.push(v & 0xff); // current charges
-          values.push((v >> 8) & 0xff); //max charges
-          break;
-        default:
-          values.push(v);
-          break;
-      }
+      magic_attributes.push({
+        id: id,
+        values: values,
+        name: constants.magical_properties[id].s,
+      } as types.IMagicProperty);
+    } catch (error) {
+      const statName = constants.magical_properties[id]?.s || `Unknown(${id})`;
+      throw wrapParsingError(
+        error,
+        `Failed to read magical property '${statName}' (stat ID: ${id}) starting at byte offset ${byteOffset}`,
+      );
     }
-    magic_attributes.push({
-      id: id,
-      values: values,
-      name: constants.magical_properties[id].s,
-    } as types.IMagicProperty);
     id = reader.ReadUInt16(9);
   }
   return magic_attributes;

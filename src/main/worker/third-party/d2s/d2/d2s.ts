@@ -4,6 +4,7 @@ import { BitWriter } from '../binary/bitwriter';
 import { enhanceAttributes, enhanceItems } from './attribute_enhancer';
 import { readAttributes, writeAttributes } from './attributes';
 import { getConstantData } from './constants';
+import { wrapParsingError, formatCharContext } from './errors';
 import {
   readHeader,
   readHeaderData,
@@ -31,21 +32,93 @@ async function read(
   const char = {} as types.ID2S;
   const reader = new BitReader(buffer);
   const config = Object.assign(defaultConfig, userConfig);
-  await readHeader(char, reader);
-  //could load constants based on version here
-  if (!constants) {
-    constants = getConstantData(char.header.version);
+
+  try {
+    await readHeader(char, reader);
+  } catch (error) {
+    throw wrapParsingError(error, 'Failed to parse D2S file header');
   }
-  await readHeaderData(char, reader, constants);
-  await readAttributes(char, reader, constants);
-  await readSkills(char, reader, constants);
-  await items.readCharItems(char, reader, constants, config);
-  await items.readCorpseItems(char, reader, constants, config);
+
+  try {
+    //could load constants based on version here
+    if (!constants) {
+      constants = getConstantData(char.header.version);
+    }
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to load game data constants for version ${char.header.version}`,
+    );
+  }
+
+  try {
+    await readHeaderData(char, reader, constants);
+  } catch (error) {
+    throw wrapParsingError(error, 'Failed to parse character header data');
+  }
+
+  try {
+    await readAttributes(char, reader, constants);
+  } catch (error) {
+    throw wrapParsingError(error, 'Failed to parse character attributes');
+  }
+
+  try {
+    await readSkills(char, reader, constants);
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to parse character skills for ${formatCharContext(char)}`,
+    );
+  }
+
+  try {
+    await items.readCharItems(char, reader, constants, config);
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to parse character items for ${formatCharContext(char)}`,
+    );
+  }
+
+  try {
+    await items.readCorpseItems(char, reader, constants, config);
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to parse corpse items for ${formatCharContext(char)}`,
+    );
+  }
+
   if (char.header.status.expansion) {
-    await items.readMercItems(char, reader, constants, config);
-    await items.readGolemItems(char, reader, constants, config);
+    try {
+      await items.readMercItems(char, reader, constants, config);
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to parse mercenary items for ${formatCharContext(char)}`,
+      );
+    }
+
+    try {
+      await items.readGolemItems(char, reader, constants, config);
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to parse golem item for ${formatCharContext(char)}`,
+      );
+    }
   }
-  await enhanceAttributes(char, constants, config);
+
+  try {
+    await enhanceAttributes(char, constants, config);
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to enhance attributes for ${formatCharContext(char)}`,
+    );
+  }
+
   return char;
 }
 
@@ -55,14 +128,21 @@ async function readItem(
   constants?: types.IConstantData,
   userConfig?: types.IConfig,
 ): Promise<types.IItem> {
-  const reader = new BitReader(buffer);
-  const config = Object.assign(defaultConfig, userConfig);
-  if (!constants) {
-    constants = getConstantData(version);
+  try {
+    const reader = new BitReader(buffer);
+    const config = Object.assign(defaultConfig, userConfig);
+    if (!constants) {
+      constants = getConstantData(version);
+    }
+    const item = await items.readItem(reader, version, constants, config);
+    await enhanceItems([item], constants);
+    return item;
+  } catch (error) {
+    throw wrapParsingError(
+      error,
+      `Failed to parse item from buffer (version ${version})`,
+    );
   }
-  const item = await items.readItem(reader, version, constants, config);
-  await enhanceItems([item], constants);
-  return item;
 }
 
 function writer(_buffer: Uint8Array) {

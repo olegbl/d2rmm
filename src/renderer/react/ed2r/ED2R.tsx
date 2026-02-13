@@ -53,6 +53,7 @@ import { PropsOf } from '@emotion/react';
 import { Fragment, forwardRef, useCallback, useMemo } from 'react';
 import {
   Circle,
+  Close,
   FileCopyOutlined,
   Refresh,
   RefreshOutlined,
@@ -361,6 +362,38 @@ function Stash({
     .fill(null)
     .map((_value, index) => index);
 
+  const handleDeleteTab = useCallback(
+    (indexToDelete: number) => {
+      if (file.stash.pageCount <= 3) {
+        return; // Don't delete if we have 3 or fewer tabs
+      }
+
+      const newPages = file.stash.pages.filter(
+        (_, index) => index !== indexToDelete,
+      );
+      const updatedFile: StashFile = {
+        ...file,
+        stash: {
+          ...file.stash,
+          pageCount: file.stash.pageCount - 1,
+          pages: newPages,
+        },
+      };
+
+      onChange(updatedFile);
+
+      // If the deleted tab was the current tab or if it's the last tab, switch to previous
+      const currentTabIndex = parseInt(tab, 10);
+      if (
+        currentTabIndex === indexToDelete ||
+        currentTabIndex >= newPages.length
+      ) {
+        setTab(String(Math.max(0, newPages.length - 1)));
+      }
+    },
+    [file, onChange, tab, setTab],
+  );
+
   return (
     <TabContext value={tab}>
       <Box
@@ -378,6 +411,7 @@ function Stash({
             contain: 'size',
             flex: '0 0 auto',
             height: 48,
+            display: 'flex',
           }}
         >
           <TabList
@@ -388,7 +422,22 @@ function Stash({
             {tabIndices.map((index) => (
               <Tab
                 key={index}
-                label={`Page ${index + 1}`}
+                label={
+                  <span>
+                    Page {index + 1}
+                    {file.stash.pageCount > 3 && (
+                      <Tooltip title="Delete this stash tab">
+                        <IconButton
+                          onClick={() => handleDeleteTab(index)}
+                          size="small"
+                          sx={{ ml: 1 }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </span>
+                }
                 value={String(index)}
               />
             ))}

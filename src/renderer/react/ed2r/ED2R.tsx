@@ -1485,6 +1485,20 @@ function InventoryGridItem({
             }}
           >
             <ItemName item={item} />
+            {
+              /* temporary hack to show some of the stats */
+              Array.from(
+                new Set(
+                  (item.displayed_combined_magic_attributes ?? [])
+                    .map((attr) => attr.description)
+                    .filter(Boolean),
+                ),
+              ).map((str) => (
+                <span key={str} style={{ display: 'inline-block' }}>
+                  {str}
+                </span>
+              ))
+            }
           </Typography>
         </Box>
       }

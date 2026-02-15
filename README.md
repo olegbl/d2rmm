@@ -11,15 +11,15 @@ You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](ht
 ## Building
 
 - [https://github.com/nodejs/node-gyp#on-windows](https://github.com/nodejs/node-gyp#on-windows)
-  - I needed `npm config set msvs_version 2019` instead of `npm config set msvs_version 2017`.
+- D2RMM uses Node v18 by default, so make sure to install that (e.g. via nvm).
 - `git clone`
 - `cd d2rmm`
 - `yarn install`
-- `npm start` to debug
-- `npm run package` to build release
-- `npm run docs` to build documentation
-- `npm run build:updater` to build auto-updater exe
-- `npm run build:config-schema` to build config json schema
+- `yarn start` to debug
+- `yarn package` to build release
+- `yarn docs` to build documentation
+- `yarn build:updater` to build auto-updater exe
+- `yarn build:config-schema` to build config json schema
 
 ## Experimental support for macOS
 

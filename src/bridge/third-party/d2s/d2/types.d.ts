@@ -383,6 +383,8 @@ export interface IItem {
     b25?: Uint8Array;
     b27_31?: Uint8Array;
     plist_flag?: number;
+    v105_extra_bit_1?: Uint8Array;
+    v105_extra_bit_2?: Uint8Array;
   };
   rare_name_id: number;
   rare_name_id2: number;

@@ -3,8 +3,6 @@ import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { wrapParsingError, formatCharContext } from './errors';
 
-const DEBUG = false;
-
 enum ItemType {
   Armor = 0x01,
   Shield = 0x02, //treated the same as armor... only here to be able to parse nokkas jsons
@@ -256,9 +254,6 @@ export async function readItems(
     try {
       items.push(await readItem(reader, version, constants, config));
     } catch (error) {
-      if (DEBUG) {
-        console.error('@@', 'items', items);
-      }
       throw wrapParsingError(error, `Failed to read item ${i + 1} of ${count}`);
     }
   }
@@ -329,6 +324,11 @@ export async function readItem(
   const item = {
     offset: itemStartOffset,
   } as types.IItem;
+
+  // for debugging:
+  if (false) {
+    item.hex = extractRawBytes(reader, itemStartOffset, 100);
+  }
 
   try {
     if (version <= 0x60) {
@@ -500,15 +500,7 @@ export async function readItem(
       }
 
       //realm data
-      //0=LoD? What? Why?
-      //3=RotW
-      if (version >= 0x69) {
-        //version 105 (Rise of the Warlock) introduces a new realm
-        //so the game now needs 2 bits to store realm data
-        item.timestamp = reader.ReadUInt8(2);
-      } else {
-        item.timestamp = reader.ReadUInt8(1);
-      }
+      item.timestamp = reader.ReadUInt8(1);
 
       if (item.type_id === ItemType.Armor) {
         item.defense_rating =
@@ -545,6 +537,10 @@ export async function readItem(
         item._unknown_data.plist_flag = plist_flag;
       }
 
+      if (version >= 0x69) {
+        item._unknown_data.v105_extra_bit_1 = reader.ReadBitArray(1);
+      }
+
       //magical properties
       try {
         let magic_attributes = _readMagicProperties(reader, constants);
@@ -573,6 +569,11 @@ export async function readItem(
         throw wrapParsingError(error, `Failed to read magical properties`);
       }
     }
+
+    if (version >= 0x69) {
+      item._unknown_data.v105_extra_bit_2 = reader.ReadBitArray(1);
+    }
+
     reader.Align();
 
     if (item.nr_of_items_in_sockets > 0 && item.simple_item === 0) {
@@ -591,28 +592,8 @@ export async function readItem(
       }
     }
 
-    if (version >= 0x69) {
-      // @@ DEBUGGING
-      // there is an extra byte here sometimes...
-      // e.g.:
-      // {"offset":10704,"_unknown_data":{"b0_3":{"0":0,"1":0,"2":0,"3":0},"b5_10":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0},"b12":{"0":0},"b14_15":{"0":0,"1":0},"b18_20":{"0":0,"1":0,"2":0},"b23":{"0":1},"b25":{"0":0},"b27_31":{"0":0,"1":0,"2":0,"3":0,"4":0}},"identified":1,"socketed":0,"new":0,"is_ear":0,"starter_item":0,"simple_item":0,"ethereal":0,"personalized":0,"given_runeword":0,"version":"101","location_id":1,"equipped_id":6,"position_x":6,"position_y":0,"alt_position_id":0,"type":"rin","categories":["Ring","Miscellaneous"],"type_id":4,"nr_of_items_in_sockets":0,"id":2424002104,"level":84,"quality":7,"multiple_pictures":1,"picture_id":1,"class_specific":0,"unique_id":122,"unique_name":"The Stone of Jordan","timestamp":0,"magic_attributes":[{"id":9,"values":[20],"name":"maxmana"},{"id":50,"values":[1,12],"name":"lightmindam"},{"id":77,"values":[25],"name":"item_maxmana_percent"},{"id":127,"values":[1],"name":"item_allskills"}]}
-      // has a 0x00 at the end
-      // could this be related to the holy grail tracker thing?
-      // nope - rainbow facet doesn't have this byte
-      // nope - Nature's Peace unique ring doesn't have this byte
-      // if (item.id === 2424002104) {
-      //   item.unknown_thing = reader.ReadUInt8(8);
-      // }
-    }
-
-    if (DEBUG) {
-      item.hex = extractRawBytes(reader, itemStartOffset, 100);
-    }
     return item;
   } catch (error) {
-    if (DEBUG) {
-      console.error('@@', 'item', item);
-    }
     throw wrapParsingError(
       error,
       `Failed to parse item ${JSON.stringify(item)}`,
@@ -728,11 +709,7 @@ export async function writeItem(
       writer.WriteUInt8(1, 5);
     }
 
-    if (version >= 0x69) {
-      writer.WriteUInt8(item.timestamp, 2);
-    } else {
-      writer.WriteUInt8(item.timestamp, 1);
-    }
+    writer.WriteUInt8(item.timestamp, 1);
 
     if (item.type_id === ItemType.Armor || item.type_id === ItemType.Shield) {
       writer.WriteUInt16(
@@ -774,6 +751,13 @@ export async function writeItem(
       writer.WriteUInt8(item._unknown_data.plist_flag || plist_flag, 5);
     }
 
+    if (version >= 0x69) {
+      writer.WriteArray(
+        item._unknown_data.v105_extra_bit_1 ?? new Uint8Array([0]),
+        1,
+      );
+    }
+
     _writeMagicProperties(writer, item.magic_attributes, constants);
     if (item.set_attributes && item.set_attributes.length > 0) {
       for (let i = 0; i < item.set_attributes.length; i++) {
@@ -784,6 +768,13 @@ export async function writeItem(
     if (item.given_runeword === 1) {
       _writeMagicProperties(writer, item.runeword_attributes, constants);
     }
+  }
+
+  if (version >= 0x69) {
+    writer.WriteArray(
+      item._unknown_data.v105_extra_bit_2 ?? new Uint8Array([0]),
+      1,
+    );
   }
 
   writer.Align();

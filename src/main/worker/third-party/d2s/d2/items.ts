@@ -1,7 +1,9 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { wrapParsingError, formatItemContext, formatCharContext } from './errors';
+import { wrapParsingError, formatCharContext } from './errors';
+
+const DEBUG = false;
 
 enum ItemType {
   Armor = 0x01,
@@ -190,7 +192,10 @@ export async function readCorpseItems(
           await readItems(reader, char.header.version, constants, config, char),
         );
       } catch (error) {
-        throw wrapParsingError(error, `Failed to read corpse ${i + 1} of ${char.is_dead}`);
+        throw wrapParsingError(
+          error,
+          `Failed to read corpse ${i + 1} of ${char.is_dead}`,
+        );
       }
     }
   } catch (error) {
@@ -251,10 +256,10 @@ export async function readItems(
     try {
       items.push(await readItem(reader, version, constants, config));
     } catch (error) {
-      throw wrapParsingError(
-        error,
-        `Failed to read item ${i + 1} of ${count}`,
-      );
+      if (DEBUG) {
+        console.error('@@', 'items', items);
+      }
+      throw wrapParsingError(error, `Failed to read item ${i + 1} of ${count}`);
     }
   }
   return items;
@@ -273,6 +278,44 @@ export async function writeItems(
     writer.WriteArray(await writeItem(items[i], version, constants, config));
   }
   return writer.ToArray();
+}
+
+// Helper function to extract raw bytes from BitReader for debugging
+function extractRawBytes(
+  reader: BitReader,
+  startBitOffset: number,
+  byteCount: number,
+): string {
+  try {
+    const bytes: number[] = [];
+    for (let i = 0; i < byteCount; i++) {
+      const bitOffset = startBitOffset + i * 8;
+      if (bitOffset + 8 > reader.bits.length) {
+        break; // Stop if we've reached the end
+      }
+      let byte = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        if (reader.bits[bitOffset + bit]) {
+          byte |= 1 << bit;
+        }
+      }
+      bytes.push(byte);
+    }
+
+    // Format as hex with 16 bytes per line
+    const lines: string[] = [];
+    for (let i = 0; i < bytes.length; i += 16) {
+      const lineBytes = bytes.slice(i, i + 16);
+      const hex = lineBytes
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join(' ');
+      const offset = Math.floor(startBitOffset / 8) + i;
+      lines.push(`  ${offset.toString().padStart(4, '0')}: ${hex}`);
+    }
+    return '\n' + lines.join('\n');
+  } catch (e) {
+    return ' (unable to extract bytes)';
+  }
 }
 
 export async function readItem(
@@ -308,176 +351,199 @@ export async function readItem(
       );
     }
     if (!item.simple_item) {
-    item.id = reader.ReadUInt32(32);
-    item.level = reader.ReadUInt8(7);
-    item.quality = reader.ReadUInt8(4);
-    item.multiple_pictures = reader.ReadBit();
-    if (item.multiple_pictures) {
-      item.picture_id = reader.ReadUInt8(3);
-    }
-    item.class_specific = reader.ReadBit();
-    if (item.class_specific) {
-      item.auto_affix_id = reader.ReadUInt16(11);
-    }
+      item.id = reader.ReadUInt32(32);
+      item.level = reader.ReadUInt8(7);
+      item.quality = reader.ReadUInt8(4);
+      item.multiple_pictures = reader.ReadBit();
+      if (item.multiple_pictures) {
+        item.picture_id = reader.ReadUInt8(3);
+      }
+      item.class_specific = reader.ReadBit();
+      if (item.class_specific) {
+        item.auto_affix_id = reader.ReadUInt16(11);
+      }
 
-    // Parse quality-specific data
-    try {
-      switch (item.quality) {
-        case Quality.Low:
-          item.low_quality_id = reader.ReadUInt8(3);
-          break;
-        case Quality.Normal:
-          {
-            // sometimes normal items have 12 bits here...
-            // maybe when they have magical properties?
-            const bits = reader.ReadUInt16(12);
-            // TODO: I have no idea if this is always 0
-            if (bits === 0) {
-              item.normal_12_bits = bits;
-            } else {
-              // assume these are properties instead
-              item.normal_12_bits = null;
-              reader.SkipBits(-12);
+      // Parse quality-specific data
+      try {
+        switch (item.quality) {
+          case Quality.Low:
+            item.low_quality_id = reader.ReadUInt8(3);
+            break;
+          case Quality.Normal:
+            {
+              // sometimes normal items have 12 bits here...
+              // maybe when they have magical properties?
+              const bits = reader.ReadUInt16(12);
+              // TODO: I have no idea if this is always 0
+              if (bits === 0) {
+                item.normal_12_bits = bits;
+              } else {
+                // assume these are properties instead
+                item.normal_12_bits = null;
+                reader.SkipBits(-12);
+              }
             }
-          }
-          break;
-        case Quality.Superior:
-          item.file_index = reader.ReadUInt8(3);
-          break;
-        case Quality.Magic:
-          item.magic_prefix = reader.ReadUInt16(11);
-          if (item.magic_prefix)
-            item.magic_prefix_name = constants.magic_prefixes[item.magic_prefix]
-              ? constants.magic_prefixes[item.magic_prefix].n
+            break;
+          case Quality.Superior:
+            item.file_index = reader.ReadUInt8(3);
+            break;
+          case Quality.Magic:
+            item.magic_prefix = reader.ReadUInt16(11);
+            if (item.magic_prefix)
+              item.magic_prefix_name = constants.magic_prefixes[
+                item.magic_prefix
+              ]
+                ? constants.magic_prefixes[item.magic_prefix].n
+                : null;
+            item.magic_suffix = reader.ReadUInt16(11);
+            if (item.magic_suffix)
+              item.magic_suffix_name = constants.magic_suffixes[
+                item.magic_suffix
+              ]
+                ? constants.magic_suffixes[item.magic_suffix].n
+                : null;
+            break;
+          case Quality.Set:
+            item.set_id = reader.ReadUInt16(12);
+            item.set_name = constants.set_items[item.set_id]
+              ? constants.set_items[item.set_id].n
               : null;
-          item.magic_suffix = reader.ReadUInt16(11);
-          if (item.magic_suffix)
-            item.magic_suffix_name = constants.magic_suffixes[item.magic_suffix]
-              ? constants.magic_suffixes[item.magic_suffix].n
+            break;
+          case Quality.Unique:
+            item.unique_id = reader.ReadUInt16(12);
+            item.unique_name = constants.unq_items[item.unique_id]
+              ? constants.unq_items[item.unique_id].n
               : null;
-          break;
-        case Quality.Set:
-          item.set_id = reader.ReadUInt16(12);
-          item.set_name = constants.set_items[item.set_id]
-            ? constants.set_items[item.set_id].n
-            : null;
-          break;
-        case Quality.Unique:
-          item.unique_id = reader.ReadUInt16(12);
-          item.unique_name = constants.unq_items[item.unique_id]
-            ? constants.unq_items[item.unique_id].n
-            : null;
-          break;
-        case Quality.Rare:
-        case Quality.Crafted:
-          item.rare_name_id = reader.ReadUInt8(8);
-          if (item.rare_name_id)
-            item.rare_name = constants.rare_names[item.rare_name_id]
-              ? constants.rare_names[item.rare_name_id].n
-              : null;
-          item.rare_name_id2 = reader.ReadUInt8(8);
-          if (item.rare_name_id2)
-            item.rare_name2 = constants.rare_names[item.rare_name_id2]
-              ? constants.rare_names[item.rare_name_id2].n
-              : null;
-          item.magical_name_ids = [];
-          for (let i = 0; i < 6; i++) {
-            const prefix = reader.ReadBit();
-            if (prefix === 1) {
-              item.magical_name_ids[i] = reader.ReadUInt16(11);
-            } else {
-              item.magical_name_ids[i] = null;
+            break;
+          case Quality.Rare:
+          case Quality.Crafted:
+            item.rare_name_id = reader.ReadUInt8(8);
+            if (item.rare_name_id)
+              item.rare_name = constants.rare_names[item.rare_name_id]
+                ? constants.rare_names[item.rare_name_id].n
+                : null;
+            item.rare_name_id2 = reader.ReadUInt8(8);
+            if (item.rare_name_id2)
+              item.rare_name2 = constants.rare_names[item.rare_name_id2]
+                ? constants.rare_names[item.rare_name_id2].n
+                : null;
+            item.magical_name_ids = [];
+            for (let i = 0; i < 6; i++) {
+              const prefix = reader.ReadBit();
+              if (prefix === 1) {
+                item.magical_name_ids[i] = reader.ReadUInt16(11);
+              } else {
+                item.magical_name_ids[i] = null;
+              }
             }
+            break;
+          default:
+            break;
+        }
+      } catch (error) {
+        const qualityNames = [
+          'Unknown',
+          'Low',
+          'Normal',
+          'Superior',
+          'Magic',
+          'Set',
+          'Rare',
+          'Unique',
+          'Crafted',
+        ];
+        const qualityName =
+          qualityNames[item.quality] || `Unknown(${item.quality})`;
+        throw wrapParsingError(
+          error,
+          `Failed to read quality-specific data for ${qualityName} quality item`,
+        );
+      }
+      if (item.given_runeword) {
+        item.runeword_id = reader.ReadUInt16(12);
+        // TODO: stop parsing runeword_name here
+        //fix delerium on d2gs??? why is this a thing?
+        if (item.runeword_id == 2718) {
+          item.runeword_id = 48;
+        }
+        if (item.runeword_id == 2786) {
+          item.runeword_id = 173;
+        }
+        if (constants.runewords[item.runeword_id]) {
+          item.runeword_name = constants.runewords[item.runeword_id]!.n!;
+        }
+        // TODO: why are we skipping 4 bits?
+        reader.ReadUInt8(4);
+      }
+
+      if (item.personalized) {
+        const arr = new Uint8Array(16);
+        for (let i = 0; i < arr.length; i++) {
+          if (version > 0x61) {
+            arr[i] = reader.ReadUInt8(8);
+          } else {
+            arr[i] = reader.ReadUInt8(7);
           }
-          break;
-        default:
-          break;
-      }
-    } catch (error) {
-      const qualityNames = ['Unknown', 'Low', 'Normal', 'Superior', 'Magic', 'Set', 'Rare', 'Unique', 'Crafted'];
-      const qualityName = qualityNames[item.quality] || `Unknown(${item.quality})`;
-      throw wrapParsingError(
-        error,
-        `Failed to read quality-specific data for ${qualityName} quality item`,
-      );
-    }
-    if (item.given_runeword) {
-      item.runeword_id = reader.ReadUInt16(12);
-      // TODO: stop parsing runeword_name here
-      //fix delerium on d2gs??? why is this a thing?
-      if (item.runeword_id == 2718) {
-        item.runeword_id = 48;
-      }
-      if (item.runeword_id == 2786) {
-        item.runeword_id = 173;
-      }
-      if (constants.runewords[item.runeword_id]) {
-        item.runeword_name = constants.runewords[item.runeword_id]!.n!;
-      }
-      // TODO: why are we skipping 4 bits?
-      reader.ReadUInt8(4);
-    }
-
-    if (item.personalized) {
-      const arr = new Uint8Array(16);
-      for (let i = 0; i < arr.length; i++) {
-        if (version > 0x61) {
-          arr[i] = reader.ReadUInt8(8);
-        } else {
-          arr[i] = reader.ReadUInt8(7);
+          if (arr[i] === 0x00) {
+            break;
+          }
         }
-        if (arr[i] === 0x00) {
-          break;
+        item.personalized_name = new BitReader(arr)
+          .ReadString(16)
+          .trim()
+          .replace(/\0/g, '');
+      }
+
+      //tomes
+      if (item.type === 'tbk' || item.type == 'ibk') {
+        reader.ReadUInt8(5);
+      }
+
+      //realm data
+      //0=LoD? What? Why?
+      //3=RotW
+      if (version >= 0x69) {
+        //version 105 (Rise of the Warlock) introduces a new realm
+        //so the game now needs 2 bits to store realm data
+        item.timestamp = reader.ReadUInt8(2);
+      } else {
+        item.timestamp = reader.ReadUInt8(1);
+      }
+
+      if (item.type_id === ItemType.Armor) {
+        item.defense_rating =
+          reader.ReadUInt16(constants.magical_properties[31].sB) -
+          constants.magical_properties[31].sA;
+      }
+      if (item.type_id === ItemType.Armor || item.type_id === ItemType.Weapon) {
+        item.max_durability =
+          reader.ReadUInt16(constants.magical_properties[73].sB) -
+          constants.magical_properties[73].sA;
+        if (item.max_durability > 0) {
+          item.current_durability =
+            reader.ReadUInt16(constants.magical_properties[72].sB) -
+            constants.magical_properties[72].sA;
         }
       }
-      item.personalized_name = new BitReader(arr)
-        .ReadString(16)
-        .trim()
-        .replace(/\0/g, '');
-    }
 
-    //tomes
-    if (item.type === 'tbk' || item.type == 'ibk') {
-      reader.ReadUInt8(5);
-    }
-
-    //realm data
-    item.timestamp = reader.ReadUInt8(1);
-
-    if (item.type_id === ItemType.Armor) {
-      item.defense_rating =
-        reader.ReadUInt16(constants.magical_properties[31].sB) -
-        constants.magical_properties[31].sA;
-    }
-    if (item.type_id === ItemType.Armor || item.type_id === ItemType.Weapon) {
-      item.max_durability =
-        reader.ReadUInt16(constants.magical_properties[73].sB) -
-        constants.magical_properties[73].sA;
-      if (item.max_durability > 0) {
-        item.current_durability =
-          reader.ReadUInt16(constants.magical_properties[72].sB) -
-          constants.magical_properties[72].sA;
+      if (constants.stackables[item.type]) {
+        item.quantity = reader.ReadUInt16(9);
       }
-    }
 
-    if (constants.stackables[item.type]) {
-      item.quantity = reader.ReadUInt16(9);
-    }
+      if (item.socketed === 1) {
+        item.total_nr_of_sockets = reader.ReadUInt8(4);
+      }
 
-    if (item.socketed === 1) {
-      item.total_nr_of_sockets = reader.ReadUInt8(4);
-    }
-
-    /**
-     * 5 bits. any of the 5 bits can be set. if a bit is set that means
-     * means +1 to the set_list_count
-     */
-    let plist_flag = 0;
-    if (item.quality === Quality.Set) {
-      plist_flag = reader.ReadUInt8(5);
-      item.set_list_count = 0;
-      item._unknown_data.plist_flag = plist_flag;
-    }
+      /**
+       * 5 bits. any of the 5 bits can be set. if a bit is set that means
+       * means +1 to the set_list_count
+       */
+      let plist_flag = 0;
+      if (item.quality === Quality.Set) {
+        plist_flag = reader.ReadUInt8(5);
+        item.set_list_count = 0;
+        item._unknown_data.plist_flag = plist_flag;
+      }
 
       //magical properties
       try {
@@ -504,10 +570,7 @@ export async function readItem(
           }
         }
       } catch (error) {
-        throw wrapParsingError(
-          error,
-          `Failed to read magical properties for ${formatItemContext(item)}`,
-        );
+        throw wrapParsingError(error, `Failed to read magical properties`);
       }
     }
     reader.Align();
@@ -522,16 +585,37 @@ export async function readItem(
         } catch (error) {
           throw wrapParsingError(
             error,
-            `Failed to read socketed item ${i + 1} of ${item.nr_of_items_in_sockets} in ${formatItemContext(item)}`,
+            `Failed to read socketed item ${i + 1} of ${item.nr_of_items_in_sockets}`,
           );
         }
       }
     }
+
+    if (version >= 0x69) {
+      // @@ DEBUGGING
+      // there is an extra byte here sometimes...
+      // e.g.:
+      // {"offset":10704,"_unknown_data":{"b0_3":{"0":0,"1":0,"2":0,"3":0},"b5_10":{"0":0,"1":0,"2":0,"3":0,"4":0,"5":0},"b12":{"0":0},"b14_15":{"0":0,"1":0},"b18_20":{"0":0,"1":0,"2":0},"b23":{"0":1},"b25":{"0":0},"b27_31":{"0":0,"1":0,"2":0,"3":0,"4":0}},"identified":1,"socketed":0,"new":0,"is_ear":0,"starter_item":0,"simple_item":0,"ethereal":0,"personalized":0,"given_runeword":0,"version":"101","location_id":1,"equipped_id":6,"position_x":6,"position_y":0,"alt_position_id":0,"type":"rin","categories":["Ring","Miscellaneous"],"type_id":4,"nr_of_items_in_sockets":0,"id":2424002104,"level":84,"quality":7,"multiple_pictures":1,"picture_id":1,"class_specific":0,"unique_id":122,"unique_name":"The Stone of Jordan","timestamp":0,"magic_attributes":[{"id":9,"values":[20],"name":"maxmana"},{"id":50,"values":[1,12],"name":"lightmindam"},{"id":77,"values":[25],"name":"item_maxmana_percent"},{"id":127,"values":[1],"name":"item_allskills"}]}
+      // has a 0x00 at the end
+      // could this be related to the holy grail tracker thing?
+      // nope - rainbow facet doesn't have this byte
+      // nope - Nature's Peace unique ring doesn't have this byte
+      // if (item.id === 2424002104) {
+      //   item.unknown_thing = reader.ReadUInt8(8);
+      // }
+    }
+
+    if (DEBUG) {
+      item.hex = extractRawBytes(reader, itemStartOffset, 100);
+    }
     return item;
   } catch (error) {
+    if (DEBUG) {
+      console.error('@@', 'item', item);
+    }
     throw wrapParsingError(
       error,
-      `Failed to parse ${formatItemContext(item)}`,
+      `Failed to parse item ${JSON.stringify(item)}`,
     );
   }
 }
@@ -644,7 +728,11 @@ export async function writeItem(
       writer.WriteUInt8(1, 5);
     }
 
-    writer.WriteUInt8(item.timestamp, 1);
+    if (version >= 0x69) {
+      writer.WriteUInt8(item.timestamp, 2);
+    } else {
+      writer.WriteUInt8(item.timestamp, 1);
+    }
 
     if (item.type_id === ItemType.Armor || item.type_id === ItemType.Shield) {
       writer.WriteUInt16(
@@ -782,6 +870,7 @@ function _readSimpleBits(
         item.type += node;
       }
     }
+    // circlet: offset: 7456
     item.type = item.type.trim().replace(/\0/g, '');
     let details = _GetItemTXT(item, constants);
     item.categories = details?.c;
@@ -802,6 +891,17 @@ function _readSimpleBits(
       bits = 1;
     }
     item.nr_of_items_in_sockets = reader.ReadUInt8(bits);
+
+    if (version >= 0x69) {
+      if (
+        constants.other_items[item.type] &&
+        constants.other_items[item.type].AdvancedStashStackable
+      ) {
+        // guessing 7 bits because 99 max
+        // but 9 bits would be consistent with normal quantity
+        item.advanced_stash_quantity = reader.ReadUInt8(7);
+      }
+    }
   }
 }
 
@@ -881,6 +981,15 @@ function _writeSimpleBits(
       bits = 1;
     }
     writer.WriteUInt8(item.nr_of_items_in_sockets, bits);
+
+    if (version >= 0x69) {
+      if (
+        constants.other_items[item.type] &&
+        constants.other_items[item.type].AdvancedStashStackable
+      ) {
+        writer.WriteUInt8(item.advanced_stash_quantity ?? 1, 7);
+      }
+    }
   }
 }
 
@@ -893,11 +1002,10 @@ export function _readMagicProperties(
   while (id != 0x1ff) {
     const values = [];
     const propertyStartOffset = reader.offset - 9;
-    const byteOffset = Math.floor(propertyStartOffset / 8);
 
     if (constants.magical_properties[id] == null) {
       throw new Error(
-        `Stat ID ${id} is not defined in itemstatcost.txt (attempted to read at byte offset ${byteOffset}). This may indicate corrupted save data or unsupported game version.`,
+        `Stat ID ${id} is not defined in itemstatcost.txt (attempted to read at offset ${propertyStartOffset}). This may indicate corrupted save data or unsupported game version.`,
       );
     }
 
@@ -906,9 +1014,8 @@ export function _readMagicProperties(
       for (let i = 0; i < num_of_properties; i++) {
         const prop = constants.magical_properties[id + i];
         if (prop == null) {
-          const currentByteOffset = Math.floor(reader.offset / 8);
           throw new Error(
-            `Stat ID ${id + i} is not defined in itemstatcost.txt (property ${i + 1} of ${num_of_properties} for stat ${id} at byte offset ${currentByteOffset})`,
+            `Stat ID ${id + i} is not defined in itemstatcost.txt (property ${i + 1} of ${num_of_properties} for stat ${id} at offset ${reader.offset})`,
           );
         }
         if (prop.sP) {
@@ -964,7 +1071,7 @@ export function _readMagicProperties(
       const statName = constants.magical_properties[id]?.s || `Unknown(${id})`;
       throw wrapParsingError(
         error,
-        `Failed to read magical property '${statName}' (stat ID: ${id}) starting at byte offset ${byteOffset}`,
+        `Failed to read magical property '${statName}' (stat ID: ${id}) starting at offset ${propertyStartOffset}`,
       );
     }
     id = reader.ReadUInt16(9);

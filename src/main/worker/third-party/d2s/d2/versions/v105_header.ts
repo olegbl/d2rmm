@@ -4,6 +4,15 @@ import { BitWriter } from '../../binary/bitwriter';
 
 const difficulties = ['normal', 'nm', 'hell'];
 
+/**
+ * Header format for D2R version 105 (0x69).
+ * This version introduced structural changes:
+ * - Reduced header padding from 20 bytes to 4 bytes
+ * - Shifted main header data 16 bytes earlier (now at 0x14 instead of 0x24)
+ * - Added 48 additional bytes before character name
+ * - Character name now at byte 299 (0x12B) instead of 267 (0x10B)
+ */
+
 export function readHeader(
   char: types.ID2S,
   reader: BitReader,
@@ -11,68 +20,73 @@ export function readHeader(
 ) {
   char.header.filesize = reader.ReadUInt32(); //0x0008
   char.header.checksum = reader.ReadUInt32().toString(16).padStart(8, '0'); //0x000c
-  reader.SkipBytes(4); //0x0010
-  if (char.header.version > 0x61) {
-    reader.SeekByte(267);
-  }
-  char.header.name = reader.ReadString(16).replace(/\0/g, ''); //0x0014
-  if (char.header.version > 0x61) {
-    reader.SeekByte(36);
-  }
-  char.header.status = _readStatus(reader.ReadUInt8()); //0x0024
-  char.header.progression = reader.ReadUInt8(); //0x0025
-  char.header.active_arms = reader.ReadUInt16(); //0x0026 [unk = 0x0, 0x0]
+  reader.SkipBytes(4); //0x0010 - only 4 bytes of padding for v105+
+
+  // For v105+, name is at byte 299 (0x12B) instead of 267 (0x10B)
+  reader.SeekByte(299);
+  char.header.name = reader.ReadString(16).replace(/\0/g, '');
+
+  // For v105+, header data starts at byte 20 (0x14) instead of 36 (0x24)
+  reader.SeekByte(20);
+
+  char.header.status = _readStatus(reader.ReadUInt8()); //0x0014 (was 0x0024)
+  char.header.progression = reader.ReadUInt8(); //0x0015
+  char.header.active_arms = reader.ReadUInt16(); //0x0016
 
   // Read class ID with better error handling
-  const classId = reader.ReadUInt8();
+  const classId = reader.ReadUInt8(); //0x0018
   const classData = constants.classes[classId];
   if (!classData) {
     throw new Error(
       `Invalid class ID ${classId} at byte position ${Math.floor(reader.offset / 8)}. ` +
-      `This may indicate a parsing error due to incorrect file format for version ${char.header.version} (0x${char.header.version.toString(16)}). ` +
-      `Valid class IDs are 0-${constants.classes.length - 1}.`
+      `This may indicate a parsing error for version 105. ` +
+      `Valid class IDs are 0-${constants.classes.length - 1}. ` +
+      `Character name read as: "${char.header.name}"`
     );
   }
-  char.header.class = classData.n; //0x0028
-  reader.SkipBytes(2); //0x0029 [unk = 0x10, 0x1E]
-  char.header.level = reader.ReadUInt8(); //0x002b
-  char.header.created = reader.ReadUInt32(); //0x002c
-  char.header.last_played = reader.ReadUInt32(); //0x0030
-  reader.SkipBytes(4); //0x0034 [unk = 0xff, 0xff, 0xff, 0xff]
+  char.header.class = classData.n;
+
+  reader.SkipBytes(2); //0x0019
+  char.header.level = reader.ReadUInt8(); //0x001b (was 0x002b)
+  char.header.created = reader.ReadUInt32(); //0x001c
+  char.header.last_played = reader.ReadUInt32(); //0x0020
+  reader.SkipBytes(4); //0x0024 [unk = 0xff, 0xff, 0xff, 0xff]
   char.header.assigned_skills = _readAssignedSkills(
     reader.ReadArray(64),
     constants,
-  ); //0x0038
-  char.header.left_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0078
-  char.header.right_skill = constants.skills[reader.ReadUInt32()]?.s; //0x007c
-  char.header.left_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0080
-  char.header.right_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0084
+  ); //0x0028
+  char.header.left_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0068
+  char.header.right_skill = constants.skills[reader.ReadUInt32()]?.s; //0x006c
+  char.header.left_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0070
+  char.header.right_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0074
   char.header.menu_appearance = _readCharMenuAppearance(
     reader.ReadArray(32),
     constants,
-  ); //0x0088 [char menu appearance]
-  char.header.difficulty = _readDifficulty(reader.ReadArray(3)); //0x00a8
-  char.header.map_id = reader.ReadUInt32(); //0x00ab
-  reader.SkipBytes(2); //0x00af [unk = 0x0, 0x0]
-  char.header.dead_merc = reader.ReadUInt16(); //0x00b1
-  char.header.merc_id = reader.ReadUInt32().toString(16); //0x00b3
-  char.header.merc_name_id = reader.ReadUInt16(); //0x00b7
-  char.header.merc_type = reader.ReadUInt16(); //0x00b9
-  char.header.merc_experience = reader.ReadUInt32(); //0x00bb
-  reader.SkipBytes(144); //0x00bf [unk]
-  reader.SkipBytes(4); //0x014f [quests header identifier = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
-  reader.SkipBytes(4); //0x0153 [version = 0x6, 0x0, 0x0, 0x0]
-  reader.SkipBytes(2); //0x0153 [quests header length = 0x2a, 0x1]
-  char.header.quests_normal = _readQuests(reader.ReadArray(96)); //0x0159
-  char.header.quests_nm = _readQuests(reader.ReadArray(96)); //0x01b9
-  char.header.quests_hell = _readQuests(reader.ReadArray(96)); //0x0219
-  reader.SkipBytes(2); //0x0279 [waypoint header identifier = 0x57, 0x53 "WS"]
-  reader.SkipBytes(4); //0x027b [waypoint header version = 0x1, 0x0, 0x0, 0x0]
-  reader.SkipBytes(2); //0x027f [waypoint header length = 0x50, 0x0]
-  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48)); //0x0281
-  reader.SkipBytes(2); //0x02c9 [npc header identifier  = 0x01, 0x77 ".w"]
-  reader.SkipBytes(2); //0x02ca [npc header length = 0x34]
-  char.header.npcs = _readNPCData(reader.ReadArray(0x30)); //0x02cc
+  ); //0x0078
+  char.header.difficulty = _readDifficulty(reader.ReadArray(3)); //0x0098
+  char.header.map_id = reader.ReadUInt32(); //0x009b
+  reader.SkipBytes(2); //0x009f
+  char.header.dead_merc = reader.ReadUInt16(); //0x00a1
+  char.header.merc_id = reader.ReadUInt32().toString(16); //0x00a3
+  char.header.merc_name_id = reader.ReadUInt16(); //0x00a7
+  char.header.merc_type = reader.ReadUInt16(); //0x00a9
+  char.header.merc_experience = reader.ReadUInt32(); //0x00ab
+  reader.SkipBytes(144); //0x00af
+  reader.SkipBytes(4); //0x013f [quests header identifier = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
+  reader.SkipBytes(4); //0x0143 [version = 0x6, 0x0, 0x0, 0x0]
+  reader.SkipBytes(2); //0x0147 [quests header length = 0x2a, 0x1]
+  char.header.quests_normal = _readQuests(reader.ReadArray(96)); //0x0149
+  char.header.quests_nm = _readQuests(reader.ReadArray(96)); //0x01a9
+  char.header.quests_hell = _readQuests(reader.ReadArray(96)); //0x0209
+  reader.SkipBytes(2); //0x0269 [waypoint header identifier = 0x57, 0x53 "WS"]
+  reader.SkipBytes(4); //0x026b [waypoint header version = 0x1, 0x0, 0x0, 0x0]
+  reader.SkipBytes(2); //0x026f [waypoint header length = 0x50, 0x0]
+  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48)); //0x0271
+  reader.SkipBytes(2); //0x02b9 [npc header identifier  = 0x01, 0x77 ".w"]
+  reader.SkipBytes(2); //0x02bb [npc header length = 0x34]
+  char.header.npcs = _readNPCData(reader.ReadArray(0x30)); //0x02bd
+  // Version 105 has 84 additional bytes here before the attributes section
+  reader.SkipBytes(84); //0x02ed -> 0x0341
 }
 
 export function writeHeader(
@@ -81,76 +95,65 @@ export function writeHeader(
   constants: types.IConstantData,
 ) {
   writer
-    .WriteUInt32(0x0) //0x0008 (filesize. needs to be writen after all data)
-    .WriteUInt32(0x0); //0x000c (checksum. needs to be calculated after all data writer)
-
-  if (char.header.version > 0x61) {
-    writer.WriteArray(new Uint8Array(Array(20).fill(0))); // 0x0010
-  } else {
-    writer
-      .WriteArray(new Uint8Array([0x00, 0x00, 0x00, 0x00])) //0x0010
-      .WriteString(char.header.name, 16); //0x0014
-  }
+    .WriteUInt32(0x0) //0x0008 (filesize. needs to be written after all data)
+    .WriteUInt32(0x0) //0x000c (checksum. needs to be calculated after all data written)
+    .WriteArray(new Uint8Array(Array(4).fill(0))); // 0x0010 - only 4 bytes padding for v105+
 
   writer
-    .WriteArray(_writeStatus(char.header.status)) //0x0024
-    .WriteUInt8(char.header.progression) //0x0025
-    .WriteUInt16(char.header.active_arms) //0x0026
-    .WriteUInt8(_classId(char.header.class, constants)) //0x0028
-    .WriteArray(new Uint8Array([0x10, 0x1e])) //0x0029
-    .WriteUInt8(char.header.level) //0x002b
-    .WriteArray(new Uint8Array([0x00, 0x00, 0x00, 0x00])) //0x002c
-    .WriteUInt32(char.header.last_played) //0x0030
-    .WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff])) //0x0034
-    .WriteArray(_writeAssignedSkills(char.header.assigned_skills, constants)) //0x0038
-    .WriteUInt32(_skillId(char.header.left_skill, constants)) //0x0078
-    .WriteUInt32(_skillId(char.header.right_skill, constants)) //0x007c
-    .WriteUInt32(_skillId(char.header.left_swap_skill, constants)) //0x0080
-    .WriteUInt32(_skillId(char.header.right_swap_skill, constants)) //0x0084
+    .WriteArray(_writeStatus(char.header.status)) //0x0014 (was 0x0024)
+    .WriteUInt8(char.header.progression) //0x0015
+    .WriteUInt16(char.header.active_arms) //0x0016
+    .WriteUInt8(_classId(char.header.class, constants)) //0x0018
+    .WriteArray(new Uint8Array([0x10, 0x1e])) //0x0019
+    .WriteUInt8(char.header.level) //0x001b
+    .WriteArray(new Uint8Array([0x00, 0x00, 0x00, 0x00])) //0x001c
+    .WriteUInt32(char.header.last_played) //0x0020
+    .WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff])) //0x0024
+    .WriteArray(_writeAssignedSkills(char.header.assigned_skills, constants)) //0x0028
+    .WriteUInt32(_skillId(char.header.left_skill, constants)) //0x0068
+    .WriteUInt32(_skillId(char.header.right_skill, constants)) //0x006c
+    .WriteUInt32(_skillId(char.header.left_swap_skill, constants)) //0x0070
+    .WriteUInt32(_skillId(char.header.right_swap_skill, constants)) //0x0074
     .WriteArray(
       _writeCharMenuAppearance(char.header.menu_appearance, constants),
-    ) //0x0088 [char menu appearance]
-    .WriteArray(_writeDifficulty(char.header.difficulty)) //0x00a8
-    .WriteUInt32(char.header.map_id) //0x00ab
-    .WriteArray(new Uint8Array([0x00, 0x00])) //0x00af [unk = 0x0, 0x0]
-    .WriteUInt16(char.header.dead_merc) //0x00b1
-    .WriteUInt32(parseInt(char.header.merc_id, 16)) //0x00b3
-    .WriteUInt16(char.header.merc_name_id) //0x00b7
-    .WriteUInt16(char.header.merc_type) //0x00b9
-    .WriteUInt32(char.header.merc_experience); //0x00bb
+    ) //0x0078
+    .WriteArray(_writeDifficulty(char.header.difficulty)) //0x0098
+    .WriteUInt32(char.header.map_id) //0x009b
+    .WriteArray(new Uint8Array([0x00, 0x00])) //0x009f
+    .WriteUInt16(char.header.dead_merc) //0x00a1
+    .WriteUInt32(parseInt(char.header.merc_id, 16)) //0x00a3
+    .WriteUInt16(char.header.merc_name_id) //0x00a7
+    .WriteUInt16(char.header.merc_type) //0x00a9
+    .WriteUInt32(char.header.merc_experience); //0x00ab
 
-  if (char.header.version > 0x61) {
-    writer
-      .WriteArray(new Uint8Array(76)) //0x00bf [unk]
-      .WriteString(char.header.name, 16) //0x010b
-      .WriteArray(new Uint8Array(52)); //0x011b [unk]
-  } else {
-    writer
-      .WriteArray(new Uint8Array(140)) //0x00bf [unk]
-      .WriteUInt32(0x1); //0x014b [unk = 0x1, 0x0, 0x0, 0x0]
-  }
+  // For v105+, need 108 bytes before name (76 + 32 additional bytes)
+  writer
+    .WriteArray(new Uint8Array(108)) //0x00af
+    .WriteString(char.header.name, 16) //0x012b (was 0x010b)
+    .WriteArray(new Uint8Array(20)); //0x013b
 
   writer
-    .WriteString('Woo!', 4) //0x014f [quests = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
-    .WriteArray(new Uint8Array([0x06, 0x00, 0x00, 0x00, 0x2a, 0x01])) //0x0153 [unk = 0x6, 0x0, 0x0, 0x0, 0x2a, 0x1]
-    .WriteArray(_writeQuests(char.header.quests_normal)) //0x0159
-    .WriteArray(_writeQuests(char.header.quests_nm)) //0x01b9
-    .WriteArray(_writeQuests(char.header.quests_hell)) //0x0219
-    .WriteString('WS', 2) //0x0279 [waypoint data = 0x57, 0x53 "WS"]
-    .WriteArray(new Uint8Array([0x01, 0x00, 0x00, 0x00, 0x50, 0x00])) //0x027b [unk = 0x1, 0x0, 0x0, 0x0, 0x50, 0x0]
-    .WriteArray(_writeWaypointData(char.header.waypoints)) //0x0281
-    .WriteArray(new Uint8Array([0x01, 0x77])) //0x02c9 [npc header = 0x01, 0x77 ".w"]
-    .WriteUInt16(0x34) //0x02ca [npc struct length]
-    .WriteArray(_writeNPCData(char.header.npcs)); //0x02cc [npc introduction data... unk]
+    .WriteString('Woo!', 4) //0x013f
+    .WriteArray(new Uint8Array([0x06, 0x00, 0x00, 0x00, 0x2a, 0x01])) //0x0143
+    .WriteArray(_writeQuests(char.header.quests_normal)) //0x0149
+    .WriteArray(_writeQuests(char.header.quests_nm)) //0x01a9
+    .WriteArray(_writeQuests(char.header.quests_hell)) //0x0209
+    .WriteString('WS', 2) //0x0269
+    .WriteArray(new Uint8Array([0x01, 0x00, 0x00, 0x00, 0x50, 0x00])) //0x026b
+    .WriteArray(_writeWaypointData(char.header.waypoints)) //0x0271
+    .WriteArray(new Uint8Array([0x01, 0x77])) //0x02b9
+    .WriteUInt16(0x34) //0x02bb
+    .WriteArray(_writeNPCData(char.header.npcs)) //0x02bd
+    .WriteArray(new Uint8Array(84)); //0x02ed - version 105 has 84 additional bytes before attributes
 }
 
+// Helper functions (same as default_header.ts)
 function _classId(name: string, constants: types.IConstantData): number {
   if (!name) return -1;
   return constants.classes.findIndex((c) => c && c.n == name);
 }
 
 function _skillId(name: string, constants: types.IConstantData): number {
-  //default to "attack" if empty string or can't find spellname.
   if (name === '') return 0;
   if (!name) return -1;
   const idx = constants.skills.findIndex((s) => s && s.s == name);
@@ -183,70 +186,22 @@ function _readCharMenuAppearance(
   const reader = new BitReader(bytes);
   const graphics = reader.ReadArray(16);
   const tints = reader.ReadArray(16);
-  appearance.head = {
-    graphic: graphics[0],
-    tint: tints[0],
-  } as types.IMenuAppearance;
-  appearance.torso = {
-    graphic: graphics[1],
-    tint: tints[1],
-  } as types.IMenuAppearance;
-  appearance.legs = {
-    graphic: graphics[2],
-    tint: tints[2],
-  } as types.IMenuAppearance;
-  appearance.right_arm = {
-    graphic: graphics[3],
-    tint: tints[3],
-  } as types.IMenuAppearance;
-  appearance.left_arm = {
-    graphic: graphics[4],
-    tint: tints[4],
-  } as types.IMenuAppearance;
-  appearance.right_hand = {
-    graphic: graphics[5],
-    tint: tints[5],
-  } as types.IMenuAppearance;
-  appearance.left_hand = {
-    graphic: graphics[6],
-    tint: tints[6],
-  } as types.IMenuAppearance;
-  appearance.shield = {
-    graphic: graphics[7],
-    tint: tints[7],
-  } as types.IMenuAppearance;
-  appearance.special1 = {
-    graphic: graphics[8],
-    tint: tints[8],
-  } as types.IMenuAppearance;
-  appearance.special2 = {
-    graphic: graphics[9],
-    tint: tints[9],
-  } as types.IMenuAppearance;
-  appearance.special3 = {
-    graphic: graphics[10],
-    tint: tints[10],
-  } as types.IMenuAppearance;
-  appearance.special4 = {
-    graphic: graphics[11],
-    tint: tints[11],
-  } as types.IMenuAppearance;
-  appearance.special5 = {
-    graphic: graphics[12],
-    tint: tints[12],
-  } as types.IMenuAppearance;
-  appearance.special6 = {
-    graphic: graphics[13],
-    tint: tints[13],
-  } as types.IMenuAppearance;
-  appearance.special7 = {
-    graphic: graphics[14],
-    tint: tints[14],
-  } as types.IMenuAppearance;
-  appearance.special8 = {
-    graphic: graphics[15],
-    tint: tints[15],
-  } as types.IMenuAppearance;
+  appearance.head = { graphic: graphics[0], tint: tints[0] } as types.IMenuAppearance;
+  appearance.torso = { graphic: graphics[1], tint: tints[1] } as types.IMenuAppearance;
+  appearance.legs = { graphic: graphics[2], tint: tints[2] } as types.IMenuAppearance;
+  appearance.right_arm = { graphic: graphics[3], tint: tints[3] } as types.IMenuAppearance;
+  appearance.left_arm = { graphic: graphics[4], tint: tints[4] } as types.IMenuAppearance;
+  appearance.right_hand = { graphic: graphics[5], tint: tints[5] } as types.IMenuAppearance;
+  appearance.left_hand = { graphic: graphics[6], tint: tints[6] } as types.IMenuAppearance;
+  appearance.shield = { graphic: graphics[7], tint: tints[7] } as types.IMenuAppearance;
+  appearance.special1 = { graphic: graphics[8], tint: tints[8] } as types.IMenuAppearance;
+  appearance.special2 = { graphic: graphics[9], tint: tints[9] } as types.IMenuAppearance;
+  appearance.special3 = { graphic: graphics[10], tint: tints[10] } as types.IMenuAppearance;
+  appearance.special4 = { graphic: graphics[11], tint: tints[11] } as types.IMenuAppearance;
+  appearance.special5 = { graphic: graphics[12], tint: tints[12] } as types.IMenuAppearance;
+  appearance.special6 = { graphic: graphics[13], tint: tints[13] } as types.IMenuAppearance;
+  appearance.special7 = { graphic: graphics[14], tint: tints[14] } as types.IMenuAppearance;
+  appearance.special8 = { graphic: graphics[15], tint: tints[15] } as types.IMenuAppearance;
   return appearance;
 }
 
@@ -261,45 +216,19 @@ function _writeCharMenuAppearance(
   graphics.push(appearance && appearance.head ? appearance.head.graphic : 0);
   graphics.push(appearance && appearance.torso ? appearance.torso.graphic : 0);
   graphics.push(appearance && appearance.legs ? appearance.legs.graphic : 0);
-  graphics.push(
-    appearance && appearance.right_arm ? appearance.right_arm.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.left_arm ? appearance.left_arm.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.right_hand ? appearance.right_hand.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.left_hand ? appearance.left_hand.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.shield ? appearance.shield.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special1 ? appearance.special1.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special2 ? appearance.special2.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special3 ? appearance.special3.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special4 ? appearance.special4.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special5 ? appearance.special5.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special6 ? appearance.special6.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special7 ? appearance.special7.graphic : 0,
-  );
-  graphics.push(
-    appearance && appearance.special8 ? appearance.special8.graphic : 0,
-  );
+  graphics.push(appearance && appearance.right_arm ? appearance.right_arm.graphic : 0);
+  graphics.push(appearance && appearance.left_arm ? appearance.left_arm.graphic : 0);
+  graphics.push(appearance && appearance.right_hand ? appearance.right_hand.graphic : 0);
+  graphics.push(appearance && appearance.left_hand ? appearance.left_hand.graphic : 0);
+  graphics.push(appearance && appearance.shield ? appearance.shield.graphic : 0);
+  graphics.push(appearance && appearance.special1 ? appearance.special1.graphic : 0);
+  graphics.push(appearance && appearance.special2 ? appearance.special2.graphic : 0);
+  graphics.push(appearance && appearance.special3 ? appearance.special3.graphic : 0);
+  graphics.push(appearance && appearance.special4 ? appearance.special4.graphic : 0);
+  graphics.push(appearance && appearance.special5 ? appearance.special5.graphic : 0);
+  graphics.push(appearance && appearance.special6 ? appearance.special6.graphic : 0);
+  graphics.push(appearance && appearance.special7 ? appearance.special7.graphic : 0);
+  graphics.push(appearance && appearance.special8 ? appearance.special8.graphic : 0);
 
   for (const g of graphics) {
     writer.WriteUInt8(g);
@@ -309,16 +238,10 @@ function _writeCharMenuAppearance(
   tints.push(appearance && appearance.head ? appearance.head.tint : 0);
   tints.push(appearance && appearance.torso ? appearance.torso.tint : 0);
   tints.push(appearance && appearance.legs ? appearance.legs.tint : 0);
-  tints.push(
-    appearance && appearance.right_arm ? appearance.right_arm.tint : 0,
-  );
+  tints.push(appearance && appearance.right_arm ? appearance.right_arm.tint : 0);
   tints.push(appearance && appearance.left_arm ? appearance.left_arm.tint : 0);
-  tints.push(
-    appearance && appearance.right_hand ? appearance.right_hand.tint : 0,
-  );
-  tints.push(
-    appearance && appearance.left_hand ? appearance.left_hand.tint : 0,
-  );
+  tints.push(appearance && appearance.right_hand ? appearance.right_hand.tint : 0);
+  tints.push(appearance && appearance.left_hand ? appearance.left_hand.tint : 0);
   tints.push(appearance && appearance.shield ? appearance.shield.tint : 0);
   tints.push(appearance && appearance.special1 ? appearance.special1.tint : 0);
   tints.push(appearance && appearance.special2 ? appearance.special2.tint : 0);
@@ -366,7 +289,6 @@ function _writeAssignedSkills(
       writer.WriteUInt32(0xffff);
     }
   }
-
   return writer.ToArray();
 }
 
@@ -391,8 +313,8 @@ function _readQuests(bytes: Uint8Array): types.IQuests {
   const quests = {} as types.IQuests;
   const reader = new BitReader(bytes);
   quests.act_i = {} as types.IActIQuests;
-  quests.act_i.introduced = reader.ReadUInt16() === 0x1; //0x0000
-  quests.act_i.den_of_evil = _readQuest(reader.ReadArray(2)); //0x0002
+  quests.act_i.introduced = reader.ReadUInt16() === 0x1;
+  quests.act_i.den_of_evil = _readQuest(reader.ReadArray(2));
   quests.act_i.sisters_burial_grounds = _readQuest(reader.ReadArray(2));
   quests.act_i.tools_of_the_trade = _readQuest(reader.ReadArray(2));
   quests.act_i.the_search_for_cain = _readQuest(reader.ReadArray(2));
@@ -400,33 +322,33 @@ function _readQuests(bytes: Uint8Array): types.IQuests {
   quests.act_i.sisters_to_the_slaughter = _readQuest(reader.ReadArray(2));
   quests.act_i.completed = reader.ReadUInt16() === 0x1;
   quests.act_ii = {} as types.IActIIQuests;
-  quests.act_ii.introduced = reader.ReadUInt16() === 0x1; //0x0010 [if jerhyn introduction = 0x01]
-  quests.act_ii.radaments_lair = _readQuest(reader.ReadArray(2)); //0x0012
+  quests.act_ii.introduced = reader.ReadUInt16() === 0x1;
+  quests.act_ii.radaments_lair = _readQuest(reader.ReadArray(2));
   quests.act_ii.the_horadric_staff = _readQuest(reader.ReadArray(2));
   quests.act_ii.tainted_sun = _readQuest(reader.ReadArray(2));
   quests.act_ii.arcane_sanctuary = _readQuest(reader.ReadArray(2));
   quests.act_ii.the_summoner = _readQuest(reader.ReadArray(2));
   quests.act_ii.the_seven_tombs = _readQuest(reader.ReadArray(2));
-  quests.act_ii.completed = reader.ReadUInt16() === 0x1; //0x001e
+  quests.act_ii.completed = reader.ReadUInt16() === 0x1;
   quests.act_iii = {} as types.IActIIIQuests;
-  quests.act_iii.introduced = reader.ReadUInt16() === 0x1; //0x0020 [if hratli introduction = 0x01]
-  quests.act_iii.lam_esens_tome = _readQuest(reader.ReadArray(2)); //0x0022
+  quests.act_iii.introduced = reader.ReadUInt16() === 0x1;
+  quests.act_iii.lam_esens_tome = _readQuest(reader.ReadArray(2));
   quests.act_iii.khalims_will = _readQuest(reader.ReadArray(2));
   quests.act_iii.blade_of_the_old_religion = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_golden_bird = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_blackened_temple = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_guardian = _readQuest(reader.ReadArray(2));
-  quests.act_iii.completed = reader.ReadUInt16() === 0x1; //0x002e
+  quests.act_iii.completed = reader.ReadUInt16() === 0x1;
   quests.act_iv = {} as types.IActIVQuests;
-  quests.act_iv.introduced = reader.ReadUInt16() === 0x1; //0x0030 [if activ introduction = 0x01]
-  quests.act_iv.the_fallen_angel = _readQuest(reader.ReadArray(2)); //0x0032
+  quests.act_iv.introduced = reader.ReadUInt16() === 0x1;
+  quests.act_iv.the_fallen_angel = _readQuest(reader.ReadArray(2));
   quests.act_iv.terrors_end = _readQuest(reader.ReadArray(2));
   quests.act_iv.hellforge = _readQuest(reader.ReadArray(2));
-  quests.act_iv.completed = reader.ReadUInt16() === 0x1; //0x0038
-  reader.SkipBytes(10); //0x003a
+  quests.act_iv.completed = reader.ReadUInt16() === 0x1;
+  reader.SkipBytes(10);
   quests.act_v = {} as types.IActVQuests;
   quests.act_v.introduced = reader.ReadUInt16() === 0x1;
-  quests.act_v.siege_on_harrogath = _readQuest(reader.ReadArray(2)); //0x0046
+  quests.act_v.siege_on_harrogath = _readQuest(reader.ReadArray(2));
   quests.act_v.rescue_on_mount_arreat = _readQuest(reader.ReadArray(2));
   quests.act_v.prison_of_ice = _readQuest(reader.ReadArray(2));
   quests.act_v.betrayal_of_harrogath = _readQuest(reader.ReadArray(2));
@@ -434,7 +356,7 @@ function _readQuests(bytes: Uint8Array): types.IQuests {
   quests.act_v.eve_of_destruction = _readQuest(reader.ReadArray(2));
   quests.act_v.completed = reader.ReadUInt16() === 0x1;
   reader.SkipBytes(12);
-  return quests; //sizeof [0x0060]
+  return quests;
 }
 
 function _writeQuests(quests: types.IQuests): Uint8Array {
@@ -500,7 +422,7 @@ function _writeQuests(quests: types.IQuests): Uint8Array {
     .WriteArray(_writeQuest(quests.act_v.rite_of_passage))
     .WriteArray(_writeQuest(quests.act_v.eve_of_destruction))
     .WriteUInt8(difficultyCompleted)
-    .WriteUInt8(difficultyCompleted ? 0x80 : 0x0) //is this right?
+    .WriteUInt8(difficultyCompleted ? 0x80 : 0x0)
     .WriteArray(new Uint8Array(12))
     .ToArray();
 }
@@ -563,7 +485,7 @@ function _readWaypointData(bytes: Uint8Array): types.IWaypointData {
 function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
   const waypoints = {} as types.IWaypoints;
   const reader = new BitReader(bytes);
-  reader.SkipBytes(2); //unk = 0x2, 0x
+  reader.SkipBytes(2);
   waypoints.act_i = {} as types.IActIWaypoints;
   waypoints.act_i.rogue_encampement = reader.ReadBit() === 1;
   waypoints.act_i.cold_plains = reader.ReadBit() === 1;
@@ -680,10 +602,7 @@ function _writeWaypoints(waypoints: types.IWaypoints): Uint8Array {
       writer.WriteBit(+waypoints.act_v.worldstone_keep_lvl_2);
     }
   } else {
-    //all wps
-    //writer.WriteArray(new Uint8Array(5));
     writer.WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff, 0x7f]));
-    //_writeBits(writer, 0x3fffffffff, start, 0, 38);
   }
   writer.Align().WriteArray(new Uint8Array(17));
   return writer.ToArray();

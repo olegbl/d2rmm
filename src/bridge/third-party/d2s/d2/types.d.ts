@@ -303,6 +303,7 @@ export interface ISkill {
 export interface IItem {
   // the bit-offset within the save file at which the item was read, if any
   offset?: number;
+  hex?: string;
   identified: number;
   socketed: number;
   new: number;
@@ -388,6 +389,7 @@ export interface IItem {
   displayed_magic_attributes: IMagicProperty[];
   displayed_runeword_attributes: IMagicProperty[];
   displayed_combined_magic_attributes: IMagicProperty[];
+  advanced_stash_quantity?: number;
 }
 
 export interface IWeaponDamage {

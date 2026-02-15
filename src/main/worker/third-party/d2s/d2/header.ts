@@ -98,9 +98,14 @@ export async function fixHeader(writer: BitWriter) {
  * 0x5c, 0x0, 0x0, 0x0 = 1.09 = version
  * 0x60, 0x0, 0x0, 0x0 = 1.13c = version
  * 0x62, 0x0, 0x0, 0x0 = 1.2 = version
+ * 0x63, 0x0, 0x0, 0x0 = D2R v99 (pre-expansion)
+ * 0x69, 0x0, 0x0, 0x0 = D2R v105 (with expansion - new format)
  * */
 async function _versionSpecificHeader(version: number) {
   switch (version) {
+    case 0x69: { // D2R version 105
+      return await import(`./versions/v105_header`);
+    }
     case 0x60: {
       return await import(`./versions/default_header`);
     }

@@ -447,6 +447,7 @@ function _readItems(tsv: any, itemtypes: any, strings: any): any[] {
   const cNormCode = tsv.header.indexOf('normcode');
   const cUberCode = tsv.header.indexOf('ubercode');
   const cUltraCode = tsv.header.indexOf('ultracode');
+  const cAdvancedStashStackable = tsv.header.indexOf('AdvancedStashStackable');
 
   for (let i = 1; i < tsv.lines.length; i++) {
     const code = tsv.lines[i][cCode];
@@ -499,6 +500,7 @@ function _readItems(tsv: any, itemtypes: any, strings: any): any[] {
         item.eq2n = type.eq2n;
         item.c = type.c;
       }
+      item.AdvancedStashStackable = tsv.lines[i][cAdvancedStashStackable];
       arr.push(item);
     }
   }

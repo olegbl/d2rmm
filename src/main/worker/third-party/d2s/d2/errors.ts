@@ -53,48 +53,6 @@ export function createParsingError(
 }
 
 /**
- * Formats item information for error messages.
- */
-export function formatItemContext(item: {
-  type?: string;
-  offset?: number;
-  id?: number;
-  quality?: number;
-}): string {
-  const parts: string[] = [];
-
-  if (item.type) {
-    parts.push(`type: ${item.type}`);
-  }
-
-  if (item.quality !== undefined) {
-    const qualityNames = [
-      'Unknown',
-      'Low',
-      'Normal',
-      'Superior',
-      'Magic',
-      'Set',
-      'Rare',
-      'Unique',
-      'Crafted',
-    ];
-    parts.push(`quality: ${qualityNames[item.quality] || item.quality}`);
-  }
-
-  if (item.id !== undefined) {
-    parts.push(`id: ${item.id}`);
-  }
-
-  if (item.offset !== undefined) {
-    const byteOffset = Math.floor(item.offset / 8);
-    parts.push(`starting at byte ${byteOffset}`);
-  }
-
-  return parts.length > 0 ? `Item(${parts.join(', ')})` : 'Item';
-}
-
-/**
  * Formats character information for error messages.
  */
 export function formatCharContext(char: {

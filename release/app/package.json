@@ -15,10 +15,9 @@
   },
   "dependencies": {
     "@jitl/quickjs-wasmfile-release-asyncify": "^0.29.2",
-    "ffi-napi": "^4.0.3",
     "json5": "^2.2.0",
+    "koffi": "^2.9.0",
     "quickjs-emscripten-core": "^0.29.2",
-    "ref-napi": "^3.0.3",
     "regedit": "^5.1.2",
     "typescript": "^5.2.2"
   },

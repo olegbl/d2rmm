@@ -107,9 +107,9 @@ import { CURRENT_VERSION } from './version';
     });
 
     // Open urls in the user's browser
-    mainWindow.webContents.on('new-window', (event, url) => {
-      event.preventDefault();
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url).catch(console.error);
+      return { action: 'deny' };
     });
 
     console.debug('[main] Initializing IPC...');

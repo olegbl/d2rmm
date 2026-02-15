@@ -1,31 +1,32 @@
-import ffi from 'ffi-napi';
+import koffi from 'koffi';
 import path from 'path';
-import ref from 'ref-napi';
 import { getAppPath } from './AppInfoAPI';
 
 // http://www.zezula.net/en/casc/casclib.html
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
 export type ICascLib = {
-  CascCloseFile: ffi.ForeignFunction<boolean, [ref.Pointer<void>]>;
-  CascCloseStorage: ffi.ForeignFunction<boolean, [ref.Pointer<void>]>;
-  CascOpenFile: ffi.ForeignFunction<
-    boolean,
-    [ref.Pointer<void>, string, number, number, ref.Pointer<ref.Pointer<void>>]
-  >;
-  CascOpenStorage: ffi.ForeignFunction<
-    boolean,
-    [string, number, ref.Pointer<ref.Pointer<void>>]
-  >;
-  CascReadFile: ffi.ForeignFunction<
-    boolean,
-    [ref.Pointer<void>, ref.Pointer<void>, number, ref.Pointer<number>]
-  >;
-  GetCascError: ffi.ForeignFunction<number, []>;
+  CascCloseFile: (handle: unknown) => boolean;
+  CascCloseStorage: (storage: unknown) => boolean;
+  CascOpenFile: (
+    storage: unknown,
+    filePath: string,
+    locale: number,
+    flags: number,
+    fileOut: unknown[],
+  ) => boolean;
+  CascOpenStorage: (
+    path: string,
+    flags: number,
+    storageOut: unknown[],
+  ) => boolean;
+  CascReadFile: (
+    file: unknown,
+    buffer: Buffer,
+    size: number,
+    bytesReadOut: number[],
+  ) => boolean;
+  GetCascError: () => number;
 };
-
-export const voidPtr = ref.refType(ref.types.void);
-export const voidPtrPtr = ref.refType(voidPtr);
-export const dwordPtr = ref.refType(ref.types.uint32);
 
 let CASC_LIB: ICascLib;
 
@@ -46,14 +47,22 @@ export async function initCascLib(): Promise<void> {
   }
 
   const pathLibrary = path.resolve(getAppPath(), 'tools', libName);
-  CASC_LIB = ffi.Library(pathLibrary, {
-    CascCloseFile: ['bool', [voidPtr]],
-    CascCloseStorage: ['bool', [voidPtr]],
-    CascOpenFile: ['bool', [voidPtr, 'string', 'int', 'int', voidPtrPtr]],
-    CascOpenStorage: ['bool', ['string', 'int', voidPtrPtr]],
-    CascReadFile: ['bool', [voidPtr, voidPtr, 'int', dwordPtr]],
-    GetCascError: ['int', []],
-  });
+  const lib = koffi.load(pathLibrary);
+
+  CASC_LIB = {
+    CascCloseFile: lib.func('bool CascCloseFile(void *handle)'),
+    CascCloseStorage: lib.func('bool CascCloseStorage(void *storage)'),
+    CascOpenFile: lib.func(
+      'bool CascOpenFile(void *storage, str filePath, int locale, int flags, _Out_ void **file)',
+    ),
+    CascOpenStorage: lib.func(
+      'bool CascOpenStorage(str path, int flags, _Out_ void **storage)',
+    ),
+    CascReadFile: lib.func(
+      'bool CascReadFile(void *file, void *buffer, int size, _Out_ uint32_t *bytesRead)',
+    ),
+    GetCascError: lib.func('int GetCascError()'),
+  };
 }
 
 export function getCascLib(): ICascLib {
@@ -318,4 +327,12 @@ export function getLastCascLibError(): string {
 
   const message = KnownWindowsErrorCodes[errorCode] ?? `UNKNOWN ERROR`;
   return `CascLib error code ${errorCode}: ${message}`;
+}
+
+export function readCString(buffer: Buffer): string {
+  const nullIndex = buffer.indexOf(0);
+  if (nullIndex === -1) {
+    return buffer.toString('utf-8');
+  }
+  return buffer.toString('utf-8', 0, nullIndex);
 }

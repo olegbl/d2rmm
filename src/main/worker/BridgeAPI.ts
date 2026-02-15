@@ -22,7 +22,6 @@ import {
 } from 'fs';
 import path from 'path';
 import { Scope } from 'quickjs-emscripten';
-import ref from 'ref-napi';
 import regedit from 'regedit';
 import {
   MappingItem,
@@ -33,12 +32,7 @@ import {
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
-import {
-  dwordPtr,
-  getCascLib,
-  getLastCascLibError,
-  voidPtrPtr,
-} from './CascLib';
+import { getCascLib, getLastCascLibError, readCString } from './CascLib';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
@@ -145,7 +139,7 @@ function createError(
 //       that would recursively extract all files in a directory
 // e.g. https://github.com/ladislav-zezula/CascLib/blob/4fc4c18bd5a49208337199a7f4256271675cae44/test/CascTest.cpp#L816
 
-const cascStoragePtr = ref.alloc(voidPtrPtr);
+let cascStorage: unknown = null;
 let cascStorageIsOpen = false;
 
 export const BridgeAPI: IBridgeAPI = {
@@ -219,7 +213,9 @@ export const BridgeAPI: IBridgeAPI = {
 
     if (!cascStorageIsOpen) {
       for (const path of PATHS) {
-        if (getCascLib().CascOpenStorage(path, 0, cascStoragePtr)) {
+        const storageOut: unknown[] = [null];
+        if (getCascLib().CascOpenStorage(path, 0, storageOut)) {
+          cascStorage = storageOut[0];
           cascStorageIsOpen = true;
           break;
         }
@@ -240,8 +236,7 @@ export const BridgeAPI: IBridgeAPI = {
     console.debug('BridgeAPI.closeStorage');
 
     if (cascStorageIsOpen) {
-      const storage = cascStoragePtr.deref();
-      if (getCascLib().CascCloseStorage(storage)) {
+      if (getCascLib().CascCloseStorage(cascStorage)) {
         cascStorageIsOpen = false;
       } else {
         throw createError(
@@ -265,16 +260,14 @@ export const BridgeAPI: IBridgeAPI = {
         throw createError('BridgeAPI.isGameFile', 'CASC storage is not open');
       }
 
-      const storage = cascStoragePtr.deref();
-
-      const filePtr = ref.alloc(voidPtrPtr);
+      const fileOut: unknown[] = [null];
       if (
         !getCascLib().CascOpenFile(
-          storage,
+          cascStorage,
           path.join('data:data', filePath),
           0,
           0,
-          filePtr,
+          fileOut,
         )
       ) {
         return false;
@@ -302,16 +295,14 @@ export const BridgeAPI: IBridgeAPI = {
         );
       }
 
-      const storage = cascStoragePtr.deref();
-
-      const filePtr = ref.alloc(voidPtrPtr);
+      const fileOut: unknown[] = [null];
       if (
         !getCascLib().CascOpenFile(
-          storage,
+          cascStorage,
           path.join('data:data', filePath),
           0,
           0,
-          filePtr,
+          fileOut,
         )
       ) {
         throw createError(
@@ -321,15 +312,14 @@ export const BridgeAPI: IBridgeAPI = {
         );
       }
 
-      const file = filePtr.deref();
-      const bytesReadPtr = ref.alloc(dwordPtr);
+      const file = fileOut[0];
+      const bytesReadOut: number[] = [0];
 
       // if the file is larger than 10 MB... I got bad news for you.
       const size = 10 * 1024 * 1024;
-      const buffer = Buffer.alloc(size) as ref.Pointer<void>;
-      buffer.type = ref.types.void;
+      const buffer = Buffer.alloc(size);
 
-      if (getCascLib().CascReadFile(file, buffer, size, bytesReadPtr)) {
+      if (getCascLib().CascReadFile(file, buffer, size, bytesReadOut)) {
         output = Buffer.from(buffer.buffer);
       } else {
         throw createError(
@@ -370,7 +360,7 @@ export const BridgeAPI: IBridgeAPI = {
       // *currently* don't support binary file reading in mods
       // anyway (only in save editor), so just work around it
       // here for now, but this needs a proper fix later on
-      const dataStr = buffer.readCString();
+      const dataStr = readCString(buffer);
       await BridgeAPI.writeTextFile(targetPath, 'None', dataStr);
     } catch (e) {
       throw createError(
@@ -1180,9 +1170,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
 
     const buffers: { [key: string]: string } = {};
     for (const filePath of d2sFiles) {
-      buffers[path.basename(filePath)] = (
-        await getGameFile(filePath)
-      ).readCString();
+      buffers[path.basename(filePath)] = readCString(
+        await getGameFile(filePath),
+      );
     }
 
     const gameData = d2s.readConstantData(buffers as d2s.Buffers);
@@ -1253,9 +1243,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       'hd/items/sets.json',
       'hd/items/uniques.json',
     ]) {
-      gameFiles[filePath] = parseJson(
-        (await getGameFile(filePath)).readCString(),
-      );
+      gameFiles[filePath] = parseJson(readCString(await getGameFile(filePath)));
     }
 
     // TSV
@@ -1268,9 +1256,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       'global/excel/setitems.txt',
       'global/excel/inventory.txt',
     ]) {
-      gameFiles[filePath] = parseTsv(
-        (await getGameFile(filePath)).readCString(),
-      );
+      gameFiles[filePath] = parseTsv(readCString(await getGameFile(filePath)));
     }
 
     const itemCodeToCategory: { [code: string]: string } = {};

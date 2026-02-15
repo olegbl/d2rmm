@@ -13,15 +13,14 @@ export async function initNxmProtocolAPI(): Promise<void> {
   ];
 
   if (process.defaultApp && process.argv.length > 1) {
-    args = [
-      'nxm',
-      process.execPath,
-      [
-        process.argv[1],
-        path.resolve(path.join('node_modules', process.argv[2])),
-        path.resolve(process.argv[3]),
-      ],
-    ];
+    const scriptArgs: string[] = [process.argv[1]];
+    if (process.argv[2]) {
+      scriptArgs.push(path.resolve(path.join('node_modules', process.argv[2])));
+    }
+    if (process.argv[3]) {
+      scriptArgs.push(path.resolve(process.argv[3]));
+    }
+    args = ['nxm', process.execPath, scriptArgs];
   }
 
   provideAPI('NxmProtocolAPI', {

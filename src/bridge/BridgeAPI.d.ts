@@ -46,7 +46,6 @@ export type IBridgeAPI = {
   ) => Promise<number>;
   isGameFile: (filePath: string) => Promise<boolean>;
   extractFileToMemory: (filePath: string) => Promise<Buffer>;
-  extractFileToDisk: (filePath: string, targetPath: string) => Promise<boolean>;
   getAppPath: () => Promise<string>;
   getGamePath: () => Promise<string | null>;
   getVersion: () => Promise<[number, number, number]>;

@@ -1,7 +1,7 @@
 export type Relative =
   /**
    * Absolute path.
-   * @deprecated
+   * This for D2RMM internals, not for mods.
    */
   | 'None'
   /**
@@ -18,4 +18,9 @@ export type Relative =
    * @example C:\Games\Diablo II Resurrected\mods\D2RMM\D2RMM.mpq\data\
    * @example C:\Games\Diablo II Resurrected\data\
    */
-  | 'Output';
+  | 'Output'
+  /**
+   * Path is relative to the directory containing pre-extracted vanilla game files.
+   * @example C:\Games\Diablo II Resurrected\data.extracted\
+   */
+  | 'PreExtractedData';

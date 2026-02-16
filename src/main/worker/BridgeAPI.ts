@@ -37,7 +37,7 @@ import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
 import { encodeJson, parseJson } from './JSONParser';
-import { getModAPI } from './ModAPI';
+import { getModAPI, resetNextStringIDState } from './ModAPI';
 import { parseSprite } from './SpriteParser';
 import { encodeTsv, parseTsv } from './TSVParser';
 import './asar';
@@ -69,6 +69,10 @@ function getOutputRootPath(): string {
   return path.resolve(runtime!.options.mergedPath, '../');
 }
 
+function getPreExtractedDataPath(): string {
+  return runtime!.options.preExtractedDataPath;
+}
+
 // we don't want mods doing any ../../.. shenanigans
 function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
   if (!path.resolve(absolutePath).startsWith(path.resolve(allowedRoot))) {
@@ -95,6 +99,11 @@ function resolvePath(inputPath: string, relative: Relative): string {
       return validatePathIsSafe(
         getOutputRootPath(),
         path.resolve(getOutputPath(), inputPath),
+      );
+    case 'PreExtractedData':
+      return validatePathIsSafe(
+        getPreExtractedDataPath(),
+        path.resolve(getPreExtractedDataPath(), inputPath),
       );
     case 'None':
       return validatePathIsSafe(
@@ -386,32 +395,6 @@ export const BridgeAPI: IBridgeAPI = {
     }
 
     return output;
-  },
-
-  extractFileToDisk: async (filePath, targetPath) => {
-    console.debug('BridgeAPI.extractFileToDisk', {
-      filePath,
-      targetPath,
-    });
-
-    try {
-      const buffer = await BridgeAPI.extractFileToMemory(filePath);
-      // there's some weird shenanigans with 0-byte-terminated
-      // buffers when reading file via Casc lib + ffi, but we
-      // *currently* don't support binary file reading in mods
-      // anyway (only in save editor), so just work around it
-      // here for now, but this needs a proper fix later on
-      const dataStr = readCString(buffer);
-      await BridgeAPI.writeTextFile(targetPath, 'None', dataStr);
-    } catch (e) {
-      throw createError(
-        'BridgeAPI.extractFileToDisk',
-        'Failed to extract file',
-        String(e),
-      );
-    }
-
-    return true;
   },
 
   createDirectory: async (filePath: string) => {
@@ -1157,16 +1140,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
 
       async function getGameFile(filePath: string): Promise<Buffer> {
         // check if the file exists in the generated MPQ mod
-        if (existsSync(runtime!.getDestinationFilePath(filePath))) {
-          const buffer = await BridgeAPI.readFile(
-            runtime!.getDestinationFilePath(filePath),
-            'None',
-          );
+        if (existsSync(path.resolve(getOutputPath(), filePath))) {
+          const buffer = await BridgeAPI.readFile(filePath, 'Output');
           if (buffer == null) {
             throw createError(
               'BridgeAPI.readD2SData',
               'Failed to read file',
-              runtime!.getDestinationFilePath(filePath),
+              path.resolve(getOutputPath(), filePath),
             );
           }
           return buffer;
@@ -1175,23 +1155,23 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             throw createError(
               'BridgeAPI.readD2SData',
               'Failed to find file',
-              runtime!.getDestinationFilePath(filePath),
+              path.resolve(getOutputPath(), filePath),
             );
           }
         }
 
         // read file from pre-extracted data
         if (runtime!.options.isPreExtractedData) {
-          if (existsSync(runtime!.getPreExtractedSourceFilePath(filePath))) {
+          if (existsSync(path.resolve(getPreExtractedDataPath(), filePath))) {
             const buffer = await BridgeAPI.readFile(
-              runtime!.getPreExtractedSourceFilePath(filePath),
-              'None',
+              filePath,
+              'PreExtractedData',
             );
             if (buffer == null) {
               throw createError(
                 'BridgeAPI.readD2SData',
                 'Failed to read file',
-                runtime!.getPreExtractedSourceFilePath(filePath),
+                path.resolve(getPreExtractedDataPath(), filePath),
               );
             }
             return buffer;
@@ -1199,7 +1179,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             throw createError(
               'BridgeAPI.readD2SData',
               'Failed to find file',
-              runtime!.getPreExtractedSourceFilePath(filePath),
+              path.resolve(getPreExtractedDataPath(), filePath),
             );
           }
         }
@@ -1456,6 +1436,8 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       options,
     });
 
+    resetNextStringIDState();
+
     runtime = new InstallationRuntime(
       BridgeAPI,
       console,
@@ -1465,28 +1447,6 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
     try {
-      if (!runtime.options.isDirectMode) {
-        await BridgeAPI.deleteFile(
-          path.join(runtime.options.mergedPath, '..'),
-          'None',
-        );
-        await BridgeAPI.createDirectory(runtime.options.mergedPath);
-        const baseSavesPath = path.resolve(getBaseSavesPath());
-        const modsSavesPath = path.resolve(baseSavesPath, 'mods');
-        const savesPath = getSavesPath();
-        await BridgeAPI.writeJson(
-          path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
-          'None',
-          {
-            name: runtime.options.outputModName,
-            // use a relative path if possible - but allow an absolute path
-            savepath: savesPath.startsWith(baseSavesPath)
-              ? path.relative(modsSavesPath, savesPath)
-              : savesPath,
-          },
-        );
-      }
-
       if (!runtime.options.isPreExtractedData) {
         await BridgeAPI.openStorage(runtime.options.gamePath);
       }
@@ -1584,19 +1544,71 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         runtime.modsToInstall.length,
       ).catch(console.error);
 
-      if (!runtime.options.isPreExtractedData) {
-        await BridgeAPI.closeStorage();
-      }
-
-      // delete any files that were extracted but then unmodified
-      // since they should be the same as the vanilla files in CASC
-      if (!runtime.options.isDryRun && !runtime.options.isDirectMode) {
-        for (const file of runtime.fileManager.getUnmodifiedExtractedFiles()) {
+      // flush in-memory files to disk (or revert for uninstall)
+      // NOTE: CASC storage is still open here; close it after flush/revert
+      // since the uninstall path may need to re-extract vanilla files
+      if (!runtime.options.isDryRun) {
+        // install path
+        if (!runtime.options.isDirectMode) {
+          // delete old output
           await BridgeAPI.deleteFile(
-            runtime!.getDestinationFilePath(file),
+            path.join(runtime.options.mergedPath, '..'),
             'None',
           );
+
+          // create output directory and write modinfo
+          await BridgeAPI.createDirectory(runtime.options.mergedPath);
+          const baseSavesPath = path.resolve(getBaseSavesPath());
+          const modsSavesPath = path.resolve(baseSavesPath, 'mods');
+          const savesPath = getSavesPath();
+          await BridgeAPI.writeJson(
+            path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
+            'None',
+            {
+              name: runtime.options.outputModName,
+              // use a relative path if possible - but allow an absolute path
+              savepath: savesPath.startsWith(baseSavesPath)
+                ? path.relative(modsSavesPath, savesPath)
+                : savesPath,
+            },
+          );
         }
+
+        // write all modified files to disk
+        for (const {
+          filePath,
+          data,
+        } of runtime.fileManager.getModifiedFiles()) {
+          const destPath = path.resolve(getOutputPath(), filePath);
+          mkdirSync(path.dirname(destPath), { recursive: true });
+          writeFileSync(destPath, data);
+        }
+      } else if (runtime.options.isDirectMode) {
+        // uninstall path for direct mode
+        // revert ALL modified files to vanilla
+        for (const { filePath } of runtime.fileManager.getModifiedFiles()) {
+          if (runtime.fileManager.extracted(filePath)) {
+            // file was extracted from game data, revert to vanilla
+            if (runtime.options.isPreExtractedData) {
+              await BridgeAPI.copyFile(
+                path.resolve(getPreExtractedDataPath(), filePath),
+                path.resolve(getOutputPath(), filePath),
+                true, // overwrite
+              );
+            } else {
+              const buffer = await BridgeAPI.extractFileToMemory(filePath);
+              await BridgeAPI.writeFile(filePath, 'Output', buffer);
+            }
+          } else {
+            // file was created by a mod (not a vanilla file), delete it
+            await BridgeAPI.deleteFile(filePath, 'Output');
+          }
+        }
+      }
+      // else: dry run + non-direct mode = do nothing (memory is discarded)
+
+      if (!runtime.options.isPreExtractedData) {
+        await BridgeAPI.closeStorage();
       }
 
       const modsInstalled = runtime.modsInstalled;

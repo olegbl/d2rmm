@@ -8,6 +8,7 @@ export type FileOperation = {
 };
 
 export type FileStatus = {
+  data: Buffer | null;
   exists: boolean;
   extracted: boolean;
   filePath: string;
@@ -21,9 +22,10 @@ export class FileManager {
   constructor(private runtime: InstallationRuntime) {}
 
   private get(filePath: string): FileStatus {
-    const normalizedFilePath = filePath.toLowerCase();
+    const normalizedFilePath = filePath.replace(/\\/g, '/').toLowerCase();
     if (this.files[normalizedFilePath] == undefined) {
       return (this.files[normalizedFilePath] = {
+        data: null,
         exists: false,
         extracted: false,
         filePath: normalizedFilePath,
@@ -113,10 +115,26 @@ export class FileManager {
     fileStatus.modified = true;
   }
 
-  public getUnmodifiedExtractedFiles(): string[] {
+  public setData(filePath: string, data: Buffer): void {
+    const fileStatus = this.get(filePath);
+    fileStatus.data = data;
+    fileStatus.exists = true;
+  }
+
+  public getData(filePath: string): Buffer | null {
+    return this.get(filePath).data;
+  }
+
+  public getModifiedFiles(): Array<{ filePath: string; data: Buffer }> {
     return Object.entries(this.files)
-      .filter(([, fileStatus]) => fileStatus.extracted && !fileStatus.modified)
-      .map(([filePath]) => filePath);
+      .filter(
+        (entry): entry is [string, FileStatus & { data: Buffer }] =>
+          entry[1].modified && entry[1].data != null,
+      )
+      .map(([filePath, fileStatus]) => ({
+        filePath,
+        data: fileStatus.data,
+      }));
   }
 }
 

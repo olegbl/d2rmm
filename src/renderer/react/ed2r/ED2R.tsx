@@ -1398,10 +1398,10 @@ function getAssetPath(item: IItem, gameFiles: GameFiles): null | string {
 function getItemSprite(item: IItem, gameFiles: GameFiles): string {
   const assetPath = getAssetPath(item, gameFiles);
   const category =
-    item.categories.includes('Armor') || item.categories.includes('Any Armor')
+    item.categories?.includes('Armor') || item.categories?.includes('Any Armor')
       ? 'armor'
-      : item.categories.includes('Weapon') ||
-          item.categories.includes('Any Weapon')
+      : item.categories?.includes('Weapon') ||
+          item.categories?.includes('Any Weapon')
         ? 'weapon'
         : 'misc';
   const assetFilePaths = (
@@ -1514,6 +1514,7 @@ function InventoryGridItem({
                 </span>
               ))
             }
+            {item.id}
           </Typography>
         </Box>
       }

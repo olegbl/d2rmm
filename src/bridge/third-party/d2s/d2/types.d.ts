@@ -332,7 +332,7 @@ export interface IItem {
   picture_id: number;
   class_specific: number;
   low_quality_id: number;
-  normal_12_bits: null | number;
+  normal_12_bits: null | Uint8Array;
   timestamp: number;
   ear_attributes: IEarAttributes;
   defense_rating: number;

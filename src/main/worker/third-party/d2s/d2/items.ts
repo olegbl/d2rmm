@@ -371,11 +371,13 @@ export async function readItem(
             break;
           case Quality.Normal:
             {
-              // sometimes normal items have 12 bits here...
-              // maybe when they have magical properties?
-              const bits = reader.ReadUInt16(12);
-              // TODO: I have no idea if this is always 0
-              if (bits === 0) {
+              // when a normal item has magic properties
+              // (which is not possible in vanilla Diablo 2)
+              // we end up with an extra 12 bits here whose
+              // purpose we do not know
+              // the bits seem to either be all 0s or all 1s
+              const bits = reader.ReadBitArray(12);
+              if (bits.every((b) => b === 0) || bits.every((b) => b === 1)) {
                 item.normal_12_bits = bits;
               } else {
                 // assume these are properties instead
@@ -594,6 +596,7 @@ export async function readItem(
 
     return item;
   } catch (error) {
+    console.error('@@', item);
     throw wrapParsingError(
       error,
       `Failed to parse item ${JSON.stringify(item)}`,
@@ -637,7 +640,7 @@ export async function writeItem(
         break;
       case Quality.Normal:
         if (item.normal_12_bits != null) {
-          writer.WriteUInt16(item.normal_12_bits, 12);
+          writer.WriteArray(item.normal_12_bits, 12);
         }
         break;
       case Quality.Superior:

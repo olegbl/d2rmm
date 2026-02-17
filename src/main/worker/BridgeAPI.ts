@@ -1272,6 +1272,12 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         'hd/items/items.json',
         'hd/items/sets.json',
         'hd/items/uniques.json',
+        'local/lng/strings/item-gems.json',
+        'local/lng/strings/item-modifiers.json',
+        'local/lng/strings/item-nameaffixes.json',
+        'local/lng/strings/item-names.json',
+        'local/lng/strings/item-runes.json',
+        'local/lng/strings/skills.json',
       ]) {
         gameFiles[filePath] = parseJson(
           readCString(await getGameFile(filePath)),
@@ -1287,6 +1293,15 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         'global/excel/uniqueitems.txt',
         'global/excel/setitems.txt',
         'global/excel/inventory.txt',
+        'global/excel/magicprefix.txt',
+        'global/excel/magicsuffix.txt',
+        'global/excel/itemstatcost.txt',
+        'global/excel/properties.txt',
+        'global/excel/gems.txt',
+        'global/excel/skills.txt',
+        'global/excel/skilldesc.txt',
+        'global/excel/charstats.txt',
+        'global/excel/playerclass.txt',
       ]) {
         gameFiles[filePath] = parseTsv(
           readCString(await getGameFile(filePath)),

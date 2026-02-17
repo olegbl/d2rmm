@@ -1,7 +1,6 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { enhanceAttributes, enhanceItems } from './attribute_enhancer';
 import { readAttributes, writeAttributes } from './attributes';
 import { getConstantData } from './constants';
 import { wrapParsingError, formatCharContext } from './errors';
@@ -110,15 +109,6 @@ async function read(
     }
   }
 
-  try {
-    await enhanceAttributes(char, constants, config);
-  } catch (error) {
-    throw wrapParsingError(
-      error,
-      `Failed to enhance attributes for ${formatCharContext(char)}`,
-    );
-  }
-
   return char;
 }
 
@@ -135,7 +125,6 @@ async function readItem(
       constants = getConstantData(version);
     }
     const item = await items.readItem(reader, version, constants, config);
-    await enhanceItems([item], constants);
     return item;
   } catch (error) {
     throw wrapParsingError(

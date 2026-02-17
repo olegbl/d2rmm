@@ -38,6 +38,10 @@ import {
   getUniqueItemPositionID,
 } from 'renderer/react/ed2r/ED2RItemPosition';
 import {
+  enhanceCharacter,
+  enhanceStashPage,
+} from 'renderer/react/ed2r/ED2RSaveFileUtils';
+import {
   CharacterFile,
   StashFile,
   useSaveFiles,
@@ -138,6 +142,17 @@ export default function ED2R(): React.ReactNode {
   const onLoad = useCallback(async () => {
     const { characters, stashes, gameFiles } =
       await BridgeAPI.readD2SData(runtimeModOptions);
+
+    // enhance parsed data with display metadata from game files
+    for (const character of Object.values(characters)) {
+      enhanceCharacter(character, gameFiles);
+    }
+    for (const stash of Object.values(stashes)) {
+      for (const page of stash.pages) {
+        enhanceStashPage(page, gameFiles);
+      }
+    }
+
     setGameFiles(gameFiles);
     setSaveFiles({
       ...Object.fromEntries(

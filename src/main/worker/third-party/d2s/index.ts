@@ -9,11 +9,6 @@ export {
 } from './d2/header';
 export { readAttributes, writeAttributes } from './d2/attributes';
 export { readSkills, writeSkills } from './d2/skills';
-export {
-  enhanceAttributes,
-  enhanceItems,
-  enhancePlayerAttributes,
-} from './d2/attribute_enhancer';
 export { getConstantData, setConstantData } from './d2/constants';
 export * from './data/parser';
 export type * as types from 'bridge/third-party/d2s/d2/types.d';

@@ -1,7 +1,6 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { enhanceItems } from './attribute_enhancer';
 import { getConstantData } from './constants';
 import * as items from './items';
 
@@ -125,7 +124,6 @@ async function readStashPage(
 
   page.name = reader.ReadNullTerminatedString();
   page.items = await items.readItems(reader, version, constants, defaultConfig);
-  enhanceItems(page.items, constants, 1);
   stash.pages.push(page);
 }
 
@@ -141,7 +139,6 @@ async function readStashPart(
     type: 0,
   };
   page.items = await items.readItems(reader, version, constants, defaultConfig);
-  enhanceItems(page.items, constants, 1);
   stash.pages.push(page);
 }
 

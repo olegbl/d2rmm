@@ -596,7 +596,6 @@ export async function readItem(
 
     return item;
   } catch (error) {
-    console.error('@@', item);
     throw wrapParsingError(
       error,
       `Failed to parse item ${JSON.stringify(item)}`,

@@ -1588,11 +1588,41 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             'None',
           );
 
+          // I have no idea if this works because I don't have Diablo 2
+          // on any of these platforms. Good luck everybody!
+          function normalizePathForLinuxProtonEtc(filePath: string): string {
+            // don't do anything on Windows
+            if (process.platform === 'win32') {
+              return filePath;
+            }
+
+            // handle drive-letter paths like "Z:\\..."
+            const driveLetterMatch = filePath.match(/^[A-Za-z]:\\/);
+            if (driveLetterMatch) {
+              filePath = filePath.replace(/^[A-Za-z]:\\/, '');
+              if (!filePath.startsWith('/')) {
+                filePath = `/${filePath}`;
+              }
+            }
+
+            // normalize backslashes to forward slashes
+            if (filePath.includes('\\')) {
+              filePath = filePath.replace(/\\/g, '/');
+            }
+
+            return path.posix.resolve(filePath);
+          }
+
           // create output directory and write modinfo
           await BridgeAPI.createDirectory(runtime.options.mergedPath);
-          const baseSavesPath = path.resolve(getBaseSavesPath());
-          const modsSavesPath = path.resolve(baseSavesPath, 'mods');
-          const savesPath = getSavesPath();
+          const baseSavesPath = normalizePathForLinuxProtonEtc(
+            path.resolve(getBaseSavesPath()),
+          );
+          const modsSavesPath = normalizePathForLinuxProtonEtc(
+            path.resolve(baseSavesPath, 'mods'),
+          );
+          const savesPath = normalizePathForLinuxProtonEtc(getSavesPath());
+
           await BridgeAPI.writeJson(
             path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
             'None',
@@ -1600,7 +1630,9 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               name: runtime.options.outputModName,
               // use a relative path if possible - but allow an absolute path
               savepath: savesPath.startsWith(baseSavesPath)
-                ? path.relative(modsSavesPath, savesPath)
+                ? process.platform === 'win32'
+                  ? path.relative(modsSavesPath, savesPath)
+                  : path.posix.relative(modsSavesPath, savesPath)
                 : savesPath,
             },
           );

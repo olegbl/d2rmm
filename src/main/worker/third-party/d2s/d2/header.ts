@@ -2,6 +2,7 @@ import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { wrapParsingError } from './errors';
+import * as header from './versions/default_header';
 
 export async function readHeader(char: types.ID2S, reader: BitReader) {
   try {
@@ -26,7 +27,7 @@ export async function readHeaderData(
   constants: types.IConstantData,
 ) {
   try {
-    const v = await _versionSpecificHeader(char.header.version);
+    const v = header;
     if (v == null) {
       throw new Error(
         `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this parser.`,
@@ -56,7 +57,7 @@ export async function writeHeaderData(
 ): Promise<Uint8Array> {
   try {
     const writer = new BitWriter();
-    const v = await _versionSpecificHeader(char.header.version);
+    const v = header;
     if (v == null) {
       throw new Error(
         `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this writer.`,
@@ -89,28 +90,4 @@ export async function fixHeader(writer: BitWriter) {
   }
   //checksum pos
   writer.SeekByte(0x000c).WriteUInt32(checksum);
-}
-
-/**
- * Save Version
- * 0x47, 0x0, 0x0, 0x0 = <1.06
- * 0x59, 0x0, 0x0, 0x0 = 1.08 = version
- * 0x5c, 0x0, 0x0, 0x0 = 1.09 = version
- * 0x60, 0x0, 0x0, 0x0 = 1.13c = version
- * 0x62, 0x0, 0x0, 0x0 = 1.2 = version
- * 0x63, 0x0, 0x0, 0x0 = D2R v99 (pre-expansion)
- * 0x69, 0x0, 0x0, 0x0 = D2R v105 (with expansion - new format)
- * */
-async function _versionSpecificHeader(version: number) {
-  switch (version) {
-    case 0x69: { // D2R version 105
-      return await import(`./versions/v105_header`);
-    }
-    case 0x60: {
-      return await import(`./versions/default_header`);
-    }
-    default: {
-      return await import(`./versions/default_header`);
-    }
-  }
 }

@@ -1,6 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../../binary/bitreader';
 import { BitWriter } from '../../binary/bitwriter';
+import { extractRawBytes } from '../debug';
 
 const difficulties = ['normal', 'nm', 'hell'];
 
@@ -9,14 +10,27 @@ export function readHeader(
   reader: BitReader,
   constants: types.IConstantData,
 ) {
+  // for debugging:
+  if (false) {
+    char.header.hex = extractRawBytes(reader, reader.offset, 300);
+  }
+
   char.header.filesize = reader.ReadUInt32(); //0x0008
   char.header.checksum = reader.ReadUInt32().toString(16).padStart(8, '0'); //0x000c
   reader.SkipBytes(4); //0x0010
-  if (char.header.version > 0x61) {
+
+  // find and parse name
+  if (char.header.version >= 0x69) {
+    reader.SeekByte(299);
+  } else if (char.header.version > 0x61) {
     reader.SeekByte(267);
   }
   char.header.name = reader.ReadString(16).replace(/\0/g, ''); //0x0014
-  if (char.header.version > 0x61) {
+
+  // find and parse header data
+  if (char.header.version >= 0x69) {
+    reader.SeekByte(20);
+  } else if (char.header.version > 0x61) {
     reader.SeekByte(36);
   }
   char.header.status = _readStatus(reader.ReadUInt8()); //0x0024
@@ -29,8 +43,8 @@ export function readHeader(
   if (!classData) {
     throw new Error(
       `Invalid class ID ${classId} at byte position ${Math.floor(reader.offset / 8)}. ` +
-      `This may indicate a parsing error due to incorrect file format for version ${char.header.version} (0x${char.header.version.toString(16)}). ` +
-      `Valid class IDs are 0-${constants.classes.length - 1}.`
+        `This may indicate a parsing error due to incorrect file format for version ${char.header.version} (0x${char.header.version.toString(16)}). ` +
+        `Valid class IDs are 0-${constants.classes.length - 1}.`,
     );
   }
   char.header.class = classData.n; //0x0028
@@ -59,7 +73,9 @@ export function readHeader(
   char.header.merc_name_id = reader.ReadUInt16(); //0x00b7
   char.header.merc_type = reader.ReadUInt16(); //0x00b9
   char.header.merc_experience = reader.ReadUInt32(); //0x00bb
-  reader.SkipBytes(144); //0x00bf [unk]
+  reader.SkipBytes(73); //0x00bf [unk]
+  char.header.realm = reader.ReadUInt8(); //0x00f8 [realm: 1=Classic, 2=LoD, 3=RotW]
+  reader.SkipBytes(70); //0x00f9 [unk]
   reader.SkipBytes(4); //0x014f [quests header identifier = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
   reader.SkipBytes(4); //0x0153 [version = 0x6, 0x0, 0x0, 0x0]
   reader.SkipBytes(2); //0x0153 [quests header length = 0x2a, 0x1]
@@ -73,6 +89,10 @@ export function readHeader(
   reader.SkipBytes(2); //0x02c9 [npc header identifier  = 0x01, 0x77 ".w"]
   reader.SkipBytes(2); //0x02ca [npc header length = 0x34]
   char.header.npcs = _readNPCData(reader.ReadArray(0x30)); //0x02cc
+
+  if (char.header.version >= 0x69) {
+    reader.SkipBytes(84); //0x02ed -> 0x0341
+  }
 }
 
 export function writeHeader(
@@ -84,7 +104,9 @@ export function writeHeader(
     .WriteUInt32(0x0) //0x0008 (filesize. needs to be writen after all data)
     .WriteUInt32(0x0); //0x000c (checksum. needs to be calculated after all data writer)
 
-  if (char.header.version > 0x61) {
+  if (char.header.version >= 0x69) {
+    writer.WriteArray(new Uint8Array(Array(4).fill(0))); // 0x0010
+  } else if (char.header.version > 0x61) {
     writer.WriteArray(new Uint8Array(Array(20).fill(0))); // 0x0010
   } else {
     writer
@@ -119,7 +141,14 @@ export function writeHeader(
     .WriteUInt16(char.header.merc_type) //0x00b9
     .WriteUInt32(char.header.merc_experience); //0x00bb
 
-  if (char.header.version > 0x61) {
+  if (char.header.version >= 0x69) {
+    writer
+      .WriteArray(new Uint8Array(73)) //0x00bf [unk]
+      .WriteUInt8(char.header.realm) //0x00f8 [realm: 1=Classic, 2=LoD, 3=RotW]
+      .WriteArray(new Uint8Array(34)) //0x00f9 [unk]
+      .WriteString(char.header.name, 16) //0x012b
+      .WriteArray(new Uint8Array(20)); //0x013b
+  } else if (char.header.version > 0x61) {
     writer
       .WriteArray(new Uint8Array(76)) //0x00bf [unk]
       .WriteString(char.header.name, 16) //0x010b
@@ -142,6 +171,10 @@ export function writeHeader(
     .WriteArray(new Uint8Array([0x01, 0x77])) //0x02c9 [npc header = 0x01, 0x77 ".w"]
     .WriteUInt16(0x34) //0x02ca [npc struct length]
     .WriteArray(_writeNPCData(char.header.npcs)); //0x02cc [npc introduction data... unk]
+
+  if (char.header.version >= 0x69) {
+    writer.WriteArray(new Uint8Array(84)); //0x02ed
+  }
 }
 
 function _classId(name: string, constants: types.IConstantData): number {

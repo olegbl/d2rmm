@@ -19,10 +19,12 @@ import { DndContext, useSensor, useSensors } from '@dnd-kit/core';
 import React, { useMemo, useRef } from 'react';
 
 export type IItemPosition = Readonly<{
+  acceptedItemType?: string;
   altPositionID: AltPositionID;
   equippedID: EquippedID;
   file: SaveFile;
   height: number;
+  isAdvancedStash?: boolean;
   isValid: boolean;
   locationID: LocationID;
   isMerc?: boolean;
@@ -89,7 +91,43 @@ export function ItemDragContextProvider({
           // remove the dragged item from its original position
           {
             const file = newFromFile;
-            if (file.type === 'character') {
+            const isAdvancedStashSource =
+              draggedPositionRef.current.isAdvancedStash === true;
+
+            if (isAdvancedStashSource && file.type === 'stash') {
+              // for advanced stash, decrement quantity instead of removing
+              newFromFile = {
+                ...file,
+                stash: {
+                  ...file.stash,
+                  pages: file.stash.pages.map((page, index) =>
+                    index === draggedPositionRef.current?.stashTabIndex
+                      ? {
+                          ...page,
+                          items: page.items
+                            .map((item) =>
+                              item.type ===
+                              draggedPositionRef.current?.acceptedItemType
+                                ? {
+                                    ...item,
+                                    advanced_stash_quantity:
+                                      (item.advanced_stash_quantity ?? 1) - 1,
+                                  }
+                                : item,
+                            )
+                            // remove items with 0 quantity
+                            .filter(
+                              (item) =>
+                                item.advanced_stash_quantity == null ||
+                                item.advanced_stash_quantity > 0,
+                            ),
+                        }
+                      : page,
+                  ),
+                },
+                edited: true,
+              };
+            } else if (file.type === 'character') {
               const removeID = draggedItemRef.current
                 ? getUniqueItemID(draggedItemRef.current)
                 : null;
@@ -410,6 +448,23 @@ export function ItemDragContextProvider({
             });
           }
 
+          // advanced stash slots only accept their specific item type
+          if (
+            overItemPosition.acceptedItemType != null &&
+            item.type !== overItemPosition.acceptedItemType
+          ) {
+            isValid = false;
+          }
+
+          // advanced stash slots merge quantities, so conflicting items
+          // of the same type are OK (they'll be merged on drop)
+          if (
+            overItemPosition.isAdvancedStash &&
+            item.type === overItemPosition.acceptedItemType
+          ) {
+            conflictingItems = [];
+          }
+
           // it's okay for there to be *one* conflicting item
           // because we can swap them on drop
           if (conflictingItems.length > 1) {
@@ -434,9 +489,19 @@ export function ItemDragContextProvider({
       }}
       onDragStart={(event) => {
         if (event.active.data.current != null) {
-          const item = event.active.data.current.item as IItem;
+          let item = event.active.data.current.item as IItem;
           const itemPosition = event.active.data.current
             .itemPosition as IItemPosition;
+
+          // when picking up from an advanced stash slot,
+          // pick up a single item instead of the whole stack
+          if (itemPosition.isAdvancedStash) {
+            item = {
+              ...item,
+              advanced_stash_quantity: 1,
+            };
+          }
+
           setDraggedItem(item);
           draggedItemRef.current = item;
           draggedPositionRef.current = itemPosition;

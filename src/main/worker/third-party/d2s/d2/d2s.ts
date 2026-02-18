@@ -14,10 +14,7 @@ import {
 import * as items from './items';
 import { readSkills, writeSkills } from './skills';
 
-const defaultConfig = {
-  extendedStash: false,
-  sortProperties: true,
-} as types.IConfig;
+const defaultConfig = {} as types.IConfig;
 
 function reader(buffer: Uint8Array) {
   return new BitReader(buffer);
@@ -115,6 +112,7 @@ async function read(
 async function readItem(
   buffer: Uint8Array,
   version: number,
+  realm: number,
   constants?: types.IConstantData,
   userConfig?: types.IConfig,
 ): Promise<types.IItem> {
@@ -124,7 +122,13 @@ async function readItem(
     if (!constants) {
       constants = getConstantData(version);
     }
-    const item = await items.readItem(reader, version, constants, config);
+    const item = await items.readItem(
+      reader,
+      version,
+      realm,
+      constants,
+      config,
+    );
     return item;
   } catch (error) {
     throw wrapParsingError(
@@ -144,6 +148,7 @@ async function write(
   userConfig?: types.IConfig,
 ): Promise<Uint8Array> {
   const config = Object.assign(defaultConfig, userConfig);
+
   const writer = new BitWriter();
   writer.WriteArray(await writeHeader(data));
   if (!constants) {
@@ -165,6 +170,7 @@ async function write(
 async function writeItem(
   item: types.IItem,
   version: number,
+  realm: number,
   constants?: types.IConstantData,
   userConfig?: types.IConfig,
 ): Promise<Uint8Array> {
@@ -173,7 +179,9 @@ async function writeItem(
   if (!constants) {
     constants = getConstantData(version);
   }
-  writer.WriteArray(await items.writeItem(item, version, constants, config));
+  writer.WriteArray(
+    await items.writeItem(item, version, realm, constants, config),
+  );
   return writer.ToArray();
 }
 

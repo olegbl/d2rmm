@@ -1,6 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
+import { extractRawBytes } from './debug';
 import { wrapParsingError, formatCharContext } from './errors';
 
 enum ItemType {
@@ -36,6 +37,7 @@ export async function readCharItems(
   char.items = await readItems(
     reader,
     char.header.version,
+    char.header.realm,
     constants,
     config,
     char,
@@ -49,7 +51,13 @@ export async function writeCharItems(
 ): Promise<Uint8Array> {
   const writer = new BitWriter();
   writer.WriteArray(
-    await writeItems(char.items, char.header.version, constants, config),
+    await writeItems(
+      char.items,
+      char.header.version,
+      char.header.realm,
+      constants,
+      config,
+    ),
   );
   return writer.ToArray();
 }
@@ -78,6 +86,7 @@ export async function readMercItems(
       char.merc_items = await readItems(
         reader,
         char.header.version,
+        char.header.realm,
         constants,
         config,
         char,
@@ -101,7 +110,13 @@ export async function writeMercItems(
   if (char.header.merc_id && parseInt(char.header.merc_id, 16) !== 0) {
     char.merc_items = char.merc_items || [];
     writer.WriteArray(
-      await writeItems(char.merc_items, char.header.version, constants, config),
+      await writeItems(
+        char.merc_items,
+        char.header.version,
+        char.header.realm,
+        constants,
+        config,
+      ),
     );
   }
   return writer.ToArray();
@@ -131,8 +146,10 @@ export async function readGolemItems(
       char.golem_item = await readItem(
         reader,
         char.header.version,
+        char.header.realm,
         constants,
         config,
+        undefined,
       );
     }
   } catch (error) {
@@ -153,7 +170,13 @@ export async function writeGolemItems(
   if (char.golem_item) {
     writer.WriteUInt8(1);
     writer.WriteArray(
-      await writeItem(char.golem_item, char.header.version, constants, config),
+      await writeItem(
+        char.golem_item,
+        char.header.version,
+        char.header.realm,
+        constants,
+        config,
+      ),
     );
   } else {
     writer.WriteUInt8(0);
@@ -187,7 +210,14 @@ export async function readCorpseItems(
       try {
         reader.SkipBytes(12); //0x0004 [unk4, x_pos, y_pos]
         char.corpse_items = char.corpse_items.concat(
-          await readItems(reader, char.header.version, constants, config, char),
+          await readItems(
+            reader,
+            char.header.version,
+            char.header.realm,
+            constants,
+            config,
+            char,
+          ),
         );
       } catch (error) {
         throw wrapParsingError(
@@ -220,6 +250,7 @@ export async function writeCorpseItem(
       await writeItems(
         char.corpse_items,
         char.header.version,
+        char.header.realm,
         constants,
         config,
       ),
@@ -231,6 +262,7 @@ export async function writeCorpseItem(
 export async function readItems(
   reader: BitReader,
   version: number,
+  realm: number,
   constants: types.IConstantData,
   config: types.IConfig,
   char?: types.ID2S,
@@ -252,7 +284,9 @@ export async function readItems(
 
   for (let i = 0; i < count; i++) {
     try {
-      items.push(await readItem(reader, version, constants, config));
+      items.push(
+        await readItem(reader, version, realm, constants, config, undefined),
+      );
     } catch (error) {
       throw wrapParsingError(error, `Failed to read item ${i + 1} of ${count}`);
     }
@@ -263,6 +297,7 @@ export async function readItems(
 export async function writeItems(
   items: types.IItem[],
   version: number,
+  realm: number,
   constants: types.IConstantData,
   config: types.IConfig,
 ): Promise<Uint8Array> {
@@ -270,59 +305,25 @@ export async function writeItems(
   writer.WriteString('JM', 2);
   writer.WriteUInt16(items.length);
   for (let i = 0; i < items.length; i++) {
-    writer.WriteArray(await writeItem(items[i], version, constants, config));
+    writer.WriteArray(
+      await writeItem(items[i], version, realm, constants, config),
+    );
   }
   return writer.ToArray();
-}
-
-// Helper function to extract raw bytes from BitReader for debugging
-function extractRawBytes(
-  reader: BitReader,
-  startBitOffset: number,
-  byteCount: number,
-): string {
-  try {
-    const bytes: number[] = [];
-    for (let i = 0; i < byteCount; i++) {
-      const bitOffset = startBitOffset + i * 8;
-      if (bitOffset + 8 > reader.bits.length) {
-        break; // Stop if we've reached the end
-      }
-      let byte = 0;
-      for (let bit = 0; bit < 8; bit++) {
-        if (reader.bits[bitOffset + bit]) {
-          byte |= 1 << bit;
-        }
-      }
-      bytes.push(byte);
-    }
-
-    // Format as hex with 16 bytes per line
-    const lines: string[] = [];
-    for (let i = 0; i < bytes.length; i += 16) {
-      const lineBytes = bytes.slice(i, i + 16);
-      const hex = lineBytes
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join(' ');
-      const offset = Math.floor(startBitOffset / 8) + i;
-      lines.push(`  ${offset.toString().padStart(4, '0')}: ${hex}`);
-    }
-    return '\n' + lines.join('\n');
-  } catch (e) {
-    return ' (unable to extract bytes)';
-  }
 }
 
 export async function readItem(
   reader: BitReader,
   version: number,
-  originalConstants: types.IConstantData,
+  realm: number,
+  constants: types.IConstantData,
   config: types.IConfig,
   _parent?: types.IItem,
 ): Promise<types.IItem> {
   const itemStartOffset = reader.offset;
   const item = {
     offset: itemStartOffset,
+    _unknown_data: {},
   } as types.IItem;
 
   // for debugging:
@@ -340,16 +341,93 @@ export async function readItem(
         );
       }
     }
-    const constants = originalConstants;
 
-    try {
-      _readSimpleBits(item, reader, version, constants, config);
-    } catch (error) {
-      throw wrapParsingError(
-        error,
-        `Failed to read item flags and basic properties at byte offset ${Math.floor(itemStartOffset / 8)}`,
-      );
+    //1.10-1.14d
+    //[flags:32][version:10][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:32])([sockets:3])
+    //1.15
+    //[flags:32][version:3][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:variable])([sockets:3])
+    item._unknown_data.b0_3 = reader.ReadBitArray(4);
+    item.identified = reader.ReadBit();
+    item._unknown_data.b5_10 = reader.ReadBitArray(6);
+    item.socketed = reader.ReadBit();
+    item._unknown_data.b12 = reader.ReadBitArray(1);
+    item.new = reader.ReadBit();
+    item._unknown_data.b14_15 = reader.ReadBitArray(2);
+    item.is_ear = reader.ReadBit();
+    item.starter_item = reader.ReadBit();
+    item._unknown_data.b18_20 = reader.ReadBitArray(3);
+    item.simple_item = reader.ReadBit();
+    item.ethereal = reader.ReadBit();
+    item._unknown_data.b23 = reader.ReadBitArray(1);
+    item.personalized = reader.ReadBit();
+    item._unknown_data.b25 = reader.ReadBitArray(1);
+    item.given_runeword = reader.ReadBit();
+    item._unknown_data.b27_31 = reader.ReadBitArray(5);
+
+    if (version <= 0x60) {
+      item.version = reader.ReadUInt16(10).toString(10);
+    } else if (version >= 0x61) {
+      item.version = reader.ReadUInt16(3).toString(2);
     }
+    item.location_id = reader.ReadUInt8(3);
+    item.equipped_id = reader.ReadUInt8(4);
+    item.position_x = reader.ReadUInt8(4);
+    item.position_y = reader.ReadUInt8(4);
+    item.alt_position_id = reader.ReadUInt8(3);
+    if (item.is_ear) {
+      const clazz = reader.ReadUInt8(3);
+      const level = reader.ReadUInt8(7);
+      const arr = new Uint8Array(15);
+      for (let i = 0; i < arr.length; i++) {
+        arr[i] = reader.ReadUInt8(7);
+        if (arr[i] === 0x00) {
+          break;
+        }
+      }
+      const name = new BitReader(arr).ReadString(15).trim().replace(/\0/g, '');
+      item.ear_attributes = {
+        class: clazz,
+        level: level,
+        name: name,
+      } as types.IEarAttributes;
+    } else {
+      if (version <= 0x60) {
+        item.type = reader.ReadString(4);
+      } else if (version >= 0x61) {
+        item.type = '';
+        //props to d07riv
+        //https://github.com/d07RiV/d07riv.github.io/blob/master/d2r.html#L11-L20
+        for (let i = 0; i < 4; i++) {
+          let node = HUFFMAN as any;
+          do {
+            node = node[reader.ReadBit()];
+          } while (Array.isArray(node));
+          item.type += node;
+        }
+      }
+      // circlet: offset: 7456
+      item.type = item.type.trim().replace(/\0/g, '');
+      let details = _GetItemTXT(item, constants);
+      item.categories = details?.c;
+      if (item?.categories?.includes('Any Armor')) {
+        item.type_id = ItemType.Armor;
+      } else if (item?.categories?.includes('Weapon')) {
+        item.type_id = ItemType.Weapon;
+        details = constants.weapon_items[item.type];
+      } else {
+        item.type_id = ItemType.Other;
+      }
+
+      let bits = item.simple_item ? 1 : 3;
+      if (item.categories?.includes('Quest')) {
+        item.quest_difficulty =
+          reader.ReadUInt16(constants.magical_properties[356].sB) -
+          constants.magical_properties[356].sA;
+        bits = 1;
+      }
+      item.nr_of_items_in_sockets = reader.ReadUInt8(bits);
+    }
+
     if (!item.simple_item) {
       item.id = reader.ReadUInt32(32);
       item.level = reader.ReadUInt8(7);
@@ -576,6 +654,18 @@ export async function readItem(
       item._unknown_data.v105_extra_bit_2 = reader.ReadBitArray(1);
     }
 
+    if (
+      version >= 0x69 &&
+      realm === 3 // RotW
+    ) {
+      if (
+        constants.other_items[item.type] &&
+        constants.other_items[item.type].AdvancedStashStackable
+      ) {
+        item.advanced_stash_quantity = reader.ReadUInt8(8);
+      }
+    }
+
     reader.Align();
 
     if (item.nr_of_items_in_sockets > 0 && item.simple_item === 0) {
@@ -583,7 +673,7 @@ export async function readItem(
       for (let i = 0; i < item.nr_of_items_in_sockets; i++) {
         try {
           item.socketed_items.push(
-            await readItem(reader, version, constants, config, item),
+            await readItem(reader, version, realm, constants, config, item),
           );
         } catch (error) {
           throw wrapParsingError(
@@ -606,6 +696,7 @@ export async function readItem(
 export async function writeItem(
   item: types.IItem,
   version: number,
+  realm: number,
   constants: types.IConstantData,
   config: types.IConfig,
 ): Promise<Uint8Array> {
@@ -620,7 +711,68 @@ export async function writeItem(
   if (version <= 0x60) {
     writer.WriteString('JM', 2);
   }
-  _writeSimpleBits(writer, version, item, constants, config);
+
+  writer.WriteBits(item._unknown_data.b0_3 || new Uint8Array(4), 4);
+  writer.WriteBit(item.identified);
+  writer.WriteBits(item._unknown_data.b5_10 || new Uint8Array(6), 6);
+  writer.WriteBit(item.socketed);
+  writer.WriteBits(item._unknown_data.b12 || new Uint8Array(1), 1);
+  writer.WriteBit(item.new);
+  writer.WriteBits(item._unknown_data.b14_15 || new Uint8Array(2), 2);
+  writer.WriteBit(item.is_ear);
+  writer.WriteBit(item.starter_item);
+  writer.WriteBits(item._unknown_data.b18_20 || new Uint8Array(3), 3);
+  writer.WriteBit(item.simple_item);
+  writer.WriteBit(item.ethereal);
+  writer.WriteBits(item._unknown_data.b23 || new Uint8Array([1]), 1); //always 1? IFLAG_JUSTSAVED
+  writer.WriteBit(item.personalized);
+  writer.WriteBits(item._unknown_data.b25 || new Uint8Array(1), 1); //IFLAG_LOWQUALITY
+  writer.WriteBit(item.given_runeword);
+  writer.WriteBits(item._unknown_data.b27_31 || new Uint8Array(5), 5);
+
+  const itemVersion = item.version != null ? item.version : '101';
+  if (version <= 0x60) {
+    // 0 = pre-1.08; 1 = 1.08/1.09 normal; 2 = 1.10 normal; 100 = 1.08/1.09 expansion; 101 = 1.10 expansion
+    writer.WriteUInt16(parseInt(itemVersion, 10), 10);
+  } else if (version >= 0x61) {
+    writer.WriteUInt16(parseInt(itemVersion, 2), 3);
+  }
+  writer.WriteUInt8(item.location_id, 3);
+  writer.WriteUInt8(item.equipped_id, 4);
+  writer.WriteUInt8(item.position_x, 4);
+  writer.WriteUInt8(item.position_y, 4);
+  writer.WriteUInt8(item.alt_position_id, 3);
+  if (item.is_ear) {
+    writer.WriteUInt8(item.ear_attributes.class, 3);
+    writer.WriteUInt8(item.ear_attributes.level, 7);
+    const name = item.ear_attributes.name.substring(0, 15);
+    for (let i = 0; i < name.length; i++) {
+      writer.WriteUInt8(name.charCodeAt(i) & 0x7f, 7);
+    }
+    writer.WriteUInt8(0x00, 7);
+  } else {
+    const t = item.type.padEnd(4, ' ');
+    if (version <= 0x60) {
+      writer.WriteString(t, 4);
+    } else {
+      for (const c of t) {
+        const n = HUFFMAN_LOOKUP[c as keyof typeof HUFFMAN_LOOKUP];
+        writer.WriteUInt16(n.v, n.l);
+      }
+    }
+
+    let bits = item.simple_item ? 1 : 3;
+    if (item.categories?.includes('Quest')) {
+      const difficulty = item.quest_difficulty || 0;
+      writer.WriteUInt16(
+        difficulty + constants.magical_properties[356].sA,
+        constants.magical_properties[356].sB,
+      );
+      bits = 1;
+    }
+    writer.WriteUInt8(item.nr_of_items_in_sockets, bits);
+  }
+
   if (!item.simple_item) {
     writer.WriteUInt32(item.id, 32);
     writer.WriteUInt8(item.level, 7);
@@ -779,123 +931,34 @@ export async function writeItem(
     );
   }
 
+  if (
+    version >= 0x69 &&
+    realm === 3 // RotW
+  ) {
+    if (
+      constants.other_items[item.type] &&
+      constants.other_items[item.type].AdvancedStashStackable
+    ) {
+      writer.WriteUInt8(item.advanced_stash_quantity ?? 1, 8);
+    }
+  }
+
   writer.Align();
 
   if (item.nr_of_items_in_sockets > 0 && item.simple_item === 0) {
     for (let i = 0; i < item.nr_of_items_in_sockets; i++) {
       writer.WriteArray(
-        await writeItem(item.socketed_items[i], version, constants, config),
+        await writeItem(
+          item.socketed_items[i],
+          version,
+          realm,
+          constants,
+          config,
+        ),
       );
     }
   }
   return writer.ToArray();
-}
-
-function _readSimpleBits(
-  item: types.IItem,
-  reader: BitReader,
-  version: number,
-  constants: types.IConstantData,
-  _config: types.IConfig,
-) {
-  //init so we do not have npe's
-  item._unknown_data = {};
-  //1.10-1.14d
-  //[flags:32][version:10][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:32])([sockets:3])
-  //1.15
-  //[flags:32][version:3][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:variable])([sockets:3])
-  item._unknown_data.b0_3 = reader.ReadBitArray(4);
-  item.identified = reader.ReadBit();
-  item._unknown_data.b5_10 = reader.ReadBitArray(6);
-  item.socketed = reader.ReadBit();
-  item._unknown_data.b12 = reader.ReadBitArray(1);
-  item.new = reader.ReadBit();
-  item._unknown_data.b14_15 = reader.ReadBitArray(2);
-  item.is_ear = reader.ReadBit();
-  item.starter_item = reader.ReadBit();
-  item._unknown_data.b18_20 = reader.ReadBitArray(3);
-  item.simple_item = reader.ReadBit();
-  item.ethereal = reader.ReadBit();
-  item._unknown_data.b23 = reader.ReadBitArray(1);
-  item.personalized = reader.ReadBit();
-  item._unknown_data.b25 = reader.ReadBitArray(1);
-  item.given_runeword = reader.ReadBit();
-  item._unknown_data.b27_31 = reader.ReadBitArray(5);
-
-  if (version <= 0x60) {
-    item.version = reader.ReadUInt16(10).toString(10);
-  } else if (version >= 0x61) {
-    item.version = reader.ReadUInt16(3).toString(2);
-  }
-  item.location_id = reader.ReadUInt8(3);
-  item.equipped_id = reader.ReadUInt8(4);
-  item.position_x = reader.ReadUInt8(4);
-  item.position_y = reader.ReadUInt8(4);
-  item.alt_position_id = reader.ReadUInt8(3);
-  if (item.is_ear) {
-    const clazz = reader.ReadUInt8(3);
-    const level = reader.ReadUInt8(7);
-    const arr = new Uint8Array(15);
-    for (let i = 0; i < arr.length; i++) {
-      arr[i] = reader.ReadUInt8(7);
-      if (arr[i] === 0x00) {
-        break;
-      }
-    }
-    const name = new BitReader(arr).ReadString(15).trim().replace(/\0/g, '');
-    item.ear_attributes = {
-      class: clazz,
-      level: level,
-      name: name,
-    } as types.IEarAttributes;
-  } else {
-    if (version <= 0x60) {
-      item.type = reader.ReadString(4);
-    } else if (version >= 0x61) {
-      item.type = '';
-      //props to d07riv
-      //https://github.com/d07RiV/d07riv.github.io/blob/master/d2r.html#L11-L20
-      for (let i = 0; i < 4; i++) {
-        let node = HUFFMAN as any;
-        do {
-          node = node[reader.ReadBit()];
-        } while (Array.isArray(node));
-        item.type += node;
-      }
-    }
-    // circlet: offset: 7456
-    item.type = item.type.trim().replace(/\0/g, '');
-    let details = _GetItemTXT(item, constants);
-    item.categories = details?.c;
-    if (item?.categories?.includes('Any Armor')) {
-      item.type_id = ItemType.Armor;
-    } else if (item?.categories?.includes('Weapon')) {
-      item.type_id = ItemType.Weapon;
-      details = constants.weapon_items[item.type];
-    } else {
-      item.type_id = ItemType.Other;
-    }
-
-    let bits = item.simple_item ? 1 : 3;
-    if (item.categories?.includes('Quest')) {
-      item.quest_difficulty =
-        reader.ReadUInt16(constants.magical_properties[356].sB) -
-        constants.magical_properties[356].sA;
-      bits = 1;
-    }
-    item.nr_of_items_in_sockets = reader.ReadUInt8(bits);
-
-    if (version >= 0x69) {
-      if (
-        constants.other_items[item.type] &&
-        constants.other_items[item.type].AdvancedStashStackable
-      ) {
-        // guessing 7 bits because 99 max
-        // but 9 bits would be consistent with normal quantity
-        item.advanced_stash_quantity = reader.ReadUInt8(7);
-      }
-    }
-  }
 }
 
 function _lookupRareId(name: string, constants: types.IConstantData): number {
@@ -906,84 +969,6 @@ function _lookupRareId(name: string, constants: types.IConstantData): number {
       (k.n.toLowerCase().startsWith(name.toLowerCase()) ||
         name.toLowerCase().startsWith(k.n.toLowerCase())),
   );
-}
-
-function _writeSimpleBits(
-  writer: BitWriter,
-  version: number,
-  item: types.IItem,
-  constants: types.IConstantData,
-  _config: types.IConfig,
-) {
-  writer.WriteBits(item._unknown_data.b0_3 || new Uint8Array(4), 4);
-  writer.WriteBit(item.identified);
-  writer.WriteBits(item._unknown_data.b5_10 || new Uint8Array(6), 6);
-  writer.WriteBit(item.socketed);
-  writer.WriteBits(item._unknown_data.b12 || new Uint8Array(1), 1);
-  writer.WriteBit(item.new);
-  writer.WriteBits(item._unknown_data.b14_15 || new Uint8Array(2), 2);
-  writer.WriteBit(item.is_ear);
-  writer.WriteBit(item.starter_item);
-  writer.WriteBits(item._unknown_data.b18_20 || new Uint8Array(3), 3);
-  writer.WriteBit(item.simple_item);
-  writer.WriteBit(item.ethereal);
-  writer.WriteBits(item._unknown_data.b23 || new Uint8Array([1]), 1); //always 1? IFLAG_JUSTSAVED
-  writer.WriteBit(item.personalized);
-  writer.WriteBits(item._unknown_data.b25 || new Uint8Array(1), 1); //IFLAG_LOWQUALITY
-  writer.WriteBit(item.given_runeword);
-  writer.WriteBits(item._unknown_data.b27_31 || new Uint8Array(5), 5);
-
-  const itemVersion = item.version != null ? item.version : '101';
-  if (version <= 0x60) {
-    // 0 = pre-1.08; 1 = 1.08/1.09 normal; 2 = 1.10 normal; 100 = 1.08/1.09 expansion; 101 = 1.10 expansion
-    writer.WriteUInt16(parseInt(itemVersion, 10), 10);
-  } else if (version >= 0x61) {
-    writer.WriteUInt16(parseInt(itemVersion, 2), 3);
-  }
-  writer.WriteUInt8(item.location_id, 3);
-  writer.WriteUInt8(item.equipped_id, 4);
-  writer.WriteUInt8(item.position_x, 4);
-  writer.WriteUInt8(item.position_y, 4);
-  writer.WriteUInt8(item.alt_position_id, 3);
-  if (item.is_ear) {
-    writer.WriteUInt8(item.ear_attributes.class, 3);
-    writer.WriteUInt8(item.ear_attributes.level, 7);
-    const name = item.ear_attributes.name.substring(0, 15);
-    for (let i = 0; i < name.length; i++) {
-      writer.WriteUInt8(name.charCodeAt(i) & 0x7f, 7);
-    }
-    writer.WriteUInt8(0x00, 7);
-  } else {
-    const t = item.type.padEnd(4, ' ');
-    if (version <= 0x60) {
-      writer.WriteString(t, 4);
-    } else {
-      for (const c of t) {
-        const n = HUFFMAN_LOOKUP[c as keyof typeof HUFFMAN_LOOKUP];
-        writer.WriteUInt16(n.v, n.l);
-      }
-    }
-
-    let bits = item.simple_item ? 1 : 3;
-    if (item.categories?.includes('Quest')) {
-      const difficulty = item.quest_difficulty || 0;
-      writer.WriteUInt16(
-        difficulty + constants.magical_properties[356].sA,
-        constants.magical_properties[356].sB,
-      );
-      bits = 1;
-    }
-    writer.WriteUInt8(item.nr_of_items_in_sockets, bits);
-
-    if (version >= 0x69) {
-      if (
-        constants.other_items[item.type] &&
-        constants.other_items[item.type].AdvancedStashStackable
-      ) {
-        writer.WriteUInt8(item.advanced_stash_quantity ?? 1, 7);
-      }
-    }
-  }
 }
 
 export function _readMagicProperties(

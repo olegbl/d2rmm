@@ -16,6 +16,7 @@ export function getUniqueItemID(item: IItem): string {
 }
 
 export function getUniqueItemPositionID({
+  acceptedItemType,
   altPositionID,
   equippedID,
   file,
@@ -36,6 +37,7 @@ export function getUniqueItemPositionID({
     y,
     width,
     height,
+    acceptedItemType ?? '',
   ].join(':');
 }
 

@@ -1064,7 +1064,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       const rawData = fileName.endsWith('.d2s')
         ? await d2s.write(parsedData as ID2S)
         : fileName.endsWith('.d2i')
-          ? await d2s.stash.write(parsedData as IStash)
+          ? await d2s.stash.write(
+              parsedData as IStash,
+              // version
+              null,
+              // realm
+              fileName.split(/[/\\]/).pop()!.startsWith('Modern') ? 3 : 2,
+            )
           : null;
 
       if (rawData == null) {
@@ -1246,11 +1252,17 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           if (rawData == null) {
             throw new Error(`File content could not be read.`);
           }
-          const parsedData = await d2s.stash.read(new Uint8Array(rawData));
+          const parsedData = await d2s.stash.read(
+            new Uint8Array(rawData),
+            // version
+            null,
+            // realm
+            file.name.split(/[/\\]/).pop()!.startsWith('Modern') ? 3 : 2,
+          );
           stashFilesData.push([file.name, parsedData]);
         } catch (e) {
           console.error(
-            `Failed to read character save data from "${file.name}".`,
+            `Failed to read stash save data from "${file.name}".`,
             (e as Error).message,
           );
           continue;

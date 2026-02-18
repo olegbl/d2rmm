@@ -808,7 +808,6 @@ function enhanceAttributeDescription(
   _magic_attributes: IMagicProperty[],
   data: EnhancerData,
   level = 1,
-  sortProperties = true,
 ): IMagicProperty[] {
   if (!_magic_attributes) return [];
 
@@ -915,13 +914,11 @@ function enhanceAttributeDescription(
     }
   }
 
-  if (sortProperties) {
-    magic_attributes.sort(
-      (a, b) =>
-        (data.magicalProperties[b.id].sortOrder ?? 0) -
-        (data.magicalProperties[a.id].sortOrder ?? 0),
-    );
-  }
+  magic_attributes.sort(
+    (a, b) =>
+      (data.magicalProperties[b.id].sortOrder ?? 0) -
+      (data.magicalProperties[a.id].sortOrder ?? 0),
+  );
 
   for (let i = magic_attributes.length - 1; i >= 1; i--) {
     for (let j = i - 1; j >= 0; j--) {

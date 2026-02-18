@@ -1,6 +1,7 @@
 import type { IInstallModsOptions } from 'bridge/BridgeAPI';
 import type {
   IItem,
+  IStashPage,
   IWaypointData,
   IWaypoints,
 } from 'bridge/third-party/d2s/d2/types';
@@ -545,6 +546,16 @@ function StashTab({
     );
   }
 
+  if (page.sectionType === 1) {
+    return (
+      <StashTabContextProvider index={index}>
+        <TabPanelBox sx={{ overflow: 'auto' }} value={String(index)}>
+          <AdvancedStashTab file={file} page={page} />
+        </TabPanelBox>
+      </StashTabContextProvider>
+    );
+  }
+
   // TODO: do non-expansion stashes have a different file name?
   const isExpansion = true;
   const inventory = gameFiles['global/excel/inventory.txt'] as TSVData;
@@ -576,6 +587,334 @@ function StashTab({
         </InventoryGrid>
       </TabPanelBox>
     </StashTabContextProvider>
+  );
+}
+
+// Vanilla advanced stash item codes from bankexpansionlayouthd.json
+const GEMS_GRID: string[][] = [
+  // Columns: Diamond, Emerald, Ruby, Topaz, Amethyst, Sapphire, Skull
+  // Rows: Chipped, Flawed, Regular, Flawless, Perfect
+  ['gcw', 'gcg', 'gcr', 'gcy', 'gcv', 'gcb', 'skc'],
+  ['gfw', 'gfg', 'gfr', 'gfy', 'gfv', 'gfb', 'skf'],
+  ['gsw', 'gsg', 'gsr', 'gsy', 'gsv', 'gsb', 'sku'],
+  ['glw', 'glg', 'glr', 'gly', 'gzv', 'glb', 'skl'],
+  ['gpw', 'gpg', 'gpr', 'gpy', 'gpv', 'gpb', 'skz'],
+];
+
+const RUNES_GRID: string[][] = [
+  ['r01', 'r02', 'r03', 'r04', 'r05', 'r06', 'r07', 'r08', 'r09', 'r10', 'r11'],
+  ['r12', 'r13', 'r14', 'r15', 'r16', 'r17', 'r18', 'r19', 'r20', 'r21', 'r22'],
+  ['r23', 'r24', 'r25', 'r26', 'r27', 'r28', 'r29', 'r30', 'r31', 'r32', 'r33'],
+];
+
+const MATERIALS_CODES: string[] = [
+  'pk1',
+  'pk2',
+  'pk3',
+  'ua1',
+  'ua2',
+  'ua3',
+  'ua4',
+  'ua5',
+  'dhn',
+  'bey',
+  'mbr',
+  'xa1',
+  'xa2',
+  'xa3',
+  'xa4',
+  'xa5',
+  'rvs',
+  'rvl',
+  'toa',
+  'tes',
+  'ceh',
+  'bet',
+  'fed',
+];
+
+const ALL_VANILLA_CODES = new Set([
+  ...GEMS_GRID.flat(),
+  ...RUNES_GRID.flat(),
+  ...MATERIALS_CODES,
+]);
+
+function AdvancedStashTab({
+  file,
+  page,
+}: {
+  file: StashFile;
+  page: IStashPage;
+}): React.ReactNode {
+  const { gameFiles } = useGameFiles();
+
+  // Build a map of item type code -> item for this page
+  const itemsByType = useMemo(() => {
+    const map = new Map<string, IItem>();
+    for (const item of page.items) {
+      map.set(item.type, item);
+    }
+    return map;
+  }, [page.items]);
+
+  // Find modded AdvancedStashStackable items from misc.txt
+  const moddedCodes = useMemo(() => {
+    const misc = gameFiles['global/excel/misc.txt'] as TSVData;
+    if (misc == null) return [];
+    return misc.rows
+      .filter(
+        (row) =>
+          row.AdvancedStashStackable === '1' &&
+          !ALL_VANILLA_CODES.has(row.code),
+      )
+      .map((row) => row.code)
+      .filter(Boolean);
+  }, [gameFiles]);
+
+  // Also include any items in the page that aren't vanilla or known modded
+  const unknownItems = useMemo(() => {
+    const moddedSet = new Set(moddedCodes);
+    return page.items.filter(
+      (item) => !ALL_VANILLA_CODES.has(item.type) && !moddedSet.has(item.type),
+    );
+  }, [page.items, moddedCodes]);
+
+  const allOtherCodes = useMemo(() => {
+    const codes = [...moddedCodes];
+    for (const item of unknownItems) {
+      if (!codes.includes(item.type)) {
+        codes.push(item.type);
+      }
+    }
+    return codes;
+  }, [moddedCodes, unknownItems]);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <AdvancedStashSection title="Gems">
+        <Box sx={{ display: 'flex', gap: '2px' }}>
+          {GEMS_GRID[0].map((_, colIdx) => (
+            <Box
+              key={colIdx}
+              sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
+            >
+              {GEMS_GRID.map((row, _rowIdx) => (
+                <AdvancedStashSlot
+                  key={row[colIdx]}
+                  file={file}
+                  item={itemsByType.get(row[colIdx])}
+                  itemCode={row[colIdx]}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+      </AdvancedStashSection>
+
+      <AdvancedStashSection title="Runes">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {RUNES_GRID.map((row, rowIdx) => (
+            <Box key={rowIdx} sx={{ display: 'flex', gap: '2px' }}>
+              {row.map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+      </AdvancedStashSection>
+
+      <AdvancedStashSection title="Materials">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+          {MATERIALS_CODES.map((code) => (
+            <AdvancedStashSlot
+              key={code}
+              file={file}
+              item={itemsByType.get(code)}
+              itemCode={code}
+            />
+          ))}
+        </Box>
+      </AdvancedStashSection>
+
+      {allOtherCodes.length > 0 && (
+        <AdvancedStashSection title="Other">
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+            {allOtherCodes.map((code) => (
+              <AdvancedStashSlot
+                key={code}
+                file={file}
+                item={itemsByType.get(code)}
+                itemCode={code}
+              />
+            ))}
+          </Box>
+        </AdvancedStashSection>
+      )}
+    </Box>
+  );
+}
+
+function AdvancedStashSection({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}): React.ReactNode {
+  return (
+    <Box>
+      <Typography
+        sx={{ mb: 0.5, fontWeight: 'bold', opacity: 0.7 }}
+        variant="caption"
+      >
+        {title}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
+
+function AdvancedStashSlot({
+  file,
+  item,
+  itemCode,
+}: {
+  file: StashFile;
+  item?: IItem | null;
+  itemCode: string;
+}): React.ReactNode {
+  const { gameFiles } = useGameFiles();
+  const asset = (
+    gameFiles['hd/items/items.json'] as {
+      [assetID: string]: { asset: string };
+    }[]
+  ).find((entry) => entry[itemCode]?.asset)?.[itemCode]?.asset;
+  const sprite = gameFiles[
+    `hd/global/ui/items/misc/${asset}.lowend.sprite`
+  ] as string;
+
+  const quantity = item?.advanced_stash_quantity ?? 0;
+
+  const stashTabIndex = useStashTabIndex();
+  const { selectedFile } = useSelectedFileContext();
+
+  const itemPosition = useMemo(
+    () => ({
+      acceptedItemType: itemCode,
+      altPositionID: AltPositionID.STASH,
+      equippedID: EquippedID.NONE,
+      file: selectedFile ?? file,
+      height: 1,
+      isAdvancedStash: true,
+      isValid: true,
+      locationID: LocationID.NONE,
+      isMerc: false,
+      stashTabIndex,
+      width: 1,
+      x: 0,
+      y: 0,
+    }),
+    [itemCode, file, selectedFile, stashTabIndex],
+  );
+
+  const itemPositionID = getUniqueItemPositionID(itemPosition);
+
+  const { hoveredPosition } = useItemDragContext();
+  const isHovered =
+    hoveredPosition != null &&
+    itemPositionID ===
+      getUniqueItemPositionID({
+        ...hoveredPosition,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      });
+
+  const { setNodeRef } = useDroppable({
+    id: `advslot:${itemCode}:${itemPositionID}`,
+    data: {
+      itemPosition,
+      width: 1,
+      height: 1,
+    },
+  });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+  } = useDraggable({
+    id: `advitem:${itemCode}:${itemPositionID}`,
+    data: {
+      item,
+      itemPosition: item != null ? itemPosition : null,
+    },
+    disabled: item == null || quantity === 0,
+  });
+
+  const hoverColor =
+    isHovered && hoveredPosition != null
+      ? hoveredPosition.isValid
+        ? 'rgba(0, 100, 255, 0.3)'
+        : 'rgba(255, 0, 0, 0.3)'
+      : undefined;
+
+  return (
+    <Box
+      ref={(node: HTMLElement | null) => {
+        setNodeRef(node);
+        setDragRef(node);
+      }}
+      {...attributes}
+      {...listeners}
+      sx={{
+        position: 'relative',
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        borderColor: 'primary',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        boxSizing: 'border-box',
+        backgroundColor: hoverColor ?? 'transparent',
+        cursor: item != null && quantity > 0 ? 'grab' : 'default',
+        opacity: quantity > 0 ? 1 : 0.4,
+      }}
+    >
+      {sprite != null && (
+        <>
+          <img
+            src={sprite}
+            style={{
+              width: CELL_SIZE - 2,
+              height: CELL_SIZE - 2,
+              objectFit: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 1,
+              right: 3,
+              color: 'white',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              textShadow:
+                '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+              lineHeight: 1,
+              pointerEvents: 'none',
+            }}
+          >
+            {quantity}
+          </Box>
+        </>
+      )}
+    </Box>
   );
 }
 
@@ -1514,7 +1853,6 @@ function InventoryGridItem({
                 </span>
               ))
             }
-            {item.id}
           </Typography>
         </Box>
       }

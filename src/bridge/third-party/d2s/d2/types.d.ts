@@ -1,8 +1,4 @@
-//todo define types for these
-export interface IConfig {
-  extendedStash?: boolean;
-  sortProperties?: boolean;
-}
+export interface IConfig {}
 
 export interface IConstantData {
   classes: any[];
@@ -255,6 +251,7 @@ export interface IWaypointData {
 }
 
 export interface IHeader {
+  hex?: string;
   identifier: string;
   checksum: string;
   name: string;
@@ -285,6 +282,8 @@ export interface IHeader {
   merc_name_id: number;
   merc_type: number;
   merc_experience: number;
+  // 1 = Classic, 2 = LoD, 3 = RotW
+  realm: number;
 }
 
 export interface IStatus {
@@ -424,12 +423,14 @@ export interface IStash {
   sharedGold: number;
   kind: number;
   pages: IStashPage[];
+  advancedTabData?: Uint8Array; // raw bytes for the RotW advanced tab metadata section
 }
 
 export interface IStashPage {
   name: string;
   type: number;
   items: IItem[];
+  sectionType?: number; // D2R section padding[0]: 0=normal, 1=advanced stash items, 2=advanced tab metadata
 }
 
 export type EStashType = 'shared' | 'private';

@@ -39,11 +39,7 @@ export type IBridgeAPI = {
   ) => Promise<number>;
   createDirectory: (filePath: string) => Promise<boolean>;
   deleteFile: (filePath: string, relative: Relative) => Promise<number>;
-  execute: (
-    executablePath: string,
-    args?: string[],
-    sync?: boolean,
-  ) => Promise<number>;
+  execute: (executablePath: string, args?: string[]) => Promise<number>;
   isGameFile: (filePath: string) => Promise<boolean>;
   extractFileToMemory: (filePath: string) => Promise<Buffer>;
   getAppPath: () => Promise<string>;

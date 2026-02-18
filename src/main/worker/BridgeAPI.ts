@@ -9,7 +9,7 @@ import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import { Relative } from 'bridge/Relative';
 import type { ID2S, IStash } from 'bridge/third-party/d2s/d2/types';
-import { execFile, execFileSync } from 'child_process';
+import { spawn } from 'child_process';
 import {
   copyFileSync,
   existsSync,
@@ -234,19 +234,19 @@ export const BridgeAPI: IBridgeAPI = {
     }
   },
 
-  execute: async (
-    executablePath: string,
-    args: string[] = [],
-    sync: boolean = false,
-  ) => {
-    console.debug('BridgeAPI.execute', { executablePath, args, sync });
-
+  execute: async (executablePath: string, args: string[] = []) => {
+    console.debug('BridgeAPI.execute', { executablePath, args });
     try {
-      if (sync) {
-        execFileSync(executablePath, args ?? []);
-      } else {
-        execFile(executablePath, args ?? []);
-      }
+      const child = spawn(executablePath, args ?? [], {
+        cwd: path.dirname(executablePath),
+        detached: true,
+        stdio: 'ignore',
+      });
+
+      try {
+        child.unref();
+      } catch {}
+
       return 0;
     } catch (error) {
       throw createError('BridgeAPI.execute', 'Failed to execute file', error);

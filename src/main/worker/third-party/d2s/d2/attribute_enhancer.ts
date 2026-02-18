@@ -228,7 +228,7 @@ function _enhanceAttributeDescription(
   _magic_attributes: types.IMagicProperty[],
   constants: types.IConstantData,
   level = 1,
-  config?: types.IConfig,
+  _config?: types.IConfig,
 ): types.IMagicProperty[] {
   if (!_magic_attributes) return [];
 

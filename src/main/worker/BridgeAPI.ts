@@ -1510,7 +1510,12 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         }
         const scope = new Scope();
         try {
-          console.debug(`Mod ${action.toLowerCase()}ing...`);
+          console.debug(
+            `${action.toLowerCase()}ing version ${runtime.mod.info.version}...`,
+          );
+          console.debug(
+            `Mod configuration: ${JSON.stringify(runtime.mod.config)}`,
+          );
           const vm = scope.manage(getQuickJS().newContext());
           vm.setProp(
             vm.global,

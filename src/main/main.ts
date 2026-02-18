@@ -34,7 +34,7 @@ import { CURRENT_VERSION } from './version';
     );
   Object.assign(console, log.functions);
 
-  console.log('[main] Starting D2RMM...');
+  console.log(`[main] Starting D2RMM ${CURRENT_VERSION}...`);
 
   let mainWindow: BrowserWindow | null = null;
   if (process.env.NODE_ENV === 'production') {

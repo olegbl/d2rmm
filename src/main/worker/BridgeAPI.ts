@@ -1385,7 +1385,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         } catch (e) {
           console.debug(
             `Could not get sprite data for item code "${itemCode}"`,
-            (e as Error).stack,
+            (e as Error).message,
           );
         }
       }

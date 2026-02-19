@@ -303,6 +303,11 @@ export default function ED2R(): React.ReactNode {
                   before making changes. Data loss or corruption may occur.
                 </Typography>
                 <Typography sx={{ mt: 1 }} variant="body2">
+                  Characters and stash tabs for the Reign of the Warlock realm
+                  may not be fully parseable yet. Support for this expansion is
+                  a work in progress.
+                </Typography>
+                <Typography sx={{ mt: 1 }} variant="body2">
                   Not all save files may be parseable. Report issues on D2RMM's
                   Nexus page.
                 </Typography>

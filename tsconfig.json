@@ -21,5 +21,16 @@
     "allowJs": true,
     "outDir": "release/app/dist"
   },
-  "exclude": ["docs", "mods", "mods.empty", "release", ".erb/dll"]
+  "exclude": [
+    ".erb",
+    "assets",
+    "docs",
+    "extras",
+    "media",
+    "mods.empty",
+    "mods",
+    "node_modules",
+    "release",
+    "tools"
+  ]
 }

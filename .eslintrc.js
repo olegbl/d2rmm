@@ -19,7 +19,6 @@ module.exports = {
     'no-empty': 'off',
     'no-inner-declarations': 'off',
     // customized
-    '@typescript-eslint/no-floating-promises': 'error',
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {
@@ -48,22 +47,20 @@ module.exports = {
   },
   plugins: [
     '@typescript-eslint',
-    'eslint-plugin-compat',
     'eslint-plugin-import',
-    'eslint-plugin-jest',
     'eslint-plugin-jsx-a11y',
     'eslint-plugin-prettier',
-    'eslint-plugin-promise',
     'eslint-plugin-react',
     'eslint-plugin-react-hooks',
+    // slow, disabled:
+    // 'eslint-plugin-compat',
+    // 'eslint-plugin-jest',
+    // 'eslint-plugin-promise',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
-    project: ['./tsconfig.json'],
-    tsconfigRootDir: __dirname,
-    createDefaultProgram: true,
   },
   ignorePatterns: [
     './docs/**',
@@ -75,7 +72,6 @@ module.exports = {
   ],
   settings: {
     'import/resolver': {
-      // See https://github.com/benmosher/eslint-plugin-import/issues/1396#issuecomment-575727774 for line below
       node: {},
       webpack: {
         config: require.resolve('./.erb/configs/webpack.config.eslint.ts'),

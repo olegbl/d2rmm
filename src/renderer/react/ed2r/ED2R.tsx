@@ -55,7 +55,7 @@ import {
 import resolvePath from 'renderer/utils/resolvePath';
 import { DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
 import { PropsOf } from '@emotion/react';
-import { Fragment, forwardRef, useCallback, useMemo } from 'react';
+import { Fragment, forwardRef, useCallback, useMemo, useState } from 'react';
 import {
   Circle,
   Close,
@@ -65,7 +65,7 @@ import {
   Save,
   SaveOutlined,
 } from '@mui/icons-material';
-import { TabContext, TabList, TabPanel } from '@mui/lab';
+import { LoadingButton, TabContext, TabList, TabPanel } from '@mui/lab';
 import {
   Box,
   Button,
@@ -140,9 +140,13 @@ export default function ED2R(): React.ReactNode {
         a.fileName.localeCompare(b.fileName),
     );
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const onLoad = useCallback(async () => {
+    setIsLoading(true);
     const { characters, stashes, gameFiles } =
       await BridgeAPI.readD2SData(runtimeModOptions);
+    setIsLoading(false);
 
     // enhance parsed data with display metadata from game files
     for (const character of Object.values(characters)) {
@@ -188,81 +192,83 @@ export default function ED2R(): React.ReactNode {
   return (
     <>
       <Box sx={{ display: 'flex', height: '100%' }}>
-        <Box
-          sx={{
-            width: 240,
-            flexGrow: 0,
-            flexShrink: 0,
-            flexBasis: 'auto',
-            overflowY: 'auto',
-          }}
-        >
-          <List sx={{ padding: 0 }}>
-            <ListSubheader sx={{ padding: 0, margin: 0 }}>
-              <Box
-                sx={{
-                  height: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  paddingLeft: 1,
-                  paddingRight: 1,
-                }}
-              >
-                <Box sx={{ flex: '1 1 0' }} />
-                {isLoaded ? (
-                  <Tooltip title="Reload all save file data.">
-                    <IconButton
-                      onClick={async () => {
-                        // TODO: add confirmation modal if there are changes
-                        onReset();
-                        await onLoad();
-                      }}
-                      size="small"
-                    >
-                      <RefreshOutlined />
-                    </IconButton>
-                  </Tooltip>
-                ) : null}
-              </Box>
-              <Divider />
-            </ListSubheader>
-            {fileList.map((file) => (
-              <ListItem
-                key={file.fileName}
-                disablePadding={true}
-                onClick={() => setSelectedFileName(file.fileName)}
-                secondaryAction={
-                  file.edited ? (
-                    <Tooltip title="This file has been modified but has not been saved yet.">
-                      <IconButton disableRipple={true}>
-                        <Circle
-                          color="primary"
-                          sx={{ width: 12, height: 12 }}
-                        />
+        {isLoaded && (
+          <Box
+            sx={{
+              width: 240,
+              flexGrow: 0,
+              flexShrink: 0,
+              flexBasis: 'auto',
+              overflowY: 'auto',
+            }}
+          >
+            <List sx={{ padding: 0 }}>
+              <ListSubheader sx={{ padding: 0, margin: 0 }}>
+                <Box
+                  sx={{
+                    height: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    paddingLeft: 1,
+                    paddingRight: 1,
+                  }}
+                >
+                  <Box sx={{ flex: '1 1 0' }} />
+                  {isLoaded ? (
+                    <Tooltip title="Reload all save file data.">
+                      <IconButton
+                        onClick={async () => {
+                          // TODO: add confirmation modal if there are changes
+                          onReset();
+                          await onLoad();
+                        }}
+                        size="small"
+                      >
+                        <RefreshOutlined />
                       </IconButton>
                     </Tooltip>
-                  ) : null
-                }
-              >
-                <ListItemButton selected={file.fileName === selectedFileName}>
-                  <ListItemText
-                    primary={
-                      file.type === 'character'
-                        ? file.character.header.name
-                        : file.type === 'stash'
-                          ? file.fileName.includes('HardCore')
-                            ? 'Stash (Hardcore)'
-                            : 'Stash (Softcore)'
-                          : 'Unknown'
-                    }
-                    secondary={file.fileName}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-        <Divider orientation="vertical" />
+                  ) : null}
+                </Box>
+                <Divider />
+              </ListSubheader>
+              {fileList.map((file) => (
+                <ListItem
+                  key={file.fileName}
+                  disablePadding={true}
+                  onClick={() => setSelectedFileName(file.fileName)}
+                  secondaryAction={
+                    file.edited ? (
+                      <Tooltip title="This file has been modified but has not been saved yet.">
+                        <IconButton disableRipple={true}>
+                          <Circle
+                            color="primary"
+                            sx={{ width: 12, height: 12 }}
+                          />
+                        </IconButton>
+                      </Tooltip>
+                    ) : null
+                  }
+                >
+                  <ListItemButton selected={file.fileName === selectedFileName}>
+                    <ListItemText
+                      primary={
+                        file.type === 'character'
+                          ? file.character.header.name
+                          : file.type === 'stash'
+                            ? file.fileName.includes('HardCore')
+                              ? 'Stash (Hardcore)'
+                              : 'Stash (Softcore)'
+                            : 'Unknown'
+                      }
+                      secondary={file.fileName}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        )}
+        {isLoaded && <Divider orientation="vertical" />}
         <Box
           sx={{
             display: 'flex',
@@ -275,7 +281,41 @@ export default function ED2R(): React.ReactNode {
           }}
         >
           {!isLoaded ? (
-            <Button onClick={onLoad}>Load save data</Button>
+            <>
+              <Box
+                sx={{
+                  width: '80%',
+                  maxWidth: 680,
+                  bgcolor: 'warning.main',
+                  color: 'warning.contrastText',
+                  p: 3,
+                  borderRadius: 1,
+                  boxShadow: 3,
+                  textAlign: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography sx={{ fontWeight: 700 }} variant="h6">
+                  Experimental Save Editor — Use with Caution
+                </Typography>
+                <Typography sx={{ mt: 1 }} variant="body2">
+                  This save editor is experimental. Back up your save files
+                  before making changes. Data loss or corruption may occur.
+                </Typography>
+                <Typography sx={{ mt: 1 }} variant="body2">
+                  Not all save files may be parseable. Report issues on D2RMM's
+                  Nexus page.
+                </Typography>
+              </Box>
+              <LoadingButton
+                disabled={isLoading}
+                loading={isLoading}
+                onClick={onLoad}
+                variant="contained"
+              >
+                Load save data
+              </LoadingButton>
+            </>
           ) : selectedFile == null ? (
             <Typography variant="body2">No file selected.</Typography>
           ) : selectedFile.type === 'character' ? (

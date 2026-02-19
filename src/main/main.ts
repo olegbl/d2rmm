@@ -35,6 +35,12 @@ import { CURRENT_VERSION } from './version';
   Object.assign(console, log.functions);
 
   console.log(`[main] Starting D2RMM ${CURRENT_VERSION}...`);
+  console.debug('environment', {
+    platform: process.platform,
+    node_environment: process.env.NODE_ENV,
+    proton_drive_path: process.env.PROTON_DRIVE_PATH,
+    steam_runtime: process.env.STEAM_RUNTIME,
+  });
 
   let mainWindow: BrowserWindow | null = null;
   if (process.env.NODE_ENV === 'production') {

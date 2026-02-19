@@ -1623,17 +1623,28 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           );
           const savesPath = normalizePathForLinuxProtonEtc(getSavesPath());
 
+          // use a relative path if possible - but allow an absolute path
+          const isRelative = savesPath.startsWith(baseSavesPath);
+          const finalSavesPath = isRelative
+            ? process.platform === 'win32'
+              ? path.relative(modsSavesPath, savesPath)
+              : path.posix.relative(modsSavesPath, savesPath)
+            : savesPath;
+
+          console.debug('Generating modinfo.json', {
+            baseSavesPath,
+            modsSavesPath,
+            savesPath,
+            finalSavesPath,
+            isRelative,
+          });
+
           await BridgeAPI.writeJson(
             path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
             'None',
             {
               name: runtime.options.outputModName,
-              // use a relative path if possible - but allow an absolute path
-              savepath: savesPath.startsWith(baseSavesPath)
-                ? process.platform === 'win32'
-                  ? path.relative(modsSavesPath, savesPath)
-                  : path.posix.relative(modsSavesPath, savesPath)
-                : savesPath,
+              savepath: finalSavesPath,
             },
           );
         }

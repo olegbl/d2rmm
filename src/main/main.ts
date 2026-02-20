@@ -34,12 +34,22 @@ import { CURRENT_VERSION } from './version';
     );
   Object.assign(console, log.functions);
 
+  const appPath = app.isPackaged
+    ? path.resolve(process.resourcesPath, '..')
+    : path.resolve(__dirname, '..', '..');
+  // TODO: clean this up
+  const isSteamDeck =
+    appPath.startsWith('Z:\\home\\deck\\') ||
+    appPath.startsWith('\\home\\deck\\');
+
   console.log(`[main] Starting D2RMM ${CURRENT_VERSION}...`);
   console.debug('environment', {
     platform: process.platform,
     node_environment: process.env.NODE_ENV,
-    proton_drive_path: process.env.PROTON_DRIVE_PATH,
-    steam_runtime: process.env.STEAM_RUNTIME,
+    user_profile: process.env.USERPROFILE,
+    app_path: appPath,
+    home_path: path.resolve(app.getPath('home')),
+    is_stream_deck: isSteamDeck,
   });
 
   let mainWindow: BrowserWindow | null = null;

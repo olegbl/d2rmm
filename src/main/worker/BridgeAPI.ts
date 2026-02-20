@@ -213,6 +213,26 @@ export const BridgeAPI: IBridgeAPI = {
       return null;
     }
 
+    const appPath = getAppPath();
+
+    // TODO: clean this up
+    const isSteamDeck =
+      appPath.startsWith('Z:\\home\\deck\\') ||
+      appPath.startsWith('\\home\\deck\\');
+
+    if (isSteamDeck) {
+      return path.join(
+        'home',
+        'deck',
+        '.local',
+        'share',
+        'Steam',
+        'steamapps',
+        'common',
+        'Diablo II Resurrected',
+      );
+    }
+
     try {
       regedit.setExternalVBSLocation(path.join(getAppPath(), 'tools'));
       const regKey =
@@ -1473,6 +1493,14 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     );
     const action = runtime.options.isDryRun ? 'Uninstall' : 'Install';
 
+    console.debug('Installation paths', {
+      appPath: getAppPath(),
+      savesPath: getSavesPath(),
+      outputPath: getOutputPath(),
+      outputRootPath: getOutputRootPath(),
+      preExtractedDataPath: getPreExtractedDataPath(),
+    });
+
     try {
       if (!runtime.options.isPreExtractedData) {
         await BridgeAPI.openStorage(runtime.options.gamePath);
@@ -1588,40 +1616,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             'None',
           );
 
-          // I have no idea if this works because I don't have Diablo 2
-          // on any of these platforms. Good luck everybody!
-          function normalizePathForLinuxProtonEtc(filePath: string): string {
-            // don't do anything on Windows
-            if (process.platform === 'win32') {
-              return filePath;
-            }
-
-            // handle drive-letter paths like "Z:\\..."
-            const driveLetterMatch = filePath.match(/^[A-Za-z]:\\/);
-            if (driveLetterMatch) {
-              filePath = filePath.replace(/^[A-Za-z]:\\/, '');
-              if (!filePath.startsWith('/')) {
-                filePath = `/${filePath}`;
-              }
-            }
-
-            // normalize backslashes to forward slashes
-            if (filePath.includes('\\')) {
-              filePath = filePath.replace(/\\/g, '/');
-            }
-
-            return path.posix.resolve(filePath);
-          }
-
           // create output directory and write modinfo
           await BridgeAPI.createDirectory(runtime.options.mergedPath);
-          const baseSavesPath = normalizePathForLinuxProtonEtc(
-            path.resolve(getBaseSavesPath()),
-          );
-          const modsSavesPath = normalizePathForLinuxProtonEtc(
-            path.resolve(baseSavesPath, 'mods'),
-          );
-          const savesPath = normalizePathForLinuxProtonEtc(getSavesPath());
+          const baseSavesPath = path.resolve(getBaseSavesPath());
+          const modsSavesPath = path.resolve(baseSavesPath, 'mods');
+          const savesPath = getSavesPath();
 
           // use a relative path if possible - but allow an absolute path
           const isRelative = savesPath.startsWith(baseSavesPath);

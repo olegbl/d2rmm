@@ -219,23 +219,88 @@ export function ItemDragContextProvider({
                 };
               }
             } else if (file.type === 'stash') {
-              newToFile = {
-                ...file,
-                stash: {
-                  ...file.stash,
-                  pages: file.stash.pages.map((page, index) =>
-                    index === hoveredPositionRef.current?.stashTabIndex
-                      ? {
-                          ...page,
-                          items: page.items
-                            // add dropped item
-                            .concat([droppedItem]),
-                        }
-                      : page,
-                  ),
-                },
-                edited: true,
-              };
+              const isAdvancedStashTarget =
+                hoveredPositionRef.current?.isAdvancedStash === true;
+              const acceptedItemType =
+                hoveredPositionRef.current?.acceptedItemType;
+              const targetPageIndex =
+                hoveredPositionRef.current?.stashTabIndex ?? -1;
+              const addedQty =
+                draggedItemRef.current?.advanced_stash_quantity ?? 1;
+
+              if (isAdvancedStashTarget && acceptedItemType != null) {
+                const existingItem = file.stash.pages[
+                  targetPageIndex
+                ]?.items.find((item) => item.type === acceptedItemType);
+
+                if (existingItem != null) {
+                  // merge quantity into existing item
+                  newToFile = {
+                    ...file,
+                    stash: {
+                      ...file.stash,
+                      pages: file.stash.pages.map((page, index) =>
+                        index === targetPageIndex
+                          ? {
+                              ...page,
+                              items: page.items.map((item) =>
+                                item.type === acceptedItemType
+                                  ? {
+                                      ...item,
+                                      advanced_stash_quantity:
+                                        (item.advanced_stash_quantity ?? 0) +
+                                        addedQty,
+                                    }
+                                  : item,
+                              ),
+                            }
+                          : page,
+                      ),
+                    },
+                    edited: true,
+                  };
+                } else {
+                  // add new item with quantity
+                  newToFile = {
+                    ...file,
+                    stash: {
+                      ...file.stash,
+                      pages: file.stash.pages.map((page, index) =>
+                        index === targetPageIndex
+                          ? {
+                              ...page,
+                              items: page.items.concat([
+                                {
+                                  ...droppedItem,
+                                  advanced_stash_quantity: addedQty,
+                                },
+                              ]),
+                            }
+                          : page,
+                      ),
+                    },
+                    edited: true,
+                  };
+                }
+              } else {
+                newToFile = {
+                  ...file,
+                  stash: {
+                    ...file.stash,
+                    pages: file.stash.pages.map((page, index) =>
+                      index === hoveredPositionRef.current?.stashTabIndex
+                        ? {
+                            ...page,
+                            items: page.items
+                              // add dropped item
+                              .concat([droppedItem]),
+                          }
+                        : page,
+                    ),
+                  },
+                  edited: true,
+                };
+              }
             }
           }
 

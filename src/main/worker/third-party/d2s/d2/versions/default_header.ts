@@ -1,7 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../../binary/bitreader';
 import { BitWriter } from '../../binary/bitwriter';
-import { extractRawBytes } from '../debug';
+import { DEBUG_D2S, extractRawBytes } from '../debug';
 
 const difficulties = ['normal', 'nm', 'hell'];
 
@@ -10,8 +10,7 @@ export function readHeader(
   reader: BitReader,
   constants: types.IConstantData,
 ) {
-  // for debugging:
-  if (false) {
+  if (DEBUG_D2S) {
     char.header.hex = extractRawBytes(reader, reader.offset, 300);
   }
 

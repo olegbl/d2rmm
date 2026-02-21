@@ -1,7 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { extractRawBytes } from './debug';
+import { DEBUG_D2S, extractRawBytes } from './debug';
 import { wrapParsingError, formatCharContext } from './errors';
 
 enum ItemType {
@@ -288,6 +288,9 @@ export async function readItems(
         await readItem(reader, version, realm, constants, config, undefined),
       );
     } catch (error) {
+      if (DEBUG_D2S) {
+        console.warn('Previously parsed items', items);
+      }
       throw wrapParsingError(error, `Failed to read item ${i + 1} of ${count}`);
     }
   }
@@ -326,8 +329,7 @@ export async function readItem(
     _unknown_data: {},
   } as types.IItem;
 
-  // for debugging:
-  if (false) {
+  if (DEBUG_D2S) {
     item.hex = extractRawBytes(reader, itemStartOffset, 100);
   }
 
@@ -791,7 +793,7 @@ export async function writeItem(
         break;
       case Quality.Normal:
         if (item.normal_12_bits != null) {
-          writer.WriteArray(item.normal_12_bits, 12);
+          writer.WriteBits(item.normal_12_bits, 12);
         }
         break;
       case Quality.Superior:
@@ -906,7 +908,7 @@ export async function writeItem(
     }
 
     if (version >= 0x69) {
-      writer.WriteArray(
+      writer.WriteBits(
         item._unknown_data.v105_extra_bit_1 ?? new Uint8Array([0]),
         1,
       );
@@ -925,7 +927,7 @@ export async function writeItem(
   }
 
   if (version >= 0x69) {
-    writer.WriteArray(
+    writer.WriteBits(
       item._unknown_data.v105_extra_bit_2 ?? new Uint8Array([0]),
       1,
     );

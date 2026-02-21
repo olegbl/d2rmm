@@ -1,5 +1,7 @@
 import { BitReader } from 'main/worker/third-party/d2s/binary/bitreader';
 
+export const DEBUG_D2S = false;
+
 export function extractRawBytes(
   reader: BitReader,
   startBitOffset: number,

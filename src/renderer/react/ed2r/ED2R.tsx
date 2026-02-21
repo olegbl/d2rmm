@@ -480,28 +480,34 @@ function Stash({
             scrollButtons="auto"
             variant="scrollable"
           >
-            {tabIndices.map((index) => (
-              <Tab
-                key={index}
-                label={
-                  <span>
-                    Page {index + 1}
-                    {file.stash.pageCount > 3 && (
-                      <Tooltip title="Delete this stash tab">
-                        <IconButton
-                          onClick={() => handleDeleteTab(index)}
-                          size="small"
-                          sx={{ ml: 1 }}
-                        >
-                          <Close fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </span>
-                }
-                value={String(index)}
-              />
-            ))}
+            {tabIndices
+              .filter((index) => file.stash.pages[index] != null)
+              .map((index) => (
+                <Tab
+                  key={index}
+                  label={
+                    <span>
+                      {file.stash.pages[index]?.sectionType === 1
+                        ? 'Materials'
+                        : file.stash.pages[index]?.sectionType === 2
+                          ? 'Chronicle'
+                          : `Page ${index + 1}`}
+                      {file.stash.pageCount > 3 && (
+                        <Tooltip title="Delete this stash tab">
+                          <IconButton
+                            onClick={() => handleDeleteTab(index)}
+                            size="small"
+                            sx={{ ml: 1 }}
+                          >
+                            <Close fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </span>
+                  }
+                  value={String(index)}
+                />
+              ))}
             <Tab label="Raw" value="raw" />
           </TabList>
         </Box>

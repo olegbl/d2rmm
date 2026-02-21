@@ -57,29 +57,33 @@ function getSavesPath(): string {
 
 function getOutputPath(): string {
   if (runtime!.options.isDirectMode) {
-    return runtime!.options.dataPath;
+    return path.resolve(runtime!.options.dataPath);
   }
-  return runtime!.options.mergedPath;
+  return path.resolve(runtime!.options.mergedPath);
 }
 
 function getOutputRootPath(): string {
   if (runtime!.options.isDirectMode) {
-    return runtime!.options.dataPath;
+    return path.resolve(runtime!.options.dataPath);
   }
   return path.resolve(runtime!.options.mergedPath, '../');
 }
 
 function getPreExtractedDataPath(): string {
-  return runtime!.options.preExtractedDataPath;
+  return path.resolve(runtime!.options.preExtractedDataPath);
 }
 
 // we don't want mods doing any ../../.. shenanigans
 function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
-  if (!path.resolve(absolutePath).startsWith(path.resolve(allowedRoot))) {
+  allowedRoot = path.resolve(allowedRoot);
+  absolutePath = path.resolve(absolutePath);
+
+  if (!absolutePath.startsWith(allowedRoot)) {
     throw new Error(
       `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`,
     );
   }
+
   return absolutePath;
 }
 
@@ -142,8 +146,8 @@ function copyDirSync(
   }
 
   for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
+    const srcPath = path.resolve(path.join(src, entry.name));
+    const destPath = path.resolve(path.join(dest, entry.name));
 
     if (entry.isDirectory()) {
       const subResult = copyDirSync(srcPath, destPath, options);
@@ -215,26 +219,27 @@ export const BridgeAPI: IBridgeAPI = {
 
     const appPath = getAppPath();
 
-    // TODO: clean this up
-    const isSteamDeck =
-      appPath.startsWith('Z:\\home\\deck\\') ||
-      appPath.startsWith('\\home\\deck\\');
+    const isSteamDeck = appPath.startsWith('Z:\\home\\deck\\');
 
     if (isSteamDeck) {
-      return path.join(
-        'home',
-        'deck',
-        '.local',
-        'share',
-        'Steam',
-        'steamapps',
-        'common',
-        'Diablo II Resurrected',
+      return path.resolve(
+        path.join(
+          'home',
+          'deck',
+          '.local',
+          'share',
+          'Steam',
+          'steamapps',
+          'common',
+          'Diablo II Resurrected',
+        ),
       );
     }
 
     try {
-      regedit.setExternalVBSLocation(path.join(getAppPath(), 'tools'));
+      regedit.setExternalVBSLocation(
+        path.resolve(path.join(getAppPath(), 'tools')),
+      );
       const regKey =
         'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
       const result = await regedit.promisified.list([regKey]);
@@ -461,7 +466,7 @@ export const BridgeAPI: IBridgeAPI = {
     console.debug('BridgeAPI.readModDirectory');
 
     try {
-      const filePath = path.join(getAppPath(), 'mods');
+      const filePath = path.resolve(path.join(getAppPath(), 'mods'));
       if (existsSync(filePath)) {
         const entries = readdirSync(filePath, { withFileTypes: true });
         return entries

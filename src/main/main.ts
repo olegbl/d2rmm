@@ -29,13 +29,11 @@ import { CURRENT_VERSION } from './version';
     : path.resolve(__dirname, '..', '..');
 
   log.initialize();
-  log.transports.file.resolvePathFn = () => path.join(appPath, 'd2rmm.log');
+  log.transports.file.resolvePathFn = () =>
+    path.resolve(path.join(appPath, 'd2rmm.log'));
   Object.assign(console, log.functions);
 
-  // TODO: clean this up
-  const isSteamDeck =
-    appPath.startsWith('Z:\\home\\deck\\') ||
-    appPath.startsWith('\\home\\deck\\');
+  const isSteamDeck = appPath.startsWith('Z:\\home\\deck\\');
 
   console.log(`[main] Starting D2RMM ${CURRENT_VERSION}...`);
   console.debug('environment', {
@@ -45,11 +43,6 @@ import { CURRENT_VERSION } from './version';
     app_path: appPath,
     home_path: path.resolve(app.getPath('home')),
     is_stream_deck: isSteamDeck,
-    // try to figure out weirdness with Z:\\ prefix on Steam Deck
-    DEBUG_1: appPath,
-    DEBUG_2: path.resolve(appPath),
-    DEBUG_3: path.resolve(path.resolve(appPath)),
-    DEBUG_4: path.resolve(path.resolve(path.resolve(appPath))),
   });
 
   let mainWindow: BrowserWindow | null = null;

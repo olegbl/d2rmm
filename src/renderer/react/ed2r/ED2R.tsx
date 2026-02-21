@@ -742,7 +742,7 @@ function AdvancedStashTab({
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <AdvancedStashSection title="Gems">
+      <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
         <Box sx={{ display: 'flex', gap: '2px' }}>
           {GEMS_GRID[0].map((_, colIdx) => (
             <Box
@@ -760,13 +760,34 @@ function AdvancedStashTab({
             </Box>
           ))}
         </Box>
-      </AdvancedStashSection>
-
-      <AdvancedStashSection title="Runes">
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {RUNES_GRID.map((row, rowIdx) => (
-            <Box key={rowIdx} sx={{ display: 'flex', gap: '2px' }}>
-              {row.map((code) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['pk1', 'pk2', 'pk3'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  height={2}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['ua1', 'ua2', 'ua3', 'ua4', 'ua5'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  height={2}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['dhn', 'bey', 'mbr'].map((code) => (
                 <AdvancedStashSlot
                   key={code}
                   file={file}
@@ -775,27 +796,45 @@ function AdvancedStashTab({
                 />
               ))}
             </Box>
-          ))}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['xa1', 'xa2', 'xa3', 'xa4', 'xa5'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['rvs', 'rvl', 'toa'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['tes', 'ceh', 'bet', 'fed'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
+          </Box>
         </Box>
-      </AdvancedStashSection>
-
-      <AdvancedStashSection title="Materials">
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-          {MATERIALS_CODES.map((code) => (
-            <AdvancedStashSlot
-              key={code}
-              file={file}
-              item={itemsByType.get(code)}
-              itemCode={code}
-            />
-          ))}
-        </Box>
-      </AdvancedStashSection>
-
-      {allOtherCodes.length > 0 && (
-        <AdvancedStashSection title="Other">
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-            {allOtherCodes.map((code) => (
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        {RUNES_GRID.map((row, rowIdx) => (
+          <Box key={rowIdx} sx={{ display: 'flex', gap: '2px' }}>
+            {row.map((code) => (
               <AdvancedStashSlot
                 key={code}
                 file={file}
@@ -804,28 +843,22 @@ function AdvancedStashTab({
               />
             ))}
           </Box>
-        </AdvancedStashSection>
+        ))}
+      </Box>
+      {allOtherCodes.length > 0 && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+          {allOtherCodes.map((code) => (
+            <AdvancedStashSlot
+              key={code}
+              file={file}
+              height={itemsByType.get(code)?.inv_height}
+              item={itemsByType.get(code)}
+              itemCode={code}
+              width={itemsByType.get(code)?.inv_width}
+            />
+          ))}
+        </Box>
       )}
-    </Box>
-  );
-}
-
-function AdvancedStashSection({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}): React.ReactNode {
-  return (
-    <Box>
-      <Typography
-        sx={{ mb: 0.5, fontWeight: 'bold', opacity: 0.7 }}
-        variant="caption"
-      >
-        {title}
-      </Typography>
-      {children}
     </Box>
   );
 }
@@ -834,10 +867,14 @@ function AdvancedStashSlot({
   file,
   item,
   itemCode,
+  width = 1,
+  height = 1,
 }: {
   file: StashFile;
   item?: IItem | null;
   itemCode: string;
+  width?: number;
+  height?: number;
 }): React.ReactNode {
   const { gameFiles } = useGameFiles();
   const asset = (
@@ -860,17 +897,17 @@ function AdvancedStashSlot({
       altPositionID: AltPositionID.STASH,
       equippedID: EquippedID.NONE,
       file: selectedFile ?? file,
-      height: 1,
+      height,
       isAdvancedStash: true,
       isValid: true,
       locationID: LocationID.NONE,
       isMerc: false,
       stashTabIndex,
-      width: 1,
+      width,
       x: 0,
       y: 0,
     }),
-    [itemCode, file, selectedFile, stashTabIndex],
+    [itemCode, file, selectedFile, stashTabIndex, width, height],
   );
 
   const itemPositionID = getUniqueItemPositionID(itemPosition);
@@ -883,16 +920,16 @@ function AdvancedStashSlot({
         ...hoveredPosition,
         x: 0,
         y: 0,
-        width: 1,
-        height: 1,
+        width,
+        height,
       });
 
   const { setNodeRef } = useDroppable({
     id: `advslot:${itemCode}:${itemPositionID}`,
     data: {
       itemPosition,
-      width: 1,
-      height: 1,
+      width,
+      height,
     },
   });
 
@@ -926,8 +963,8 @@ function AdvancedStashSlot({
       {...listeners}
       sx={{
         position: 'relative',
-        width: CELL_SIZE,
-        height: CELL_SIZE,
+        width: CELL_SIZE * width,
+        height: CELL_SIZE * height,
         borderColor: 'primary',
         borderStyle: 'solid',
         borderWidth: 1,
@@ -942,8 +979,8 @@ function AdvancedStashSlot({
           <img
             src={sprite}
             style={{
-              width: CELL_SIZE - 2,
-              height: CELL_SIZE - 2,
+              width: CELL_SIZE * width - 2,
+              height: CELL_SIZE * height - 2,
               objectFit: 'none',
             }}
           />

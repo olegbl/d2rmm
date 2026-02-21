@@ -2,9 +2,18 @@
  * Base webpack config used across other specific configs
  */
 
+import { execSync } from 'child_process';
 import webpack from 'webpack';
 import webpackPaths from './webpack.paths';
 import { dependencies as externals } from '../../release/app/package.json';
+
+const gitCommitHash = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch {
+    return 'unknown';
+  }
+})();
 
 const configuration: webpack.Configuration = {
   externals: [...Object.keys(externals || {})],
@@ -46,6 +55,7 @@ const configuration: webpack.Configuration = {
   plugins: [
     new webpack.EnvironmentPlugin({
       NODE_ENV: 'production',
+      GIT_COMMIT_HASH: gitCommitHash,
     }),
   ],
 };

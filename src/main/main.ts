@@ -39,6 +39,7 @@ import { CURRENT_VERSION } from './version';
   console.debug('environment', {
     platform: process.platform,
     node_environment: process.env.NODE_ENV,
+    git_commit: process.env.GIT_COMMIT_HASH ?? 'dev',
     user_profile: process.env.USERPROFILE,
     app_path: appPath,
     home_path: path.resolve(app.getPath('home')),

@@ -2291,27 +2291,28 @@ function Waypoints({
         <FormLabel component="legend" sx={{ marginBottom: 2 }}>
           {label}
         </FormLabel>
-        {Object.keys(waypoints).map((actKey) => {
-          const act = actKey as keyof IWaypoints;
-          return (
-            <Fragment key={act}>
-              <FormLabel component="legend">
-                {getWaypointActLabel(act)}
-              </FormLabel>
-              {Object.keys(waypoints[act]).map((areaKey) => {
-                const area = areaKey as keyof IWaypoints[keyof IWaypoints];
-                return (
-                  <Waypoint
-                    key={area}
-                    label={getWaypointAreaLabel(act, area)}
-                    onChange={(newValue) => onChange(act, area, newValue)}
-                    value={waypoints[act][area]}
-                  />
-                );
-              })}
-            </Fragment>
-          );
-        })}
+        {(['act_i', 'act_ii', 'act_iii', 'act_iv', 'act_v'] as const).map(
+          (act) => {
+            return (
+              <Fragment key={act}>
+                <FormLabel component="legend">
+                  {getWaypointActLabel(act)}
+                </FormLabel>
+                {Object.keys(waypoints[act]).map((areaKey) => {
+                  const area = areaKey as keyof IWaypoints[keyof IWaypoints];
+                  return (
+                    <Waypoint
+                      key={area}
+                      label={getWaypointAreaLabel(act, area)}
+                      onChange={(newValue) => onChange(act, area, newValue)}
+                      value={waypoints[act][area]}
+                    />
+                  );
+                })}
+              </Fragment>
+            );
+          },
+        )}
       </FormGroup>
     </Box>
   );

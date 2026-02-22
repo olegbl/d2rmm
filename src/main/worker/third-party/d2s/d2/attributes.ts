@@ -70,8 +70,8 @@ export async function readAttributes(
           reader.ReadUInt32(size);
         //current_hp - max_stamina need to be bit shifted
         if (id >= 6 && id <= 11) {
-          char.attributes[Attributes[field.s as keyof typeof Attributes]] >>>=
-            8;
+          char.attributes[Attributes[field.s as keyof typeof Attributes]] /=
+            256;
         }
       } catch (error) {
         throw wrapParsingError(
@@ -125,7 +125,7 @@ export async function writeAttributes(
       writtenIds.add(i);
       const size = property.cB;
       if (i >= 6 && i <= 11) {
-        value <<= 8;
+        value = Math.round(value * 256);
       }
       writer.WriteUInt16(i, 9);
       writer.WriteUInt32(value, size);

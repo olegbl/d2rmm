@@ -84,101 +84,10 @@ export function ItemDragContextProvider({
           draggedPositionRef.current != null &&
           hoveredPositionRef.current != null
         ) {
-          let newFromFile = draggedPositionRef.current.file;
           let newToFile = hoveredPositionRef.current.file;
-          const isWithinFile = newFromFile === newToFile;
-
-          // remove the dragged item from its original position
-          {
-            const file = newFromFile;
-            const isAdvancedStashSource =
-              draggedPositionRef.current.isAdvancedStash === true;
-
-            if (isAdvancedStashSource && file.type === 'stash') {
-              // for advanced stash, decrement quantity instead of removing
-              newFromFile = {
-                ...file,
-                stash: {
-                  ...file.stash,
-                  pages: file.stash.pages.map((page, index) =>
-                    index === draggedPositionRef.current?.stashTabIndex
-                      ? {
-                          ...page,
-                          items: page.items
-                            .map((item) =>
-                              item.type ===
-                              draggedPositionRef.current?.acceptedItemType
-                                ? {
-                                    ...item,
-                                    advanced_stash_quantity:
-                                      (item.advanced_stash_quantity ?? 1) - 1,
-                                  }
-                                : item,
-                            )
-                            // remove items with 0 quantity
-                            .filter(
-                              (item) =>
-                                item.advanced_stash_quantity == null ||
-                                item.advanced_stash_quantity > 0,
-                            ),
-                        }
-                      : page,
-                  ),
-                },
-                edited: true,
-              };
-            } else if (file.type === 'character') {
-              const removeID = draggedItemRef.current
-                ? getUniqueItemID(draggedItemRef.current)
-                : null;
-              newFromFile = {
-                ...file,
-                character: {
-                  ...file.character,
-                  items: file.character.items
-                    // remove dragged item
-                    .filter(
-                      (item) =>
-                        removeID == null || getUniqueItemID(item) !== removeID,
-                    ),
-                  merc_items: file.character.merc_items
-                    // remove dragged item
-                    ?.filter(
-                      (item) =>
-                        removeID == null || getUniqueItemID(item) !== removeID,
-                    ),
-                },
-                edited: true,
-              };
-            } else if (file.type === 'stash') {
-              newFromFile = {
-                ...file,
-                stash: {
-                  ...file.stash,
-                  pages: file.stash.pages.map((page, index) =>
-                    index === draggedPositionRef.current?.stashTabIndex
-                      ? {
-                          ...page,
-                          items: page.items
-                            // remove dragged item
-                            .filter(
-                              (item) =>
-                                draggedItemRef.current == null ||
-                                getUniqueItemID(item) !=
-                                  getUniqueItemID(draggedItemRef.current),
-                            ),
-                        }
-                      : page,
-                  ),
-                },
-                edited: true,
-              };
-            }
-          }
 
           // add the dragged item to its new position
           {
-            const file = isWithinFile ? newFromFile : newToFile;
             const { x, y } =
               hoveredPositionRef.current.locationID === LocationID.BELT
                 ? {
@@ -194,13 +103,13 @@ export function ItemDragContextProvider({
               position_x: x,
               position_y: y,
             };
-            if (file.type === 'character') {
+            if (newToFile.type === 'character') {
               if (hoveredPositionRef.current.isMerc) {
                 newToFile = {
-                  ...file,
+                  ...newToFile,
                   character: {
-                    ...file.character,
-                    merc_items: (file.character.merc_items ?? [])
+                    ...newToFile.character,
+                    merc_items: (newToFile.character.merc_items ?? [])
                       // add dropped item
                       .concat([droppedItem]),
                   },
@@ -208,17 +117,17 @@ export function ItemDragContextProvider({
                 };
               } else {
                 newToFile = {
-                  ...file,
+                  ...newToFile,
                   character: {
-                    ...file.character,
-                    items: file.character.items
+                    ...newToFile.character,
+                    items: newToFile.character.items
                       // add dropped item
                       .concat([droppedItem]),
                   },
                   edited: true,
                 };
               }
-            } else if (file.type === 'stash') {
+            } else if (newToFile.type === 'stash') {
               const isAdvancedStashTarget =
                 hoveredPositionRef.current?.isAdvancedStash === true;
               const acceptedItemType =
@@ -229,17 +138,17 @@ export function ItemDragContextProvider({
                 draggedItemRef.current?.advanced_stash_quantity ?? 1;
 
               if (isAdvancedStashTarget && acceptedItemType != null) {
-                const existingItem = file.stash.pages[
+                const existingItem = newToFile.stash.pages[
                   targetPageIndex
                 ]?.items.find((item) => item.type === acceptedItemType);
 
                 if (existingItem != null) {
                   // merge quantity into existing item
                   newToFile = {
-                    ...file,
+                    ...newToFile,
                     stash: {
-                      ...file.stash,
-                      pages: file.stash.pages.map((page, index) =>
+                      ...newToFile.stash,
+                      pages: newToFile.stash.pages.map((page, index) =>
                         index === targetPageIndex
                           ? {
                               ...page,
@@ -262,10 +171,10 @@ export function ItemDragContextProvider({
                 } else {
                   // add new item with quantity
                   newToFile = {
-                    ...file,
+                    ...newToFile,
                     stash: {
-                      ...file.stash,
-                      pages: file.stash.pages.map((page, index) =>
+                      ...newToFile.stash,
+                      pages: newToFile.stash.pages.map((page, index) =>
                         index === targetPageIndex
                           ? {
                               ...page,
@@ -284,10 +193,10 @@ export function ItemDragContextProvider({
                 }
               } else {
                 newToFile = {
-                  ...file,
+                  ...newToFile,
                   stash: {
-                    ...file.stash,
-                    pages: file.stash.pages.map((page, index) =>
+                    ...newToFile.stash,
+                    pages: newToFile.stash.pages.map((page, index) =>
                       index === hoveredPositionRef.current?.stashTabIndex
                         ? {
                             ...page,
@@ -304,17 +213,60 @@ export function ItemDragContextProvider({
             }
           }
 
-          // update the files
-          if (isWithinFile) {
-            onChange(newToFile);
-          } else {
-            onChange(newFromFile);
-            onChange(newToFile);
-          }
-
-          // pick up overlapping item, if any
+          // pick up overlapping item, if any — remove it from the destination
+          // file immediately so the save state stays consistent
           if (hoveredPositionRef.current.overlappingItem != null) {
             const newDraggedItem = hoveredPositionRef.current.overlappingItem;
+            const overlappingItemID = getUniqueItemID(newDraggedItem);
+
+            // remove the overlapping item from the destination file
+            if (newToFile.type === 'character') {
+              if (hoveredPositionRef.current.isMerc) {
+                newToFile = {
+                  ...newToFile,
+                  character: {
+                    ...newToFile.character,
+                    merc_items: newToFile.character.merc_items?.filter(
+                      (item) => getUniqueItemID(item) !== overlappingItemID,
+                    ),
+                  },
+                };
+              } else {
+                newToFile = {
+                  ...newToFile,
+                  character: {
+                    ...newToFile.character,
+                    items: newToFile.character.items.filter(
+                      (item) => getUniqueItemID(item) !== overlappingItemID,
+                    ),
+                  },
+                };
+              }
+            } else if (newToFile.type === 'stash') {
+              const targetPageIndex =
+                hoveredPositionRef.current.stashTabIndex ?? -1;
+              newToFile = {
+                ...newToFile,
+                stash: {
+                  ...newToFile.stash,
+                  pages: newToFile.stash.pages.map((page, index) =>
+                    index === targetPageIndex
+                      ? {
+                          ...page,
+                          items: page.items.filter(
+                            (item) =>
+                              getUniqueItemID(item) !== overlappingItemID,
+                          ),
+                        }
+                      : page,
+                  ),
+                },
+              };
+            }
+
+            // update destination file (dragged item added, overlapping item removed)
+            onChange(newToFile);
+
             const newDraggedPosition = {
               ...hoveredPositionRef.current,
               file: newToFile,
@@ -330,6 +282,9 @@ export function ItemDragContextProvider({
             hoveredPositionRef.current = newDraggedPosition;
             return false; // don't end drag
           } else {
+            // update destination file
+            onChange(newToFile);
+
             draggedItemInitialOffsetRef.current = null;
             setDraggedItem(null);
             draggedItemRef.current = null;
@@ -347,8 +302,105 @@ export function ItemDragContextProvider({
   return (
     <DndContext
       onDragCancel={(_event) => {
-        // ignore cancel since it's not valid
-        // for a number of use cases like after swapping
+        // The item was removed from its source file at drag start, so we must
+        // restore it when the drag is cancelled to avoid losing the item.
+        if (
+          draggedItemRef.current != null &&
+          draggedPositionRef.current != null
+        ) {
+          const item = draggedItemRef.current;
+          const position = draggedPositionRef.current;
+          let restoredFile = position.file;
+
+          if (position.isAdvancedStash && restoredFile.type === 'stash') {
+            // add 1 quantity back to the advanced stash slot
+            const existingItem = restoredFile.stash.pages[
+              position.stashTabIndex
+            ]?.items.find((i) => i.type === position.acceptedItemType);
+            if (existingItem != null) {
+              restoredFile = {
+                ...restoredFile,
+                stash: {
+                  ...restoredFile.stash,
+                  pages: restoredFile.stash.pages.map((page, index) =>
+                    index === position.stashTabIndex
+                      ? {
+                          ...page,
+                          items: page.items.map((i) =>
+                            i.type === position.acceptedItemType
+                              ? {
+                                  ...i,
+                                  advanced_stash_quantity:
+                                    (i.advanced_stash_quantity ?? 0) + 1,
+                                }
+                              : i,
+                          ),
+                        }
+                      : page,
+                  ),
+                },
+                edited: true,
+              };
+            } else {
+              restoredFile = {
+                ...restoredFile,
+                stash: {
+                  ...restoredFile.stash,
+                  pages: restoredFile.stash.pages.map((page, index) =>
+                    index === position.stashTabIndex
+                      ? { ...page, items: page.items.concat([item]) }
+                      : page,
+                  ),
+                },
+                edited: true,
+              };
+            }
+          } else if (restoredFile.type === 'character') {
+            if (position.isMerc) {
+              restoredFile = {
+                ...restoredFile,
+                character: {
+                  ...restoredFile.character,
+                  merc_items: (restoredFile.character.merc_items ?? []).concat([
+                    item,
+                  ]),
+                },
+                edited: true,
+              };
+            } else {
+              restoredFile = {
+                ...restoredFile,
+                character: {
+                  ...restoredFile.character,
+                  items: restoredFile.character.items.concat([item]),
+                },
+                edited: true,
+              };
+            }
+          } else if (restoredFile.type === 'stash') {
+            restoredFile = {
+              ...restoredFile,
+              stash: {
+                ...restoredFile.stash,
+                pages: restoredFile.stash.pages.map((page, index) =>
+                  index === position.stashTabIndex
+                    ? { ...page, items: page.items.concat([item]) }
+                    : page,
+                ),
+              },
+              edited: true,
+            };
+          }
+
+          onChange(restoredFile);
+        }
+
+        draggedItemInitialOffsetRef.current = null;
+        setDraggedItem(null);
+        draggedItemRef.current = null;
+        draggedPositionRef.current = null;
+        setHoveredPosition(null);
+        hoveredPositionRef.current = null;
       }}
       onDragEnd={(_event) => {
         // handled in onAttemptDragEnd
@@ -567,11 +619,84 @@ export function ItemDragContextProvider({
             };
           }
 
+          // immediately remove the item from its source file so the save
+          // state stays consistent with what the UI shows during drag
+          let newFile = itemPosition.file;
+          if (itemPosition.isAdvancedStash && newFile.type === 'stash') {
+            // for advanced stash, decrement quantity instead of removing
+            newFile = {
+              ...newFile,
+              stash: {
+                ...newFile.stash,
+                pages: newFile.stash.pages.map((page, index) =>
+                  index === itemPosition.stashTabIndex
+                    ? {
+                        ...page,
+                        items: page.items
+                          .map((i) =>
+                            i.type === itemPosition.acceptedItemType
+                              ? {
+                                  ...i,
+                                  advanced_stash_quantity:
+                                    (i.advanced_stash_quantity ?? 1) - 1,
+                                }
+                              : i,
+                          )
+                          // remove items with 0 quantity
+                          .filter(
+                            (i) =>
+                              i.advanced_stash_quantity == null ||
+                              i.advanced_stash_quantity > 0,
+                          ),
+                      }
+                    : page,
+                ),
+              },
+              edited: true,
+            };
+          } else if (newFile.type === 'character') {
+            const removeID = getUniqueItemID(item);
+            newFile = {
+              ...newFile,
+              character: {
+                ...newFile.character,
+                items: newFile.character.items.filter(
+                  (i) => getUniqueItemID(i) !== removeID,
+                ),
+                merc_items: newFile.character.merc_items?.filter(
+                  (i) => getUniqueItemID(i) !== removeID,
+                ),
+              },
+              edited: true,
+            };
+          } else if (newFile.type === 'stash') {
+            const removeID = getUniqueItemID(item);
+            newFile = {
+              ...newFile,
+              stash: {
+                ...newFile.stash,
+                pages: newFile.stash.pages.map((page, index) =>
+                  index === itemPosition.stashTabIndex
+                    ? {
+                        ...page,
+                        items: page.items.filter(
+                          (i) => getUniqueItemID(i) !== removeID,
+                        ),
+                      }
+                    : page,
+                ),
+              },
+              edited: true,
+            };
+          }
+          onChange(newFile);
+
+          const updatedPosition = { ...itemPosition, file: newFile };
           setDraggedItem(item);
           draggedItemRef.current = item;
-          draggedPositionRef.current = itemPosition;
-          setHoveredPosition(itemPosition);
-          hoveredPositionRef.current = itemPosition;
+          draggedPositionRef.current = updatedPosition;
+          setHoveredPosition(updatedPosition);
+          hoveredPositionRef.current = updatedPosition;
         }
       }}
       sensors={sensors}

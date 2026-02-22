@@ -89,6 +89,10 @@ import {
   Typography,
   styled,
   tooltipClasses,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 
 const SORT_ORDER = ['stash', 'character'];
@@ -607,8 +611,7 @@ function StashTab({
     );
   }
 
-  // TODO: do non-expansion stashes have a different file name?
-  const isExpansion = true;
+  const isExpansion = true; // Classic doesn't have shared stashes
   const inventory = gameFiles['global/excel/inventory.txt'] as TSVData;
   const inventoryRow = inventory.rows.find(
     (row) => row.class === (isExpansion ? 'Bank Page 1' : 'Big Bank Page 1'),
@@ -2395,6 +2398,38 @@ function CharacterBasicTab({
             size="small"
             value={header.class}
           />
+          <Tooltip
+            placement="top"
+            title="You can try downgrading realm if you want, but it'll probably result in a broken save file."
+          >
+            <FormControl>
+              <InputLabel>Realm</InputLabel>
+              <Select
+                label="Realm"
+                onChange={(e) =>
+                  onChange({
+                    ...file,
+                    character: {
+                      ...file.character,
+                      header: { ...header, realm: Number(e.target.value) },
+                    },
+                  })
+                }
+                size="small"
+                value={file.character.header.realm}
+              >
+                <MenuItem value={1}>
+                  <Box>Classic</Box>
+                </MenuItem>
+                <MenuItem value={2}>
+                  <Box>Lord of Destruction</Box>
+                </MenuItem>
+                <MenuItem value={3}>
+                  <Box>Reign of the Warlock</Box>
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Tooltip>
         </Box>
 
         <Box
@@ -2439,6 +2474,8 @@ function CharacterBasicTab({
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <FormControlLabel
               control={
+                // it's a bit weird that save files have an expansion flag
+                // *and* a realm flag, but backwards compatibility I guess...
                 <Checkbox
                   checked={Boolean(header.status?.expansion)}
                   onChange={(_e, checked) =>

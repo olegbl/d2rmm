@@ -17,6 +17,7 @@ import { useOutputPath } from 'renderer/react/context/OutputPathContext';
 import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedDataPathContext';
 import { useFinalSavesPath } from 'renderer/react/context/SavesPathContext';
 import useSessionState from 'renderer/react/context/SessionContext';
+import { useClipboardContext } from 'renderer/react/ed2r/ED2RClipboardContext';
 import {
   AltPositionID,
   CELL_SIZE,
@@ -31,6 +32,8 @@ import {
 } from 'renderer/react/ed2r/ED2RGameFilesContext';
 import {
   IItemPosition,
+  getContainerItems,
+  validateItemPlacement,
   useItemDragContext,
 } from 'renderer/react/ed2r/ED2RItemDragContext';
 import {
@@ -2023,6 +2026,7 @@ function InventoryGridItem({
     (item == null ? null : getUniqueItemID(item));
 
   const { onChange } = useSaveFiles();
+  const { copyItem, cutItem } = useClipboardContext();
   const [contextMenuPos, setContextMenuPos] = useState<{
     x: number;
     y: number;
@@ -2044,6 +2048,17 @@ function InventoryGridItem({
   };
 
   const handleCloseMenu = () => setContextMenuPos(null);
+
+  const handleCopy = () => {
+    copyItem(item);
+    setContextMenuPos(null);
+  };
+
+  const handleCut = () => {
+    if (itemPosition == null) return;
+    cutItem(item, itemPosition);
+    setContextMenuPos(null);
+  };
 
   const handleDelete = () => {
     if (file == null) return;
@@ -2139,6 +2154,8 @@ function InventoryGridItem({
         onClose={handleCloseMenu}
         open={contextMenuPos != null}
       >
+        <MenuItem onClick={handleCopy}>Copy</MenuItem>
+        <MenuItem onClick={handleCut}>Cut</MenuItem>
         <MenuItem onClick={handleDelete}>Delete</MenuItem>
       </Menu>
     </>
@@ -2229,20 +2246,106 @@ function InventoryGrid({
   const { selectedFile: file } = useSelectedFileContext();
   const stashTabIndex = useStashTabIndex();
 
-  const itemPosition = {
+  const itemPosition = useMemo(
+    () =>
+      ({
+        altPositionID,
+        equippedID,
+        file,
+        isMerc,
+        locationID,
+        stashTabIndex,
+        // these properties are placeholders for grids
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      }) as IItemPosition,
+    [altPositionID, equippedID, file, isMerc, locationID, stashTabIndex],
+  );
+  const itemPositionID = getUniqueItemPositionID(itemPosition);
+
+  const { clipboard, pasteItem } = useClipboardContext();
+  const [pasteMenuState, setPasteMenuState] = useState<{
+    mouseX: number;
+    mouseY: number;
+    cellX: number;
+    cellY: number;
+  } | null>(null);
+
+  const handleGridContextMenu = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    // subtract 1px for the outer left/top border
+    const cellX = Math.floor((e.clientX - rect.left - 1) / CELL_SIZE);
+    const cellY = Math.floor((e.clientY - rect.top - 1) / CELL_SIZE);
+    if (cellX >= 0 && cellX < width && cellY >= 0 && cellY < height) {
+      setPasteMenuState({
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        cellX,
+        cellY,
+      });
+    }
+  };
+
+  const pasteValidation = useMemo(() => {
+    if (clipboard == null || pasteMenuState == null || file == null) {
+      return null;
+    }
+    const { item } = clipboard;
+    const targetPosition: IItemPosition = {
+      ...itemPosition,
+      x: pasteMenuState.cellX,
+      y: pasteMenuState.cellY,
+      width: item.inv_width,
+      height: item.inv_height,
+      isValid: true,
+    };
+    const containerItems = getContainerItems(
+      file,
+      locationID,
+      altPositionID,
+      equippedID,
+      stashTabIndex,
+      isMerc,
+    );
+    return validateItemPlacement(
+      item,
+      targetPosition,
+      width,
+      height,
+      containerItems,
+    );
+  }, [
+    clipboard,
+    pasteMenuState,
+    file,
+    itemPosition,
+    locationID,
     altPositionID,
     equippedID,
-    file,
-    isMerc,
-    locationID,
     stashTabIndex,
-    // these properties are placeholders for grids
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  } as IItemPosition;
-  const itemPositionID = getUniqueItemPositionID(itemPosition);
+    isMerc,
+    width,
+    height,
+  ]);
+
+  const handlePaste = () => {
+    if (clipboard == null || pasteMenuState == null || file == null) return;
+    const { item } = clipboard;
+    const targetPosition: IItemPosition = {
+      ...itemPosition,
+      x: pasteMenuState.cellX,
+      y: pasteMenuState.cellY,
+      width: item.inv_width,
+      height: item.inv_height,
+      isValid: true,
+    };
+    pasteItem(targetPosition, width, height);
+    setPasteMenuState(null);
+  };
 
   // TODO: XXX can move this to the overlay renderer for perf?
   const { hoveredPosition } = useItemDragContext();
@@ -2266,9 +2369,23 @@ function InventoryGrid({
     },
   });
 
+  const isPasteDisabled =
+    clipboard == null ||
+    !pasteValidation?.isValid ||
+    pasteValidation?.conflictingItem != null;
+  const pasteTooltip =
+    clipboard == null
+      ? 'No item in clipboard'
+      : pasteValidation?.conflictingItem != null
+        ? 'This item cannot fit here'
+        : pasteValidation?.invalidReason ?? '';
+  const pasteLabel =
+    clipboard != null ? `Paste "${getItemName(clipboard.item)}"` : 'Paste';
+
   return (
     <Box
       ref={setNodeRef}
+      onContextMenu={handleGridContextMenu}
       sx={{
         position: 'relative',
         display: 'flex',
@@ -2345,6 +2462,24 @@ function InventoryGrid({
         </>
       )}
       {children}
+      <Menu
+        anchorPosition={
+          pasteMenuState != null
+            ? { top: pasteMenuState.mouseY, left: pasteMenuState.mouseX }
+            : undefined
+        }
+        anchorReference="anchorPosition"
+        onClose={() => setPasteMenuState(null)}
+        open={pasteMenuState != null}
+      >
+        <Tooltip disableHoverListener={!isPasteDisabled} title={pasteTooltip}>
+          <span>
+            <MenuItem disabled={isPasteDisabled} onClick={handlePaste}>
+              {pasteLabel}
+            </MenuItem>
+          </span>
+        </Tooltip>
+      </Menu>
     </Box>
   );
 }

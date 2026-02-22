@@ -29,6 +29,7 @@ import ThemeContextProvider from 'renderer/react/context/ThemeContext';
 import { ToastContextProvider } from 'renderer/react/context/ToastContext';
 import { UpdatesContextProvider } from 'renderer/react/context/UpdatesContext';
 import ED2R from 'renderer/react/ed2r/ED2R';
+import { ClipboardContextProvider } from 'renderer/react/ed2r/ED2RClipboardContext';
 import { GameFilesContextProvider } from 'renderer/react/ed2r/ED2RGameFilesContext';
 import { ItemDragContextProvider } from 'renderer/react/ed2r/ED2RItemDragContext';
 import { SaveFilesContextProvider } from 'renderer/react/ed2r/ED2RSaveFilesContext';
@@ -135,6 +136,7 @@ const CONTEXT_PROVIDERS = [
   TabContextProvider,
   // save editor
   ItemDragContextProvider,
+  ClipboardContextProvider,
   SelectedFileContextProvider,
   SaveFilesContextProvider,
   GameFilesContextProvider,

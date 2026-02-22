@@ -42,6 +42,149 @@ export type IItemDragContext = Readonly<{
 
 const ItemDragContext = React.createContext<IItemDragContext | null>(null);
 
+// ============================================================
+// Shared validation utilities (also used by clipboard paste)
+// ============================================================
+
+export function getContainerItems(
+  file: SaveFile,
+  locationID: LocationID,
+  altPositionID: AltPositionID,
+  equippedID: EquippedID,
+  stashTabIndex: number,
+  isMerc: boolean | undefined,
+  itemToExclude?: IItem | null,
+): IItem[] {
+  const allItems =
+    file.type === 'character'
+      ? isMerc
+        ? file.character.merc_items ?? []
+        : file.character.items
+      : file.type === 'stash'
+        ? file.stash.pages[stashTabIndex]?.items ?? []
+        : [];
+  return allItems.filter(
+    (item) =>
+      item !== itemToExclude &&
+      item.location_id === locationID &&
+      item.alt_position_id === altPositionID &&
+      item.equipped_id === equippedID,
+  );
+}
+
+export type ItemPlacementValidation = Readonly<{
+  isValid: boolean;
+  conflictingItem: IItem | null;
+  invalidReason?: string;
+}>;
+
+export function validateItemPlacement(
+  item: IItem,
+  targetPosition: IItemPosition,
+  gridWidth: number,
+  gridHeight: number,
+  containerItems: IItem[],
+): ItemPlacementValidation {
+  let isValid = true;
+  let invalidReason: string | undefined;
+  let conflictingItems = containerItems;
+
+  const { x, y } = targetPosition;
+  const width = item.inv_width;
+  const height = item.inv_height;
+
+  if (targetPosition.locationID === LocationID.EQUIPPED) {
+    const { equippedID } = targetPosition;
+    if (
+      ((equippedID === EquippedID.RIGHT_HAND ||
+        equippedID === EquippedID.LEFT_HAND ||
+        equippedID === EquippedID.ALT_RIGHT_HAND ||
+        equippedID === EquippedID.ALT_LEFT_HAND) &&
+        !item.categories.includes('Weapon') &&
+        !item.categories.includes('Any Shield')) ||
+      ((equippedID === EquippedID.RIGHT_FINGER ||
+        equippedID === EquippedID.LEFT_FINGER) &&
+        !item.categories.includes('Ring')) ||
+      (equippedID === EquippedID.NECK && !item.categories.includes('Amulet')) ||
+      (equippedID === EquippedID.HEAD && !item.categories.includes('Helm')) ||
+      (equippedID === EquippedID.TORSO && !item.categories.includes('Armor')) ||
+      (equippedID === EquippedID.HANDS &&
+        !item.categories.includes('Gloves')) ||
+      (equippedID === EquippedID.FEET && !item.categories.includes('Boots')) ||
+      (equippedID === EquippedID.WAIST && !item.categories.includes('Belt'))
+    ) {
+      isValid = false;
+      invalidReason = 'Item cannot be equipped in this slot';
+    }
+    // TODO: handle 2H weapons, off-hand weapons, class-specific equipment
+  }
+
+  if (targetPosition.locationID === LocationID.BELT) {
+    if (width > 1 || height > 1) {
+      isValid = false;
+      invalidReason = 'Only 1×1 items can be placed in the belt';
+    } else if (
+      !item.categories.includes('Potion') &&
+      !item.categories.includes('Scroll')
+    ) {
+      isValid = false;
+      invalidReason = 'Only potions and scrolls can be placed in the belt';
+    }
+    conflictingItems = conflictingItems.filter((conflictItem) => {
+      const xy = getBeltItemPositionIn2D(conflictItem.position_x);
+      return xy.x === x && xy.y === y;
+    });
+  }
+
+  if (targetPosition.locationID === LocationID.NONE) {
+    if (x + width > gridWidth || y + height > gridHeight) {
+      isValid = false;
+      invalidReason = 'Item does not fit within the grid bounds';
+    }
+    conflictingItems = conflictingItems.filter((conflictItem) => {
+      const x1 = conflictItem.position_x;
+      const y1 = conflictItem.position_y;
+      const w1 = conflictItem.inv_width;
+      const h1 = conflictItem.inv_height;
+      return !(
+        (
+          x + width <= x1 || // A is completely left of B
+          x1 + w1 <= x || // B is completely left of A
+          y + height <= y1 || // A is completely above B
+          y1 + h1 <= y
+        ) // B is completely above A
+      );
+    });
+  }
+
+  if (
+    targetPosition.acceptedItemType != null &&
+    item.type !== targetPosition.acceptedItemType
+  ) {
+    isValid = false;
+    invalidReason = `This slot only accepts "${targetPosition.acceptedItemType}" items`;
+  }
+
+  // advanced stash slots merge same-type quantities — no conflict
+  if (
+    targetPosition.isAdvancedStash &&
+    item.type === targetPosition.acceptedItemType
+  ) {
+    conflictingItems = [];
+  }
+
+  if (conflictingItems.length > 1) {
+    isValid = false;
+    invalidReason = 'Item overlaps with multiple existing items';
+  }
+
+  return {
+    isValid,
+    conflictingItem: conflictingItems[0] ?? null,
+    invalidReason,
+  };
+}
+
 export function ItemDragContextProvider({
   children,
 }: {
@@ -452,147 +595,36 @@ export function ItemDragContextProvider({
             return;
           }
 
-          let isValid = true;
-
-          // find other items that are in the same general area
-          let conflictingItems: IItem[] = (
-            overItemPosition.file.type === 'character'
-              ? overItemPosition.isMerc
-                ? overItemPosition.file.character.merc_items ?? []
-                : overItemPosition.file.character.items
-              : overItemPosition.file.type === 'stash'
-                ? overItemPosition.file.stash.pages[
-                    overItemPosition.stashTabIndex
-                  ].items
-                : []
-          ).filter(
-            (item) =>
-              item !== draggedItemRef.current &&
-              item.location_id === overItemPosition.locationID &&
-              item.alt_position_id === overItemPosition.altPositionID &&
-              item.equipped_id === overItemPosition.equippedID,
-          );
-
+          // equipped items are always at 0, 0
           if (overItemPosition.locationID === LocationID.EQUIPPED) {
-            // equipped items are always at 0, 0
             x = 0;
             y = 0;
-
-            // check if this slot accepts this item type
-            if (
-              (overItemPosition.equippedID === EquippedID.RIGHT_HAND &&
-                !item.categories.includes('Weapon') &&
-                !item.categories.includes('Any Shield')) ||
-              (overItemPosition.equippedID === EquippedID.LEFT_HAND &&
-                !item.categories.includes('Weapon') &&
-                !item.categories.includes('Any Shield')) ||
-              (overItemPosition.equippedID === EquippedID.ALT_RIGHT_HAND &&
-                !item.categories.includes('Weapon') &&
-                !item.categories.includes('Any Shield')) ||
-              (overItemPosition.equippedID === EquippedID.ALT_LEFT_HAND &&
-                !item.categories.includes('Weapon') &&
-                !item.categories.includes('Any Shield')) ||
-              (overItemPosition.equippedID === EquippedID.RIGHT_FINGER &&
-                !item.categories.includes('Ring')) ||
-              (overItemPosition.equippedID === EquippedID.LEFT_FINGER &&
-                !item.categories.includes('Ring')) ||
-              (overItemPosition.equippedID === EquippedID.NECK &&
-                !item.categories.includes('Amulet')) ||
-              (overItemPosition.equippedID === EquippedID.HEAD &&
-                !item.categories.includes('Helm')) ||
-              (overItemPosition.equippedID === EquippedID.TORSO &&
-                !item.categories.includes('Armor')) ||
-              (overItemPosition.equippedID === EquippedID.HANDS &&
-                !item.categories.includes('Gloves')) ||
-              (overItemPosition.equippedID === EquippedID.FEET &&
-                !item.categories.includes('Boots')) ||
-              (overItemPosition.equippedID === EquippedID.WAIST &&
-                !item.categories.includes('Belt'))
-            ) {
-              isValid = false;
-            }
-
-            // TODO: handle 2H weapons
-            // TODO: handle off-hand weapons
-            // TODO: handle class specific equipment
           }
 
-          if (overItemPosition.locationID === LocationID.BELT) {
-            // if item is too big to fit in the belt
-            if (width > 1 || height > 1) {
-              isValid = false;
-            }
+          // find other items in the same container, excluding the dragged item
+          const containerItems = getContainerItems(
+            overItemPosition.file,
+            overItemPosition.locationID,
+            overItemPosition.altPositionID,
+            overItemPosition.equippedID,
+            overItemPosition.stashTabIndex,
+            overItemPosition.isMerc,
+            draggedItemRef.current,
+          );
 
-            // check if belt accepts this item type
-            if (
-              !item.categories.includes('Potion') &&
-              !item.categories.includes('Scroll')
-            ) {
-              isValid = false;
-            }
-
-            // determine which item is currently in that slot
-            conflictingItems = conflictingItems.filter((item) => {
-              const xy = getBeltItemPositionIn2D(item.position_x);
-              return xy.x === x && xy.y === y;
-            });
-          }
-
-          // if over a grid container of some kind (inventory, stash, cube, etc...)
-          if (overItemPosition.locationID === LocationID.NONE) {
-            // determine if the item fits in this grid
-            if (x + width > overWidth || y + height > overHeight) {
-              isValid = false;
-            }
-
-            // determine which items are curently in those slots
-            conflictingItems = conflictingItems.filter((item) => {
-              const x0 = x;
-              const y0 = y;
-              const w0 = width;
-              const h0 = height;
-              const x1 = item.position_x;
-              const y1 = item.position_y;
-              const w1 = item.inv_width;
-              const h1 = item.inv_height;
-              return !(
-                x0 + w0 <= x1 || // A is completely left of B
-                x1 + w1 <= x0 || // B is completely left of A
-                y0 + h0 <= y1 || // A is completely above B
-                y1 + h1 <= y0 || // B is completely above A
-                false
-              );
-            });
-          }
-
-          // advanced stash slots only accept their specific item type
-          if (
-            overItemPosition.acceptedItemType != null &&
-            item.type !== overItemPosition.acceptedItemType
-          ) {
-            isValid = false;
-          }
-
-          // advanced stash slots merge quantities, so conflicting items
-          // of the same type are OK (they'll be merged on drop)
-          if (
-            overItemPosition.isAdvancedStash &&
-            item.type === overItemPosition.acceptedItemType
-          ) {
-            conflictingItems = [];
-          }
-
-          // it's okay for there to be *one* conflicting item
-          // because we can swap them on drop
-          if (conflictingItems.length > 1) {
-            isValid = false;
-          }
+          const { isValid, conflictingItem } = validateItemPlacement(
+            item,
+            { ...overItemPosition, x, y },
+            overWidth,
+            overHeight,
+            containerItems,
+          );
 
           const newHoveredPosition = {
             ...overItemPosition,
             height,
             isValid,
-            overlappingItem: conflictingItems[0],
+            overlappingItem: conflictingItem,
             width,
             x,
             y,

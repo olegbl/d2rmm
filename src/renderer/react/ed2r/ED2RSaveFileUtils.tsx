@@ -595,7 +595,9 @@ export function enhanceCharacter(char: ID2S, gameFiles: GameFiles): void {
   enhanceItems(char.items, gameFiles, level);
   enhanceItems([char.golem_item], gameFiles, level);
   enhanceItems(char.merc_items, gameFiles, level);
-  enhanceItems(char.corpse_items, gameFiles, level);
+  for (const corpse of char.corpses ?? []) {
+    enhanceItems(corpse.items, gameFiles, level);
+  }
   enhancePlayerAttributes(char, gameFiles);
 }
 

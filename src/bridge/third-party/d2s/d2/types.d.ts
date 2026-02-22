@@ -17,17 +17,22 @@ export interface IConstantData {
   unq_items: any[];
 }
 
+export interface ICorpse {
+  items: IItem[];
+  unknown_4: number;    // 4 bytes, purpose unknown
+  x_position: number;  // 4 bytes, corpse x position on map
+  y_position: number;  // 4 bytes, corpse y position on map
+}
+
 export interface ID2S {
   header: IHeader;
   attributes: IAttributes;
   item_bonuses: IMagicProperty[];
   skills: ISkill[]; //Skill
   items: IItem[]; //Item
-  corpse_items: IItem[];
+  corpses: ICorpse[];
   merc_items: IItem[];
   golem_item: IItem;
-  is_dead: number;
-  corpse_unk12?: Uint8Array; // 12 bytes (unk4, x_pos, y_pos) before corpse items (preserved verbatim)
 }
 
 export interface IAttributes {

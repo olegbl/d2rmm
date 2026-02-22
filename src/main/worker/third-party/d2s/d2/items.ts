@@ -191,12 +191,11 @@ export async function readCorpseItems(
   config: types.IConfig,
 ) {
   try {
-    char.corpse_items = [] as types.IItem[];
+    char.corpses = [];
     const header = reader.ReadString(2); //0x0000 [item list header = 0x4a, 0x4d "JM"]
     if (header !== 'JM') {
       // header is not present in first save after char is created
       if (char.header.level === 1) {
-        char.is_dead = 0;
         return;
       }
 
@@ -205,25 +204,25 @@ export async function readCorpseItems(
         `Corpse item list header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
       );
     }
-    char.is_dead = reader.ReadUInt16(); //0x0002 [corpse count]
-    for (let i = 0; i < char.is_dead; i++) {
+    const count = reader.ReadUInt16(); //0x0002 [corpse count]
+    for (let i = 0; i < count; i++) {
       try {
-        const unk12 = reader.ReadBytes(12); //0x0004 [unk4, x_pos, y_pos]
-        if (i === 0) char.corpse_unk12 = unk12;
-        char.corpse_items = char.corpse_items.concat(
-          await readItems(
-            reader,
-            char.header.version,
-            char.header.realm,
-            constants,
-            config,
-            char,
-          ),
+        const unknown_4 = reader.ReadUInt32(); //0x0004 [unknown]
+        const x_position = reader.ReadUInt32(); //0x0008 [x position on map]
+        const y_position = reader.ReadUInt32(); //0x000C [y position on map]
+        const items = await readItems(
+          reader,
+          char.header.version,
+          char.header.realm,
+          constants,
+          config,
+          char,
         );
+        char.corpses.push({ items, unknown_4, x_position, y_position });
       } catch (error) {
         throw wrapParsingError(
           error,
-          `Failed to read corpse ${i + 1} of ${char.is_dead}`,
+          `Failed to read corpse ${i + 1} of ${count}`,
         );
       }
     }
@@ -242,14 +241,15 @@ export async function writeCorpseItem(
 ): Promise<Uint8Array> {
   const writer = new BitWriter();
   writer.WriteString('JM', 2);
-  writer.WriteUInt16(char.is_dead);
-  //json struct doesnt support multiple corpses without modifying it
-  if (char.is_dead) {
-    writer.WriteArray(char.corpse_unk12 ?? new Uint8Array(12));
-    char.corpse_items = char.corpse_items || [];
+  const corpses = char.corpses ?? [];
+  writer.WriteUInt16(corpses.length);
+  for (const corpse of corpses) {
+    writer.WriteUInt32(corpse.unknown_4 ?? 0);
+    writer.WriteUInt32(corpse.x_position ?? 0);
+    writer.WriteUInt32(corpse.y_position ?? 0);
     writer.WriteArray(
       await writeItems(
-        char.corpse_items,
+        corpse.items ?? [],
         char.header.version,
         char.header.realm,
         constants,

@@ -20,7 +20,9 @@ export async function enhanceAttributes(
   enhanceItems(char.items, constants, char.attributes.level, config);
   enhanceItems([char.golem_item], constants, char.attributes.level, config);
   enhanceItems(char.merc_items, constants, char.attributes.level, config);
-  enhanceItems(char.corpse_items, constants, char.attributes.level, config);
+  for (const corpse of char.corpses ?? []) {
+    enhanceItems(corpse.items, constants, char.attributes.level, config);
+  }
   enhancePlayerAttributes(char, constants, config);
 }
 

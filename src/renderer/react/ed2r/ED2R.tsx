@@ -500,17 +500,20 @@ function Stash({
                         : file.stash.pages[index]?.sectionType === 2
                           ? 'Chronicle'
                           : `Page ${index + 1}`}
-                      {file.stash.pageCount > 3 && (
-                        <Tooltip title="Delete this stash tab">
-                          <IconButton
-                            onClick={() => handleDeleteTab(index)}
-                            size="small"
-                            sx={{ ml: 1 }}
-                          >
-                            <Close fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                      {file.stash.pages[index]?.sectionType === 0 &&
+                        tabIndices.filter(
+                          (i) => file.stash.pages[i]?.sectionType === 0,
+                        ).length > 3 && (
+                          <Tooltip title="Delete this stash tab">
+                            <IconButton
+                              onClick={() => handleDeleteTab(index)}
+                              size="small"
+                              sx={{ ml: 1 }}
+                            >
+                              <Close fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                     </span>
                   }
                   value={String(index)}

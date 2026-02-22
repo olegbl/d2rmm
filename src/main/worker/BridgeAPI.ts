@@ -224,6 +224,7 @@ export const BridgeAPI: IBridgeAPI = {
     if (isSteamDeck) {
       return path.resolve(
         path.join(
+          'Z:',
           'home',
           'deck',
           '.local',

@@ -33,6 +33,7 @@ export async function initAppInfoAPI(): Promise<void> {
       if (isSteamDeck()) {
         return path.resolve(
           path.join(
+            'Z:',
             'home',
             'deck',
             '.local',

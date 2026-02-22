@@ -927,184 +927,109 @@ function _writeWaypoints(waypoints: types.IWaypoints): Uint8Array {
   return writer.ToArray();
 }
 
+// Ordered list of all 40 NPC slots per difficulty block (intro and congrats).
+// Unknown slots correspond to NPC bit positions that are preserved but not mapped to named NPCs.
+const NPC_SLOTS: ReadonlyArray<keyof types.INPCS> = [
+  'warriv_act_ii',  // bit 0
+  'unknown_1',      // bit 1
+  'charsi',         // bit 2
+  'warriv_act_i',   // bit 3
+  'kashya',         // bit 4
+  'akara',          // bit 5
+  'gheed',          // bit 6
+  'unknown_2',      // bit 7
+  'greiz',          // bit 8
+  'jerhyn',         // bit 9
+  'meshif_act_ii',  // bit 10
+  'geglash',        // bit 11
+  'lysnader',       // bit 12
+  'fara',           // bit 13
+  'drogan',         // bit 14
+  'unknown_3',      // bit 15
+  'alkor',          // bit 16
+  'hratli',         // bit 17
+  'ashera',         // bit 18
+  'unknown_4',      // bit 19
+  'unknown_5',      // bit 20
+  'cain_act_iii',   // bit 21
+  'unknown_6',      // bit 22
+  'elzix',          // bit 23
+  'malah',          // bit 24
+  'anya',           // bit 25
+  'unknown_7',      // bit 26
+  'natalya',        // bit 27
+  'meshif_act_iii', // bit 28
+  'unknown_8',      // bit 29
+  'unknown_9',      // bit 30
+  'ormus',          // bit 31
+  'unknown_10',     // bit 32
+  'unknown_11',     // bit 33
+  'unknown_12',     // bit 34
+  'unknown_13',     // bit 35
+  'unknown_14',     // bit 36
+  'cain_act_v',     // bit 37
+  'qualkehk',       // bit 38
+  'nihlathak',      // bit 39
+];
+
 function _readNPCData(bytes: Uint8Array): types.INPCData {
-  const npcs = { normal: {}, nm: {}, hell: {} } as types.INPCData;
   const reader = new BitReader(bytes);
-  for (let j = 0; j < 3; j++) {
-    npcs[difficulties[j] as keyof typeof npcs] = {
-      warriv_act_ii: { intro: false, congrats: false },
-      charsi: { intro: false, congrats: false },
-      warriv_act_i: { intro: false, congrats: false },
-      kashya: { intro: false, congrats: false },
-      akara: { intro: false, congrats: false },
-      gheed: { intro: false, congrats: false },
-      greiz: { intro: false, congrats: false },
-      jerhyn: { intro: false, congrats: false },
-      meshif_act_ii: { intro: false, congrats: false },
-      geglash: { intro: false, congrats: false },
-      lysnader: { intro: false, congrats: false },
-      fara: { intro: false, congrats: false },
-      drogan: { intro: false, congrats: false },
-      alkor: { intro: false, congrats: false },
-      hratli: { intro: false, congrats: false },
-      ashera: { intro: false, congrats: false },
-      cain_act_iii: { intro: false, congrats: false },
-      elzix: { intro: false, congrats: false },
-      malah: { intro: false, congrats: false },
-      anya: { intro: false, congrats: false },
-      natalya: { intro: false, congrats: false },
-      meshif_act_iii: { intro: false, congrats: false },
-      ormus: { intro: false, congrats: false },
-      cain_act_v: { intro: false, congrats: false },
-      qualkehk: { intro: false, congrats: false },
-      nihlathak: { intro: false, congrats: false },
-    } as types.INPCS;
-  }
-  //introductions
+  const npcs = {
+    normal: {} as types.INPCS,
+    nm: {} as types.INPCS,
+    hell: {} as types.INPCS,
+  } as types.INPCData;
+
+  // Read intro bits: 3 difficulties × 40 bits = 15 bytes (byte-aligned)
   for (let i = 0; i < 3; i++) {
-    const j = i * 5;
-    const npc = npcs[difficulties[i] as keyof typeof npcs];
-    npc.warriv_act_ii.intro = reader.bits[0 + j * 8] === 1;
-    npc.charsi.intro = reader.bits[2 + j * 8] === 1;
-    npc.warriv_act_i.intro = reader.bits[3 + j * 8] === 1;
-    npc.kashya.intro = reader.bits[4 + j * 8] === 1;
-    npc.akara.intro = reader.bits[5 + j * 8] === 1;
-    npc.gheed.intro = reader.bits[6 + j * 8] === 1;
-    npc.greiz.intro = reader.bits[8 + j * 8] === 1;
-    npc.jerhyn.intro = reader.bits[9 + j * 8] === 1;
-    npc.meshif_act_ii.intro = reader.bits[10 + j * 8] === 1;
-    npc.geglash.intro = reader.bits[11 + j * 8] === 1;
-    npc.lysnader.intro = reader.bits[12 + j * 8] === 1;
-    npc.fara.intro = reader.bits[13 + j * 8] === 1;
-    npc.drogan.intro = reader.bits[14 + j * 8] === 1;
-    npc.alkor.intro = reader.bits[16 + j * 8] === 1;
-    npc.hratli.intro = reader.bits[17 + j * 8] === 1;
-    npc.ashera.intro = reader.bits[18 + j * 8] === 1;
-    npc.cain_act_iii.intro = reader.bits[21 + j * 8] === 1;
-    npc.elzix.intro = reader.bits[23 + j * 8] === 1;
-    npc.malah.intro = reader.bits[24 + j * 8] === 1;
-    npc.anya.intro = reader.bits[25 + j * 8] === 1;
-    npc.natalya.intro = reader.bits[27 + j * 8] === 1;
-    npc.meshif_act_iii.intro = reader.bits[28 + j * 8] === 1;
-    npc.ormus.intro = reader.bits[31 + j * 8] === 1;
-    npc.cain_act_v.intro = reader.bits[37 + j * 8] === 1;
-    npc.qualkehk.intro = reader.bits[38 + j * 8] === 1;
-    npc.nihlathak.intro = reader.bits[39 + j * 8] === 1;
+    const npc = npcs[difficulties[i] as 'normal' | 'nm' | 'hell'];
+    for (const slot of NPC_SLOTS) {
+      npc[slot] = { intro: reader.ReadBit() === 1, congrats: false };
+    }
   }
-  //congrats
+
+  // 9-byte gap between intro and congrats sections
+  npcs.unknown_gap = reader.ReadBytes(9);
+
+  // Read congrats bits: 3 difficulties × 40 bits = 15 bytes (byte-aligned)
   for (let i = 0; i < 3; i++) {
-    const j = i * 5;
-    const npc = npcs[difficulties[i] as keyof typeof npcs];
-    npc.warriv_act_ii.congrats = reader.bits[192 + (0 + j * 8)] === 1;
-    npc.charsi.congrats = reader.bits[192 + (2 + j * 8)] === 1;
-    npc.warriv_act_i.congrats = reader.bits[192 + (3 + j * 8)] === 1;
-    npc.kashya.congrats = reader.bits[192 + (4 + j * 8)] === 1;
-    npc.akara.congrats = reader.bits[192 + (5 + j * 8)] === 1;
-    npc.gheed.congrats = reader.bits[192 + (6 + j * 8)] === 1;
-    npc.greiz.congrats = reader.bits[192 + (8 + j * 8)] === 1;
-    npc.jerhyn.congrats = reader.bits[192 + (9 + j * 8)] === 1;
-    npc.meshif_act_ii.congrats = reader.bits[192 + (10 + j * 8)] === 1;
-    npc.geglash.congrats = reader.bits[192 + (11 + j * 8)] === 1;
-    npc.lysnader.congrats = reader.bits[192 + (12 + j * 8)] === 1;
-    npc.fara.congrats = reader.bits[192 + (13 + j * 8)] === 1;
-    npc.drogan.congrats = reader.bits[192 + (14 + j * 8)] === 1;
-    npc.alkor.congrats = reader.bits[192 + (16 + j * 8)] === 1;
-    npc.hratli.congrats = reader.bits[192 + (17 + j * 8)] === 1;
-    npc.ashera.congrats = reader.bits[192 + (18 + j * 8)] === 1;
-    npc.cain_act_iii.congrats = reader.bits[192 + (21 + j * 8)] === 1;
-    npc.elzix.congrats = reader.bits[192 + (23 + j * 8)] === 1;
-    npc.malah.congrats = reader.bits[192 + (24 + j * 8)] === 1;
-    npc.anya.congrats = reader.bits[192 + (25 + j * 8)] === 1;
-    npc.natalya.congrats = reader.bits[192 + (27 + j * 8)] === 1;
-    npc.meshif_act_iii.congrats = reader.bits[192 + (28 + j * 8)] === 1;
-    npc.ormus.congrats = reader.bits[192 + (31 + j * 8)] === 1;
-    npc.cain_act_v.congrats = reader.bits[192 + (37 + j * 8)] === 1;
-    npc.qualkehk.congrats = reader.bits[192 + (38 + j * 8)] === 1;
-    npc.nihlathak.congrats = reader.bits[192 + (39 + j * 8)] === 1;
+    const npc = npcs[difficulties[i] as 'normal' | 'nm' | 'hell'];
+    for (const slot of NPC_SLOTS) {
+      npc[slot].congrats = reader.ReadBit() === 1;
+    }
   }
+
+  // 9-byte trailing gap after congrats section
+  npcs.unknown_trailing = reader.ReadBytes(9);
+
   return npcs;
 }
 
 function _writeNPCData(npcs: types.INPCData): Uint8Array {
   const writer = new BitWriter(0x30);
   writer.length = 0x30 * 8;
-  if (npcs) {
-    for (let j = 0; j < 3; j++) {
-      const npc = npcs[difficulties[j] as keyof typeof npcs];
-      writer.SeekByte(j * 5);
-      writer.WriteBit(+npc.warriv_act_ii.intro);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.charsi.intro);
-      writer.WriteBit(+npc.warriv_act_i.intro);
-      writer.WriteBit(+npc.kashya.intro);
-      writer.WriteBit(+npc.akara.intro);
-      writer.WriteBit(+npc.gheed.intro);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.greiz.intro);
-      writer.WriteBit(+npc.jerhyn.intro);
-      writer.WriteBit(+npc.meshif_act_ii.intro);
-      writer.WriteBit(+npc.geglash.intro);
-      writer.WriteBit(+npc.lysnader.intro);
-      writer.WriteBit(+npc.fara.intro);
-      writer.WriteBit(+npc.drogan.intro);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.alkor.intro);
-      writer.WriteBit(+npc.hratli.intro);
-      writer.WriteBit(+npc.ashera.intro);
-      writer.WriteBits(new Uint8Array(2).fill(0), 2);
-      writer.WriteBit(+npc.cain_act_iii.intro);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.elzix.intro);
-      writer.WriteBit(+npc.malah.intro);
-      writer.WriteBit(+npc.anya.intro);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.natalya.intro);
-      writer.WriteBit(+npc.meshif_act_iii.intro);
-      writer.WriteBits(new Uint8Array(2).fill(0), 2);
-      writer.WriteBit(+npc.ormus.intro);
-      writer.WriteBits(new Uint8Array(5).fill(0), 5);
-      writer.WriteBit(+npc.cain_act_v.intro);
-      writer.WriteBit(+npc.qualkehk.intro);
-      writer.WriteBit(+npc.nihlathak.intro);
-    }
-    for (let j = 0; j < 3; j++) {
-      writer.SeekByte(24 + j * 5);
-      const npc = npcs[difficulties[j] as keyof typeof npcs];
-      writer.WriteBit(+npc.warriv_act_ii.congrats);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.charsi.congrats);
-      writer.WriteBit(+npc.warriv_act_i.congrats);
-      writer.WriteBit(+npc.kashya.congrats);
-      writer.WriteBit(+npc.akara.congrats);
-      writer.WriteBit(+npc.gheed.congrats);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.greiz.congrats);
-      writer.WriteBit(+npc.jerhyn.congrats);
-      writer.WriteBit(+npc.meshif_act_ii.congrats);
-      writer.WriteBit(+npc.geglash.congrats);
-      writer.WriteBit(+npc.lysnader.congrats);
-      writer.WriteBit(+npc.fara.congrats);
-      writer.WriteBit(+npc.drogan.congrats);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.alkor.congrats);
-      writer.WriteBit(+npc.hratli.congrats);
-      writer.WriteBit(+npc.ashera.congrats);
-      writer.WriteBits(new Uint8Array(2).fill(0), 2);
-      writer.WriteBit(+npc.cain_act_iii.congrats);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.elzix.congrats);
-      writer.WriteBit(+npc.malah.congrats);
-      writer.WriteBit(+npc.anya.congrats);
-      writer.WriteBit(0);
-      writer.WriteBit(+npc.natalya.congrats);
-      writer.WriteBit(+npc.meshif_act_iii.congrats);
-      writer.WriteBits(new Uint8Array(2).fill(0), 2);
-      writer.WriteBit(+npc.ormus.congrats);
-      writer.WriteBits(new Uint8Array(5).fill(0), 5);
-      writer.WriteBit(+npc.cain_act_v.congrats);
-      writer.WriteBit(+npc.qualkehk.congrats);
-      writer.WriteBit(+npc.nihlathak.congrats);
+
+  // Write intro bits: 3 difficulties × 40 bits = 15 bytes (byte-aligned)
+  for (let i = 0; i < 3; i++) {
+    const npc = npcs[difficulties[i] as 'normal' | 'nm' | 'hell'];
+    for (const slot of NPC_SLOTS) {
+      writer.WriteBit(npc?.[slot]?.intro ? 1 : 0);
     }
   }
+
+  // Write 9-byte gap
+  writer.WriteBytes(npcs.unknown_gap ?? new Uint8Array(9));
+
+  // Write congrats bits: 3 difficulties × 40 bits = 15 bytes (byte-aligned)
+  for (let i = 0; i < 3; i++) {
+    const npc = npcs[difficulties[i] as 'normal' | 'nm' | 'hell'];
+    for (const slot of NPC_SLOTS) {
+      writer.WriteBit(npc?.[slot]?.congrats ? 1 : 0);
+    }
+  }
+
+  // Write 9-byte trailing gap
+  writer.WriteBytes(npcs.unknown_trailing ?? new Uint8Array(9));
+
   return writer.ToArray();
 }

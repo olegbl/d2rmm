@@ -69,32 +69,46 @@ export interface INPC {
 }
 
 export interface INPCS {
-  warriv_act_ii: INPC;
-  charsi: INPC;
-  warriv_act_i: INPC;
-  kashya: INPC;
-  akara: INPC;
-  gheed: INPC;
-  greiz: INPC;
-  jerhyn: INPC;
-  meshif_act_ii: INPC;
-  geglash: INPC;
-  lysnader: INPC;
-  fara: INPC;
-  drogan: INPC;
-  alkor: INPC;
-  hratli: INPC;
-  ashera: INPC;
-  cain_act_iii: INPC;
-  elzix: INPC;
-  malah: INPC;
-  anya: INPC;
-  natalya: INPC;
-  meshif_act_iii: INPC;
-  ormus: INPC;
-  cain_act_v: INPC;
-  qualkehk: INPC;
-  nihlathak: INPC;
+  warriv_act_ii: INPC;  // bit 0
+  unknown_1: INPC;      // bit 1
+  charsi: INPC;         // bit 2
+  warriv_act_i: INPC;   // bit 3
+  kashya: INPC;         // bit 4
+  akara: INPC;          // bit 5
+  gheed: INPC;          // bit 6
+  unknown_2: INPC;      // bit 7
+  greiz: INPC;          // bit 8
+  jerhyn: INPC;         // bit 9
+  meshif_act_ii: INPC;  // bit 10
+  geglash: INPC;        // bit 11
+  lysnader: INPC;       // bit 12
+  fara: INPC;           // bit 13
+  drogan: INPC;         // bit 14
+  unknown_3: INPC;      // bit 15
+  alkor: INPC;          // bit 16
+  hratli: INPC;         // bit 17
+  ashera: INPC;         // bit 18
+  unknown_4: INPC;      // bit 19
+  unknown_5: INPC;      // bit 20
+  cain_act_iii: INPC;   // bit 21
+  unknown_6: INPC;      // bit 22
+  elzix: INPC;          // bit 23
+  malah: INPC;          // bit 24
+  anya: INPC;           // bit 25
+  unknown_7: INPC;      // bit 26
+  natalya: INPC;        // bit 27
+  meshif_act_iii: INPC; // bit 28
+  unknown_8: INPC;      // bit 29
+  unknown_9: INPC;      // bit 30
+  ormus: INPC;          // bit 31
+  unknown_10: INPC;     // bit 32
+  unknown_11: INPC;     // bit 33
+  unknown_12: INPC;     // bit 34
+  unknown_13: INPC;     // bit 35
+  unknown_14: INPC;     // bit 36
+  cain_act_v: INPC;     // bit 37
+  qualkehk: INPC;       // bit 38
+  nihlathak: INPC;      // bit 39
 }
 
 export interface IQuest {
@@ -248,6 +262,8 @@ export interface INPCData {
   normal: INPCS;
   nm: INPCS;
   hell: INPCS;
+  unknown_gap?: Uint8Array;      // 9 bytes between intro and congrats sections
+  unknown_trailing?: Uint8Array; // 9 bytes after congrats section
 }
 
 export interface IWaypointData {

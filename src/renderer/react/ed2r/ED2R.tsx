@@ -90,8 +90,13 @@ import {
   tooltipClasses,
   Select,
   MenuItem,
+  Menu,
   FormControl,
   InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 
 const SORT_ORDER = ['stash', 'character'];
@@ -955,56 +960,163 @@ function AdvancedStashSlot({
         : 'rgba(255, 0, 0, 0.3)'
       : undefined;
 
+  const { onChange } = useSaveFiles();
+  const [contextMenuPos, setContextMenuPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [editQtyOpen, setEditQtyOpen] = useState(false);
+  const [editQtyValue, setEditQtyValue] = useState('');
+
+  const actualFile: StashFile =
+    selectedFile?.type === 'stash' ? selectedFile : file;
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (item == null || quantity === 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCloseMenu = () => setContextMenuPos(null);
+
+  const handleDelete = () => {
+    onChange({
+      ...actualFile,
+      stash: {
+        ...actualFile.stash,
+        pages: actualFile.stash.pages.map((page, index) =>
+          index === stashTabIndex
+            ? { ...page, items: page.items.filter((i) => i.type !== itemCode) }
+            : page,
+        ),
+      },
+      edited: true,
+    });
+    setContextMenuPos(null);
+  };
+
+  const handleOpenEditQty = () => {
+    setEditQtyValue(String(quantity));
+    setEditQtyOpen(true);
+    setContextMenuPos(null);
+  };
+
+  const handleConfirmEditQty = () => {
+    const newQty = parseInt(editQtyValue, 10);
+    if (isNaN(newQty) || newQty < 0) return;
+    onChange({
+      ...actualFile,
+      stash: {
+        ...actualFile.stash,
+        pages: actualFile.stash.pages.map((page, index) =>
+          index === stashTabIndex
+            ? {
+                ...page,
+                items:
+                  newQty === 0
+                    ? page.items.filter((i) => i.type !== itemCode)
+                    : page.items.map((i) =>
+                        i.type === itemCode
+                          ? { ...i, advanced_stash_quantity: newQty }
+                          : i,
+                      ),
+              }
+            : page,
+        ),
+      },
+      edited: true,
+    });
+    setEditQtyOpen(false);
+  };
+
   return (
-    <Box
-      ref={(node: HTMLElement | null) => {
-        setNodeRef(node);
-        setDragRef(node);
-      }}
-      {...attributes}
-      {...listeners}
-      sx={{
-        position: 'relative',
-        width: CELL_SIZE * width,
-        height: CELL_SIZE * height,
-        borderColor: 'primary',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        boxSizing: 'border-box',
-        backgroundColor: hoverColor ?? 'transparent',
-        cursor: item != null && quantity > 0 ? 'grab' : 'default',
-        opacity: quantity > 0 ? 1 : 0.4,
-      }}
-    >
-      {sprite != null && (
-        <>
-          <img
-            src={sprite}
-            style={{
-              width: CELL_SIZE * width - 2,
-              height: CELL_SIZE * height - 2,
-              objectFit: 'none',
-            }}
+    <>
+      <Box
+        ref={(node: HTMLElement | null) => {
+          setNodeRef(node);
+          setDragRef(node);
+        }}
+        {...attributes}
+        {...listeners}
+        onContextMenu={handleContextMenu}
+        sx={{
+          position: 'relative',
+          width: CELL_SIZE * width,
+          height: CELL_SIZE * height,
+          borderColor: 'primary',
+          borderStyle: 'solid',
+          borderWidth: 1,
+          boxSizing: 'border-box',
+          backgroundColor: hoverColor ?? 'transparent',
+          cursor: item != null && quantity > 0 ? 'grab' : 'default',
+          opacity: quantity > 0 ? 1 : 0.4,
+        }}
+      >
+        {sprite != null && (
+          <>
+            <img
+              src={sprite}
+              style={{
+                width: CELL_SIZE * width - 2,
+                height: CELL_SIZE * height - 2,
+                objectFit: 'none',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 1,
+                right: 3,
+                color: 'white',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                textShadow:
+                  '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+                lineHeight: 1,
+                pointerEvents: 'none',
+              }}
+            >
+              {quantity}
+            </Box>
+          </>
+        )}
+      </Box>
+      <Menu
+        anchorPosition={
+          contextMenuPos != null
+            ? { top: contextMenuPos.y, left: contextMenuPos.x }
+            : undefined
+        }
+        anchorReference="anchorPosition"
+        onClose={handleCloseMenu}
+        open={contextMenuPos != null}
+      >
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+        <MenuItem onClick={handleOpenEditQty}>Edit Quantity</MenuItem>
+      </Menu>
+      <Dialog onClose={() => setEditQtyOpen(false)} open={editQtyOpen}>
+        <DialogTitle>Edit Quantity</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus={true}
+            fullWidth={true}
+            inputProps={{ min: 0 }}
+            label="Quantity"
+            onChange={(e) => setEditQtyValue(e.target.value)}
+            sx={{ mt: 1 }}
+            type="number"
+            value={editQtyValue}
           />
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 1,
-              right: 3,
-              color: 'white',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              textShadow:
-                '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
-              lineHeight: 1,
-              pointerEvents: 'none',
-            }}
-          >
-            {quantity}
-          </Box>
-        </>
-      )}
-    </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditQtyOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmEditQty} variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 
@@ -1907,6 +2019,12 @@ function InventoryGridItem({
     (draggedItem == null ? null : getUniqueItemID(draggedItem)) ===
     (item == null ? null : getUniqueItemID(item));
 
+  const { onChange } = useSaveFiles();
+  const [contextMenuPos, setContextMenuPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   if (item == null) {
     return null;
   }
@@ -1916,49 +2034,111 @@ function InventoryGridItem({
   width ??= item.inv_width;
   height ??= item.inv_height;
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenuPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleCloseMenu = () => setContextMenuPos(null);
+
+  const handleDelete = () => {
+    if (file == null) return;
+    const uniqueID = getUniqueItemID(item);
+    if (file.type === 'character') {
+      onChange({
+        ...file,
+        character: {
+          ...file.character,
+          items: file.character.items.filter(
+            (i) => getUniqueItemID(i) !== uniqueID,
+          ),
+          merc_items: file.character.merc_items?.filter(
+            (i) => getUniqueItemID(i) !== uniqueID,
+          ),
+        },
+        edited: true,
+      });
+    } else {
+      onChange({
+        ...file,
+        stash: {
+          ...file.stash,
+          pages: file.stash.pages.map((page, index) =>
+            index === stashTabIndex
+              ? {
+                  ...page,
+                  items: page.items.filter(
+                    (i) => getUniqueItemID(i) !== uniqueID,
+                  ),
+                }
+              : page,
+          ),
+        },
+        edited: true,
+      });
+    }
+    setContextMenuPos(null);
+  };
+
   return (
-    <InventoryGridItemTooltip
-      title={
-        <Box sx={{ padding: 2 }}>
-          <Typography
-            sx={{
-              alignItems: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <ItemName item={item} />
-            {
-              /* temporary hack to show some of the stats */
-              Array.from(
-                new Set(
-                  (item.displayed_combined_magic_attributes ?? [])
-                    .map((attr) => attr.description)
-                    .filter(Boolean),
-                ),
-              ).map((str) => (
-                <span key={str} style={{ display: 'inline-block' }}>
-                  {str}
-                </span>
-              ))
-            }
-          </Typography>
-        </Box>
-      }
-    >
-      <InventoryItem
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        height={height}
-        isDragging={isDragging}
-        isInOverlay={false}
-        item={item}
-        width={width}
-        x={x}
-        y={y}
-      />
-    </InventoryGridItemTooltip>
+    <>
+      <InventoryGridItemTooltip
+        title={
+          <Box sx={{ padding: 2 }}>
+            <Typography
+              sx={{
+                alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <ItemName item={item} />
+              {
+                /* temporary hack to show some of the stats */
+                Array.from(
+                  new Set(
+                    (item.displayed_combined_magic_attributes ?? [])
+                      .map((attr) => attr.description)
+                      .filter(Boolean),
+                  ),
+                ).map((str) => (
+                  <span key={str} style={{ display: 'inline-block' }}>
+                    {str}
+                  </span>
+                ))
+              }
+            </Typography>
+          </Box>
+        }
+      >
+        <InventoryItem
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+          height={height}
+          isDragging={isDragging}
+          isInOverlay={false}
+          item={item}
+          onContextMenu={handleContextMenu}
+          width={width}
+          x={x}
+          y={y}
+        />
+      </InventoryGridItemTooltip>
+      <Menu
+        anchorPosition={
+          contextMenuPos != null
+            ? { top: contextMenuPos.y, left: contextMenuPos.x }
+            : undefined
+        }
+        anchorReference="anchorPosition"
+        onClose={handleCloseMenu}
+        open={contextMenuPos != null}
+      >
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+      </Menu>
+    </>
   );
 }
 

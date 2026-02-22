@@ -1508,6 +1508,15 @@ const config = JSON.parse(D2RMM.getConfigJSON());
     });
 
     try {
+      console.debug(
+        'Save files',
+        readdirSync(getSavesPath(), { withFileTypes: true }).map(
+          (entry) => entry.name,
+        ),
+      );
+    } catch {}
+
+    try {
       if (!runtime.options.isPreExtractedData) {
         await BridgeAPI.openStorage(runtime.options.gamePath);
       }

@@ -26,10 +26,19 @@ export class BitWriter {
     return this;
   }
 
-  public WriteBytes(
-    bytes: Uint8Array,
-    numberOfBits: number = bytes.length * 8,
-  ): BitWriter {
+  public WriteBytes(bytes: Uint8Array, numberOfBits?: number): BitWriter {
+    // we're passing the data around oveer IPC in Electron,
+    // so Uint8Arrays can be converted to POJOs ;
+    // this should ideally be cleaned up to not assume data
+    // types, but for now:
+    bytes =
+      bytes instanceof Uint8Array
+        ? bytes
+        : Uint8Array.from(
+            Object.values(bytes as unknown as Record<string, number>),
+          );
+    numberOfBits ??= bytes.length * 8;
+
     const toWrite = new Uint8Array(numberOfBits);
     bytes.reduce((acc, c) => {
       const b = c
@@ -44,10 +53,7 @@ export class BitWriter {
     return this.WriteBits(toWrite, numberOfBits);
   }
 
-  public WriteArray(
-    bytes: Uint8Array,
-    numberOfBits: number = bytes.length * 8,
-  ): BitWriter {
+  public WriteArray(bytes: Uint8Array, numberOfBits?: number): BitWriter {
     return this.WriteBytes(bytes, numberOfBits);
   }
 

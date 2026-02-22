@@ -31,7 +31,7 @@ export function extractRawBytes(
         .map((b) => b.toString(16).padStart(2, '0'))
         .join(' ');
       const offset = Math.floor(startBitOffset / 8) + i;
-      lines.push(`  ${offset.toString().padStart(4, '0')}: ${hex}`);
+      lines.push(`  0x${offset.toString(16).padStart(4, '0')}: ${hex}`);
     }
     return '\n' + lines.join('\n');
   } catch (e) {

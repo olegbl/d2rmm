@@ -3,6 +3,7 @@ import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { readAttributes, writeAttributes } from './attributes';
 import { getConstantData } from './constants';
+import { DEBUG_D2S } from './debug';
 import { wrapParsingError, formatCharContext } from './errors';
 import {
   readHeader,
@@ -26,87 +27,97 @@ async function read(
   userConfig?: types.IConfig,
 ): Promise<types.ID2S> {
   const char = {} as types.ID2S;
-  const reader = new BitReader(buffer);
-  const config = Object.assign(defaultConfig, userConfig);
-
   try {
-    await readHeader(char, reader);
-  } catch (error) {
-    throw wrapParsingError(error, 'Failed to parse D2S file header');
-  }
+    const reader = new BitReader(buffer);
+    const config = Object.assign(defaultConfig, userConfig);
 
-  try {
-    //could load constants based on version here
-    if (!constants) {
-      constants = getConstantData(char.header.version);
-    }
-  } catch (error) {
-    throw wrapParsingError(
-      error,
-      `Failed to load game data constants for version ${char.header.version}`,
-    );
-  }
-
-  try {
-    await readHeaderData(char, reader, constants);
-  } catch (error) {
-    throw wrapParsingError(error, 'Failed to parse character header data');
-  }
-
-  try {
-    await readAttributes(char, reader, constants);
-  } catch (error) {
-    throw wrapParsingError(error, 'Failed to parse character attributes');
-  }
-
-  try {
-    await readSkills(char, reader, constants);
-  } catch (error) {
-    throw wrapParsingError(
-      error,
-      `Failed to parse character skills for ${formatCharContext(char)}`,
-    );
-  }
-
-  try {
-    await items.readCharItems(char, reader, constants, config);
-  } catch (error) {
-    throw wrapParsingError(
-      error,
-      `Failed to parse character items for ${formatCharContext(char)}`,
-    );
-  }
-
-  try {
-    await items.readCorpseItems(char, reader, constants, config);
-  } catch (error) {
-    throw wrapParsingError(
-      error,
-      `Failed to parse corpse items for ${formatCharContext(char)}`,
-    );
-  }
-
-  if (char.header.status.expansion) {
     try {
-      await items.readMercItems(char, reader, constants, config);
+      await readHeader(char, reader);
+    } catch (error) {
+      throw wrapParsingError(error, 'Failed to parse D2S file header');
+    }
+
+    try {
+      //could load constants based on version here
+      if (!constants) {
+        constants = getConstantData(char.header.version);
+      }
     } catch (error) {
       throw wrapParsingError(
         error,
-        `Failed to parse mercenary items for ${formatCharContext(char)}`,
+        `Failed to load game data constants for version ${char.header.version}`,
       );
     }
 
     try {
-      await items.readGolemItems(char, reader, constants, config);
+      await readHeaderData(char, reader, constants);
+    } catch (error) {
+      throw wrapParsingError(error, 'Failed to parse character header data');
+    }
+
+    try {
+      await readAttributes(char, reader, constants);
+    } catch (error) {
+      throw wrapParsingError(error, 'Failed to parse character attributes');
+    }
+
+    try {
+      await readSkills(char, reader, constants);
     } catch (error) {
       throw wrapParsingError(
         error,
-        `Failed to parse golem item for ${formatCharContext(char)}`,
+        `Failed to parse character skills for ${formatCharContext(char)}`,
       );
     }
-  }
 
-  return char;
+    try {
+      await items.readCharItems(char, reader, constants, config);
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to parse character items for ${formatCharContext(char)}`,
+      );
+    }
+
+    try {
+      await items.readCorpseItems(char, reader, constants, config);
+    } catch (error) {
+      throw wrapParsingError(
+        error,
+        `Failed to parse corpse items for ${formatCharContext(char)}`,
+      );
+    }
+
+    if (char.header.status.expansion) {
+      try {
+        await items.readMercItems(char, reader, constants, config);
+      } catch (error) {
+        throw wrapParsingError(
+          error,
+          `Failed to parse mercenary items for ${formatCharContext(char)}`,
+        );
+      }
+
+      try {
+        await items.readGolemItems(char, reader, constants, config);
+      } catch (error) {
+        throw wrapParsingError(
+          error,
+          `Failed to parse golem item for ${formatCharContext(char)}`,
+        );
+      }
+    }
+
+    return char;
+  } catch (error) {
+    if (DEBUG_D2S) {
+      console.warn('Character read so far', char);
+    }
+    throw wrapParsingError(
+      error,
+      `Failed to read character ${formatCharContext(char)}`,
+    );
+  }
 }
 
 async function readItem(

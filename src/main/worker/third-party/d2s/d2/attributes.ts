@@ -52,11 +52,11 @@ export async function readAttributes(
         `Attribute header 'gf' not found (found '${header}' instead) at byte offset ${byteOffset}. ${formatCharContext(char)}`,
       );
     }
-    // let bitoffset = 0;
+    char.header.attributes_order = [];
     let id = reader.ReadUInt16(9);
     //read till 0x1ff end of attributes is found
     while (id != 0x1ff) {
-      // bitoffset += 9;
+      char.header.attributes_order.push(id);
       const field = constants.magical_properties[id];
       if (field === undefined) {
         const byteOffset = Math.floor((reader.offset - 9) / 8);
@@ -99,7 +99,18 @@ export async function writeAttributes(
   try {
     const writer = new BitWriter();
     writer.WriteString('gf', 2); //0x0000 [attributes header = 0x67, 0x66 "gf"]
+    const order = [...(char.header.attributes_order ?? [])];
+    const writtenIds = new Set<number>();
+
+    // Add any attributes that are missing in order
     for (let i = 0; i < 16; i++) {
+      if (!order.includes(i)) {
+        order.push(i);
+      }
+    }
+
+    // Write in the order stats appeared in the file, preserving explicit zeros
+    for (const i of order) {
       const property = constants.magical_properties[i];
       if (property === undefined) {
         throw new Error(
@@ -108,9 +119,10 @@ export async function writeAttributes(
       }
       let value =
         char.attributes[Attributes[property.s as keyof typeof Attributes]];
-      if (!value) {
+      if (value == null) {
         continue;
       }
+      writtenIds.add(i);
       const size = property.cB;
       if (i >= 6 && i <= 11) {
         value <<= 8;
@@ -118,6 +130,7 @@ export async function writeAttributes(
       writer.WriteUInt16(i, 9);
       writer.WriteUInt32(value, size);
     }
+
     writer.WriteUInt16(0x1ff, 9);
     writer.Align();
     return writer.ToArray();

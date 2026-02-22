@@ -7,14 +7,14 @@ import * as header from './versions/default_header';
 export async function readHeader(char: types.ID2S, reader: BitReader) {
   try {
     char.header = {} as types.IHeader;
-    //0x0000
+    // 0x0000
     char.header.identifier = reader.ReadUInt32().toString(16).padStart(8, '0');
     if (char.header.identifier != 'aa55aa55') {
       throw new Error(
         `Invalid D2S file identifier '0x${char.header.identifier}' (expected 'aa55aa55'). This may not be a valid Diablo II save file.`,
       );
     }
-    //0x0004
+    // 0x0004
     char.header.version = reader.ReadUInt32();
   } catch (error) {
     throw wrapParsingError(error, 'Failed to read D2S file header');
@@ -85,9 +85,9 @@ export async function fixHeader(writer: BitWriter) {
       byte += 1;
     }
     checksum = byte + checksum * 2;
-    //hack make it a uint32
+    // hack make it a uint32
     checksum >>>= 0;
   }
-  //checksum pos
+  // checksum pos
   writer.SeekByte(0x000c).WriteUInt32(checksum);
 }

@@ -14,30 +14,39 @@ export function readHeader(
     char.header.hex = extractRawBytes(reader, reader.offset, 300);
   }
 
-  char.header.filesize = reader.ReadUInt32(); //0x0008
-  char.header.checksum = reader.ReadUInt32().toString(16).padStart(8, '0'); //0x000c
-  reader.SkipBytes(4); //0x0010
+  // [ v1+ v98+ v105+ ]
 
-  // find and parse name
+  // [ 0x0008 0x0008 0x0008 ]
+  char.header.filesize = reader.ReadUInt32();
+
+  // [ 0x000c 0x000c 0x000c ]
+  char.header.checksum = reader.ReadUInt32().toString(16).padStart(8, '0');
+
+  // [ 0x0010 0x0010 0x0010 ]
+  reader.SkipBytes(0x4); // TODO: NO SKIPPING
+
   if (char.header.version >= 0x69) {
-    reader.SeekByte(299);
-  } else if (char.header.version > 0x61) {
-    reader.SeekByte(267);
+    // no bits here
+  } else if (char.header.version >= 0x62) {
+    // 0x0014
+    reader.SkipBytes(0x10); // TODO: NO SKIPPING
+  } else {
+    // 0x0010
+    char.header.name = reader.ReadString(0x10).replace(/\0/g, '');
   }
-  char.header.name = reader.ReadString(16).replace(/\0/g, ''); //0x0014
 
-  // find and parse header data
-  if (char.header.version >= 0x69) {
-    reader.SeekByte(20);
-  } else if (char.header.version > 0x61) {
-    reader.SeekByte(36);
-  }
-  char.header.status = _readStatus(reader.ReadUInt8()); //0x0024
-  char.header.progression = reader.ReadUInt8(); //0x0025
-  char.header.active_arms = reader.ReadUInt16(); //0x0026 [unk = 0x0, 0x0]
+  // [ 0x0024 0x0024 0x0014 ]
+  char.header.status = _readStatus(reader.ReadUInt8());
 
-  // Read class ID with better error handling
+  // [ 0x0025 0x0025 0x0015 ]
+  char.header.progression = reader.ReadUInt8();
+
+  // [ 0x0026 0x0026 0x0016 ]
+  char.header.active_arms = reader.ReadUInt16(); //  0x0, 0x0
+
+  // [ 0x0028 0x0028 0x0018 ]
   const classId = reader.ReadUInt8();
+
   const classData = constants.classes[classId];
   if (!classData) {
     throw new Error(
@@ -46,52 +55,148 @@ export function readHeader(
         `Valid class IDs are 0-${constants.classes.length - 1}.`,
     );
   }
-  char.header.class = classData.n; //0x0028
-  reader.SkipBytes(2); //0x0029 [unk = 0x10, 0x1E]
-  char.header.level = reader.ReadUInt8(); //0x002b
-  char.header.created = reader.ReadUInt32(); //0x002c
-  char.header.last_played = reader.ReadUInt32(); //0x0030
-  reader.SkipBytes(4); //0x0034 [unk = 0xff, 0xff, 0xff, 0xff]
-  char.header.assigned_skills = _readAssignedSkills(
+  char.header.class = classData.n;
+
+  // [ 0x0029 0x0029 0x0019 ]
+  reader.SkipBytes(2); // 0x10, 0x1E // TODO: NO SKIPPING
+
+  // [ 0x002b 0x002b 0x001b ]
+  char.header.level = reader.ReadUInt8();
+
+  // [ 0x002c 0x002c 0x001c ]
+  char.header.created = reader.ReadUInt32();
+
+  // [ 0x0030 0x0030 0x0020 ]
+  char.header.last_played = reader.ReadUInt32();
+
+  // [ 0x0034 0x0034 0x0024 ]
+  reader.SkipBytes(4); // 0xff, 0xff, 0xff, 0xff // TODO: NO SKIPPING
+
+  // [ 0x0038 0x0038 0x0028 ]
+  const assignedSkillsResult = _readAssignedSkills(
     reader.ReadArray(64),
     constants,
-  ); //0x0038
-  char.header.left_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0078
-  char.header.right_skill = constants.skills[reader.ReadUInt32()]?.s; //0x007c
-  char.header.left_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0080
-  char.header.right_swap_skill = constants.skills[reader.ReadUInt32()]?.s; //0x0084
+  );
+  char.header.assigned_skills = assignedSkillsResult.names;
+  char.header.assigned_skill_ids = assignedSkillsResult.ids;
+
+  // [ 0x0078 0x0078 0x0068 ]
+  char.header.left_skill = constants.skills[reader.ReadUInt32()]?.s;
+
+  // [ 0x007c 0x007c 0x006c ]
+  char.header.right_skill = constants.skills[reader.ReadUInt32()]?.s;
+
+  // [ 0x0080 0x0080 0x0070 ]
+  char.header.left_swap_skill = constants.skills[reader.ReadUInt32()]?.s;
+
+  // [ 0x0084 0x0084 0x0074 ]
+  char.header.right_swap_skill = constants.skills[reader.ReadUInt32()]?.s;
+
+  // [ 0x0088 0x0088 0x0078 ]
   char.header.menu_appearance = _readCharMenuAppearance(
     reader.ReadArray(32),
     constants,
-  ); //0x0088 [char menu appearance]
-  char.header.difficulty = _readDifficulty(reader.ReadArray(3)); //0x00a8
-  char.header.map_id = reader.ReadUInt32(); //0x00ab
-  reader.SkipBytes(2); //0x00af [unk = 0x0, 0x0]
-  char.header.dead_merc = reader.ReadUInt16(); //0x00b1
-  char.header.merc_id = reader.ReadUInt32().toString(16); //0x00b3
-  char.header.merc_name_id = reader.ReadUInt16(); //0x00b7
-  char.header.merc_type = reader.ReadUInt16(); //0x00b9
-  char.header.merc_experience = reader.ReadUInt32(); //0x00bb
-  reader.SkipBytes(73); //0x00bf [unk]
-  char.header.realm = reader.ReadUInt8(); //0x00f8 [realm: 1=Classic, 2=LoD, 3=RotW]
-  reader.SkipBytes(70); //0x00f9 [unk]
-  reader.SkipBytes(4); //0x014f [quests header identifier = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
-  reader.SkipBytes(4); //0x0153 [version = 0x6, 0x0, 0x0, 0x0]
-  reader.SkipBytes(2); //0x0153 [quests header length = 0x2a, 0x1]
-  char.header.quests_normal = _readQuests(reader.ReadArray(96)); //0x0159
-  char.header.quests_nm = _readQuests(reader.ReadArray(96)); //0x01b9
-  char.header.quests_hell = _readQuests(reader.ReadArray(96)); //0x0219
-  reader.SkipBytes(2); //0x0279 [waypoint header identifier = 0x57, 0x53 "WS"]
-  reader.SkipBytes(4); //0x027b [waypoint header version = 0x1, 0x0, 0x0, 0x0]
-  reader.SkipBytes(2); //0x027f [waypoint header length = 0x50, 0x0]
-  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48)); //0x0281
-  reader.SkipBytes(2); //0x02c9 [npc header identifier  = 0x01, 0x77 ".w"]
-  reader.SkipBytes(2); //0x02ca [npc header length = 0x34]
-  char.header.npcs = _readNPCData(reader.ReadArray(0x30)); //0x02cc
+  );
+
+  // [ 0x00a8 0x00a8 0x0098 ]
+  char.header.difficulty = _readDifficulty(reader.ReadArray(3));
+
+  // [ 0x00ab 0x00ab 0x009b ]
+  char.header.map_id = reader.ReadUInt32();
+
+  // [ 0x00af 0x00af 0x009f ]
+  reader.SkipBytes(2); // 0x0, 0x0 // TODO: NO SKIPPING
+
+  // [ 0x00b1 0x00b1 0x00a1 ]
+  char.header.dead_merc = reader.ReadUInt16();
+
+  // [ 0x00b3 0x00b3 0x00a3 ]
+  char.header.merc_id = reader.ReadUInt32().toString(16);
+
+  // [ 0x00b7 0x00b7 0x00a7 ]
+  char.header.merc_name_id = reader.ReadUInt16();
+
+  // [ 0x00b9 0x00b9 0x00a9 ]
+  char.header.merc_type = reader.ReadUInt16();
+
+  // [ 0x00bb 0x00bb 0x00ab ]
+  char.header.merc_experience = reader.ReadUInt32();
 
   if (char.header.version >= 0x69) {
-    reader.SkipBytes(84); //0x02ed -> 0x0341
+    // 0x00af
+    char.header.unknown_before_realm = reader.ReadBytes(0x49);
+    // 0x00f8
+    char.header.realm = reader.ReadUInt8(); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x00f9
+    char.header.unknown_after_realm = reader.ReadBytes(0x32);
+    // 0x012b
+    char.header.name = reader.ReadString(0x10).replace(/\0/g, '');
+    // 0x013b
+    char.header.unknown_after_name = reader.ReadBytes(0x4);
+  } else if (char.header.version >= 0x62) {
+    // 0x00bf
+    char.header.unknown_before_realm = reader.ReadBytes(0x49);
+    // 0x0108
+    char.header.realm = reader.ReadUInt8(); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x0109
+    char.header.unknown_after_realm = reader.ReadBytes(0x2);
+    // 0x010b
+    char.header.name = reader.ReadString(0x10).replace(/\0/g, '');
+    // 0x011b
+    char.header.unknown_after_name = reader.ReadBytes(0x34);
+  } else {
+    // 0x00bf
+    char.header.unknown_before_realm = reader.ReadBytes(0x49);
+    // 0x0108
+    char.header.realm = reader.ReadUInt8(); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x0109
+    char.header.unknown_after_realm = reader.ReadBytes(0x46);
   }
+
+  if (char.header.version >= 0x69) {
+    // 0x02ed
+    char.header.extended_header_data = reader.ReadBytes(0x54);
+    // 0x0341
+  }
+
+  // [ 0x014f 0x014f 0x013f ]
+  char.header.quests_header_magic = reader.ReadString(4); // "Woo!"
+
+  // [ 0x0153 0x0153 0x0143 ]
+  char.header.quests_header_version = reader.ReadUInt32();
+
+  // [ 0x0157 0x0157 0x0147 ]
+  char.header.quests_header_length = reader.ReadUInt16();
+
+  // [ 0x0159 0x0159 0x0149 ]
+  char.header.quests_normal = _readQuests(reader.ReadArray(96));
+
+  // [ 0x01b9 0x01b9 0x01a9 ]
+  char.header.quests_nm = _readQuests(reader.ReadArray(96));
+
+  // [ 0x0219 0x0219 0x0209 ]
+  char.header.quests_hell = _readQuests(reader.ReadArray(96));
+
+  // [ 0x0279 0x0279 0x0269 ]
+  char.header.waypoints_header_magic = reader.ReadString(2); // "WS"
+
+  // [ 0x027b 0x027b 0x026b ]
+  char.header.waypoints_header_version = reader.ReadUInt32();
+
+  // [ 0x027f 0x027f 0x026f ]
+  char.header.waypoints_header_length = reader.ReadUInt16();
+
+  // [ 0x0281 0x0281 0x0271 ]
+  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48));
+
+  // [ 0x02c9 0x02c9 0x02b9 ]
+  char.header.npcs_header_magic = reader.ReadArray(2); // 0x01, 0x77 ".w"
+
+  // [ 0x02cb 0x02cb 0x02bb ]
+  char.header.npcs_header_length = reader.ReadUInt16();
+
+  // [ 0x02cd 0x02cd 0x02bd ]
+  char.header.npcs = _readNPCData(reader.ReadArray(0x30));
 }
 
 export function writeHeader(
@@ -99,81 +204,181 @@ export function writeHeader(
   writer: BitWriter,
   constants: types.IConstantData,
 ) {
-  writer
-    .WriteUInt32(0x0) //0x0008 (filesize. needs to be writen after all data)
-    .WriteUInt32(0x0); //0x000c (checksum. needs to be calculated after all data writer)
+  // [ v1+ v98+ v105+ ]
+
+  // [ 0x0008 0x0008 0x0008 ]
+  writer.WriteUInt32(0x0); // filesize, needs to be written after all data
+
+  // [ 0x000c 0x000c 0x000c ]
+  writer.WriteUInt32(0x0); // checksum, needs to be calculated after all data written
+
+  // [ 0x0010 0x0010 0x0010 ]
+  writer.WriteBytes(new Uint8Array(0x4));
 
   if (char.header.version >= 0x69) {
-    writer.WriteArray(new Uint8Array(Array(4).fill(0))); // 0x0010
-  } else if (char.header.version > 0x61) {
-    writer.WriteArray(new Uint8Array(Array(20).fill(0))); // 0x0010
+    // no bits here
+  } else if (char.header.version >= 0x62) {
+    // 0x0014
+    writer.WriteBytes(new Uint8Array(0x10));
   } else {
-    writer
-      .WriteArray(new Uint8Array([0x00, 0x00, 0x00, 0x00])) //0x0010
-      .WriteString(char.header.name, 16); //0x0014
+    // 0x0014
+    writer.WriteString(char.header.name, 0x10);
   }
 
-  writer
-    .WriteArray(_writeStatus(char.header.status)) //0x0024
-    .WriteUInt8(char.header.progression) //0x0025
-    .WriteUInt16(char.header.active_arms) //0x0026
-    .WriteUInt8(_classId(char.header.class, constants)) //0x0028
-    .WriteArray(new Uint8Array([0x10, 0x1e])) //0x0029
-    .WriteUInt8(char.header.level) //0x002b
-    .WriteArray(new Uint8Array([0x00, 0x00, 0x00, 0x00])) //0x002c
-    .WriteUInt32(char.header.last_played) //0x0030
-    .WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff])) //0x0034
-    .WriteArray(_writeAssignedSkills(char.header.assigned_skills, constants)) //0x0038
-    .WriteUInt32(_skillId(char.header.left_skill, constants)) //0x0078
-    .WriteUInt32(_skillId(char.header.right_skill, constants)) //0x007c
-    .WriteUInt32(_skillId(char.header.left_swap_skill, constants)) //0x0080
-    .WriteUInt32(_skillId(char.header.right_swap_skill, constants)) //0x0084
-    .WriteArray(
-      _writeCharMenuAppearance(char.header.menu_appearance, constants),
-    ) //0x0088 [char menu appearance]
-    .WriteArray(_writeDifficulty(char.header.difficulty)) //0x00a8
-    .WriteUInt32(char.header.map_id) //0x00ab
-    .WriteArray(new Uint8Array([0x00, 0x00])) //0x00af [unk = 0x0, 0x0]
-    .WriteUInt16(char.header.dead_merc) //0x00b1
-    .WriteUInt32(parseInt(char.header.merc_id, 16)) //0x00b3
-    .WriteUInt16(char.header.merc_name_id) //0x00b7
-    .WriteUInt16(char.header.merc_type) //0x00b9
-    .WriteUInt32(char.header.merc_experience); //0x00bb
+  // [ 0x0024 0x0024 0x0014 ]
+  writer.WriteArray(_writeStatus(char.header.status));
+
+  // [ 0x0025 0x0025 0x0015 ]
+  writer.WriteUInt8(char.header.progression);
+
+  // [ 0x0026 0x0026 0x0016 ]
+  writer.WriteUInt16(char.header.active_arms);
+
+  // [ 0x0028 0x0028 0x0018 ]
+  writer.WriteUInt8(_classId(char.header.class, constants));
+
+  // [ 0x0029 0x0029 0x0019 ]
+  writer.WriteArray(new Uint8Array([0x10, 0x1e]));
+
+  // [ 0x002b 0x002b 0x001b ]
+  writer.WriteUInt8(char.header.level);
+
+  // [ 0x002c 0x002c 0x001c ]
+  writer.WriteUInt32(char.header.created); // created
+
+  // [ 0x0030 0x0030 0x0020 ]
+  writer.WriteUInt32(char.header.last_played);
+
+  // [ 0x0034 0x0034 0x0024 ]
+  writer.WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff]));
+
+  // [ 0x0038 0x0038 0x0028 ]
+  writer.WriteArray(
+    _writeAssignedSkills(
+      char.header.assigned_skills,
+      char.header.assigned_skill_ids,
+      constants,
+    ),
+  );
+
+  // [ 0x0078 0x0078 0x0068 ]
+  writer.WriteUInt32(_skillId(char.header.left_skill, constants));
+
+  // [ 0x007c 0x007c 0x006c ]
+  writer.WriteUInt32(_skillId(char.header.right_skill, constants));
+
+  // [ 0x0080 0x0080 0x0070 ]
+  writer.WriteUInt32(_skillId(char.header.left_swap_skill, constants));
+
+  // [ 0x0084 0x0084 0x0074 ]
+  writer.WriteUInt32(_skillId(char.header.right_swap_skill, constants));
+
+  // [ 0x0088 0x0088 0x0078 ]
+  writer.WriteArray(
+    _writeCharMenuAppearance(char.header.menu_appearance, constants),
+  );
+
+  // [ 0x00a8 0x00a8 0x0098 ]
+  writer.WriteArray(_writeDifficulty(char.header.difficulty));
+
+  // [ 0x00ab 0x00ab 0x009b ]
+  writer.WriteUInt32(char.header.map_id);
+
+  // [ 0x00af 0x00af 0x009f ]
+  writer.WriteArray(new Uint8Array([0x00, 0x00])); // 0x0, 0x0
+
+  // [ 0x00b1 0x00b1 0x00a1 ]
+  writer.WriteUInt16(char.header.dead_merc);
+
+  // [ 0x00b3 0x00b3 0x00a3 ]
+  writer.WriteUInt32(parseInt(char.header.merc_id, 16));
+
+  // [ 0x00b7 0x00b7 0x00a7 ]
+  writer.WriteUInt16(char.header.merc_name_id);
+
+  // [ 0x00b9 0x00b9 0x00a9 ]
+  writer.WriteUInt16(char.header.merc_type);
+
+  // [ 0x00bb 0x00bb 0x00ab ]
+  writer.WriteUInt32(char.header.merc_experience);
 
   if (char.header.version >= 0x69) {
-    writer
-      .WriteArray(new Uint8Array(73)) //0x00bf [unk]
-      .WriteUInt8(char.header.realm) //0x00f8 [realm: 1=Classic, 2=LoD, 3=RotW]
-      .WriteArray(new Uint8Array(34)) //0x00f9 [unk]
-      .WriteString(char.header.name, 16) //0x012b
-      .WriteArray(new Uint8Array(20)); //0x013b
-  } else if (char.header.version > 0x61) {
-    writer
-      .WriteArray(new Uint8Array(76)) //0x00bf [unk]
-      .WriteString(char.header.name, 16) //0x010b
-      .WriteArray(new Uint8Array(52)); //0x011b [unk]
+    // 0x00af
+    writer.WriteArray(char.header.unknown_before_realm ?? new Uint8Array(0x49));
+    // 0x00f8
+    writer.WriteUInt8(char.header.realm); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x00f9
+    writer.WriteArray(char.header.unknown_after_realm ?? new Uint8Array(0x32));
+    // 0x012b
+    writer.WriteString(char.header.name, 0x10);
+    // 0x013b
+    writer.WriteArray(char.header.unknown_after_name ?? new Uint8Array(0x4));
+  } else if (char.header.version >= 0x62) {
+    // 0x00bf
+    writer.WriteArray(char.header.unknown_before_realm ?? new Uint8Array(0x49));
+    // 0x0108
+    writer.WriteUInt8(char.header.realm); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x0109
+    writer.WriteArray(char.header.unknown_after_realm ?? new Uint8Array(0x2));
+    // 0x010b
+    writer.WriteString(char.header.name, 0x10);
+    // 0x011b
+    writer.WriteArray(char.header.unknown_after_name ?? new Uint8Array(0x34));
   } else {
-    writer
-      .WriteArray(new Uint8Array(140)) //0x00bf [unk]
-      .WriteUInt32(0x1); //0x014b [unk = 0x1, 0x0, 0x0, 0x0]
+    // 0x00bf
+    writer.WriteArray(char.header.unknown_before_realm ?? new Uint8Array(0x49));
+    // 0x0108
+    writer.WriteUInt8(char.header.realm); // realm: 1=Classic, 2=LoD, 3=RotW
+    // 0x0109
+    writer.WriteArray(char.header.unknown_after_realm ?? new Uint8Array(0x46));
   }
-
-  writer
-    .WriteString('Woo!', 4) //0x014f [quests = 0x57, 0x6f, 0x6f, 0x21 "Woo!"]
-    .WriteArray(new Uint8Array([0x06, 0x00, 0x00, 0x00, 0x2a, 0x01])) //0x0153 [unk = 0x6, 0x0, 0x0, 0x0, 0x2a, 0x1]
-    .WriteArray(_writeQuests(char.header.quests_normal)) //0x0159
-    .WriteArray(_writeQuests(char.header.quests_nm)) //0x01b9
-    .WriteArray(_writeQuests(char.header.quests_hell)) //0x0219
-    .WriteString('WS', 2) //0x0279 [waypoint data = 0x57, 0x53 "WS"]
-    .WriteArray(new Uint8Array([0x01, 0x00, 0x00, 0x00, 0x50, 0x00])) //0x027b [unk = 0x1, 0x0, 0x0, 0x0, 0x50, 0x0]
-    .WriteArray(_writeWaypointData(char.header.waypoints)) //0x0281
-    .WriteArray(new Uint8Array([0x01, 0x77])) //0x02c9 [npc header = 0x01, 0x77 ".w"]
-    .WriteUInt16(0x34) //0x02ca [npc struct length]
-    .WriteArray(_writeNPCData(char.header.npcs)); //0x02cc [npc introduction data... unk]
 
   if (char.header.version >= 0x69) {
-    writer.WriteArray(new Uint8Array(84)); //0x02ed
+    // 0x013f
+    writer.WriteBytes(char.header.extended_header_data ?? new Uint8Array(0x54));
+    // 0x01a8
   }
+
+  // [ 0x014f 0x014f 0x01a8 ]
+  writer.WriteString(char.header.quests_header_magic ?? 'Woo!', 4);
+
+  // [ 0x0153 0x0153 0x01ac ]
+  writer.WriteUInt32(char.header.quests_header_version ?? 0x06);
+
+  // [ 0x0157 0x0157 0x01b0 ]
+  writer.WriteUInt16(char.header.quests_header_length ?? 0x012a);
+
+  // [ 0x0159 0x0159 0x01b2 ]
+  writer.WriteArray(_writeQuests(char.header.quests_normal));
+
+  // [ 0x01b9 0x01b9 0x0212 ]
+  writer.WriteArray(_writeQuests(char.header.quests_nm));
+
+  // [ 0x0219 0x0219 0x0272 ]
+  writer.WriteArray(_writeQuests(char.header.quests_hell));
+
+  // [ 0x0279 0x0279 0x02d2 ]
+  writer.WriteString(char.header.waypoints_header_magic ?? 'WS', 2);
+
+  // [ 0x027b 0x027b 0x02d4 ]
+  writer.WriteUInt32(char.header.waypoints_header_version ?? 0x01);
+
+  // [ 0x027f 0x027f 0x02d8 ]
+  writer.WriteUInt16(char.header.waypoints_header_length ?? 0x50);
+
+  // [ 0x0281 0x0281 0x02da ]
+  writer.WriteArray(_writeWaypointData(char.header.waypoints));
+
+  // [ 0x02c9 0x02c9 0x0322 ]
+  writer.WriteBytes(
+    char.header.npcs_header_magic ?? new Uint8Array([0x01, 0x77]),
+  );
+
+  // [ 0x02cb 0x02cb 0x0324 ]
+  writer.WriteUInt16(char.header.npcs_header_length ?? 0x34);
+
+  // [ 0x02cd 0x02cd 0x0326 ]
+  writer.WriteArray(_writeNPCData(char.header.npcs));
 }
 
 function _classId(name: string, constants: types.IConstantData): number {
@@ -370,32 +575,37 @@ function _writeCharMenuAppearance(
 function _readAssignedSkills(
   bytes: Uint8Array,
   constants: types.IConstantData,
-): string[] {
-  const skills = [] as string[];
+): { names: string[]; ids: number[] } {
+  const names = [] as string[];
+  const ids = [] as number[];
   const reader = new BitReader(bytes);
   for (let i = 0; i < 16; i++) {
     const skillId = reader.ReadUInt32();
+    ids.push(skillId);
     const skill = constants.skills[skillId];
     if (skill) {
-      skills.push(skill.s);
+      names.push(skill.s);
     }
   }
-  return skills;
+  return { names, ids };
 }
 
 function _writeAssignedSkills(
   skills: string[],
+  skillIds: number[] | undefined,
   constants: types.IConstantData,
 ): Uint8Array {
   const writer = new BitWriter(64);
   writer.length = 64 * 8;
   skills = skills || [];
   for (let i = 0; i < 16; i++) {
-    const skillId = _skillId(skills[i], constants);
-    if (skillId > 0) {
-      writer.WriteUInt32(skillId);
+    if (skillIds != null && i < skillIds.length) {
+      // Use the raw stored ID for faithful round-tripping
+      writer.WriteUInt32(skillIds[i]);
     } else {
-      writer.WriteUInt32(0xffff);
+      // Fall back to name lookup (for mods that set assigned_skills directly)
+      const skillId = _skillId(skills[i], constants);
+      writer.WriteUInt32(skillId > 0 ? skillId : 0xffffffff);
     }
   }
 
@@ -420,121 +630,114 @@ function _writeDifficulty(difficulty: types.IDifficulty): Uint8Array {
 }
 
 function _readQuests(bytes: Uint8Array): types.IQuests {
-  const quests = {} as types.IQuests;
   const reader = new BitReader(bytes);
+  const quests = {} as types.IQuests;
+
   quests.act_i = {} as types.IActIQuests;
-  quests.act_i.introduced = reader.ReadUInt16() === 0x1; //0x0000
-  quests.act_i.den_of_evil = _readQuest(reader.ReadArray(2)); //0x0002
+  quests.act_i.introduced = reader.ReadUInt16(); // 0x0000
+  quests.act_i.den_of_evil = _readQuest(reader.ReadArray(2)); // 0x0002
   quests.act_i.sisters_burial_grounds = _readQuest(reader.ReadArray(2));
   quests.act_i.tools_of_the_trade = _readQuest(reader.ReadArray(2));
   quests.act_i.the_search_for_cain = _readQuest(reader.ReadArray(2));
   quests.act_i.the_forgotten_tower = _readQuest(reader.ReadArray(2));
   quests.act_i.sisters_to_the_slaughter = _readQuest(reader.ReadArray(2));
-  quests.act_i.completed = reader.ReadUInt16() === 0x1;
+  quests.act_i.completed = reader.ReadUInt16();
+
   quests.act_ii = {} as types.IActIIQuests;
-  quests.act_ii.introduced = reader.ReadUInt16() === 0x1; //0x0010 [if jerhyn introduction = 0x01]
-  quests.act_ii.radaments_lair = _readQuest(reader.ReadArray(2)); //0x0012
+  quests.act_ii.introduced = reader.ReadUInt16(); // 0x0010 [if jerhyn introduction = 0x01]
+  quests.act_ii.radaments_lair = _readQuest(reader.ReadArray(2)); // 0x0012
   quests.act_ii.the_horadric_staff = _readQuest(reader.ReadArray(2));
   quests.act_ii.tainted_sun = _readQuest(reader.ReadArray(2));
   quests.act_ii.arcane_sanctuary = _readQuest(reader.ReadArray(2));
   quests.act_ii.the_summoner = _readQuest(reader.ReadArray(2));
   quests.act_ii.the_seven_tombs = _readQuest(reader.ReadArray(2));
-  quests.act_ii.completed = reader.ReadUInt16() === 0x1; //0x001e
+  quests.act_ii.completed = reader.ReadUInt16(); // 0x001e
+
   quests.act_iii = {} as types.IActIIIQuests;
-  quests.act_iii.introduced = reader.ReadUInt16() === 0x1; //0x0020 [if hratli introduction = 0x01]
-  quests.act_iii.lam_esens_tome = _readQuest(reader.ReadArray(2)); //0x0022
+  quests.act_iii.introduced = reader.ReadUInt16(); // 0x0020 [if hratli introduction = 0x01]
+  quests.act_iii.lam_esens_tome = _readQuest(reader.ReadArray(2)); // 0x0022
   quests.act_iii.khalims_will = _readQuest(reader.ReadArray(2));
   quests.act_iii.blade_of_the_old_religion = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_golden_bird = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_blackened_temple = _readQuest(reader.ReadArray(2));
   quests.act_iii.the_guardian = _readQuest(reader.ReadArray(2));
-  quests.act_iii.completed = reader.ReadUInt16() === 0x1; //0x002e
+  quests.act_iii.completed = reader.ReadUInt16(); // 0x002e
+
   quests.act_iv = {} as types.IActIVQuests;
-  quests.act_iv.introduced = reader.ReadUInt16() === 0x1; //0x0030 [if activ introduction = 0x01]
-  quests.act_iv.the_fallen_angel = _readQuest(reader.ReadArray(2)); //0x0032
+  quests.act_iv.introduced = reader.ReadUInt16(); // 0x0030 [if activ introduction = 0x01]
+  quests.act_iv.the_fallen_angel = _readQuest(reader.ReadArray(2)); // 0x0032
   quests.act_iv.terrors_end = _readQuest(reader.ReadArray(2));
   quests.act_iv.hellforge = _readQuest(reader.ReadArray(2));
-  quests.act_iv.completed = reader.ReadUInt16() === 0x1; //0x0038
-  reader.SkipBytes(10); //0x003a
+  quests.act_iv.completed = reader.ReadUInt16(); // 0x0038
+
+  quests.unknown_act_iv_v_gap = reader.ReadBytes(10); // 0x003a
+
   quests.act_v = {} as types.IActVQuests;
-  quests.act_v.introduced = reader.ReadUInt16() === 0x1;
-  quests.act_v.siege_on_harrogath = _readQuest(reader.ReadArray(2)); //0x0046
+  quests.act_v.introduced = reader.ReadUInt16();
+  quests.act_v.siege_on_harrogath = _readQuest(reader.ReadArray(2)); // 0x0046
   quests.act_v.rescue_on_mount_arreat = _readQuest(reader.ReadArray(2));
   quests.act_v.prison_of_ice = _readQuest(reader.ReadArray(2));
   quests.act_v.betrayal_of_harrogath = _readQuest(reader.ReadArray(2));
   quests.act_v.rite_of_passage = _readQuest(reader.ReadArray(2));
   quests.act_v.eve_of_destruction = _readQuest(reader.ReadArray(2));
-  quests.act_v.completed = reader.ReadUInt16() === 0x1;
-  reader.SkipBytes(12);
+  quests.act_v.completed = reader.ReadUInt16(); // raw UInt16 — bitmask, not a simple boolean
+
+  quests.unknown_trailing = reader.ReadBytes(12);
+
   return quests; //sizeof [0x0060]
 }
 
 function _writeQuests(quests: types.IQuests): Uint8Array {
   const writer = new BitWriter(96);
   writer.length = 96 * 8;
-  const difficultyCompleted =
-    +quests.act_v.completed || +quests.act_v.eve_of_destruction.is_completed;
-  return writer
-    .WriteUInt16(+quests.act_i.introduced)
-    .WriteArray(_writeQuest(quests.act_i.den_of_evil))
-    .WriteArray(_writeQuest(quests.act_i.sisters_burial_grounds))
-    .WriteArray(_writeQuest(quests.act_i.tools_of_the_trade))
-    .WriteArray(_writeQuest(quests.act_i.the_search_for_cain))
-    .WriteArray(_writeQuest(quests.act_i.the_forgotten_tower))
-    .WriteArray(_writeQuest(quests.act_i.sisters_to_the_slaughter))
-    .WriteUInt16(
-      +quests.act_i.completed ||
-        +quests.act_i.sisters_to_the_slaughter.is_completed,
-    )
-    .WriteUInt16(
-      +quests.act_ii.introduced ||
-        +quests.act_i.sisters_to_the_slaughter.is_completed,
-    )
-    .WriteArray(_writeQuest(quests.act_ii.radaments_lair))
-    .WriteArray(_writeQuest(quests.act_ii.the_horadric_staff))
-    .WriteArray(_writeQuest(quests.act_ii.tainted_sun))
-    .WriteArray(_writeQuest(quests.act_ii.arcane_sanctuary))
-    .WriteArray(_writeQuest(quests.act_ii.the_summoner))
-    .WriteArray(_writeQuest(quests.act_ii.the_seven_tombs))
-    .WriteUInt16(
-      +quests.act_ii.completed || +quests.act_ii.the_seven_tombs.is_completed,
-    )
-    .WriteUInt16(
-      +quests.act_iii.introduced || +quests.act_ii.the_seven_tombs.is_completed,
-    )
-    .WriteArray(_writeQuest(quests.act_iii.lam_esens_tome))
-    .WriteArray(_writeQuest(quests.act_iii.khalims_will))
-    .WriteArray(_writeQuest(quests.act_iii.blade_of_the_old_religion))
-    .WriteArray(_writeQuest(quests.act_iii.the_golden_bird))
-    .WriteArray(_writeQuest(quests.act_iii.the_blackened_temple))
-    .WriteArray(_writeQuest(quests.act_iii.the_guardian))
-    .WriteUInt16(
-      +quests.act_iii.completed || +quests.act_iii.the_guardian.is_completed,
-    )
-    .WriteUInt16(
-      +quests.act_iv.introduced || +quests.act_iii.the_guardian.is_completed,
-    )
-    .WriteArray(_writeQuest(quests.act_iv.the_fallen_angel))
-    .WriteArray(_writeQuest(quests.act_iv.terrors_end))
-    .WriteArray(_writeQuest(quests.act_iv.hellforge))
-    .WriteUInt16(
-      +quests.act_iv.completed || +quests.act_iv.terrors_end.is_completed,
-    )
-    .WriteArray(new Uint8Array(6))
-    .WriteUInt16(
-      +quests.act_v.introduced || +quests.act_iv.terrors_end.is_completed,
-    )
-    .WriteArray(new Uint8Array(4))
-    .WriteArray(_writeQuest(quests.act_v.siege_on_harrogath))
-    .WriteArray(_writeQuest(quests.act_v.rescue_on_mount_arreat))
-    .WriteArray(_writeQuest(quests.act_v.prison_of_ice))
-    .WriteArray(_writeQuest(quests.act_v.betrayal_of_harrogath))
-    .WriteArray(_writeQuest(quests.act_v.rite_of_passage))
-    .WriteArray(_writeQuest(quests.act_v.eve_of_destruction))
-    .WriteUInt8(difficultyCompleted)
-    .WriteUInt8(difficultyCompleted ? 0x80 : 0x0) //is this right?
-    .WriteArray(new Uint8Array(12))
-    .ToArray();
+
+  writer.WriteUInt16(quests.act_i.introduced ?? 0);
+  writer.WriteArray(_writeQuest(quests.act_i.den_of_evil));
+  writer.WriteArray(_writeQuest(quests.act_i.sisters_burial_grounds));
+  writer.WriteArray(_writeQuest(quests.act_i.tools_of_the_trade));
+  writer.WriteArray(_writeQuest(quests.act_i.the_search_for_cain));
+  writer.WriteArray(_writeQuest(quests.act_i.the_forgotten_tower));
+  writer.WriteArray(_writeQuest(quests.act_i.sisters_to_the_slaughter));
+  writer.WriteUInt16(quests.act_i.completed);
+
+  writer.WriteUInt16(quests.act_ii.introduced);
+  writer.WriteArray(_writeQuest(quests.act_ii.radaments_lair));
+  writer.WriteArray(_writeQuest(quests.act_ii.the_horadric_staff));
+  writer.WriteArray(_writeQuest(quests.act_ii.tainted_sun));
+  writer.WriteArray(_writeQuest(quests.act_ii.arcane_sanctuary));
+  writer.WriteArray(_writeQuest(quests.act_ii.the_summoner));
+  writer.WriteArray(_writeQuest(quests.act_ii.the_seven_tombs));
+  writer.WriteUInt16(quests.act_ii.completed);
+
+  writer.WriteUInt16(quests.act_iii.introduced);
+  writer.WriteArray(_writeQuest(quests.act_iii.lam_esens_tome));
+  writer.WriteArray(_writeQuest(quests.act_iii.khalims_will));
+  writer.WriteArray(_writeQuest(quests.act_iii.blade_of_the_old_religion));
+  writer.WriteArray(_writeQuest(quests.act_iii.the_golden_bird));
+  writer.WriteArray(_writeQuest(quests.act_iii.the_blackened_temple));
+  writer.WriteArray(_writeQuest(quests.act_iii.the_guardian));
+  writer.WriteUInt16(quests.act_iii.completed);
+
+  writer.WriteUInt16(quests.act_iv.introduced);
+  writer.WriteArray(_writeQuest(quests.act_iv.the_fallen_angel));
+  writer.WriteArray(_writeQuest(quests.act_iv.terrors_end));
+  writer.WriteArray(_writeQuest(quests.act_iv.hellforge));
+  writer.WriteUInt16(quests.act_iv.completed);
+
+  writer.WriteBytes(quests.unknown_act_iv_v_gap ?? new Uint8Array(10));
+
+  writer.WriteUInt16(quests.act_v.introduced);
+  writer.WriteArray(_writeQuest(quests.act_v.siege_on_harrogath));
+  writer.WriteArray(_writeQuest(quests.act_v.rescue_on_mount_arreat));
+  writer.WriteArray(_writeQuest(quests.act_v.prison_of_ice));
+  writer.WriteArray(_writeQuest(quests.act_v.betrayal_of_harrogath));
+  writer.WriteArray(_writeQuest(quests.act_v.rite_of_passage));
+  writer.WriteArray(_writeQuest(quests.act_v.eve_of_destruction));
+  writer.WriteUInt16(quests.act_v.completed);
+
+  writer.WriteBytes(quests.unknown_trailing ?? new Uint8Array(12));
+
+  return writer.ToArray();
 }
 
 function _readQuest(bytes: Uint8Array): types.IQuest {
@@ -543,19 +746,19 @@ function _readQuest(bytes: Uint8Array): types.IQuest {
   quest.is_completed = reader.ReadBit() === 1;
   quest.is_requirement_completed = reader.ReadBit() === 1;
   quest.is_received = reader.ReadBit() === 1;
-  if (reader.ReadBit() === 1) quest.unk3 = true;
-  if (reader.ReadBit() === 1) quest.unk4 = true;
-  if (reader.ReadBit() === 1) quest.unk5 = true;
-  if (reader.ReadBit() === 1) quest.unk6 = true;
-  if (reader.ReadBit() === 1) quest.consumed_scroll = true;
-  if (reader.ReadBit() === 1) quest.unk8 = true;
-  if (reader.ReadBit() === 1) quest.unk9 = true;
-  if (reader.ReadBit() === 1) quest.unk10 = true;
-  if (reader.ReadBit() === 1) quest.unk11 = true;
+  quest.unk3 = reader.ReadBit() === 1;
+  quest.unk4 = reader.ReadBit() === 1;
+  quest.unk5 = reader.ReadBit() === 1;
+  quest.unk6 = reader.ReadBit() === 1;
+  quest.consumed_scroll = reader.ReadBit() === 1;
+  quest.unk8 = reader.ReadBit() === 1;
+  quest.unk9 = reader.ReadBit() === 1;
+  quest.unk10 = reader.ReadBit() === 1;
+  quest.unk11 = reader.ReadBit() === 1;
   quest.closed = reader.ReadBit() === 1;
   quest.done_recently = reader.ReadBit() === 1;
-  if (reader.ReadBit() === 1) quest.unk14 = true;
-  if (reader.ReadBit() === 1) quest.unk15 = true;
+  quest.unk14 = reader.ReadBit() === 1;
+  quest.unk15 = reader.ReadBit() === 1;
   return quest;
 }
 
@@ -593,9 +796,11 @@ function _readWaypointData(bytes: Uint8Array): types.IWaypointData {
 }
 
 function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
-  const waypoints = {} as types.IWaypoints;
   const reader = new BitReader(bytes);
-  reader.SkipBytes(2); //unk = 0x2, 0x
+  const waypoints = {} as types.IWaypoints;
+
+  waypoints.unknown_header = reader.ReadBytes(2);
+
   waypoints.act_i = {} as types.IActIWaypoints;
   waypoints.act_i.rogue_encampement = reader.ReadBit() === 1;
   waypoints.act_i.cold_plains = reader.ReadBit() === 1;
@@ -606,6 +811,7 @@ function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
   waypoints.act_i.jail_lvl_1 = reader.ReadBit() === 1;
   waypoints.act_i.inner_cloister = reader.ReadBit() === 1;
   waypoints.act_i.catacombs_lvl_2 = reader.ReadBit() === 1;
+
   waypoints.act_ii = {} as types.IActIIWaypoints;
   waypoints.act_ii.lut_gholein = reader.ReadBit() === 1;
   waypoints.act_ii.sewers_lvl_2 = reader.ReadBit() === 1;
@@ -616,6 +822,7 @@ function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
   waypoints.act_ii.palace_cellar_lvl_1 = reader.ReadBit() === 1;
   waypoints.act_ii.arcane_sanctuary = reader.ReadBit() === 1;
   waypoints.act_ii.canyon_of_the_magi = reader.ReadBit() === 1;
+
   waypoints.act_iii = {} as types.IActIIIWaypoints;
   waypoints.act_iii.kurast_docks = reader.ReadBit() === 1;
   waypoints.act_iii.spider_forest = reader.ReadBit() === 1;
@@ -626,10 +833,12 @@ function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
   waypoints.act_iii.upper_kurast = reader.ReadBit() === 1;
   waypoints.act_iii.travincal = reader.ReadBit() === 1;
   waypoints.act_iii.durance_of_hate_lvl_2 = reader.ReadBit() === 1;
+
   waypoints.act_iv = {} as types.IActIVWaypoints;
   waypoints.act_iv.the_pandemonium_fortress = reader.ReadBit() === 1;
   waypoints.act_iv.city_of_the_damned = reader.ReadBit() === 1;
   waypoints.act_iv.river_of_flame = reader.ReadBit() === 1;
+
   waypoints.act_v = {} as types.IActVWaypoints;
   waypoints.act_v.harrogath = reader.ReadBit() === 1;
   waypoints.act_v.frigid_highlands = reader.ReadBit() === 1;
@@ -640,84 +849,81 @@ function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
   waypoints.act_v.frozen_tundra = reader.ReadBit() === 1;
   waypoints.act_v.the_ancients_way = reader.ReadBit() === 1;
   waypoints.act_v.worldstone_keep_lvl_2 = reader.ReadBit() === 1;
-  reader.Align().SkipBytes(17);
+
+  reader.Align();
+
+  waypoints.unknown_trailing = reader.ReadBytes(17);
+
   return waypoints;
 }
 
 function _writeWaypointData(waypoints: types.IWaypointData): Uint8Array {
   const writer = new BitWriter(72);
   writer.length = 72 * 8;
+
   for (let i = 0; i < difficulties.length; i++) {
-    const w =
-      waypoints != null
-        ? waypoints[difficulties[i] as keyof typeof waypoints]
-        : null;
-    writer.WriteArray(_writeWaypoints(w!));
+    const difficultyWaypoints =
+      waypoints[difficulties[i] as keyof typeof waypoints];
+    writer.WriteArray(_writeWaypoints(difficultyWaypoints));
   }
+
   return writer.ToArray();
 }
 
 function _writeWaypoints(waypoints: types.IWaypoints): Uint8Array {
   const writer = new BitWriter(24);
   writer.length = 24 * 8;
-  writer.WriteArray(new Uint8Array([0x02, 0x01]));
-  if (waypoints) {
-    if (waypoints.act_i) {
-      writer.WriteBit(+waypoints.act_i.rogue_encampement);
-      writer.WriteBit(+waypoints.act_i.cold_plains);
-      writer.WriteBit(+waypoints.act_i.stony_field);
-      writer.WriteBit(+waypoints.act_i.dark_woods);
-      writer.WriteBit(+waypoints.act_i.black_marsh);
-      writer.WriteBit(+waypoints.act_i.outer_cloister);
-      writer.WriteBit(+waypoints.act_i.jail_lvl_1);
-      writer.WriteBit(+waypoints.act_i.inner_cloister);
-      writer.WriteBit(+waypoints.act_i.catacombs_lvl_2);
-    }
-    if (waypoints.act_ii) {
-      writer.WriteBit(+waypoints.act_ii.lut_gholein);
-      writer.WriteBit(+waypoints.act_ii.sewers_lvl_2);
-      writer.WriteBit(+waypoints.act_ii.dry_hills);
-      writer.WriteBit(+waypoints.act_ii.halls_of_the_dead_lvl_2);
-      writer.WriteBit(+waypoints.act_ii.far_oasis);
-      writer.WriteBit(+waypoints.act_ii.lost_city);
-      writer.WriteBit(+waypoints.act_ii.palace_cellar_lvl_1);
-      writer.WriteBit(+waypoints.act_ii.arcane_sanctuary);
-      writer.WriteBit(+waypoints.act_ii.canyon_of_the_magi);
-    }
-    if (waypoints.act_iii) {
-      writer.WriteBit(+waypoints.act_iii.kurast_docks);
-      writer.WriteBit(+waypoints.act_iii.spider_forest);
-      writer.WriteBit(+waypoints.act_iii.great_marsh);
-      writer.WriteBit(+waypoints.act_iii.flayer_jungle);
-      writer.WriteBit(+waypoints.act_iii.lower_kurast);
-      writer.WriteBit(+waypoints.act_iii.kurast_bazaar);
-      writer.WriteBit(+waypoints.act_iii.upper_kurast);
-      writer.WriteBit(+waypoints.act_iii.travincal);
-      writer.WriteBit(+waypoints.act_iii.durance_of_hate_lvl_2);
-    }
-    if (waypoints.act_iv) {
-      writer.WriteBit(+waypoints.act_iv.the_pandemonium_fortress);
-      writer.WriteBit(+waypoints.act_iv.city_of_the_damned);
-      writer.WriteBit(+waypoints.act_iv.river_of_flame);
-    }
-    if (waypoints.act_v) {
-      writer.WriteBit(+waypoints.act_v.harrogath);
-      writer.WriteBit(+waypoints.act_v.frigid_highlands);
-      writer.WriteBit(+waypoints.act_v.arreat_plateau);
-      writer.WriteBit(+waypoints.act_v.crystalline_passage);
-      writer.WriteBit(+waypoints.act_v.halls_of_pain);
-      writer.WriteBit(+waypoints.act_v.glacial_trail);
-      writer.WriteBit(+waypoints.act_v.frozen_tundra);
-      writer.WriteBit(+waypoints.act_v.the_ancients_way);
-      writer.WriteBit(+waypoints.act_v.worldstone_keep_lvl_2);
-    }
-  } else {
-    //all wps
-    //writer.WriteArray(new Uint8Array(5));
-    writer.WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff, 0x7f]));
-    //_writeBits(writer, 0x3fffffffff, start, 0, 38);
-  }
-  writer.Align().WriteArray(new Uint8Array(17));
+
+  writer.WriteBytes(waypoints.unknown_header ?? new Uint8Array([0x02, 0x01]));
+
+  writer.WriteBit(+waypoints.act_i.rogue_encampement);
+  writer.WriteBit(+waypoints.act_i.cold_plains);
+  writer.WriteBit(+waypoints.act_i.stony_field);
+  writer.WriteBit(+waypoints.act_i.dark_woods);
+  writer.WriteBit(+waypoints.act_i.black_marsh);
+  writer.WriteBit(+waypoints.act_i.outer_cloister);
+  writer.WriteBit(+waypoints.act_i.jail_lvl_1);
+  writer.WriteBit(+waypoints.act_i.inner_cloister);
+  writer.WriteBit(+waypoints.act_i.catacombs_lvl_2);
+
+  writer.WriteBit(+waypoints.act_ii.lut_gholein);
+  writer.WriteBit(+waypoints.act_ii.sewers_lvl_2);
+  writer.WriteBit(+waypoints.act_ii.dry_hills);
+  writer.WriteBit(+waypoints.act_ii.halls_of_the_dead_lvl_2);
+  writer.WriteBit(+waypoints.act_ii.far_oasis);
+  writer.WriteBit(+waypoints.act_ii.lost_city);
+  writer.WriteBit(+waypoints.act_ii.palace_cellar_lvl_1);
+  writer.WriteBit(+waypoints.act_ii.arcane_sanctuary);
+  writer.WriteBit(+waypoints.act_ii.canyon_of_the_magi);
+
+  writer.WriteBit(+waypoints.act_iii.kurast_docks);
+  writer.WriteBit(+waypoints.act_iii.spider_forest);
+  writer.WriteBit(+waypoints.act_iii.great_marsh);
+  writer.WriteBit(+waypoints.act_iii.flayer_jungle);
+  writer.WriteBit(+waypoints.act_iii.lower_kurast);
+  writer.WriteBit(+waypoints.act_iii.kurast_bazaar);
+  writer.WriteBit(+waypoints.act_iii.upper_kurast);
+  writer.WriteBit(+waypoints.act_iii.travincal);
+  writer.WriteBit(+waypoints.act_iii.durance_of_hate_lvl_2);
+
+  writer.WriteBit(+waypoints.act_iv.the_pandemonium_fortress);
+  writer.WriteBit(+waypoints.act_iv.city_of_the_damned);
+  writer.WriteBit(+waypoints.act_iv.river_of_flame);
+
+  writer.WriteBit(+waypoints.act_v.harrogath);
+  writer.WriteBit(+waypoints.act_v.frigid_highlands);
+  writer.WriteBit(+waypoints.act_v.arreat_plateau);
+  writer.WriteBit(+waypoints.act_v.crystalline_passage);
+  writer.WriteBit(+waypoints.act_v.halls_of_pain);
+  writer.WriteBit(+waypoints.act_v.glacial_trail);
+  writer.WriteBit(+waypoints.act_v.frozen_tundra);
+  writer.WriteBit(+waypoints.act_v.the_ancients_way);
+  writer.WriteBit(+waypoints.act_v.worldstone_keep_lvl_2);
+
+  writer.Align();
+
+  writer.WriteBytes(waypoints.unknown_trailing ?? new Uint8Array(17));
+
   return writer.ToArray();
 }
 

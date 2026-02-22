@@ -117,14 +117,14 @@ export interface IQuest {
 }
 
 export interface IActIQuests {
-  introduced: boolean;
+  introduced: number;
   den_of_evil: IQuest;
   sisters_burial_grounds: IQuest;
   tools_of_the_trade: IQuest;
   the_search_for_cain: IQuest;
   the_forgotten_tower: IQuest;
   sisters_to_the_slaughter: IQuest;
-  completed: boolean;
+  completed: number;
 }
 
 export interface IActIWaypoints {
@@ -140,14 +140,14 @@ export interface IActIWaypoints {
 }
 
 export interface IActIIQuests {
-  introduced: boolean;
+  introduced: number;
   radaments_lair: IQuest;
   the_horadric_staff: IQuest;
   tainted_sun: IQuest;
   arcane_sanctuary: IQuest;
   the_summoner: IQuest;
   the_seven_tombs: IQuest;
-  completed: boolean;
+  completed: number;
 }
 
 export interface IActIIWaypoints {
@@ -163,14 +163,14 @@ export interface IActIIWaypoints {
 }
 
 export interface IActIIIQuests {
-  introduced: boolean;
+  introduced: number;
   lam_esens_tome: IQuest;
   khalims_will: IQuest;
   blade_of_the_old_religion: IQuest;
   the_golden_bird: IQuest;
   the_blackened_temple: IQuest;
   the_guardian: IQuest;
-  completed: boolean;
+  completed: number;
 }
 
 export interface IActIIIWaypoints {
@@ -186,11 +186,11 @@ export interface IActIIIWaypoints {
 }
 
 export interface IActIVQuests {
-  introduced: boolean;
+  introduced: number;
   the_fallen_angel: IQuest;
   terrors_end: IQuest;
   hellforge: IQuest;
-  completed: boolean;
+  completed: number;
 }
 
 export interface IActIVWaypoints {
@@ -200,14 +200,14 @@ export interface IActIVWaypoints {
 }
 
 export interface IActVQuests {
-  introduced: boolean;
+  introduced: number;
   siege_on_harrogath: IQuest;
   rescue_on_mount_arreat: IQuest;
   prison_of_ice: IQuest;
   betrayal_of_harrogath: IQuest;
   rite_of_passage: IQuest;
   eve_of_destruction: IQuest;
-  completed: boolean;
+  completed: number; // raw UInt16 — contains bitmask state beyond a simple boolean
 }
 
 export interface IActVWaypoints {
@@ -228,6 +228,10 @@ export interface IQuests {
   act_iii: IActIIIQuests;
   act_iv: IActIVQuests;
   act_v: IActVQuests;
+  // 10 unknown bytes between act_iv and act_v (saved verbatim for faithful round-tripping)
+  unknown_act_iv_v_gap?: Uint8Array;
+  // 12 unknown bytes at the end of each difficulty quest block
+  unknown_trailing?: Uint8Array;
 }
 
 export interface IWaypoints {
@@ -236,6 +240,8 @@ export interface IWaypoints {
   act_iii: IActIIIWaypoints;
   act_iv: IActIVWaypoints;
   act_v: IActVWaypoints;
+  unknown_header?: Uint8Array; // 2 bytes before waypoint bits (preserved for round-tripping)
+  unknown_trailing?: Uint8Array; // 17 bytes after waypoint bits (preserved for round-tripping)
 }
 
 export interface INPCData {
@@ -284,6 +290,22 @@ export interface IHeader {
   merc_experience: number;
   // 1 = Classic, 2 = LoD, 3 = RotW
   realm: number;
+  quests_header_magic?: string;
+  quests_header_version?: number;
+  quests_header_length?: number;
+  waypoints_header_magic?: string;
+  waypoints_header_version?: number;
+  waypoints_header_length?: number;
+  npcs_header_magic?: Uint8Array;
+  npcs_header_length?: number;
+  extended_header_data?: Uint8Array;
+  unknown_before_realm?: Uint8Array;
+  unknown_after_realm?: Uint8Array;
+  unknown_after_name?: Uint8Array;
+  // raw 32-bit skill IDs for the 16 hotkey slots (preserved verbatim for round-tripping)
+  assigned_skill_ids?: number[];
+  // stat IDs in the order they appear in the save file (preserved for round-tripping)
+  attributes_order?: number[];
 }
 
 export interface IStatus {

@@ -208,7 +208,8 @@ export async function readCorpseItems(
     char.is_dead = reader.ReadUInt16(); //0x0002 [corpse count]
     for (let i = 0; i < char.is_dead; i++) {
       try {
-        reader.SkipBytes(12); //0x0004 [unk4, x_pos, y_pos]
+        const unk12 = reader.ReadBytes(12); //0x0004 [unk4, x_pos, y_pos]
+        if (i === 0) char.corpse_unk12 = unk12;
         char.corpse_items = char.corpse_items.concat(
           await readItems(
             reader,
@@ -244,7 +245,7 @@ export async function writeCorpseItem(
   writer.WriteUInt16(char.is_dead);
   //json struct doesnt support multiple corpses without modifying it
   if (char.is_dead) {
-    writer.WriteArray(new Uint8Array(12));
+    writer.WriteArray(char.corpse_unk12 ?? new Uint8Array(12));
     char.corpse_items = char.corpse_items || [];
     writer.WriteArray(
       await writeItems(
@@ -554,8 +555,7 @@ export async function readItem(
         if (constants.runewords[item.runeword_id]) {
           item.runeword_name = constants.runewords[item.runeword_id]!.n!;
         }
-        // TODO: why are we skipping 4 bits?
-        reader.ReadUInt8(4);
+        item._unknown_data.runeword_extra_4 = reader.ReadUInt8(4);
       }
 
       if (item.personalized) {
@@ -577,8 +577,8 @@ export async function readItem(
       }
 
       //tomes
-      if (item.type === 'tbk' || item.type == 'ibk') {
-        reader.ReadUInt8(5);
+      if (item.type === 'tbk' || item.type === 'ibk') {
+        item._unknown_data.tome_extra_5 = reader.ReadUInt8(5);
       }
 
       //realm data
@@ -844,7 +844,7 @@ export async function writeItem(
         runeword_id = 48;
       }
       writer.WriteUInt16(runeword_id, 12);
-      writer.WriteUInt8(5, 4); //always 5?
+      writer.WriteUInt8(item._unknown_data.runeword_extra_4 ?? 5, 4);
     }
 
     if (item.personalized) {
@@ -859,10 +859,8 @@ export async function writeItem(
       writer.WriteUInt8(0x00, version > 0x61 ? 8 : 7);
     }
 
-    if (item.type === 'tbk') {
-      writer.WriteUInt8(0, 5);
-    } else if (item.type === 'ibk') {
-      writer.WriteUInt8(1, 5);
+    if (item.type === 'tbk' || item.type === 'ibk') {
+      writer.WriteUInt8(item._unknown_data.tome_extra_5 ?? (item.type === 'ibk' ? 1 : 0), 5);
     }
 
     writer.WriteUInt8(item.timestamp, 1);

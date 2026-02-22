@@ -27,6 +27,7 @@ export interface ID2S {
   merc_items: IItem[];
   golem_item: IItem;
   is_dead: number;
+  corpse_unk12?: Uint8Array; // 12 bytes (unk4, x_pos, y_pos) before corpse items (preserved verbatim)
 }
 
 export interface IAttributes {
@@ -422,6 +423,8 @@ export interface IItem {
     plist_flag?: number;
     v105_extra_bit_1?: Uint8Array;
     v105_extra_bit_2?: Uint8Array;
+    runeword_extra_4?: number; // 4 bits after runeword_id (preserved verbatim)
+    tome_extra_5?: number; // 5 bits for tome items (tbk/ibk, preserved verbatim)
   };
   rare_name_id: number;
   rare_name_id2: number;

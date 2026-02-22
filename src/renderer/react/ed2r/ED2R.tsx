@@ -59,7 +59,6 @@ import { Fragment, forwardRef, useCallback, useMemo, useState } from 'react';
 import {
   Circle,
   Close,
-  FileCopyOutlined,
   Refresh,
   RefreshOutlined,
   Save,
@@ -1125,29 +1124,28 @@ function Character({
                 Revert
               </Button>
             ) : null}
-            <Button
-              onClick={() => {
-                // TODO: add confirmation modal
-              }}
-              startIcon={<FileCopyOutlined />}
+            <Tooltip
+              placement="top"
+              title="Your save file will also be backed up for you."
             >
-              Backup
-            </Button>
-            <Button
-              disabled={!file.edited}
-              onClick={async () => {
-                await BridgeAPI.writeSaveFile(
-                  runtimeModOptions,
-                  file.fileName,
-                  file.character,
-                );
-                onCommit(file);
-              }}
-              startIcon={file.edited ? <Save /> : <SaveOutlined />}
-              variant={file.edited ? 'contained' : 'outlined'}
-            >
-              Save
-            </Button>
+              <span>
+                <Button
+                  disabled={!file.edited}
+                  onClick={async () => {
+                    await BridgeAPI.writeSaveFile(
+                      runtimeModOptions,
+                      file.fileName,
+                      file.character,
+                    );
+                    onCommit(file);
+                  }}
+                  startIcon={file.edited ? <Save /> : <SaveOutlined />}
+                  variant={file.edited ? 'contained' : 'outlined'}
+                >
+                  Save
+                </Button>
+              </span>
+            </Tooltip>
           </ButtonGroup>
         </Box>
       </Box>

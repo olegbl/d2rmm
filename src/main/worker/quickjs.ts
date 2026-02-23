@@ -93,8 +93,7 @@ function getHandleForValue<T>(
   if (value instanceof Error) {
     return scope.manage(vm.newError(value.message));
   } else if (typeof value === 'boolean') {
-    // vm.newBoolean doesn't exist - but numbers can be used as booleans in JS
-    return scope.manage(vm.newNumber(value ? 1 : 0));
+    return value ? vm.true : vm.false;
   } else if (typeof value === 'number') {
     return scope.manage(vm.newNumber(value));
   } else if (typeof value === 'string') {

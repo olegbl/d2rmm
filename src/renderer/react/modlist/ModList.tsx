@@ -1,7 +1,10 @@
+import { getAppPath } from 'renderer/AppInfoAPI';
+import ShellAPI from 'renderer/ShellAPI';
 import { isOrderedSectionHeader } from 'renderer/react/ReorderUtils';
 import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
 import {
   useEnabledMods,
+  useMods,
   useOrdereredItems,
 } from 'renderer/react/context/ModsContext';
 import ModInstallButton from 'renderer/react/modlist/ModInstallButton';
@@ -10,6 +13,7 @@ import ModListSectionHeader from 'renderer/react/modlist/ModListSectionHeader';
 import OverflowActionsButton from 'renderer/react/modlist/OverflowActionsButton';
 import RunGameButton from 'renderer/react/modlist/RunGameButton';
 import ModSettingsDrawer from 'renderer/react/settings/ModSettingsDrawer';
+import resolvePath from 'renderer/utils/resolvePath';
 import {
   ChangeEvent,
   useCallback,
@@ -18,18 +22,32 @@ import {
   useTransition,
 } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import { Refresh } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   ButtonGroup,
   Divider,
   InputAdornment,
+  Link,
   List,
   TextField,
+  Typography,
 } from '@mui/material';
 
 export default function ModList(): JSX.Element {
   const [, startTransition] = useTransition();
+
+  const modsPath = resolvePath(getAppPath(), 'mods', '');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [, onRefreshMods] = useMods();
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await onRefreshMods();
+    setIsRefreshing(false);
+  }, [onRefreshMods, setIsRefreshing]);
+
   const [orderedItems, reorderItems] = useOrdereredItems();
   const [enabledMods] = useEnabledMods();
   const [isDirectMode] = useIsDirectMode();
@@ -130,6 +148,52 @@ export default function ModList(): JSX.Element {
         disablePadding={true}
         sx={{ width: '100%', flex: 1, overflow: 'auto' }}
       >
+        {renderedItems.length === 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              gap: 1,
+              color: 'text.secondary',
+              p: 4,
+            }}
+          >
+            <Typography variant="body1">No Mods Found</Typography>
+            <Typography align="center" variant="body2">
+              Find and download mods at{' '}
+              <Link
+                href="https://www.nexusmods.com/games/diablo2resurrected/mods"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Nexus Mods
+              </Link>
+              .<br />
+              Extract them into{' '}
+              <Link
+                href="#"
+                onClick={() => {
+                  ShellAPI.showItemInFolder(modsPath).catch(console.error);
+                }}
+              >
+                {modsPath}
+              </Link>
+              .
+            </Typography>
+            <LoadingButton
+              loading={isRefreshing}
+              loadingPosition="start"
+              onClick={() => onRefresh().catch(console.error)}
+              startIcon={<Refresh />}
+              variant="contained"
+            >
+              Refresh Mod List
+            </LoadingButton>
+          </Box>
+        )}
         {isReorderEnabled ? (
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable direction="vertical" droppableId="mods">

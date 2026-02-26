@@ -58,12 +58,19 @@ export type GameData = {
   magicalProperties: MagicalProperty[];
   skills: SkillInfo[];
   classes: ClassInfo[];
+  /** Raw TSV row from armor/weapons/misc keyed by item code */
+  itemCodeToItem: { [code: string]: TSVDataRow };
+  /** Category hierarchy keyed by raw item type code */
+  itemCodeToCategories: { [code: string]: string[] };
 };
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
+// NOTE: these properties are hard coded in the binary
+//       rather than in itemstatcost.txt, so we have to
+//       hard code them in the save editor as well
 const ITEM_PROPERTY_STAT_COUNT: {
   [stat: string]: { numprops: number; rangestr: string; equalstr: string };
 } = {
@@ -235,9 +242,81 @@ function buildClasses(
   return arr;
 }
 
+function buildCategoryHierarchy(gameFiles: Record<string, unknown>): {
+  [typeCode: string]: string[];
+} {
+  const tsv = gameFiles['global/excel/itemtypes.txt'] as TSVData;
+  if (tsv == null) return {};
+
+  const raw: {
+    [code: string]: { name: string; equiv1?: string; equiv2?: string };
+  } = {};
+  for (const row of tsv.rows) {
+    const code = row.Code;
+    if (!code) continue;
+    raw[code] = {
+      name: row.ItemType,
+      equiv1: row.Equiv1 || undefined,
+      equiv2: row.Equiv2 || undefined,
+    };
+  }
+
+  function resolveCategories(code: string): string[] {
+    const entry = raw[code];
+    if (!entry) return [];
+    return [
+      entry.name,
+      ...resolveCategories(entry.equiv1 ?? ''),
+      ...resolveCategories(entry.equiv2 ?? ''),
+    ];
+  }
+
+  const result: { [typeCode: string]: string[] } = {};
+  for (const code of Object.keys(raw)) {
+    result[code] = resolveCategories(code);
+  }
+  return result;
+}
+
+function buildItemCodeToItem(gameFiles: Record<string, unknown>): {
+  [code: string]: TSVDataRow;
+} {
+  const result: { [code: string]: TSVDataRow } = {};
+  for (const filePath of [
+    'global/excel/armor.txt',
+    'global/excel/weapons.txt',
+    'global/excel/misc.txt',
+  ]) {
+    const tsv = gameFiles[filePath] as TSVData;
+    if (tsv == null) continue;
+    for (const row of tsv.rows) {
+      if (row.code) result[row.code] = row;
+    }
+  }
+  return result;
+}
+
+function buildCategoriesByCode(
+  itemCodeToItem: { [code: string]: TSVDataRow },
+  categoryHierarchy: { [typeCode: string]: string[] },
+): { [code: string]: string[] } {
+  const result: { [code: string]: string[] } = {};
+  for (const [code, row] of Object.entries(itemCodeToItem)) {
+    result[code] = categoryHierarchy[row.type] ?? [];
+  }
+  return result;
+}
+
 function buildGameData(gameFiles: Record<string, unknown>): GameData {
   if (Object.keys(gameFiles).length === 0) {
-    return { strings: {}, magicalProperties: [], skills: [], classes: [] };
+    return {
+      strings: {},
+      magicalProperties: [],
+      skills: [],
+      classes: [],
+      itemCodeToItem: {},
+      itemCodeToCategories: {},
+    };
   }
 
   const strings = buildStrings(gameFiles);
@@ -245,6 +324,8 @@ function buildGameData(gameFiles: Record<string, unknown>): GameData {
     gameFiles['global/excel/skilldesc.txt'] as TSVData,
     strings,
   );
+  const categoryHierarchy = buildCategoryHierarchy(gameFiles);
+  const itemCodeToItem = buildItemCodeToItem(gameFiles);
 
   return {
     strings,
@@ -260,6 +341,11 @@ function buildGameData(gameFiles: Record<string, unknown>): GameData {
       gameFiles['global/excel/charstats.txt'] as TSVData,
       gameFiles['global/excel/playerclass.txt'] as TSVData,
       strings,
+    ),
+    itemCodeToItem,
+    itemCodeToCategories: buildCategoriesByCode(
+      itemCodeToItem,
+      categoryHierarchy,
     ),
   };
 }

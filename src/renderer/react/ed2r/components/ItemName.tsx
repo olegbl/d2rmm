@@ -1,11 +1,25 @@
 import type { IItem } from 'bridge/third-party/d2s/d2/types';
 import { Quality } from 'renderer/react/ed2r/ED2RConstants';
-import { COLOR_MAP, useItemColor } from 'renderer/react/ed2r/components/Color';
+import {
+  type GameData,
+  useGameData,
+} from 'renderer/react/ed2r/ED2RGameDataContext';
+import {
+  type GameFiles,
+  useGameFiles,
+} from 'renderer/react/ed2r/ED2RGameFilesContext';
+import {
+  COLOR_MAP,
+  getColor,
+  type ProfileHD,
+} from 'renderer/react/ed2r/components/Color';
 import React from 'react';
 
 export function ItemName({ item }: { item: IItem }): React.ReactNode {
-  const name = getItemName(item);
-  const color = useItemColor(item);
+  const { gameData } = useGameData();
+  const { gameFiles } = useGameFiles();
+  const name = getItemName(item, gameData);
+  const color = getItemColor(item, gameData, gameFiles);
 
   const lines = name
     // remove localization feminine/masculine indicators
@@ -34,9 +48,17 @@ export function ItemName({ item }: { item: IItem }): React.ReactNode {
   ));
 }
 
-export function getItemName(item: IItem): string {
+export function getItemName(item: IItem, gameData?: GameData): string {
+  let typeName = item.type_name;
+  if (gameData != null) {
+    const row = gameData.itemCodeToItem[item.type];
+    if (row != null) {
+      typeName = gameData.strings[row.namestr] ?? row.namestr;
+    }
+  }
+
   if (item.personalized) {
-    return `${item.personalized_name}'s ${getItemName({ ...item, personalized: 0 })}`;
+    return `${item.personalized_name}'s ${getItemName({ ...item, personalized: 0 }, gameData)}`;
   }
 
   // TODO: item.runeword_id ("Runeword" + id*) runes.txt (Name -> Key) item-runes.json
@@ -47,18 +69,18 @@ export function getItemName(item: IItem): string {
   //         2786 -> 173 (mosaic)
   if (item.runeword_name != null) {
     // TODO: add recipe line
-    return `${item.runeword_name}\n${item.type_name}`;
+    return `${item.runeword_name}\n${typeName}`;
   }
 
   switch (item.quality) {
     case Quality.LOW:
-      return `Low Quality ${item.type_name}`;
+      return `Low Quality ${typeName}`;
     case Quality.NORMAL:
-      return item.type_name;
+      return typeName;
     case Quality.SUPERIOR:
-      return `Superior ${item.type_name}`;
+      return `Superior ${typeName}`;
     case Quality.MAGIC:
-      return [item.magic_prefix_name, item.type_name, item.magic_suffix_name]
+      return [item.magic_prefix_name, typeName, item.magic_suffix_name]
         .filter((value) => value != null)
         .join(' ');
     case Quality.CRAFTED:
@@ -66,12 +88,74 @@ export function getItemName(item: IItem): string {
       return [item.rare_name, item.rare_name2]
         .filter((value) => value != null)
         .join(' ')
-        .concat(`\n${item.type_name}`);
+        .concat(`\n${typeName}`);
     case Quality.SET:
-      return `${item.set_name}\n${item.type_name}`;
+      return `${item.set_name}\n${typeName}`;
     case Quality.UNIQUE:
-      return `${item.unique_name}\n${item.type_name}`;
+      return `${item.unique_name}\n${typeName}`;
   }
 
-  return item.type_name;
+  return typeName;
+}
+
+export function getItemColor(
+  item: IItem,
+  gameData: GameData,
+  gameFiles: GameFiles,
+): string {
+  const categories = gameData.itemCodeToCategories[item.type] ?? [];
+  const profileHD = gameFiles['global/ui/layouts/_profilehd.json'] as ProfileHD;
+
+  if (item.runeword_name != null) {
+    return getColor(profileHD.TooltipStyle.UniqueColor, profileHD);
+  }
+
+  if (categories.includes('Rune')) {
+    return getColor(profileHD.TooltipStyle.RuneColor, profileHD);
+  }
+
+  if (categories.includes('Rejuv Potion')) {
+    return getColor(profileHD.TooltipStyle.RejuvPotionColor, profileHD);
+  }
+
+  if (categories.includes('Healing Potion')) {
+    return getColor(profileHD.TooltipStyle.HealthPotionColor, profileHD);
+  }
+
+  if (categories.includes('Mana Potion')) {
+    return getColor(profileHD.TooltipStyle.ManaPotionColor, profileHD);
+  }
+
+  if (categories.includes('Quest')) {
+    return getColor(profileHD.TooltipStyle.QuestColor, profileHD);
+  }
+
+  if (categories.includes('Event')) {
+    return getColor(profileHD.TooltipStyle.EventItemsColor, profileHD);
+  }
+
+  switch (item.quality) {
+    case Quality.LOW:
+    case Quality.NORMAL:
+    case Quality.SUPERIOR:
+      if (item.ethereal) {
+        return getColor(profileHD.TooltipStyle.EtherealColor, profileHD);
+      }
+      if (item.socketed) {
+        return getColor(profileHD.TooltipStyle.SocketedColor, profileHD);
+      }
+      return getColor(profileHD.TooltipStyle.DefaultColor, profileHD);
+    case Quality.MAGIC:
+      return getColor(profileHD.TooltipStyle.MagicColor, profileHD);
+    case Quality.CRAFTED:
+      return getColor(profileHD.TooltipStyle.CraftedColor, profileHD);
+    case Quality.RARE:
+      return getColor(profileHD.TooltipStyle.RareColor, profileHD);
+    case Quality.SET:
+      return getColor(profileHD.TooltipStyle.SetColor, profileHD);
+    case Quality.UNIQUE:
+      return getColor(profileHD.TooltipStyle.UniqueColor, profileHD);
+  }
+
+  return '#FFFFFF';
 }

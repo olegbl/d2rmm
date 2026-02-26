@@ -53,6 +53,7 @@ import {
   StashTabContextProvider,
   useStashTabIndex,
 } from 'renderer/react/ed2r/ED2RStashTabContext';
+import { ItemDescription } from 'renderer/react/ed2r/components/ItemDescription';
 import { getItemName, ItemName } from 'renderer/react/ed2r/components/ItemName';
 import resolvePath from 'renderer/utils/resolvePath';
 import { DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
@@ -1933,20 +1934,7 @@ function InventoryGridItem({
               }}
             >
               <ItemName item={item} />
-              {
-                /* temporary hack to show some of the stats */
-                Array.from(
-                  new Set(
-                    (item.displayed_combined_magic_attributes ?? [])
-                      .map((attr) => attr.description)
-                      .filter(Boolean),
-                  ),
-                ).map((str) => (
-                  <span key={str} style={{ display: 'inline-block' }}>
-                    {str}
-                  </span>
-                ))
-              }
+              <ItemDescription item={item} />
             </Typography>
           </Box>
         }

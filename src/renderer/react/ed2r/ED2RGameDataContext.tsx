@@ -654,11 +654,10 @@ function descFuncHandler(
 
   const sign = v >= 0 ? '+' : '';
   let value: string | number | null = null;
-  const hasDescExtra = descFunc >= 6 && descFunc <= 10;
+  const hasDescExtra = (descFunc >= 6 && descFunc <= 10) || descFunc === 26;
   switch (descFunc) {
     case 1:
     case 6:
-    case 12:
       value = `${sign}${v}`;
       break;
     case 2:
@@ -684,9 +683,12 @@ function descFuncHandler(
     case 11:
       property.description = descString!.replace(/%d/, (v / 100).toString());
       break;
+    case 12:
+      value = v > 1 ? `+${v}` : v < 0 ? `-${v}` : `${v}`;
+      break;
     case 13: {
       const clazz = data.classes[property.values[0]];
-      property.description = `${sign}${v} ${clazz.allSkillsString}`;
+      property.description = sprintf(clazz.allSkillsString, v);
       break;
     }
     case 14: {
@@ -725,7 +727,11 @@ function descFuncHandler(
       value = `${v * -1}%`;
       break;
     case 21:
-      value = `${v * -1}`;
+      value = `${v * -1}%`;
+      break;
+    case 25:
+    case 26:
+      value = `+${v * -1}`;
       break;
     case 22:
       property.description = `${v}% ${descString} [montype]`;
@@ -772,7 +778,7 @@ function descFuncHandler(
       break;
     }
     case 29:
-      property.description = sprintf(descString!, v.toString());
+      property.description = sprintf(descString!, Math.abs(v).toString());
       break;
     default:
       throw new Error(`No handler for descFunc: ${descFunc}`);

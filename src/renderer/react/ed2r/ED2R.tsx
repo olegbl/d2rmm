@@ -21,10 +21,8 @@ import { useClipboardContext } from 'renderer/react/ed2r/ED2RClipboardContext';
 import {
   AltPositionID,
   CELL_SIZE,
-  COLOR_MAP,
   EquippedID,
   LocationID,
-  Quality,
 } from 'renderer/react/ed2r/ED2RConstants';
 import {
   GameFiles,
@@ -55,6 +53,7 @@ import {
   StashTabContextProvider,
   useStashTabIndex,
 } from 'renderer/react/ed2r/ED2RStashTabContext';
+import { getItemName, ItemName } from 'renderer/react/ed2r/components/ItemName';
 import resolvePath from 'renderer/utils/resolvePath';
 import { DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
 import { PropsOf } from '@emotion/react';
@@ -1699,184 +1698,6 @@ function CharacterCubeTab({
       </InventoryGrid>
     </TabPanelBox>
   );
-}
-
-function ItemName({ item }: { item: IItem }): React.ReactNode {
-  const name = getItemName(item);
-  const color = useItemColor(item);
-
-  const lines = name
-    // remove localization feminine/masculine indicators
-    .replace(/(\[fs\]|\[ms\])/gm, '')
-    // split into lines
-    .split('\n')
-    // split into tokens
-    .map((line, lineIndex) =>
-      (line.match(/(^|(?:ÿc.))(.+?)(?:(?=ÿc.)|$)/gm) ?? [])
-        // separate color from text
-        .map((token, tokenIndex) =>
-          token.startsWith('ÿc')
-            ? [COLOR_MAP[token.substring(0, 3)], token.substring(3)]
-            : [lineIndex === 0 && tokenIndex === 0 ? color : undefined, token],
-        ),
-    );
-
-  return lines.map((line, lineIndex) => (
-    <span key={lineIndex} style={{ display: 'inline-block' }}>
-      {line.map(([color, token], tokenIndex) => (
-        <span key={tokenIndex} style={{ color }}>
-          {token}
-        </span>
-      ))}
-    </span>
-  ));
-}
-
-function getItemName(item: IItem): string {
-  if (item.personalized) {
-    return `${item.personalized_name}'s ${getItemName({ ...item, personalized: 0 })}`;
-  }
-
-  // TODO: item.runeword_id ("Runeword" + id*) runes.txt (Name -> Key) item-runes.json
-  //       * id > 75 -> +25
-  //         id <= 75 -> +25
-  //         etc...?
-  //         2718 -> 48 (delirium)
-  //         2786 -> 173 (mosaic)
-  if (item.runeword_name != null) {
-    // TODO: add recipe line
-    return `${item.runeword_name}\n${item.type_name}`;
-  }
-
-  switch (item.quality) {
-    case Quality.LOW:
-      return `Low Quality ${item.type_name}`;
-    case Quality.NORMAL:
-      return item.type_name;
-    case Quality.SUPERIOR:
-      return `Superior ${item.type_name}`;
-    case Quality.MAGIC:
-      return [item.magic_prefix_name, item.type_name, item.magic_suffix_name]
-        .filter((value) => value != null)
-        .join(' ');
-    case Quality.CRAFTED:
-    case Quality.RARE:
-      return [item.rare_name, item.rare_name2]
-        .filter((value) => value != null)
-        .join(' ')
-        .concat(`\n${item.type_name}`);
-    case Quality.SET:
-      return `${item.set_name}\n${item.type_name}`;
-    case Quality.UNIQUE:
-      return `${item.unique_name}\n${item.type_name}`;
-  }
-
-  return item.type_name;
-}
-
-type ColorVar = { r: number; g: number; b: number; a: number };
-type ColorConst = [number, number, number, number];
-
-function useItemColor(item: IItem): string {
-  const { gameFiles } = useGameFiles();
-
-  const profileHD = gameFiles['global/ui/layouts/_profilehd.json'] as {
-    [name: `FontColor${string}`]: string | ColorVar;
-    TooltipStyle: {
-      DefaultColor: string | ColorConst;
-      QuestColor: string | ColorConst;
-      RareColor: string | ColorConst;
-      CraftedColor: string | ColorConst;
-      TemperedColor: string | ColorConst;
-      MagicColor: string | ColorConst;
-      SetColor: string | ColorConst;
-      UniqueColor: string | ColorConst;
-      SocketedColor: string | ColorConst;
-      EtherealColor: string | ColorConst;
-      HealthPotionColor: string | ColorConst;
-      ManaPotionColor: string | ColorConst;
-      RejuvPotionColor: string | ColorConst;
-      GoldColor: string | ColorConst;
-      RuneColor: string | ColorConst;
-      EventItemsColor: string | ColorConst;
-    };
-  };
-
-  function getColor(color: string | ColorConst): string {
-    if (Array.isArray(color)) {
-      const [r1, g1, b1, a] = color;
-      const r = Math.round(r1 * 255);
-      const g = Math.round(g1 * 255);
-      const b = Math.round(b1 * 255);
-      return `rgba(${r},${g},${b},${a})`;
-    }
-
-    let colorVar: string | ColorConst | ColorVar = color;
-    while (typeof colorVar === 'string' && colorVar.startsWith('$FontColor')) {
-      colorVar = profileHD[`FontColor${colorVar.slice('$FontColor'.length)}`];
-    }
-
-    if (typeof colorVar === 'object') {
-      const { r, g, b, a } = colorVar;
-      const a1 = a / 255;
-      return `rgba(${r},${g},${b},${a1})`;
-    }
-
-    return colorVar;
-  }
-
-  if (item.runeword_name != null) {
-    return getColor(profileHD.TooltipStyle.UniqueColor);
-  }
-
-  if (item.categories.includes('Rune')) {
-    return getColor(profileHD.TooltipStyle.RuneColor);
-  }
-
-  if (item.categories.includes('Rejuv Potion')) {
-    return getColor(profileHD.TooltipStyle.RejuvPotionColor);
-  }
-
-  if (item.categories.includes('Healing Potion')) {
-    return getColor(profileHD.TooltipStyle.HealthPotionColor);
-  }
-
-  if (item.categories.includes('Mana Potion')) {
-    return getColor(profileHD.TooltipStyle.ManaPotionColor);
-  }
-
-  if (item.categories.includes('Quest')) {
-    return getColor(profileHD.TooltipStyle.QuestColor);
-  }
-
-  if (item.categories.includes('Event')) {
-    return getColor(profileHD.TooltipStyle.EventItemsColor);
-  }
-
-  switch (item.quality) {
-    case Quality.LOW:
-    case Quality.NORMAL:
-    case Quality.SUPERIOR:
-      if (item.ethereal) {
-        return getColor(profileHD.TooltipStyle.EtherealColor);
-      }
-      if (item.socketed) {
-        return getColor(profileHD.TooltipStyle.SocketedColor);
-      }
-      return getColor(profileHD.TooltipStyle.DefaultColor);
-    case Quality.MAGIC:
-      return getColor(profileHD.TooltipStyle.MagicColor);
-    case Quality.CRAFTED:
-      return getColor(profileHD.TooltipStyle.CraftedColor);
-    case Quality.RARE:
-      return getColor(profileHD.TooltipStyle.RareColor);
-    case Quality.SET:
-      return getColor(profileHD.TooltipStyle.SetColor);
-    case Quality.UNIQUE:
-      return getColor(profileHD.TooltipStyle.UniqueColor);
-  }
-
-  return '#FFFFFF';
 }
 
 const InventoryGridItemTooltip = styled(

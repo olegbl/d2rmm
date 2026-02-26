@@ -111,7 +111,8 @@ export interface ModAPI {
 
   /**
    * Reads a TSV (tab separated values in a .txt) D2R file. This is a classic data format used by D2.
-   * @note The last column in the file will probably have a `\r` at the end of its name.
+   * @note The last column in the file will probably have a `\r` at the end of its name unless
+   *       you pass `{ removeCarriageReturns: true }` as the second argument.
    * @note The file is either read from D2R game files as specified in D2RMM's config,
    *       or is the result of previously installed mods already operating on this file.
    * @example
@@ -120,11 +121,27 @@ export interface ModAPI {
    * console.log('There are ' + treasureclassex.rows.length + ' treasure classes!');
    * console.log('Each treasure class has ' + treasureclassex.headers.length + ' properties!');
    * ```
+   * @example
+   * ```
+   * // Use removeCarriageReturns to avoid worrying about "\r" on the last column.
+   * const difficultylevels = D2RMM.readTsv('global\\excel\\difficultylevels.txt', { removeCarriageReturns: true });
+   * difficultylevels.rows.forEach(row => {
+   *   row.GambleUltra = '5'; // no need to use 'GambleUltra\r' as the key
+   * });
+   * // Pass addCarriageReturns: true to writeTsv to restore them on write.
+   * D2RMM.writeTsv('global\\excel\\difficultylevels.txt', difficultylevels, { addCarriageReturns: true });
+   * ```
    * @param filePath - The path of the file to read, relative to the data directory.
+   * @param options - Optional settings.
+   * @param options.removeCarriageReturns - When true, strips `\r` from all headers and values so
+   *        the last column can be accessed without a trailing `\r` in its name.
    * @returns The parsed TSV data.
    * @since D2RMM v1.0.0
    */
-  readTsv: (filePath: string) => TSVData;
+  readTsv: (
+    filePath: string,
+    options?: { removeCarriageReturns?: boolean },
+  ) => TSVData;
 
   /**
    * Writes a TSV (tab separated values in a .txt) D2R file. This is a classic data format used by D2.
@@ -141,9 +158,17 @@ export interface ModAPI {
    * ```
    * @param filePath - The path of the file to write, relative to the data directory.
    * @param data - The TSV data to write.
+   * @param options - Optional settings.
+   * @param options.addCarriageReturns - When true, writes the file with CRLF (`\r\n`) line endings
+   *        so the last column retains its trailing `\r` as D2R expects. Use this when you passed
+   *        `removeCarriageReturns: true` to the corresponding `readTsv` call.
    * @since D2RMM v1.0.0
    */
-  writeTsv: (filePath: string, data: TSVData) => void;
+  writeTsv: (
+    filePath: string,
+    data: TSVData,
+    options?: { addCarriageReturns?: boolean },
+  ) => void;
 
   /**
    * Reads a plain text D2R file.

@@ -75,7 +75,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       }
       throw new Error(message);
     },
-    readTsv: async (filePath) => {
+    readTsv: async (filePath, options) => {
       filePath = processPathForPlatform(filePath);
       console.debug('D2RMM.readTsv', filePath);
       await tryExtractFile(filePath);
@@ -83,14 +83,21 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       if (buffer == null) {
         throw new Error(`File "${filePath}" not found`);
       }
-      const result = parseTsv(readCString(buffer));
+      let rawText = readCString(buffer);
+      if (options?.removeCarriageReturns) {
+        rawText = rawText?.replace(/\r\n/g, '\n');
+      }
+      const result = parseTsv(rawText);
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return result;
     },
-    writeTsv: async (filePath, data) => {
+    writeTsv: async (filePath, data, options) => {
       filePath = processPathForPlatform(filePath);
       console.debug('D2RMM.writeTsv', filePath);
-      const textData = encodeTsv(data);
+      let textData = encodeTsv(data);
+      if (options?.addCarriageReturns) {
+        textData = textData.replace(/\n/g, '\r\n');
+      }
       runtime.fileManager.setData(filePath, Buffer.from(textData, 'utf-8'));
       await runtime.fileManager.write(filePath, runtime.mod.id);
     },

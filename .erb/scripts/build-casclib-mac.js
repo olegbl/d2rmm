@@ -14,7 +14,7 @@ const buildDir = path.join(cascLibDir, 'build');
 const outputDylib = path.join(root, 'tools', 'CascLib.dylib');
 
 execSync(
-  `cmake -B "${buildDir}" -S "${cascLibDir}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON`,
+  `cmake -B "${buildDir}" -S "${cascLibDir}" -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5`,
   { stdio: 'inherit' },
 );
 execSync(`cmake --build "${buildDir}"`, { stdio: 'inherit' });

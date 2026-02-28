@@ -11,7 +11,7 @@ You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](ht
 ## Building
 
 - [https://github.com/nodejs/node-gyp#on-windows](https://github.com/nodejs/node-gyp#on-windows)
-- D2RMM uses Node v18 by default, so make sure to install that (e.g. via nvm).
+- D2RMM uses Node v22 by default, so make sure to install that (e.g. via nvm).
 - `git clone`
 - `cd d2rmm`
 - `yarn install`

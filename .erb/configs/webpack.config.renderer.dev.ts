@@ -45,7 +45,6 @@ const configuration: webpack.Configuration = {
   target: ['web', 'electron-renderer'],
 
   entry: [
-    `webpack-dev-server/client?http://localhost:${port}/dist`,
     'webpack/hot/only-dev-server',
     'core-js',
     'regenerator-runtime/runtime',
@@ -163,7 +162,10 @@ const configuration: webpack.Configuration = {
     historyApiFallback: {
       verbose: true,
     },
-    onBeforeSetupMiddleware() {
+    setupMiddlewares(middlewares: any[], devServer: any) {
+      if (!devServer) {
+        throw new Error('webpack-dev-server is not defined');
+      }
       console.log('Starting Main Process...');
       spawn('npm', ['run', 'start:main'], {
         shell: true,
@@ -172,6 +174,7 @@ const configuration: webpack.Configuration = {
       })
         .on('close', (code: number) => process.exit(code!))
         .on('error', (spawnError) => console.error(spawnError));
+      return middlewares;
     },
   },
 };

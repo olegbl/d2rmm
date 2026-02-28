@@ -360,11 +360,6 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      # typedoc resolves types from app deps (regedit, koffi, etc.)
-      - name: Install app dependencies
-        working-directory: release/app
-        run: npm install --ignore-scripts
-
       - name: Generate documentation
         run: npm run docs
 

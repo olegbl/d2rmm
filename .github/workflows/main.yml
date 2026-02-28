@@ -330,7 +330,7 @@ jobs:
           artifacts: 'artifacts/*'
           artifactErrorsFailBuild: true
           generateReleaseNotes: false
-          body: '> [!NOTE]\n> This release contains the same files as [D2RMM ${{ needs.check-version.outputs.current_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.current_version }}). It exists only to keep older download links working — please visit the link above for the latest version.<!-- #alias -->'
+          body: "> [!NOTE]\n> This release contains the same files as [D2RMM ${{ needs.check-version.outputs.current_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.current_version }}). It exists only to keep older download links working — please visit the link above for the latest version.<!-- #alias -->"
 
       - name: Publish alias pre-release
         if: needs.check-version.outputs.version_to_alias != ''

@@ -27,4 +27,5 @@ export type IModUpdaterAPI = {
     key?: string,
     expires?: number,
   ) => Promise<string>;
+  installModFromZip: (zipFilePath: string) => Promise<string>;
 };

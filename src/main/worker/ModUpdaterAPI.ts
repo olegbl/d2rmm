@@ -15,6 +15,7 @@ import {
   rmSync,
   statSync,
 } from 'fs';
+import os from 'os';
 import path from 'path';
 import { getAppPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
@@ -115,6 +116,77 @@ const NexusModsAPI = {
   },
 };
 
+async function installFromZipPath(
+  zipFilePath: string,
+  modID: string,
+): Promise<string> {
+  console.debug('ModUpdaterAPI', 'installFromZipPath', { zipFilePath, modID });
+
+  const extractDirPath = path.join(os.tmpdir(), 'D2RMM', 'ModInstall', modID);
+  if (existsSync(extractDirPath)) {
+    rmSync(extractDirPath, { force: true, recursive: true });
+  }
+  mkdirSync(extractDirPath, { recursive: true });
+
+  process.noAsar = true;
+  await decompress(zipFilePath, extractDirPath);
+  process.noAsar = false;
+
+  console.debug('ModUpdaterAPI', 'extracted zip file', {
+    modID,
+    zipFilePath,
+    extractDirPath,
+  });
+
+  function findModInfo(dirPath: string): string | null {
+    if (existsSync(path.join(dirPath, 'mod.json'))) return dirPath;
+    if (existsSync(path.join(dirPath, 'modinfo.json'))) return dirPath;
+    for (const fileName of readdirSync(dirPath, { encoding: null })) {
+      const fp = path.join(dirPath, fileName);
+      if (statSync(fp).isDirectory()) {
+        const result = findModInfo(fp);
+        if (result != null) return result;
+      }
+    }
+    return null;
+  }
+
+  const extractedModDirPath = findModInfo(extractDirPath);
+  if (extractedModDirPath == null) {
+    rmSync(extractDirPath, { force: true, recursive: true });
+    throw new Error(
+      `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the .zip file.`,
+    );
+  }
+
+  console.debug('ModUpdaterAPI', 'validated extracted files', {
+    modID,
+    extractedModDirPath,
+  });
+
+  const modDirPath = path.join(getAppPath(), 'mods', modID);
+  const configFilePath = path.join(modDirPath, 'config.json');
+  if (existsSync(configFilePath)) {
+    cpSync(configFilePath, path.join(extractedModDirPath, 'config.json'));
+  }
+  if (existsSync(modDirPath)) {
+    rmSync(modDirPath, { force: true, recursive: true });
+  }
+
+  console.debug('ModUpdaterAPI', 'cleaned up old mod directory', {
+    modID,
+    modDirPath,
+  });
+
+  mkdirSync(modDirPath, { recursive: true });
+  cpSync(extractedModDirPath, modDirPath, { recursive: true });
+  rmSync(extractDirPath, { force: true, recursive: true });
+
+  console.debug('ModUpdaterAPI', 'installed mod', { modID });
+
+  return modID;
+}
+
 export async function initModUpdaterAPI(): Promise<void> {
   provideAPI('ModUpdaterAPI', {
     validateNexusApiKey: async (nexusApiKey) => {
@@ -193,87 +265,18 @@ export async function initModUpdaterAPI(): Promise<void> {
         downloadFilePath: filePath,
       });
 
-      // extract the zip file
-      const downloadDirPath = path.join(path.dirname(filePath), modID);
-      process.noAsar = true;
-      await decompress(filePath, downloadDirPath);
-      process.noAsar = false;
-      rmSync(filePath);
-
-      console.debug('ModUpdaterAPI', 'extracted zip file', {
-        modID,
-        nexusModID,
-        nexusFileID,
-        downloadDirPath,
-      });
-
-      // check that the extracted files have the expected structure
-      function findModInfo(dirPath: string): string | null {
-        // if mod.json exists, this is a D2RMM mod
-        if (existsSync(path.join(dirPath, 'mod.json'))) {
-          return dirPath;
+      try {
+        return await installFromZipPath(filePath, modID);
+      } finally {
+        // Always remove the downloaded temp zip, even on failure.
+        if (existsSync(filePath)) {
+          rmSync(filePath);
         }
-        // if modinfo.json exists, this is a non-D2RMM data mod
-        if (existsSync(path.join(dirPath, 'modinfo.json'))) {
-          return dirPath;
-        }
-        const files = readdirSync(dirPath, { encoding: null });
-        for (const fileName of files) {
-          const filePath = path.join(dirPath, fileName);
-          if (statSync(filePath).isDirectory()) {
-            const result = findModInfo(filePath);
-            if (result != null) {
-              return result;
-            }
-          }
-        }
-        return null;
       }
-      const extractedModDirPath = findModInfo(downloadDirPath);
-      if (extractedModDirPath == null) {
-        throw new Error(
-          `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the downloaded .zip file.`,
-        );
-      }
-
-      console.debug('ModUpdaterAPI', 'validated extracted files', {
-        modID,
-        nexusModID,
-        nexusFileID,
-        extractedModDirPath,
-      });
-
-      // delete all mod files except mod.config
-      const modDirPath = path.join(getAppPath(), 'mods', modID);
-      const configFilePath = path.join(modDirPath, 'config.json');
-      if (existsSync(configFilePath)) {
-        cpSync(configFilePath, path.join(extractedModDirPath, 'config.json'));
-      }
-      if (existsSync(modDirPath)) {
-        rmSync(modDirPath, { force: true, recursive: true });
-      }
-
-      console.debug('ModUpdaterAPI', 'cleaned up mod directory', {
-        modID,
-        nexusModID,
-        nexusFileID,
-        modDirPath,
-      });
-
-      // copy the new extracted files to the mod directory
-      mkdirSync(modDirPath, { recursive: true });
-      cpSync(extractedModDirPath, modDirPath, { recursive: true });
-
-      // clean up
-      rmSync(downloadDirPath, { force: true, recursive: true });
-
-      console.debug('ModUpdaterAPI', 'installed mod', {
-        modID,
-        nexusModID,
-        nexusFileID,
-      });
-
-      return modID;
+    },
+    installModFromZip: async (zipFilePath) => {
+      const modID = path.basename(zipFilePath, '.zip');
+      return installFromZipPath(zipFilePath, modID);
     },
   } as IModUpdaterAPI);
 }

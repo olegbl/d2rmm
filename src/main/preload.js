@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('IPCBridge', {
   addListener: (listener) => {
@@ -18,4 +18,8 @@ contextBridge.exposeInMainWorld('IPCBridge', {
 
 contextBridge.exposeInMainWorld('env', {
   platform: process.platform,
+});
+
+contextBridge.exposeInMainWorld('ElectronUtils', {
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 });

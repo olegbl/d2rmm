@@ -35,13 +35,14 @@ import { GameFilesContextProvider } from 'renderer/react/ed2r/ED2RGameFilesConte
 import { ItemDragContextProvider } from 'renderer/react/ed2r/ED2RItemDragContext';
 import { SaveFilesContextProvider } from 'renderer/react/ed2r/ED2RSaveFilesContext';
 import { SelectedFileContextProvider } from 'renderer/react/ed2r/ED2RSelectedFileContext';
+import useModDropZone from 'renderer/react/hooks/useModDropZone';
 import ModList from 'renderer/react/modlist/ModList';
 import { Suspense } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
-import { Box, Divider, Tab } from '@mui/material';
+import { Box, Divider, Tab, Typography } from '@mui/material';
 
 function TabPanelBox({
   children,
@@ -71,18 +72,48 @@ function TabPanelBox({
 
 function RootRoute() {
   const [tab, setTab] = useTabState();
+  const { isDraggingOver, onDragEnter, onDragLeave, onDragOver, onDrop } =
+    useModDropZone();
 
   return (
     <TabContext value={tab}>
       <Box
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
         sx={{
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
           width: '100%',
           overflow: 'hidden',
+          position: 'relative',
         }}
       >
+        {isDraggingOver && (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: (theme) => theme.zIndex.modal + 1,
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              border: '3px dashed',
+              borderColor: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <Typography
+              sx={{ color: 'common.white', fontWeight: 'bold' }}
+              variant="h5"
+            >
+              Drop .zip to install mod
+            </Typography>
+          </Box>
+        )}
         <Box
           sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
         >

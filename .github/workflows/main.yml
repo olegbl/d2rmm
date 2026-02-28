@@ -260,7 +260,7 @@ jobs:
                     return `- [\`${sha}\`](${c.html_url}) ${message}`;
                   })
                   .join('\n');
-                body = `## Changes since ${lastRelease.name || baseTag}\n\n${bullets}`;
+                body = `<details>\n<summary><h2>${commitCount} Changes since ${lastRelease.name || baseTag}</h2></summary>\n\n${bullets}\n</details>`;
               }
             }
 

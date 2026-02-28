@@ -1,6 +1,7 @@
 import AddSectionHeaderMenuItem from 'renderer/react/modlist/AddSectionHeaderMenuItem';
 import CheckForAllModUpdatesMenuItem from 'renderer/react/modlist/CheckForAllModUpdatesMenuItem';
 import RefreshModListMenuItem from 'renderer/react/modlist/RefreshModListMenuItem';
+import UpdateAllModsMenuItem from 'renderer/react/modlist/UpdateAllModsMenuItem';
 import { useCallback, useState } from 'react';
 import { MoreVert } from '@mui/icons-material';
 import { Button, Menu } from '@mui/material';
@@ -40,6 +41,7 @@ export default function OverflowActionsButton(_props: Props): JSX.Element {
       >
         <RefreshModListMenuItem onHideMenu={onHideMenu} />
         <CheckForAllModUpdatesMenuItem onHideMenu={onHideMenu} />
+        <UpdateAllModsMenuItem onHideMenu={onHideMenu} />
         <AddSectionHeaderMenuItem onHideMenu={onHideMenu} />
       </Menu>
     </>

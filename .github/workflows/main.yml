@@ -262,8 +262,8 @@ jobs:
                   .reverse() // newest first
                   .map(c => {
                     const sha = c.sha.substring(0, 7);
-                    const message = c.commit.message.split('\n')[0].replace(/@/g, '\\@');
-                    return `- [\`${sha}\`](${c.html_url}) ${message}`;
+                    const message = c.commit.message.split('\n')[0].replace(/`/g, "'");
+                    return `- [\`${sha}\`](${c.html_url}) \`${message}\``;
                   })
                   .join('\n');
                 body = `## Changes since ${lastRelease.name || baseTag}\n\n${bullets}`;

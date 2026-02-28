@@ -1,6 +1,10 @@
 # Releases
 release/*.zip
 CHANGELOG.md
+
+# Updater binaries (built on demand via prepackage)
+tools/updater
+tools/updater.exe
 /docs/
 
 # Mods

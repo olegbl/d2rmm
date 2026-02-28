@@ -62,7 +62,11 @@ jobs:
             const pattern = new RegExp(`^v${major}\\.${prevMinor}\\.(\\d+)$`);
             const maxPatch = releases.reduce((max, r) => {
               const m = r.tag_name.match(pattern);
-              return m ? Math.max(max, parseInt(m[1], 10)) : max;
+              if (!m) return max;
+              // Skip alias releases so re-pushing the same version doesn't
+              // keep incrementing the alias (e.g. 1.8.1 → 1.8.2 → 1.8.3...).
+              if (r.body && r.body.includes('This release contains the same files as')) return max;
+              return Math.max(max, parseInt(m[1], 10));
             }, -1);
 
             const aliasVersion = `${major}.${prevMinor}.${maxPatch + 1}`;
@@ -369,6 +373,34 @@ jobs:
           tag: v${{ needs.check-version.outputs.previous_version }}
           allowUpdates: true
           prerelease: false
+
+      - name: Finalize alias pre-release
+        if: needs.check-version.outputs.version_changed == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const previousTag = "v${{ needs.check-version.outputs.previous_version }}";
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            // Find alias releases that point to the previous version by their body text.
+            const aliasReleases = releases.filter(r =>
+              r.prerelease && r.body && r.body.includes(`/releases/tag/${previousTag}`)
+            );
+            for (const alias of aliasReleases) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: alias.id,
+                prerelease: false
+              });
+              console.log(`Finalized alias release ${alias.tag_name}.`);
+            }
+            if (aliasReleases.length === 0) {
+              console.log(`No alias releases found for ${previousTag}.`);
+            }
 
   docs:
     needs: release

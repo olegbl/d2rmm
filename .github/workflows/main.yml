@@ -12,6 +12,7 @@ jobs:
       version_changed: ${{ steps.check_versions.outputs.version_changed }}
       current_version: ${{ steps.check_versions.outputs.current_version }}
       previous_version: ${{ steps.check_versions.outputs.previous_version }}
+      alias_version: ${{ steps.compute_alias.outputs.alias_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,6 +36,38 @@ jobs:
 
           "Previous Version = $previous_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Compute alias version
+        id: compute_alias
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const version = '${{ steps.check_versions.outputs.current_version }}';
+            const [major, minor, patch] = version.split('.').map(Number);
+
+            // Only alias when releasing a new minor version (patch = 0),
+            // e.g. 1.9.0 gets an alias of 1.8.x+1 so old links stay valid.
+            if (patch !== 0 || minor === 0) {
+              core.setOutput('alias_version', '');
+              return;
+            }
+
+            // Find the highest existing tag for the previous minor to get the next patch.
+            const prevMinor = minor - 1;
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const pattern = new RegExp(`^v${major}\\.${prevMinor}\\.(\\d+)$`);
+            const maxPatch = releases.reduce((max, r) => {
+              const m = r.tag_name.match(pattern);
+              return m ? Math.max(max, parseInt(m[1], 10)) : max;
+            }, -1);
+
+            const aliasVersion = `${major}.${prevMinor}.${maxPatch + 1}`;
+            core.setOutput('alias_version', aliasVersion);
+            console.log(`Alias version: ${aliasVersion}`);
 
   build-windows:
     runs-on: windows-2022
@@ -215,6 +248,86 @@ jobs:
               console.log(`Release ${tagName} published as pre-release.`);
             } else {
               console.log(`Release ${tagName} not found.`);
+            }
+
+      - name: Create alias tag
+        if: needs.check-version.outputs.alias_version != ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const aliasTag = "v${{ needs.check-version.outputs.alias_version }}";
+
+            // Delete any existing alias release so we can recreate it cleanly.
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const existing = releases.find(r => r.tag_name === aliasTag);
+            if (existing) {
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: existing.id
+              });
+              console.log(`Deleted existing release ${aliasTag}`);
+            }
+
+            // Delete existing alias tag (if any).
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${aliasTag}`
+              });
+              console.log(`Deleted existing tag ${aliasTag}`);
+            } catch (e) {
+              if (!e.message.includes('Reference does not exist')) throw e;
+            }
+
+            // Create alias tag pointing to the same commit as the current release.
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${aliasTag}`,
+              sha: context.sha
+            });
+            console.log(`Created alias tag ${aliasTag}`);
+
+      - name: Create alias release
+        if: needs.check-version.outputs.alias_version != ''
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: D2RMM ${{ needs.check-version.outputs.alias_version }}
+          tag: v${{ needs.check-version.outputs.alias_version }}
+          draft: false
+          prerelease: true
+          artifacts: 'artifacts/*'
+          artifactErrorsFailBuild: true
+          generateReleaseNotes: false
+          body: "This release contains the same files as [D2RMM ${{ needs.check-version.outputs.current_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.current_version }}). It exists only to keep older download links working — please visit the link above for the latest version."
+
+      - name: Publish alias pre-release
+        if: needs.check-version.outputs.alias_version != ''
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const aliasTag = "v${{ needs.check-version.outputs.alias_version }}";
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const release = releases.find(r => r.tag_name === aliasTag);
+            if (release) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                draft: false,
+                prerelease: true
+              });
+              console.log(`Alias release ${aliasTag} published as pre-release.`);
             }
 
       - name: Finalize pre-release

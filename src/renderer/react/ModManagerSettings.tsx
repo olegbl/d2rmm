@@ -249,6 +249,14 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               />
             </>
           ) : null}
+          {!isDirectMode && outputModName.trim() === '' ? (
+            <Alert severity="warning">
+              <Typography>
+                The Output Mod Name is empty. This will almost certainly break
+                your game. Are you sure this is right?
+              </Typography>
+            </Alert>
+          ) : null}
           <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
           <Typography color="text.secondary" variant="subtitle2">
             Specify where D2RMM should read save files from when installing

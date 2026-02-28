@@ -194,6 +194,29 @@ jobs:
           artifactErrorsFailBuild: true
           generateReleaseNotes: false
 
+      - name: Publish pre-release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const tagName = "v${{ needs.check-version.outputs.current_version }}";
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const release = releases.data.find(r => r.tag_name === tagName);
+            if (release) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                draft: false,
+                prerelease: true
+              });
+              console.log(`Release ${tagName} published as pre-release.`);
+            } else {
+              console.log(`Release ${tagName} not found.`);
+            }
+
       - name: Finalize pre-release
         if: needs.check-version.outputs.version_changed == 'true'
         uses: ncipollo/release-action@v1

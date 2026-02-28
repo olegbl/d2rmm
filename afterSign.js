@@ -3,10 +3,19 @@ const fs = require('fs-extra');
 const path = require('path');
 
 exports.default = async function afterSign(context) {
+  const { productName, version } = context.packager.appInfo;
+  const isMac = context.packager.platform.nodeName === 'darwin';
+
+  // On macOS, files need to go inside the .app bundle at Contents/
+  // since appPath = path.resolve(process.resourcesPath, '..') = D2RMM.app/Contents/
+  const appContentsDir = isMac
+    ? path.join(context.appOutDir, `${productName}.app`, 'Contents')
+    : context.appOutDir;
+
   // copy the generated types.d.ts file into the app output directory
   {
     const sourceFilePath = path.join(context.outDir, 'types.d.ts');
-    const targetFilePath = path.join(context.appOutDir, 'types.d.ts');
+    const targetFilePath = path.join(appContentsDir, 'types.d.ts');
     fs.writeFileSync(
       targetFilePath,
       fs
@@ -21,7 +30,7 @@ exports.default = async function afterSign(context) {
   {
     const sourceFilePath = path.join(context.outDir, 'config-schema.json');
     const targetFilePath = path.join(
-      context.appOutDir,
+      appContentsDir,
       'mods',
       'config-schema.json',
     );
@@ -41,8 +50,8 @@ exports.default = async function afterSign(context) {
   }
 
   // wrap the generated app in a "D2RMM X.X.X" versioned folder
-  {
-    const { productName, version } = context.packager.appInfo;
+  // (Windows only — on macOS the .app bundle is self-contained inside the DMG)
+  if (!isMac) {
     const source = context.appOutDir;
     const intermediary = path.join(context.outDir, `${productName} ${version}`);
     const destination = path.join(

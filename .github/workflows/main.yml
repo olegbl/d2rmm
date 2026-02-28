@@ -6,9 +6,12 @@ on:
       - master
 
 jobs:
-  release:
+  check-version:
     runs-on: windows-2022
-
+    outputs:
+      version_changed: ${{ steps.check_versions.outputs.version_changed }}
+      current_version: ${{ steps.check_versions.outputs.current_version }}
+      previous_version: ${{ steps.check_versions.outputs.previous_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,6 +35,12 @@ jobs:
 
           "Previous Version = $previous_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "Current Version = $current_version" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
@@ -57,11 +66,60 @@ jobs:
       - name: Build package
         run: npm run package
 
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: release/build/*.zip
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # GitHub dependencies don't work in GitHub Action workflows...
+      - name: Remove CascLib dependency
+        run: npm remove CascLib --force
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build package
+        run: npm run package
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: release/build/*.dmg
+
+  release:
+    needs: [check-version, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: artifacts
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: artifacts
+
       - name: Delete release
         uses: actions/github-script@v6
         with:
           script: |
-            const releaseName = "D2RMM ${{ steps.check_versions.outputs.current_version }}";
+            const releaseName = "D2RMM ${{ needs.check-version.outputs.current_version }}";
             const releases = await github.rest.repos.listReleases({
               owner: context.repo.owner,
               repo: context.repo.repo
@@ -82,7 +140,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const tagName = "v${{ steps.check_versions.outputs.current_version }}";
+            const tagName = "v${{ needs.check-version.outputs.current_version }}";
             try {
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
@@ -102,7 +160,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const tagName = "v${{ steps.check_versions.outputs.current_version }}";
+            const tagName = "v${{ needs.check-version.outputs.current_version }}";
             try {
               await github.rest.git.createRef({
                 owner: context.repo.owner,
@@ -120,23 +178,43 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: D2RMM ${{ steps.check_versions.outputs.current_version }}
-          tag: v${{ steps.check_versions.outputs.current_version }}
+          name: D2RMM ${{ needs.check-version.outputs.current_version }}
+          tag: v${{ needs.check-version.outputs.current_version }}
           draft: false
           prerelease: true
-          artifacts: release/build/D2RMM ${{ steps.check_versions.outputs.current_version }}.zip
+          artifacts: 'artifacts/*'
           artifactErrorsFailBuild: true
           generateReleaseNotes: false
 
       - name: Finalize pre-release
-        if: steps.check_versions.outputs.version_changed == 'true'
+        if: needs.check-version.outputs.version_changed == 'true'
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          name: D2RMM ${{ steps.check_versions.outputs.previous_version }}
-          tag: v${{ steps.check_versions.outputs.previous_version }}
+          name: D2RMM ${{ needs.check-version.outputs.previous_version }}
+          tag: v${{ needs.check-version.outputs.previous_version }}
           allowUpdates: true
-          preRelease: false
+          prerelease: false
+
+  docs:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # GitHub dependencies don't work in GitHub Action workflows...
+      - name: Remove CascLib dependency
+        run: npm remove CascLib --force
+
+      # Skip postinstall (native module compilation) since docs only need typedoc
+      - name: Install dependencies
+        run: npm install --ignore-scripts
 
       - name: Generate documentation
         run: npm run docs

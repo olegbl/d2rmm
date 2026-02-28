@@ -28,4 +28,5 @@ export type IModUpdaterAPI = {
     expires?: number,
   ) => Promise<string>;
   installModFromZip: (zipFilePath: string) => Promise<string>;
+  installModFromFolder: (folderPath: string) => Promise<string>;
 };

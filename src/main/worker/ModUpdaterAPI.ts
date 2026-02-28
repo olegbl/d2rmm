@@ -12,8 +12,10 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  readFileSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -116,6 +118,19 @@ const NexusModsAPI = {
   },
 };
 
+function findModInfo(dirPath: string): string | null {
+  if (existsSync(path.join(dirPath, 'mod.json'))) return dirPath;
+  if (existsSync(path.join(dirPath, 'modinfo.json'))) return dirPath;
+  for (const fileName of readdirSync(dirPath, { encoding: null })) {
+    const fp = path.join(dirPath, fileName);
+    if (statSync(fp).isDirectory()) {
+      const result = findModInfo(fp);
+      if (result != null) return result;
+    }
+  }
+  return null;
+}
+
 async function installFromZipPath(
   zipFilePath: string,
   modID: string,
@@ -137,19 +152,6 @@ async function installFromZipPath(
     zipFilePath,
     extractDirPath,
   });
-
-  function findModInfo(dirPath: string): string | null {
-    if (existsSync(path.join(dirPath, 'mod.json'))) return dirPath;
-    if (existsSync(path.join(dirPath, 'modinfo.json'))) return dirPath;
-    for (const fileName of readdirSync(dirPath, { encoding: null })) {
-      const fp = path.join(dirPath, fileName);
-      if (statSync(fp).isDirectory()) {
-        const result = findModInfo(fp);
-        if (result != null) return result;
-      }
-    }
-    return null;
-  }
 
   const extractedModDirPath = findModInfo(extractDirPath);
   if (extractedModDirPath == null) {
@@ -183,6 +185,52 @@ async function installFromZipPath(
   rmSync(extractDirPath, { force: true, recursive: true });
 
   console.debug('ModUpdaterAPI', 'installed mod', { modID });
+
+  return modID;
+}
+
+async function installFromFolderPath(
+  folderPath: string,
+  modID: string,
+): Promise<string> {
+  console.debug('ModUpdaterAPI', 'installFromFolderPath', {
+    folderPath,
+    modID,
+  });
+
+  const extractedModDirPath = findModInfo(folderPath);
+  if (extractedModDirPath == null) {
+    throw new Error(
+      `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the folder.`,
+    );
+  }
+
+  console.debug('ModUpdaterAPI', 'validated folder structure', {
+    modID,
+    extractedModDirPath,
+  });
+
+  // Read existing config before overwriting the mod directory, so we do not
+  // write into the user's source folder (unlike the zip path which uses a
+  // temporary extraction directory).
+  const modDirPath = path.join(getAppPath(), 'mods', modID);
+  const configFilePath = path.join(modDirPath, 'config.json');
+  const existingConfig = existsSync(configFilePath)
+    ? readFileSync(configFilePath)
+    : null;
+
+  if (existsSync(modDirPath)) {
+    rmSync(modDirPath, { force: true, recursive: true });
+  }
+
+  mkdirSync(modDirPath, { recursive: true });
+  cpSync(extractedModDirPath, modDirPath, { recursive: true });
+
+  if (existingConfig != null) {
+    writeFileSync(path.join(modDirPath, 'config.json'), existingConfig);
+  }
+
+  console.debug('ModUpdaterAPI', 'installed mod from folder', { modID });
 
   return modID;
 }
@@ -277,6 +325,10 @@ export async function initModUpdaterAPI(): Promise<void> {
     installModFromZip: async (zipFilePath) => {
       const modID = path.basename(zipFilePath, '.zip');
       return installFromZipPath(zipFilePath, modID);
+    },
+    installModFromFolder: async (folderPath) => {
+      const modID = path.basename(folderPath);
+      return installFromFolderPath(folderPath, modID);
     },
   } as IModUpdaterAPI);
 }

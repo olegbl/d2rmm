@@ -48,30 +48,52 @@ export default function useModDropZone(): ModDropZoneHandlers {
       dragDepth.current = 0;
       setIsDraggingOver(false);
 
-      const allFiles = Array.from(event.dataTransfer.files);
-      const zipFiles = allFiles.filter((f) => f.name.endsWith('.zip'));
-      const nonZipCount = allFiles.length - zipFiles.length;
+      type InstallableItem =
+        | { kind: 'zip'; file: File }
+        | { kind: 'folder'; file: File };
 
-      if (nonZipCount > 0) {
+      const installable: InstallableItem[] = [];
+      let ignoredCount = 0;
+
+      Array.from(event.dataTransfer.files).forEach((file, index) => {
+        const entry = event.dataTransfer.items[index]?.webkitGetAsEntry();
+        if (entry?.isDirectory) {
+          installable.push({ kind: 'folder', file });
+        } else if (file.name.endsWith('.zip')) {
+          installable.push({ kind: 'zip', file });
+        } else {
+          ignoredCount += 1;
+        }
+      });
+
+      if (ignoredCount > 0) {
         showToast({
           severity: 'info',
-          title: `${nonZipCount} non-zip file${nonZipCount > 1 ? 's' : ''} ignored`,
-          description: 'Only .zip files can be installed by drag-and-drop.',
+          title: `${ignoredCount} file${ignoredCount > 1 ? 's' : ''} ignored`,
+          description:
+            'Only .zip files and mod folders can be installed by drag-and-drop.',
           duration: 4000,
         });
       }
 
-      if (zipFiles.length === 0) {
+      if (installable.length === 0) {
         return;
       }
 
-      // Install sequentially to avoid race conditions when multiple zips share a modID
+      // Install sequentially to avoid race conditions when multiple items share a modID
       (async () => {
-        for (const file of zipFiles) {
-          const zipFilePath = ElectronUtilsAPI.getPathForFile(file);
-          const modID = file.name.replace(/\.zip$/i, '');
+        for (const item of installable) {
+          const itemPath = ElectronUtilsAPI.getPathForFile(item.file);
+          const modID =
+            item.kind === 'zip'
+              ? item.file.name.replace(/\.zip$/i, '')
+              : item.file.name;
           try {
-            await ModUpdaterAPI.installModFromZip(zipFilePath);
+            if (item.kind === 'zip') {
+              await ModUpdaterAPI.installModFromZip(itemPath);
+            } else {
+              await ModUpdaterAPI.installModFromFolder(itemPath);
+            }
             const mods = await refreshMods([modID]);
             const mod = mods.find((m) => m.id === modID);
             showToast({

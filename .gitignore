@@ -2,9 +2,11 @@
 release/*.zip
 CHANGELOG.md
 
-# Updater binaries (built on demand via prepackage)
+# Binaries built on demand via prepackage
 tools/updater
 tools/updater.exe
+tools/CascLib.dll
+tools/CascLib.dylib
 /docs/
 
 # Mods

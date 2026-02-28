@@ -53,15 +53,19 @@ jobs:
           node-version: 22
           architecture: 'x64'
 
-      # GitHub dependencies don't work in GitHub Action workflows...
-      - name: Remove CascLib dependency
-        run: npm remove CascLib --force
-
       - name: Install MSBuild
         uses: microsoft/setup-msbuild@v1.3.1
 
+      # GitHub git dependencies don't work in GitHub Action workflows,
+      # so we remove CascLib from package.json and clone it manually instead.
+      - name: Remove CascLib from package.json
+        run: npm remove CascLib --force
+
       - name: Install dependencies
         run: npm install
+
+      - name: Clone CascLib source
+        run: git clone https://github.com/ladislav-zezula/CascLib.git node_modules/CascLib
 
       - name: Build package
         run: npm run package
@@ -83,12 +87,16 @@ jobs:
         with:
           node-version: 22
 
-      # GitHub dependencies don't work in GitHub Action workflows...
-      - name: Remove CascLib dependency
+      # GitHub git dependencies don't work in GitHub Action workflows,
+      # so we remove CascLib from package.json and clone it manually instead.
+      - name: Remove CascLib from package.json
         run: npm remove CascLib --force
 
       - name: Install dependencies
         run: npm install
+
+      - name: Clone CascLib source
+        run: git clone https://github.com/ladislav-zezula/CascLib.git node_modules/CascLib
 
       - name: Build package
         run: npm run package
@@ -214,6 +222,11 @@ jobs:
 
       # Skip postinstall (native module compilation) since docs only need typedoc
       - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      # typedoc resolves types from app deps (regedit, koffi, etc.)
+      - name: Install app dependencies
+        working-directory: release/app
         run: npm install --ignore-scripts
 
       - name: Generate documentation

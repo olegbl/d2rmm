@@ -232,23 +232,53 @@ jobs:
         with:
           script: |
             const tagName = "v${{ needs.check-version.outputs.current_version }}";
-            const releases = await github.rest.repos.listReleases({
+            const { data: allReleases } = await github.rest.repos.listReleases({
               owner: context.repo.owner,
-              repo: context.repo.repo
+              repo: context.repo.repo,
+              per_page: 100
             });
-            const release = releases.data.find(r => r.tag_name === tagName);
-            if (release) {
-              await github.rest.repos.updateRelease({
+            const release = allReleases.find(r => r.tag_name === tagName);
+            if (!release) {
+              console.log(`Release ${tagName} not found.`);
+              return;
+            }
+
+            // Generate release notes: commits since last non-pre-release.
+            let body = '';
+            let commitCount = 0;
+            const lastRelease = allReleases.find(r => !r.prerelease && !r.draft);
+            if (lastRelease) {
+              const baseTag = lastRelease.tag_name;
+              console.log(`Comparing ${baseTag}...${context.sha}`);
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                release_id: release.id,
-                draft: false,
-                prerelease: true
+                basehead: `${baseTag}...${context.sha}`
               });
-              console.log(`Release ${tagName} published as pre-release.`);
-            } else {
-              console.log(`Release ${tagName} not found.`);
+              commitCount = comparison.commits.length;
+              if (commitCount > 0) {
+                const bullets = comparison.commits
+                  .slice()
+                  .reverse() // newest first
+                  .map(c => {
+                    const sha = c.sha.substring(0, 7);
+                    const message = c.commit.message.split('\n')[0];
+                    return `- [\`${sha}\`](${c.html_url}) ${message}`;
+                  })
+                  .join('\n');
+                body = `## Changes since ${lastRelease.name || baseTag}\n\n${bullets}`;
+              }
             }
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              draft: false,
+              prerelease: true,
+              body
+            });
+            console.log(`Release ${tagName} published as pre-release with ${commitCount} commits in release notes.`);
 
       - name: Create alias tag
         if: needs.check-version.outputs.alias_version != ''
@@ -306,7 +336,7 @@ jobs:
           artifacts: 'artifacts/*'
           artifactErrorsFailBuild: true
           generateReleaseNotes: false
-          body: "This release contains the same files as [D2RMM ${{ needs.check-version.outputs.current_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.current_version }}). It exists only to keep older download links working — please visit the link above for the latest version."
+          body: 'This release contains the same files as [D2RMM ${{ needs.check-version.outputs.current_version }}](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.current_version }}). It exists only to keep older download links working — please visit the link above for the latest version.'
 
       - name: Publish alias pre-release
         if: needs.check-version.outputs.alias_version != ''

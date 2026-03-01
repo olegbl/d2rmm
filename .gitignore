@@ -43,4 +43,4 @@ npm-debug.log.*
 *.scss.d.ts
 
 # AI
-.claude
+.claude/settings.local.json

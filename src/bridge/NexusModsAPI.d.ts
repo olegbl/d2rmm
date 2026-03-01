@@ -103,3 +103,30 @@ export type NexusModsApiStateEvent = {
   hourlyRemaining: string;
   hourlyReset: string;
 };
+
+// /v2/graphql { collectionRevision(slug, revision) { modFiles { ... } } }
+// A single mod entry within a collection revision
+export type CollectionRevisionMod = {
+  fileId: number;
+  optional: boolean;
+  file: {
+    fileId: number;
+    modId: number;
+    mod: {
+      modId: number;
+      modCategory: {
+        name: string;
+      } | null;
+      game: {
+        domainName: string;
+      };
+    };
+  } | null;
+};
+
+// /v2/graphql { collectionRevision(slug, revision) { ... } }
+// Retrieve a specific revision of a collection
+export type CollectionRevision = {
+  revisionNumber: number;
+  modFiles: CollectionRevisionMod[];
+};

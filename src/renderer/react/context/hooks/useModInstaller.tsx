@@ -91,6 +91,7 @@ export default function useModInstaller(authState: INexusAuthState) {
           title: message,
           severity: 'success',
         });
+        return modID;
       } else {
         const message = `Failed to install mod ${originalModID} from Nexus Mods. Checks the logs.`;
         showToast({

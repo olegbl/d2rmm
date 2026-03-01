@@ -1,5 +1,6 @@
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
 import type {
+  CollectionRevision,
   DownloadLink,
   Files,
   NexusModsApiStateEvent,
@@ -89,6 +90,69 @@ const NexusModsAPI = {
     );
     await NexusModsAPI.publishStatus(headers);
     return JSON.parse(response.toString()) as Files;
+  },
+  getCollectionRevision: async (
+    nexusApiKey: string,
+    collectionSlug: string,
+    revisionNumber: number,
+  ): Promise<CollectionRevision> => {
+    console.debug('NexusModsAPI', 'getCollectionRevision', {
+      collectionSlug,
+      revisionNumber,
+    });
+    const query = `
+      query CollectionRevision($slug: String!, $revision: Int!, $viewAdultContent: Boolean) {
+        collectionRevision(slug: $slug, revision: $revision, viewAdultContent: $viewAdultContent) {
+          revisionNumber
+          modFiles {
+            fileId
+            optional
+            file {
+              fileId
+              modId
+              mod {
+                modId
+                modCategory {
+                  name
+                }
+                game {
+                  domainName
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          slug: collectionSlug,
+          revision: revisionNumber,
+          viewAdultContent: true,
+        },
+      }),
+    });
+    const data = (await response.json()) as {
+      data: { collectionRevision: CollectionRevision };
+      errors?: { message: string }[];
+    };
+    if (data.errors != null && data.errors.length > 0) {
+      throw new Error(`GraphQL error: ${data.errors[0].message}`);
+    }
+    if (data.data.collectionRevision == null) {
+      throw new Error(
+        `Collection "${collectionSlug}" revision ${revisionNumber} not found.`,
+      );
+    }
+    return data.data.collectionRevision;
   },
   getDownloadLink: async (
     nexusApiKey: string,
@@ -329,6 +393,17 @@ export async function initModUpdaterAPI(): Promise<void> {
     installModFromFolder: async (folderPath) => {
       const modID = path.basename(folderPath);
       return installFromFolderPath(folderPath, modID);
+    },
+    getCollectionRevision: async (
+      nexusApiKey,
+      collectionSlug,
+      revisionNumber,
+    ) => {
+      return NexusModsAPI.getCollectionRevision(
+        nexusApiKey,
+        collectionSlug,
+        revisionNumber,
+      );
     },
   } as IModUpdaterAPI);
 }

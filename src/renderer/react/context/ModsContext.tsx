@@ -106,6 +106,7 @@ export type IModsContext = {
   selectedMod: ISelectedMod;
   setEnabledMods: IEnabledModsMutator;
   setInstalledMods: IInstalledModsMutator;
+  setItemsOrder: React.Dispatch<React.SetStateAction<IItemsOrder>>;
   setModConfig: IModConfigMutator;
   setModConfigOverrides: ISetModConfigOverrides;
   setSectionHeaders: ISectionHeadersMutator;
@@ -419,6 +420,7 @@ export function ModsContextProvider({
       selectedMod,
       setEnabledMods,
       setInstalledMods,
+      setItemsOrder,
       setModConfig,
       setModConfigOverrides,
       setSectionHeaders,
@@ -438,6 +440,7 @@ export function ModsContextProvider({
       selectedMod,
       setEnabledMods,
       setInstalledMods,
+      setItemsOrder,
       setModConfig,
       setModConfigOverrides,
       setSectionHeaders,
@@ -550,6 +553,16 @@ export function useToggleSectionHeader(id: string): () => void {
       }),
     }));
   }, [id, setSectionHeaders]);
+}
+
+export function useSetItemsOrder(): React.Dispatch<
+  React.SetStateAction<IItemsOrder>
+> {
+  const context = useContext(Context);
+  if (context == null) {
+    throw new Error('No preferences context available.');
+  }
+  return context.setItemsOrder;
 }
 
 export function useOrdereredItems(): [IOrderedItems, IItemsOrderMutator] {

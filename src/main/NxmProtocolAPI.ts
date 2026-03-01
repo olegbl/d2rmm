@@ -34,26 +34,39 @@ export async function initNxmProtocolAPI(): Promise<void> {
       const { host, pathname, searchParams } = new URL(url);
       const paths = pathname.split('/');
       const game = host;
-      const nexusModID = paths[2];
-      const nexusFileID = parseInt(paths[4], 10);
-      const key = searchParams.get('key');
-      const expires = searchParams.has('expires')
-        ? parseInt(searchParams.get('expires') ?? '0', 10)
-        : null;
-      if (
-        game === 'diablo2resurrected' &&
-        nexusModID != null &&
-        nexusFileID != null
-      ) {
-        EventAPI.send('nexus-mods-open-url', {
-          nexusModID,
-          nexusFileID,
-          key,
-          expires,
-        })
-          .then()
-          .catch(console.error);
-        return true;
+      if (game !== 'diablo2resurrected') {
+        return false;
+      }
+      if (paths[1] === 'mods') {
+        const nexusModID = paths[2];
+        const nexusFileID = parseInt(paths[4], 10);
+        const key = searchParams.get('key');
+        const expires = searchParams.has('expires')
+          ? parseInt(searchParams.get('expires') ?? '0', 10)
+          : null;
+        if (nexusModID != null && nexusFileID != null) {
+          EventAPI.send('nexus-mods-open-url', {
+            nexusModID,
+            nexusFileID,
+            key,
+            expires,
+          })
+            .then()
+            .catch(console.error);
+          return true;
+        }
+      } else if (paths[1] === 'collections') {
+        const collectionSlug = paths[2];
+        const revisionNumber = parseInt(paths[4], 10);
+        if (collectionSlug != null && !isNaN(revisionNumber)) {
+          EventAPI.send('nexus-mods-open-collection-url', {
+            collectionSlug,
+            revisionNumber,
+          })
+            .then()
+            .catch(console.error);
+          return true;
+        }
       }
     }
     return false;

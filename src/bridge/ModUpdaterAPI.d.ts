@@ -1,3 +1,5 @@
+import type { CollectionRevision } from './NexusModsAPI';
+
 export type ModUpdaterNexusDownload = {
   type: 'nexus';
   version: string;
@@ -29,4 +31,9 @@ export type IModUpdaterAPI = {
   ) => Promise<string>;
   installModFromZip: (zipFilePath: string) => Promise<string>;
   installModFromFolder: (folderPath: string) => Promise<string>;
+  getCollectionRevision: (
+    nexusApiKey: string,
+    collectionSlug: string,
+    revisionNumber: number,
+  ) => Promise<CollectionRevision>;
 };

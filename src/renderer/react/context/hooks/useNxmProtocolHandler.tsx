@@ -1,5 +1,6 @@
 import { useEventAPIListener } from 'renderer/EventAPI';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
+import useModCollectionInstaller from 'renderer/react/context/hooks/useModCollectionInstaller';
 import useModInstaller from 'renderer/react/context/hooks/useModInstaller';
 import { useCallback } from 'react';
 
@@ -7,6 +8,7 @@ export default function useNxmProtocolHandler(
   authState: INexusAuthState,
 ): void {
   const installMod = useModInstaller(authState);
+  const installCollection = useModCollectionInstaller(authState);
 
   const onOpenNxmUrl = useCallback(
     ({
@@ -32,5 +34,21 @@ export default function useNxmProtocolHandler(
     [installMod],
   );
 
+  const onOpenCollectionUrl = useCallback(
+    ({
+      collectionSlug,
+      revisionNumber,
+    }: {
+      collectionSlug: string;
+      revisionNumber: number;
+    }) => {
+      installCollection({ collectionSlug, revisionNumber })
+        .then()
+        .catch(console.error);
+    },
+    [installCollection],
+  );
+
   useEventAPIListener('nexus-mods-open-url', onOpenNxmUrl);
+  useEventAPIListener('nexus-mods-open-collection-url', onOpenCollectionUrl);
 }

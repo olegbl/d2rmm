@@ -182,3 +182,19 @@ Key types: `ICollectionPayload`, `ICollectionManifest` in [src/bridge/NexusModsA
 - `@electron/rebuild` v4 requires Node ≥22.12.0
 
 More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/patterns.md](.claude/patterns.md) | [.claude/codebase-map.md](.claude/codebase-map.md)
+
+---
+
+## Creating D2RMM Mods
+
+Use the `/create-mod` skill to get guided assistance writing mods. Supporting knowledge files:
+
+| File                                                           | Contents                                                                               |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [.claude/d2r-modding-api.md](.claude/d2r-modding-api.md)       | Full `D2RMM` global API, `mod.json` schema, config field types, binding expressions    |
+| [.claude/d2r-game-files.md](.claude/d2r-game-files.md)         | Game data file paths, key column meanings, localization structure                      |
+| [.claude/d2r-game-mechanics.md](.claude/d2r-game-mechanics.md) | How game systems work: item drop pipeline, TC chaining, NoDrop, quality rolls, affixes |
+| [.claude/d2r-mod-examples.md](.claude/d2r-mod-examples.md)     | Annotated code patterns from real mods                                                 |
+
+Example mods: https://github.com/olegbl/d2rmm.mods (local path in [.claude/local.md](.claude/local.md) if available)
+External references: https://olegbl.github.io/d2rmm/ · https://locbones.github.io/D2R_DataGuide/ · https://d2mods.info/forum/kb/

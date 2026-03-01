@@ -14,6 +14,15 @@ const DialogManagerContext = React.createContext<IDialogManagerContext | null>(
 
 export default DialogManagerContext;
 
+type IDialogStateContext = {
+  dialogs: [string, Dialog][];
+  hideDialog: (id: string) => void;
+};
+
+const DialogStateContext = React.createContext<IDialogStateContext | null>(
+  null,
+);
+
 type Props = {
   children: React.ReactNode;
 };
@@ -49,17 +58,37 @@ export function DialogManagerContextProvider({ children }: Props): JSX.Element {
     });
   }, []);
 
-  const context = useMemo(
-    () => ({
-      hideDialog,
-      showDialog,
-    }),
+  const managerContext = useMemo(
+    () => ({ hideDialog, showDialog }),
     [hideDialog, showDialog],
   );
 
+  const stateContext = useMemo(
+    () => ({ dialogs, hideDialog }),
+    [dialogs, hideDialog],
+  );
+
   return (
-    <DialogManagerContext.Provider value={context}>
-      {children}
+    <DialogManagerContext.Provider value={managerContext}>
+      <DialogStateContext.Provider value={stateContext}>
+        {children}
+      </DialogStateContext.Provider>
+    </DialogManagerContext.Provider>
+  );
+}
+
+// Renders all open dialogs. Place this inside all context providers that
+// dialog components may need (e.g. inside Content in App.tsx).
+export function DialogRenderer(): JSX.Element {
+  const context = useContext(DialogStateContext);
+  if (context == null) {
+    throw new Error(
+      'DialogRenderer must be used within a DialogManagerContextProvider',
+    );
+  }
+  const { dialogs, hideDialog } = context;
+  return (
+    <>
       {dialogs.map(([id, dialog], index) => (
         <DialogContextProvider
           key={id}
@@ -70,7 +99,7 @@ export function DialogManagerContextProvider({ children }: Props): JSX.Element {
           {dialog}
         </DialogContextProvider>
       ))}
-    </DialogManagerContext.Provider>
+    </>
   );
 }
 

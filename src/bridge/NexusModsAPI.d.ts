@@ -104,6 +104,9 @@ export type NexusModsApiStateEvent = {
   hourlyReset: string;
 };
 
+// Nexus Mods GraphQL API
+// https://github.com/Nexus-Mods/node-nexus-api/blob/master/src/types.ts
+
 // /v2/graphql { collectionRevision(slug, revision) { modFiles { ... } } }
 // A single mod entry within a collection revision
 export type CollectionRevisionMod = {
@@ -129,4 +132,66 @@ export type CollectionRevisionMod = {
 export type CollectionRevision = {
   revisionNumber: number;
   modFiles: CollectionRevisionMod[];
+};
+
+// /v2/graphql { myCollections(gameId) { nodes { id slug name } } }
+// One of the authenticated user's collections
+export type MyCollection = {
+  id: number;
+  slug: string;
+  name: string;
+};
+
+export type UpdatePolicy = 'exact' | 'latest' | 'prefer';
+
+export type SourceType = 'browse' | 'manual' | 'direct' | 'nexus';
+
+export interface ICollectionManifestInfo {
+  author: string;
+  authorUrl?: string;
+  name: string;
+  description?: string;
+  summary?: string;
+  domainName: string;
+  gameVersions?: string[];
+}
+
+export interface ICollectionManifestModSource {
+  type: SourceType;
+  modId?: number;
+  fileId?: number;
+  md5?: string;
+  fileSize?: number;
+  updatePolicy?: UpdatePolicy;
+  logicalFilename?: string;
+  fileExpression?: string;
+  url?: string;
+  adultContent?: boolean;
+}
+
+export interface ICollectionManifestMod {
+  name: string;
+  version: string;
+  optional: boolean;
+  domainName: string;
+  source: ICollectionManifestModSource;
+  author?: string;
+}
+
+export interface ICollectionManifest {
+  info: ICollectionManifestInfo;
+  mods: ICollectionManifestMod[];
+}
+
+export interface ICollectionPayload {
+  adultContent: boolean;
+  collectionSchemaId: number;
+  collectionManifest: ICollectionManifest;
+}
+
+// /v1/collections/upload_url
+// Pre-signed S3 URL for uploading a collection asset
+export type PreSignedUrl = {
+  uuid: string;
+  uploadUrl: string;
 };

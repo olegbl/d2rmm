@@ -1,13 +1,18 @@
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
 import type {
+  ICollectionPayload,
   CollectionRevision,
   DownloadLink,
   Files,
+  ICollectionManifest,
+  MyCollection,
   NexusModsApiStateEvent,
+  PreSignedUrl,
   ValidateResult,
 } from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
 import decompress from 'decompress';
+import { zipSync } from 'fflate';
 import {
   cpSync,
   existsSync,
@@ -153,6 +158,190 @@ const NexusModsAPI = {
       );
     }
     return data.data.collectionRevision;
+  },
+  getMyCollections: async (nexusApiKey: string): Promise<MyCollection[]> => {
+    console.debug('NexusModsAPI', 'getMyCollections');
+    const query = `
+      query MyCollections($gameDomain: String) {
+        myCollections(
+          gameDomain: $gameDomain,
+          viewAdultContent: true,
+          viewUnlisted: true,
+          viewUnderModeration: true,
+        ) {
+          nodes {
+            id
+            slug
+            name
+          }
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query,
+        variables: { gameDomain: 'diablo2resurrected' },
+      }),
+    });
+    const data = (await response.json()) as {
+      data: { myCollections: { nodes: MyCollection[] } };
+      errors?: { message: string }[];
+    };
+    if (data.errors != null && data.errors.length > 0) {
+      throw new Error(`GraphQL error: ${data.errors[0].message}`);
+    }
+    return data.data.myCollections.nodes;
+  },
+  getRevisionUploadUrl: async (nexusApiKey: string): Promise<PreSignedUrl> => {
+    console.debug('NexusModsAPI', 'getRevisionUploadUrl');
+    const query = `
+      query CollectionRevisionUploadUrl {
+        collectionRevisionUploadUrl {
+          uuid
+          url
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({ query }),
+    });
+    const data = (await response.json()) as unknown;
+    console.debug('NexusModsAPI', 'getRevisionUploadUrl response', data);
+    const typed = data as {
+      data?: { collectionRevisionUploadUrl?: { uuid: string; url: string } };
+      errors?: { message: string }[];
+    };
+    if (typed.errors != null && typed.errors.length > 0) {
+      throw new Error(`GraphQL error: ${typed.errors[0].message}`);
+    }
+    const result = typed.data?.collectionRevisionUploadUrl;
+    if (result == null) {
+      throw new Error('collectionRevisionUploadUrl returned no data');
+    }
+    return { uuid: result.uuid, uploadUrl: result.url };
+  },
+  uploadCollectionAsset: async (
+    uploadUrl: string,
+    manifest: ICollectionManifest,
+  ): Promise<void> => {
+    console.debug('NexusModsAPI', 'uploadCollectionAsset');
+    // Nexus validates the upload as an archive containing collection.json.
+    // The upload manifest includes modRules (required by the Vortex-compatible schema)
+    // which cannot be sent in the GraphQL mutation payload.
+    const uploadManifest = { ...manifest, modRules: [] };
+    const jsonBytes = Buffer.from(JSON.stringify(uploadManifest));
+    const body = Buffer.from(zipSync({ 'collection.json': jsonBytes }));
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body,
+    });
+    console.debug(
+      'NexusModsAPI',
+      'uploadCollectionAsset response',
+      uploadResponse.status,
+    );
+    if (!uploadResponse.ok) {
+      const text = await uploadResponse.text();
+      throw new Error(
+        `Asset upload failed (${uploadResponse.status}): ${text}`,
+      );
+    }
+  },
+  createCollection: async (
+    nexusApiKey: string,
+    payload: ICollectionPayload,
+    assetUUID: string,
+  ): Promise<{ collectionId: number; revisionId: number }> => {
+    console.debug('NexusModsAPI', 'createCollection');
+    const mutation = `
+      mutation CreateCollection($data: CollectionPayload!, $uuid: String!) {
+        createCollection(collectionData: $data, uuid: $uuid) {
+          collection { id }
+          revision { id }
+          success
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { data: payload, uuid: assetUUID },
+      }),
+    });
+    const data = (await response.json()) as {
+      data: {
+        createCollection: {
+          collection: { id: number };
+          revision: { id: number };
+          success: boolean;
+        };
+      };
+      errors?: { message: string }[];
+    };
+    if (data.errors != null && data.errors.length > 0) {
+      throw new Error(`GraphQL error: ${data.errors[0].message}`);
+    }
+    return {
+      collectionId: data.data.createCollection.collection.id,
+      revisionId: data.data.createCollection.revision.id,
+    };
+  },
+  createOrUpdateRevision: async (
+    nexusApiKey: string,
+    payload: ICollectionPayload,
+    assetUUID: string,
+    collectionId: number,
+  ): Promise<{ revisionId: number }> => {
+    console.debug('NexusModsAPI', 'createOrUpdateRevision', { collectionId });
+    const mutation = `
+      mutation CreateOrUpdateRevision($data: CollectionPayload!, $uuid: String!, $collectionId: Int!) {
+        createOrUpdateRevision(collectionData: $data, uuid: $uuid, collectionId: $collectionId) {
+          revision { id }
+          success
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { data: payload, uuid: assetUUID, collectionId },
+      }),
+    });
+    const data = (await response.json()) as {
+      data: {
+        createOrUpdateRevision: { revision: { id: number }; success: boolean };
+      };
+      errors?: { message: string }[];
+    };
+    if (data.errors != null && data.errors.length > 0) {
+      throw new Error(`GraphQL error: ${data.errors[0].message}`);
+    }
+    return { revisionId: data.data.createOrUpdateRevision.revision.id };
   },
   getDownloadLink: async (
     nexusApiKey: string,
@@ -404,6 +593,61 @@ export async function initModUpdaterAPI(): Promise<void> {
         collectionSlug,
         revisionNumber,
       );
+    },
+    getModFiles: async (nexusApiKey, nexusModID) => {
+      const result = await NexusModsAPI.getFiles(nexusApiKey, nexusModID);
+      return result.files
+        .filter(
+          (file) =>
+            file.category_name === 'MAIN' ||
+            file.category_name === 'OLD_VERSION',
+        )
+        .map((file) => ({
+          fileId: file.file_id,
+          version: file.version,
+          uploadedTimestamp: file.uploaded_timestamp,
+        }));
+    },
+    getMyCollections: async (nexusApiKey) => {
+      return NexusModsAPI.getMyCollections(nexusApiKey);
+    },
+    createCollection: async (nexusApiKey, payload) => {
+      const { uuid, uploadUrl } =
+        await NexusModsAPI.getRevisionUploadUrl(nexusApiKey);
+      await NexusModsAPI.uploadCollectionAsset(
+        uploadUrl,
+        payload.collectionManifest,
+      );
+      const result = await NexusModsAPI.createCollection(
+        nexusApiKey,
+        payload,
+        uuid,
+      );
+      // createCollection creates the collection shell but doesn't process the
+      // S3 manifest for the mod list. Call createOrUpdateRevision with the same
+      // UUID (file is already on S3) to populate the draft revision with mods.
+      await NexusModsAPI.createOrUpdateRevision(
+        nexusApiKey,
+        payload,
+        uuid,
+        result.collectionId,
+      );
+      return result;
+    },
+    createOrUpdateRevision: async (nexusApiKey, payload, collectionId) => {
+      const { uuid, uploadUrl } =
+        await NexusModsAPI.getRevisionUploadUrl(nexusApiKey);
+      await NexusModsAPI.uploadCollectionAsset(
+        uploadUrl,
+        payload.collectionManifest,
+      );
+      const result = await NexusModsAPI.createOrUpdateRevision(
+        nexusApiKey,
+        payload,
+        uuid,
+        collectionId,
+      );
+      return result;
     },
   } as IModUpdaterAPI);
 }

@@ -6,7 +6,10 @@ import ModManagerLogs from 'renderer/react/ModManagerLogs';
 import ModManagerSettings from 'renderer/react/ModManagerSettings';
 import { AppUpdaterContextProvider } from 'renderer/react/context/AppUpdaterContext';
 import { DataPathContextProvider } from 'renderer/react/context/DataPathContext';
-import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
+import {
+  DialogManagerContextProvider,
+  DialogRenderer,
+} from 'renderer/react/context/DialogContext';
 import { ExtraGameLaunchArgsContextProvider } from 'renderer/react/context/ExtraGameLaunchArgsContext';
 import { GamePathContextProvider } from 'renderer/react/context/GamePathContext';
 import { InstallBeforeRunContextProvider } from 'renderer/react/context/InstallBeforeRunContext';
@@ -153,6 +156,7 @@ function Content() {
         </Routes>
       </Router>
       <AppUpdaterDialog />
+      <DialogRenderer />
     </>
   );
 }

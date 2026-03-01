@@ -1,4 +1,8 @@
-import type { CollectionRevision } from './NexusModsAPI';
+import type {
+  CollectionRevision,
+  ICollectionPayload,
+  MyCollection,
+} from './NexusModsAPI';
 
 export type ModUpdaterNexusDownload = {
   type: 'nexus';
@@ -36,4 +40,20 @@ export type IModUpdaterAPI = {
     collectionSlug: string,
     revisionNumber: number,
   ) => Promise<CollectionRevision>;
+  getModFiles: (
+    nexusApiKey: string,
+    nexusModID: string,
+  ) => Promise<
+    { fileId: number; version: string; uploadedTimestamp: number }[]
+  >;
+  getMyCollections: (nexusApiKey: string) => Promise<MyCollection[]>;
+  createCollection: (
+    nexusApiKey: string,
+    payload: ICollectionPayload,
+  ) => Promise<{ collectionId: number; revisionId: number }>;
+  createOrUpdateRevision: (
+    nexusApiKey: string,
+    payload: ICollectionPayload,
+    collectionId: number,
+  ) => Promise<{ revisionId: number }>;
 };

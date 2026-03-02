@@ -2,6 +2,7 @@ import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
 import {
   useSectionHeaders,
   useSetItemsOrder,
+  useSetModConfig,
 } from 'renderer/react/context/ModsContext';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import useModInstaller from 'renderer/react/context/hooks/useModInstaller';
@@ -13,6 +14,7 @@ export default function useModCollectionInstaller(authState: INexusAuthState) {
   const showToast = useToast();
   const [, setSectionHeaders] = useSectionHeaders();
   const setItemsOrder = useSetItemsOrder();
+  const setModConfig = useSetModConfig();
 
   return useCallback(
     async ({
@@ -31,11 +33,20 @@ export default function useModCollectionInstaller(authState: INexusAuthState) {
         throw new Error(message);
       }
 
-      const collection = await ModUpdaterAPI.getCollectionRevision(
-        authState.apiKey,
-        collectionSlug,
-        revisionNumber,
-      );
+      const [collection, modConfigs] = await Promise.all([
+        ModUpdaterAPI.getCollectionRevision(
+          authState.apiKey,
+          collectionSlug,
+          revisionNumber,
+        ),
+        // Fetch the collection archive to extract per-mod D2RMM configs.
+        // Returns {} (gracefully) if the collection has none or the download fails.
+        ModUpdaterAPI.getCollectionModConfigs(
+          authState.apiKey,
+          collectionSlug,
+          revisionNumber,
+        ),
+      ]);
 
       for (const collectionMod of collection.modFiles) {
         if (
@@ -45,11 +56,18 @@ export default function useModCollectionInstaller(authState: INexusAuthState) {
           continue;
         }
 
+        const nexusModId = collectionMod.file.mod.modId;
         const modId = await installMod({
-          nexusModID: String(collectionMod.file.mod.modId),
+          nexusModID: String(nexusModId),
           nexusFileID: collectionMod.file.fileId,
         }).catch(() => null);
         if (modId == null) continue;
+
+        // Restore the mod's config if the collection embedded one
+        const config = modConfigs[nexusModId];
+        if (config != null) {
+          setModConfig(modId, config);
+        }
 
         const category =
           collectionMod.file.mod.modCategory?.name ?? 'Uncategorized';
@@ -103,6 +121,13 @@ export default function useModCollectionInstaller(authState: INexusAuthState) {
         });
       }
     },
-    [authState.apiKey, installMod, setSectionHeaders, setItemsOrder, showToast],
+    [
+      authState.apiKey,
+      installMod,
+      setModConfig,
+      setSectionHeaders,
+      setItemsOrder,
+      showToast,
+    ],
   );
 }

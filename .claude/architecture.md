@@ -190,6 +190,49 @@ Mod API (what mods call) is separate from D2RMM's internal API. See [D2RMM API d
 
 ---
 
+## Mod State & Config System
+
+Mod data in the renderer lives in `ModsContext` (`src/renderer/react/context/ModsContext.tsx`) as two distinct layers:
+
+### Layer 1 — `modsWithoutOverrides` (disk-sourced)
+
+Loaded at startup (and on explicit refresh) by reading the filesystem via `getMods()`:
+
+```
+getMods()
+  → BridgeAPI.readModInfo(modID)    → mod.info  (mod.json schema)
+  → BridgeAPI.readModConfig(modID)  → mod.config (config.json values, merged with defaults)
+  → stored as Mod[] state
+```
+
+`mod.config` = `{ ...getDefaultConfig(info.config), ...diskConfigValues }`.
+
+### Layer 2 — `modConfigOverrides` (in-memory / localStorage)
+
+A `Record<string, Partial<ModInfo>>` that overrides **`mod.info` fields** (not config values). Used by `useModInstaller` to patch metadata after a Nexus install (e.g. inject `version` or `website` when the mod's `mod.json` doesn't include them). Persisted to localStorage.
+
+### How to update a mod's config
+
+| Use case | Correct approach | Why |
+|----------|-----------------|-----|
+| User changes a config option in the UI | `setModConfig(id, newConfig)` from `useSetModConfig()` | Updates disk + in-memory state atomically |
+| Install-time config restore (collection) | `setModConfig(id, config)` | Same — ensures UI reflects the write without a manual refresh |
+| **Avoid** | `BridgeAPI.writeModConfig(id, config)` directly | Writes disk only; in-memory `mod.config` stays stale until next `refreshMods()` call |
+
+`setModConfig` is defined in `ModsContext` and calls `BridgeAPI.writeModConfig` internally while also patching `modsWithoutOverrides` in place via `setMods(...)`.
+
+### Refreshing mods
+
+```typescript
+const [, refreshMods] = useMods();
+await refreshMods();          // re-read all mods from disk
+await refreshMods([modId]);   // partial refresh — re-read one mod (returns Mod[])
+```
+
+`refreshMods` is the correct way to sync the in-memory state after any external change to mod files on disk.
+
+---
+
 ## Dialog System
 
 Dialogs use a context-based approach rather than React Router:

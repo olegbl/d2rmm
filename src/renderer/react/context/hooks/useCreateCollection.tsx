@@ -1,8 +1,10 @@
 import type { Mod } from 'bridge/BridgeAPI';
+import type { ModConfigValue } from 'bridge/ModConfigValue';
 import type {
   ICollectionManifestMod,
   ICollectionPayload,
 } from 'bridge/NexusModsAPI';
+import BridgeAPI from 'renderer/BridgeAPI';
 import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
 import { INexusAuthState } from 'renderer/react/context/NexusModsContext';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
@@ -16,6 +18,7 @@ type Args = {
   selectedCollectionId: number | null;
   title: string;
   modRoles: Record<string, ModRole>;
+  modConfigInclusion: Record<string, boolean>;
   mods: Mod[];
 };
 
@@ -27,6 +30,7 @@ export default function useCreateCollection() {
       selectedCollectionId,
       title,
       modRoles,
+      modConfigInclusion,
       mods,
     }: Args): Promise<string> => {
       const nexusApiKey = authState.apiKey;
@@ -34,8 +38,10 @@ export default function useCreateCollection() {
         throw new Error('Not authenticated with Nexus Mods.');
       }
 
-      // Build the list of mods for the manifest, looking up fileId for each
+      // Build the list of mods for the manifest, looking up fileId for each.
+      // Also collect configs keyed by nexusModId to embed in installationInfo.
       const manifestMods: ICollectionManifestMod[] = [];
+      const allConfigs: Record<number, ModConfigValue> = {};
       for (const mod of mods) {
         const role = modRoles[mod.id] ?? 'omit';
         if (role === 'omit') continue;
@@ -63,6 +69,16 @@ export default function useCreateCollection() {
           );
         }
 
+        const nexusModId = parseInt(nexusModIdStr, 10);
+        if (modConfigInclusion[mod.id] ?? true) {
+          const config = (await BridgeAPI.readModConfig(
+            mod.id,
+          )) as ModConfigValue | null;
+          if (config != null && Object.keys(config).length > 0) {
+            allConfigs[nexusModId] = config;
+          }
+        }
+
         manifestMods.push({
           name: mod.info.name ?? mod.id,
           version: modVersion,
@@ -70,13 +86,19 @@ export default function useCreateCollection() {
           domainName: 'diablo2resurrected',
           source: {
             type: 'nexus',
-            modId: parseInt(nexusModIdStr, 10),
+            modId: nexusModId,
             fileId: matchedFile.fileId,
             updatePolicy: 'prefer',
           },
           author: mod.info.author ?? undefined,
         });
       }
+
+      // Build the installationInfo content with all mod configs embedded
+      const installationInfo =
+        Object.keys(allConfigs).length > 0
+          ? `<d2rmm-configs>${JSON.stringify(allConfigs)}</d2rmm-configs>`
+          : '';
 
       const payload: ICollectionPayload = {
         adultContent: false,
@@ -94,9 +116,12 @@ export default function useCreateCollection() {
       let collectionSlug: string | null = null;
 
       if (mode === 'create') {
-        const { collectionId } = await ModUpdaterAPI.createCollection(
+        const { collectionId, revisionId } =
+          await ModUpdaterAPI.createCollection(nexusApiKey, payload);
+        await ModUpdaterAPI.updateRevisionInstallationInfo(
           nexusApiKey,
-          payload,
+          revisionId,
+          installationInfo,
         );
         const collections = await ModUpdaterAPI.getMyCollections(nexusApiKey);
         collectionSlug =
@@ -105,10 +130,15 @@ export default function useCreateCollection() {
         if (selectedCollectionId == null) {
           throw new Error('No collection selected.');
         }
-        await ModUpdaterAPI.createOrUpdateRevision(
+        const { revisionId } = await ModUpdaterAPI.createOrUpdateRevision(
           nexusApiKey,
           payload,
           selectedCollectionId,
+        );
+        await ModUpdaterAPI.updateRevisionInstallationInfo(
+          nexusApiKey,
+          revisionId,
+          installationInfo,
         );
         const collections = await ModUpdaterAPI.getMyCollections(nexusApiKey);
         collectionSlug =

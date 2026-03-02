@@ -1,4 +1,5 @@
 import type { MyCollection } from 'bridge/NexusModsAPI';
+import BridgeAPI from 'renderer/BridgeAPI';
 import ModUpdaterAPI from 'renderer/ModUpdaterAPI';
 import ShellAPI from 'renderer/ShellAPI';
 import { isOrderedMod } from 'renderer/react/ReorderUtils';
@@ -39,6 +40,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 
@@ -59,6 +61,10 @@ export default function CreateCollectionDialog(): JSX.Element {
   const [myCollections, setMyCollections] = useState<MyCollection[]>([]);
   const [title, setTitle] = useState('');
   const [modRoles, setModRoles] = useState<Record<string, ModRole>>({});
+  const [modHasConfig, setModHasConfig] = useState<Record<string, boolean>>({});
+  const [modConfigInclusion, setModConfigInclusion] = useState<
+    Record<string, boolean>
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const mods = orderedItems.filter(isOrderedMod).map((item) => item.mod);
@@ -73,6 +79,32 @@ export default function CreateCollectionDialog(): JSX.Element {
       initialRoles[mod.id] = isNexusMod && isEnabled ? 'required' : 'omit';
     }
     setModRoles(initialRoles);
+
+    // Determine which mods have a non-default config so we can enable the
+    // "Include Config" toggle only for those.
+    Promise.all(
+      mods
+        .filter((mod) => getNexusModID(mod) != null)
+        .map(async (mod) => {
+          const config = await BridgeAPI.readModConfig(mod.id).catch(
+            () => null,
+          );
+          const hasConfig =
+            config != null && Object.keys(config as object).length > 0;
+          return [mod.id, hasConfig] as [string, boolean];
+        }),
+    )
+      .then((results) => {
+        const hasConfigMap: Record<string, boolean> = {};
+        const inclusionMap: Record<string, boolean> = {};
+        for (const [id, hasConfig] of results) {
+          hasConfigMap[id] = hasConfig;
+          inclusionMap[id] = hasConfig;
+        }
+        setModHasConfig(hasConfigMap);
+        setModConfigInclusion(inclusionMap);
+      })
+      .catch(console.error);
 
     if (nexusAuthState.apiKey != null) {
       ModUpdaterAPI.getMyCollections(nexusAuthState.apiKey)
@@ -118,6 +150,7 @@ export default function CreateCollectionDialog(): JSX.Element {
         selectedCollectionId,
         title: collectionTitle,
         modRoles,
+        modConfigInclusion,
         mods,
       });
       setCollectionUrl(url);
@@ -135,6 +168,7 @@ export default function CreateCollectionDialog(): JSX.Element {
     close,
     createCollection,
     mode,
+    modConfigInclusion,
     modRoles,
     mods,
     myCollections,
@@ -237,6 +271,7 @@ export default function CreateCollectionDialog(): JSX.Element {
             <TableRow>
               <TableCell>Mod</TableCell>
               <TableCell align="right">Role</TableCell>
+              <TableCell align="right">Config</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -277,6 +312,39 @@ export default function CreateCollectionDialog(): JSX.Element {
                       <ToggleButton value="optional">Optional</ToggleButton>
                       <ToggleButton value="omit">Omit</ToggleButton>
                     </ToggleButtonGroup>
+                  </TableCell>
+                  <TableCell align="right">
+                    {(() => {
+                      const hasConfig = modHasConfig[mod.id] ?? false;
+                      const includeConfig =
+                        hasConfig && (modConfigInclusion[mod.id] ?? true);
+                      return (
+                        <Tooltip
+                          title={
+                            hasConfig ? '' : 'No custom config for this mod'
+                          }
+                        >
+                          <span>
+                            <ToggleButtonGroup
+                              disabled={!hasConfig}
+                              exclusive={true}
+                              onChange={(_e, value: true | null) => {
+                                setModConfigInclusion((prev) => ({
+                                  ...prev,
+                                  [mod.id]: value === true,
+                                }));
+                              }}
+                              size="small"
+                              value={includeConfig ? true : null}
+                            >
+                              <ToggleButton value={true}>
+                                Include Config
+                              </ToggleButton>
+                            </ToggleButtonGroup>
+                          </span>
+                        </Tooltip>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               );

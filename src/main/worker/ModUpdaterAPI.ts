@@ -1,10 +1,11 @@
+import type { ModConfigValue } from 'bridge/ModConfigValue';
 import type { IModUpdaterAPI } from 'bridge/ModUpdaterAPI';
 import type {
-  ICollectionPayload,
   CollectionRevision,
   DownloadLink,
   Files,
   ICollectionManifest,
+  ICollectionPayload,
   MyCollection,
   NexusModsApiStateEvent,
   PreSignedUrl,
@@ -158,6 +159,88 @@ const NexusModsAPI = {
       );
     }
     return data.data.collectionRevision;
+  },
+  getCollectionModConfigs: async (
+    nexusApiKey: string,
+    collectionSlug: string,
+    revisionNumber: number,
+  ): Promise<Record<number, ModConfigValue>> => {
+    console.debug('NexusModsAPI', 'getCollectionModConfigs', {
+      collectionSlug,
+      revisionNumber,
+    });
+    const query = `
+      query CollectionRevisionInstallationInfo($slug: String!, $revision: Int!, $viewAdultContent: Boolean) {
+        collectionRevision(slug: $slug, revision: $revision, viewAdultContent: $viewAdultContent) {
+          installationInfo
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query,
+        variables: {
+          slug: collectionSlug,
+          revision: revisionNumber,
+          viewAdultContent: true,
+        },
+      }),
+    });
+    const data = (await response.json()) as {
+      data?: { collectionRevision?: { installationInfo?: string | null } };
+      errors?: { message: string }[];
+    };
+    const installationInfo =
+      data.data?.collectionRevision?.installationInfo ?? '';
+    const match = installationInfo.match(
+      /<d2rmm-configs>([\s\S]*?)<\/d2rmm-configs>/,
+    );
+    if (match == null) return {};
+    try {
+      return JSON.parse(match[1]) as Record<number, ModConfigValue>;
+    } catch {
+      return {};
+    }
+  },
+  updateRevision: async (
+    nexusApiKey: string,
+    revisionId: number,
+    installationInfo: string,
+  ): Promise<void> => {
+    console.debug('NexusModsAPI', 'updateRevision', { revisionId });
+    const mutation = `
+      mutation UpdateRevision($revisionId: Int!, $installationInfo: String) {
+        updateRevision(revisionId: $revisionId, installationInfo: $installationInfo) {
+          revisionId
+          success
+        }
+      }
+    `;
+    const response = await fetch('https://api.nexusmods.com/v2/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        apikey: nexusApiKey,
+      },
+      body: JSON.stringify({
+        query: mutation,
+        variables: { revisionId, installationInfo },
+      }),
+    });
+    const data = (await response.json()) as {
+      data?: { updateRevision?: { revisionId: number; success: boolean } };
+      errors?: { message: string }[];
+    };
+    if (data.errors != null && data.errors.length > 0) {
+      throw new Error(`GraphQL error: ${data.errors[0].message}`);
+    }
   },
   getMyCollections: async (nexusApiKey: string): Promise<MyCollection[]> => {
     console.debug('NexusModsAPI', 'getMyCollections');
@@ -329,7 +412,11 @@ const NexusModsAPI = {
       },
       body: JSON.stringify({
         query: mutation,
-        variables: { data: payload, uuid: assetUUID, collectionId },
+        variables: {
+          data: payload,
+          uuid: assetUUID,
+          collectionId,
+        },
       }),
     });
     const data = (await response.json()) as {
@@ -648,6 +735,28 @@ export async function initModUpdaterAPI(): Promise<void> {
         collectionId,
       );
       return result;
+    },
+    getCollectionModConfigs: async (
+      nexusApiKey,
+      collectionSlug,
+      revisionNumber,
+    ) => {
+      return NexusModsAPI.getCollectionModConfigs(
+        nexusApiKey,
+        collectionSlug,
+        revisionNumber,
+      );
+    },
+    updateRevisionInstallationInfo: async (
+      nexusApiKey,
+      revisionId,
+      installationInfo,
+    ) => {
+      return NexusModsAPI.updateRevision(
+        nexusApiKey,
+        revisionId,
+        installationInfo,
+      );
     },
   } as IModUpdaterAPI);
 }

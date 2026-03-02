@@ -1,3 +1,4 @@
+import type { ModConfigValue } from './ModConfigValue';
 import type {
   CollectionRevision,
   ICollectionPayload,
@@ -56,4 +57,19 @@ export type IModUpdaterAPI = {
     payload: ICollectionPayload,
     collectionId: number,
   ) => Promise<{ revisionId: number }>;
+  // Reads installationInfo from a collection revision and extracts D2RMM
+  // mod configs embedded there. Returns a map of nexusModId → config.
+  // Returns {} if the revision has no D2RMM configs.
+  getCollectionModConfigs: (
+    nexusApiKey: string,
+    collectionSlug: string,
+    revisionNumber: number,
+  ) => Promise<Record<number, ModConfigValue>>;
+  // Embeds all D2RMM mod configs into a revision's installationInfo field
+  // so they can be restored when another user installs the collection.
+  updateRevisionInstallationInfo: (
+    nexusApiKey: string,
+    revisionId: number,
+    installationInfo: string,
+  ) => Promise<void>;
 };

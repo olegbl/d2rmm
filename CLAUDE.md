@@ -185,16 +185,18 @@ More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/patt
 
 ---
 
-## Creating D2RMM Mods
+## Working with D2RMM Mods
 
-Use the `/create-mod` skill to get guided assistance writing mods. Supporting knowledge files:
+**Any time you work on a D2RMM mod — creating, debugging, modifying, or reviewing — read the relevant knowledge files below first before searching game files or guessing at APIs/formats.**
 
-| File                                                           | Contents                                                                               |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| [.claude/d2r-modding-api.md](.claude/d2r-modding-api.md)       | Full `D2RMM` global API, `mod.json` schema, config field types, binding expressions    |
-| [.claude/d2r-game-files.md](.claude/d2r-game-files.md)         | Game data file paths, key column meanings, localization structure                      |
-| [.claude/d2r-game-mechanics.md](.claude/d2r-game-mechanics.md) | How game systems work: item drop pipeline, TC chaining, NoDrop, quality rolls, affixes |
-| [.claude/d2r-mod-examples.md](.claude/d2r-mod-examples.md)     | Annotated code patterns from real mods                                                 |
+| File                                                           | Contents — read when...                                                                           |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| [.claude/d2r-modding-api.md](.claude/d2r-modding-api.md)       | **Always** — D2RMM global API, `mod.json` schema, config fields, color codes, localization format |
+| [.claude/d2r-game-files.md](.claude/d2r-game-files.md)         | Game data file paths, column meanings, gem/rune keys — read when touching any game data file      |
+| [.claude/d2r-game-mechanics.md](.claude/d2r-game-mechanics.md) | Item drops, TC chaining, NoDrop, quality rolls, affixes — read when touching drop/loot systems    |
+| [.claude/d2r-mod-examples.md](.claude/d2r-mod-examples.md)     | Annotated patterns from real mods — read when unsure how to implement something                   |
+
+Use the `/create-mod` skill for guided assistance writing new mods from scratch.
 
 Example mods: https://github.com/olegbl/d2rmm.mods (local path in [.claude/local.md](.claude/local.md) if available)
 External references: https://olegbl.github.io/d2rmm/ · https://locbones.github.io/D2R_DataGuide/ · https://d2mods.info/forum/kb/

@@ -56,7 +56,21 @@ Key columns:
 | `spawnstack` | Stack size when spawned by game |
 | `ShowLevel` | `1` to show ilvl in item name |
 
-Common item codes: `gld`=gold, `hp1-hp5`=health potions, `mp1-mp5`=mana potions, `rvs`/`rvl`=rejuv potions, `tsc`/`isc`=scrolls, `tpk`=thawing, `amu`=amulet, `rin`=ring, `jew`=jewel, `cm1-cm3`=charms, `gpl-gpv`=skulls/gems (by quality).
+Common item codes: `gld`=gold, `hp1-hp5`=health potions, `mp1-mp5`=mana potions, `rvs`/`rvl`=rejuv potions, `tsc`/`isc`=scrolls, `tpk`=thawing, `amu`=amulet, `rin`=ring, `jew`=jewel, `cm1-cm3`=charms.
+
+**Gem and skull item codes** — 5 qualities × 7 types (source: `src/renderer/react/ed2r/ED2R.tsx`):
+
+|          | Diamond | Emerald | Ruby  | Topaz | Amethyst | Sapphire | Skull |
+|----------|---------|---------|-------|-------|----------|----------|-------|
+| Chipped  | `gcw`   | `gcg`   | `gcr` | `gcy` | `gcv`    | `gcb`    | `skc` |
+| Flawed   | `gfw`   | `gfg`   | `gfr` | `gfy` | `gfv`    | `gfb`    | `skf` |
+| Regular  | `gsw`   | `gsg`   | `gsr` | `gsy` | `gsv`    | `gsb`    | `sku` |
+| Flawless | `glw`   | `glg`   | `glr` | `gly` | `gzv`    | `glb`    | `skl` |
+| Perfect  | `gpw`   | `gpg`   | `gpr` | `gpy` | `gpv`    | `gpb`    | `skz` |
+
+Notes:
+- Flawless Amethyst uses `gzv` (not `glv`) because `glv` is taken by the Glaive weapon.
+- Regular-quality Diamond/Emerald/Ruby/Sapphire (`gsw`, `gsg`, `gsr`, `gsb`) are in **`item-nameaffixes.json`**, not `item-names.json`. All other gem/skull keys are in `item-names.json`.
 
 ---
 
@@ -357,9 +371,9 @@ In `local\lng\strings\`:
 
 | File                    | Contents                                 |
 | ----------------------- | ---------------------------------------- |
-| `item-names.json`       | Potion, gem, rune, scroll, tome names    |
+| `item-names.json`       | Potion, gem, rune, scroll, tome names — most gem/skull keys live here |
 | `item-runes.json`       | Runeword names (keys like `r01`, `r02`…) |
-| `item-nameaffixes.json` | Suffix/prefix affix names                |
+| `item-nameaffixes.json` | Suffix/prefix affix names — **also** holds regular-quality gem names for Diamond/Emerald/Ruby/Sapphire (`gsw`, `gsg`, `gsr`, `gsb`); regular Topaz/Amethyst and all Skulls are in `item-names.json` |
 | `item-modifiers.json`   | Stat modifier descriptions               |
 | `item-quality.json`     | Quality names (Superior, Cracked, etc.)  |
 | `monsters.json`         | Monster and boss names                   |

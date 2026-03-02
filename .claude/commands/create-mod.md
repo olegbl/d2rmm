@@ -66,10 +66,10 @@ Decide what the user should be able to configure. Keep it simple — only expose
   "description": "A short description of what this mod does.",
   "author": "AuthorName",
   "website": "https://www.nexusmods.com/diablo2resurrected/mods/XXX",
-  "version": "1.0",
-  "config": []
+  "version": "1.0"
 }
 ```
+Omit `"config"` entirely if the mod has no config fields. Do **not** add `"config": []`.
 
 **mod.js / mod.ts rules:**
 - The global `D2RMM` object provides all file I/O APIs
@@ -89,6 +89,7 @@ Decide what the user should be able to configure. Keep it simple — only expose
 ### Step 6 — Verify
 After writing, review:
 - [ ] `mod.json` has `$schema`, `name`, `description`, `author`, `version`
+- [ ] `mod.json` has `"config": [...]` only if there are actual config fields — omit it entirely otherwise
 - [ ] Config field IDs match what's used as `config.fieldId` in mod code
 - [ ] Both regular and `base\` file variants are handled for every TSV file
 - [ ] TSV values are set as strings (not numbers/booleans)

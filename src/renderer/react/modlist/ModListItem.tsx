@@ -1,5 +1,4 @@
 import type { Mod } from 'bridge/BridgeAPI';
-import { DialogManagerContextProvider } from 'renderer/react/context/DialogContext';
 import { useToggleMod } from 'renderer/react/context/ModsContext';
 import { ModListAuthorChip } from 'renderer/react/modlist/ModListAuthorAction';
 import { ModListDataModChip } from 'renderer/react/modlist/ModListDataModAction';
@@ -63,33 +62,31 @@ export default function ModListItem({
 
   return (
     <MenuListMenuContextProvider>
-      <DialogManagerContextProvider>
-        {isReorderEnabled ? (
-          <Draggable draggableId={mod.id} index={index}>
-            {(providedDraggable) => (
-              <div
-                ref={providedDraggable.innerRef}
-                {...providedDraggable.draggableProps}
-                {...providedDraggable.dragHandleProps}
-              >
-                {item}
-              </div>
-            )}
-          </Draggable>
-        ) : (
-          item
-        )}
-        <ModListMenu>
-          <ModListSettingsMenuItem isEnabled={isEnabled} mod={mod} />
-          <ModListWebsiteMenuItem mod={mod} />
-          <ModListUpdateMenuItem mod={mod} />
-          <ModListDownloadMenuItem mod={mod} />
-          <ModListNexusIDMenuItem mod={mod} />
-          <ModListRenameMenuItem mod={mod} />
-          <ModListOpenMenuItem mod={mod} />
-          <ModListDeleteMenuItem mod={mod} />
-        </ModListMenu>
-      </DialogManagerContextProvider>
+      {isReorderEnabled ? (
+        <Draggable draggableId={mod.id} index={index}>
+          {(providedDraggable) => (
+            <div
+              ref={providedDraggable.innerRef}
+              {...providedDraggable.draggableProps}
+              {...providedDraggable.dragHandleProps}
+            >
+              {item}
+            </div>
+          )}
+        </Draggable>
+      ) : (
+        item
+      )}
+      <ModListMenu>
+        <ModListSettingsMenuItem isEnabled={isEnabled} mod={mod} />
+        <ModListWebsiteMenuItem mod={mod} />
+        <ModListUpdateMenuItem mod={mod} />
+        <ModListDownloadMenuItem mod={mod} />
+        <ModListNexusIDMenuItem mod={mod} />
+        <ModListRenameMenuItem mod={mod} />
+        <ModListOpenMenuItem mod={mod} />
+        <ModListDeleteMenuItem mod={mod} />
+      </ModListMenu>
     </MenuListMenuContextProvider>
   );
 }

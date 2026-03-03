@@ -39,7 +39,7 @@ export function parseBinding<T extends ModConfigSingleValue>(
         return !arg1 as T;
       }
     }
-    if (op === 'and' && value.length === 3) {
+    if (op === 'and' && value.length >= 3) {
       const args = value
         .slice(1)
         .map((arg) => parseBinding(arg, config, expandedSections));

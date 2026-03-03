@@ -81,7 +81,13 @@ export default function ModSettingsSection({
   const areAnyDescendantsModified = descendants.some(
     (child) =>
       JSON.stringify(mod.config[child.id]) !==
-      JSON.stringify(child.defaultValue),
+      JSON.stringify(
+        parseBinding<ModConfigSingleValue>(
+          child.defaultValue,
+          mod.config,
+          expandedSections,
+        ),
+      ),
   );
 
   const onReset = useCallback(
@@ -93,13 +99,17 @@ export default function ModSettingsSection({
         ...descendants.reduce(
           (agg, child) => ({
             ...agg,
-            [child.id]: child.defaultValue,
+            [child.id]: parseBinding<ModConfigSingleValue>(
+              child.defaultValue,
+              mod.config,
+              expandedSections,
+            ),
           }),
           {},
         ),
       });
     },
-    [descendants, mod.config, mod.id, setModConfig],
+    [descendants, expandedSections, mod.config, mod.id, setModConfig],
   );
 
   const isShown = parseBinding<boolean>(

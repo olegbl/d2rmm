@@ -436,7 +436,18 @@ When `parentField` is false, `dependentField` is forced to false. When `parentFi
 
 ## Binding Expressions
 
-`visible`, `overrideValue`, and `allowToggleAll` accept **Binding expressions** — JSON arrays that evaluate dynamically based on other config values.
+Several properties accept **Binding expressions** — JSON arrays that evaluate based on other config values. They differ in *when* they evaluate:
+
+| Property | Evaluates | Notes |
+|---|---|---|
+| `visible` | Reactively (on every change) | Hides/shows the field |
+| `overrideValue` | Reactively (on every change) | Forces a value; `null` = user controls |
+| `allowToggleAll` | Reactively (on every change) | Shows/hides "toggle all" button |
+| `defaultValue` | **Load-time only** (once, using saved config) | Initial value when no saved value exists; does NOT re-evaluate when other fields change at runtime |
+
+For reactive value coupling (e.g. "field B should track field A unless the user overrides it"), use `overrideValue: ["if", condition, computedValue, null]` — not `defaultValue`. `defaultValue` is appropriate for migration logic (e.g. detecting a legacy saved value and deriving a new field's starting state from it).
+
+`visible`, `overrideValue`, `allowToggleAll`, and `defaultValue` all accept:
 
 | Expression                        | Result                      | Example                                     |
 | --------------------------------- | --------------------------- | ------------------------------------------- |

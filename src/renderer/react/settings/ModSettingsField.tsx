@@ -43,8 +43,21 @@ export default function ModSettingsField({
   );
 
   const onReset = useCallback((): void => {
-    onChangeConfig(field.id, field.defaultValue);
-  }, [field, onChangeConfig]);
+    onChangeConfig(
+      field.id,
+      parseBinding<ModConfigSingleValue>(
+        field.defaultValue,
+        mod.config,
+        expandedSections,
+      ),
+    );
+  }, [
+    expandedSections,
+    field.defaultValue,
+    field.id,
+    mod.config,
+    onChangeConfig,
+  ]);
 
   const isShown =
     field.visible == null ||
@@ -115,7 +128,13 @@ export default function ModSettingsField({
         )}
         <Box sx={{ flex: '1 1 0' }} />
         {JSON.stringify(mod.config[field.id]) ===
-          JSON.stringify(field.defaultValue) || overrideValue != null ? null : (
+          JSON.stringify(
+            parseBinding<ModConfigSingleValue>(
+              field.defaultValue,
+              mod.config,
+              expandedSections,
+            ),
+          ) || overrideValue != null ? null : (
           <Tooltip title="Revert to Default">
             <IconButton onClick={onReset} size="small">
               <Refresh />

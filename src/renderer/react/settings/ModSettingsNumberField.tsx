@@ -55,7 +55,11 @@ export default function ModSettingsNumberField({
       }
 
       if (Number.isNaN(newValue)) {
-        newValue = field.defaultValue;
+        newValue = parseBinding<number>(
+          field.defaultValue,
+          mod.config,
+          expandedSections,
+        );
       }
 
       if (field.minValue != null) {
@@ -69,10 +73,12 @@ export default function ModSettingsNumberField({
       onChangeFromProps(field.id, newValue);
     },
     [
+      expandedSections,
       field.defaultValue,
       field.id,
       field.maxValue,
       field.minValue,
+      mod.config,
       onChangeFromProps,
     ],
   );

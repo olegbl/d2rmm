@@ -5,6 +5,7 @@ import type {
   ModConfigValue,
 } from 'bridge/ModConfigValue';
 import BridgeAPI from 'renderer/BridgeAPI';
+import { parseBinding } from 'renderer/react/BindingsParser';
 import {
   getAbsoluteIndexFromRenderedIndex,
   getHiddenItemCountForSection,
@@ -116,17 +117,27 @@ export type IModsContext = {
 export const Context = React.createContext<IModsContext | null>(null);
 
 function getDefaultConfig(
-  fields?: readonly ModConfigFieldOrSection[] | null,
+  fields: readonly ModConfigFieldOrSection[] | null | undefined,
+  savedConfig: ModConfigValue,
 ): ModConfigValue {
   if (fields == null) {
     return {};
   }
   const defaultConfig: Mutable<ModConfigValue> = {};
   for (const field of fields) {
-    defaultConfig[field.id] =
-      field.defaultValue as unknown as ModConfigSingleValue;
+    const currentConfig = { ...defaultConfig, ...savedConfig };
+
+    defaultConfig[field.id] = parseBinding<ModConfigSingleValue>(
+      field.defaultValue as unknown as ModConfigSingleValue,
+      currentConfig,
+      {},
+    );
+
     if (field.type === 'section') {
-      Object.assign(defaultConfig, getDefaultConfig(field.children));
+      Object.assign(
+        defaultConfig,
+        getDefaultConfig(field.children, currentConfig),
+      );
     }
   }
   return defaultConfig;
@@ -159,16 +170,16 @@ export function ModsContextProvider({
             continue;
           }
 
-          const config = (await BridgeAPI.readModConfig(
+          const savedConfig = (await BridgeAPI.readModConfig(
             modID,
           )) as unknown as ModConfigValue;
 
-          const defaultConfig = getDefaultConfig(info.config);
+          const defaultConfig = getDefaultConfig(info.config, savedConfig);
 
           mods.push({
             id: modID,
             info,
-            config: { ...defaultConfig, ...config },
+            config: { ...defaultConfig, ...savedConfig },
           });
         } catch (error) {
           logger.error('Failed to load mod', modID, error as Error);

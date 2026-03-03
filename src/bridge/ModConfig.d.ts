@@ -155,9 +155,14 @@ export interface ModConfigSection extends ModConfigBase {
    * checkbox on the left hand side that will set this section's `value`
    * the same way as it would work for a checkbox field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.8.0
    */
-  defaultValue?: null | boolean;
+  defaultValue?: Binding<null | boolean>;
 
   /**
    * The override value of the section field.
@@ -212,11 +217,17 @@ export interface ModConfigFieldCheckbox extends ModConfigFieldBase {
   type: 'checkbox';
 
   /**
-   * The default value of the checkbox field.
+   * The default value of the checkbox field. Used when the user has no saved
+   * value for this field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.0.0
    */
-  defaultValue: boolean;
+  defaultValue: Binding<boolean>;
 
   /**
    * The override value of the checkbox field.
@@ -243,11 +254,17 @@ export interface ModConfigFieldNumber extends ModConfigFieldBase {
   type: 'number';
 
   /**
-   * The default value of the number field.
+   * The default value of the number field. Used when the user has no saved
+   * value for this field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.0.0
    */
-  defaultValue: number;
+  defaultValue: Binding<number>;
 
   /**
    * The minimum value that the user can input.
@@ -288,11 +305,17 @@ export interface ModConfigFieldText extends ModConfigFieldBase {
   type: 'text';
 
   /**
-   * The default value of the text field.
+   * The default value of the text field. Used when the user has no saved
+   * value for this field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.4.0
    */
-  defaultValue: string;
+  defaultValue: Binding<string>;
 
   /**
    * The override value of the text field.
@@ -319,11 +342,17 @@ export interface ModConfigFieldSelect extends ModConfigFieldBase {
   type: 'select';
 
   /**
-   * The default value of the select field.
+   * The default value of the select field. Used when the user has no saved
+   * value for this field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.3.0
    */
-  defaultValue: ModConfigSingleValue;
+  defaultValue: Binding<ModConfigSingleValue>;
 
   /**
    * The override value of the select field.
@@ -379,10 +408,16 @@ export interface ModConfigFieldColor extends ModConfigFieldBase {
 
   /**
    * The default value of the color in RGBA format (`[0, 255]`, `[0, 255]`, `[0, 255]`, `[0.0, 1.0]`).
+   * Used when the user has no saved value for this field.
    *
+   * When used as a Binding, it is evaluated **once at load time** against the
+   * saved config — it does NOT re-evaluate reactively at runtime. For reactive
+   * value forcing, use `overrideValue` instead.
+   *
+   * @since D2RMM v1.9.0 as a Binding<>
    * @since D2RMM v1.6.0
    */
-  defaultValue: [number, number, number, number];
+  defaultValue: Binding<[number, number, number, number]>;
 
   /**
    * The override value of the color field.

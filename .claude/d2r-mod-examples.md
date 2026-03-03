@@ -4,6 +4,45 @@ Real examples drawn from https://github.com/olegbl/d2rmm.mods. Read the actual m
 
 ---
 
+## Config UX Patterns
+
+### Preset select + custom number
+Preferred pattern when exposing a numeric value that users don't intuitively understand at the raw scale (e.g. percentages, divisors, multipliers). Offer named presets in a `select`; show a `number` input only when "Custom" is chosen. See `IncreaseDroprate` for a full implementation.
+
+**mod.json:**
+```json
+{ "id": "qualityPreset", "type": "select", "defaultValue": "10",
+  "options": [
+    { "label": "Vanilla (1%)", "value": "1" },
+    { "label": "10x (10%)", "value": "10" },
+    { "label": "Custom", "value": "custom" }
+  ]
+},
+{ "id": "quality", "type": "number", "defaultValue": 10,
+  "visible": ["eq", ["value", "qualityPreset"], "custom"] }
+```
+**mod.js:**
+```javascript
+function getPresetValue(preset, custom) {
+  return preset === 'custom' ? custom : parseFloat(preset);
+}
+const chance = getPresetValue(config.qualityPreset, config.quality);
+```
+
+### Conditional field override (force value based on another field)
+Use `overrideValue` on a checkbox to prevent a dangerous combination of settings. Always mirror the same guard in `mod.js` as a safety net.
+
+```json
+{ "id": "dependentField", "type": "checkbox", "defaultValue": true,
+  "overrideValue": ["if", ["not", ["value", "parentField"]], false, null] }
+```
+When `parentField` is false → `dependentField` forced to false. When true → `null` = no override.
+
+### Hide fields when a section is disabled
+Add `"visible": ["value", "sectionToggleId"]` to each field in a section so they disappear when the section's master toggle is off. Also apply to the section header itself if you want to hide it too.
+
+---
+
 ## Pattern 1 — Modify a TSV file (most common)
 
 **Source**: `IncreaseStackSize`, `ShowItemLevel`, `TownCast`, `SingleplayerRunewords`, etc.

@@ -376,6 +376,62 @@ In mod.js: `config.runeColor` is `[R, G, B, A]`.
 }
 ```
 
+**D2RMM UI rendering notes (confirmed from live UI):**
+- `description` renders as a tooltip on a **"?" icon** next to the section name — it is NOT shown inline. This applies to all field types, not just sections.
+- `defaultExpanded: true` on a section with no items/children shows an empty expanded area. Use `defaultExpanded: false` for info-only sections (no controls under them) to avoid the empty space.
+- `visible` bindings work on section headers the same as on individual fields — you can hide/show an entire section header based on another field's value.
+- Sections in `mod.json` can be used either as flat headers (items following the section are visually grouped under it until the next section) or with explicit `children` nesting.
+
+**Preset select + custom number pattern** (for user-friendly numeric config):
+
+Use a `select` with named presets plus a `number` field that only appears when "Custom" is chosen. This avoids exposing raw numbers to users who don't understand the underlying scale.
+
+```json
+{
+  "id": "qualityPreset",
+  "type": "select",
+  "name": "Quality Chance",
+  "defaultValue": "10",
+  "options": [
+    { "label": "Vanilla (1%)", "value": "1", "description": "Original game rates." },
+    { "label": "2x (2%)", "value": "2" },
+    { "label": "10x (10%)", "value": "10" },
+    { "label": "Custom", "value": "custom", "description": "Enter a value below." }
+  ]
+},
+{
+  "id": "quality",
+  "type": "number",
+  "name": "Custom Quality Chance (%)",
+  "defaultValue": 10,
+  "minValue": 0,
+  "maxValue": 100,
+  "visible": ["eq", ["value", "qualityPreset"], "custom"]
+}
+```
+
+In `mod.js`, resolve the preset to its actual value:
+
+```javascript
+function getPresetValue(preset, custom) {
+  return preset === 'custom' ? custom : parseFloat(preset);
+}
+const chance = getPresetValue(config.qualityPreset, config.quality);
+```
+
+**Conditional override pattern** (force a field's value based on another field):
+
+```json
+{
+  "id": "dependentField",
+  "type": "checkbox",
+  "defaultValue": true,
+  "overrideValue": ["if", ["not", ["value", "parentField"]], false, null]
+}
+```
+
+When `parentField` is false, `dependentField` is forced to false. When `parentField` is true, `overrideValue` evaluates to `null` (no override — user controls it freely). Always also guard the same logic in `mod.js` as a safety net, since `overrideValue` only affects the UI.
+
 ---
 
 ## Binding Expressions

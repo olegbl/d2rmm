@@ -61,7 +61,7 @@ Common item codes: `gld`=gold, `hp1-hp5`=health potions, `mp1-mp5`=mana potions,
 **Gem and skull item codes** — 5 qualities × 7 types (source: `src/renderer/react/ed2r/ED2R.tsx`):
 
 |          | Diamond | Emerald | Ruby  | Topaz | Amethyst | Sapphire | Skull |
-|----------|---------|---------|-------|-------|----------|----------|-------|
+| -------- | ------- | ------- | ----- | ----- | -------- | -------- | ----- |
 | Chipped  | `gcw`   | `gcg`   | `gcr` | `gcy` | `gcv`    | `gcb`    | `skc` |
 | Flawed   | `gfw`   | `gfg`   | `gfr` | `gfy` | `gfv`    | `gfb`    | `skf` |
 | Regular  | `gsw`   | `gsg`   | `gsr` | `gsy` | `gsv`    | `gsb`    | `sku` |
@@ -69,6 +69,7 @@ Common item codes: `gld`=gold, `hp1-hp5`=health potions, `mp1-mp5`=mana potions,
 | Perfect  | `gpw`   | `gpg`   | `gpr` | `gpy` | `gpv`    | `gpb`    | `skz` |
 
 Notes:
+
 - Flawless Amethyst uses `gzv` (not `glv`) because `glv` is taken by the Glaive weapon.
 - Regular-quality Diamond/Emerald/Ruby/Sapphire (`gsw`, `gsg`, `gsr`, `gsb`) are in **`item-nameaffixes.json`**, not `item-names.json`. All other gem/skull keys are in `item-names.json`.
 
@@ -256,17 +257,32 @@ Key columns:
 
 ### `global\excel\levels.txt`
 
-World area/level definitions.
+World area/level definitions. Also modify `global\excel\base\levels.txt` (LoD/classic realm variant).
 
 Key columns:
 | Column | Description |
 |--------|-------------|
 | `Name` | Level name string key |
-| `MonDen` / `MonDen(N)` / `MonDen(H)` | Monster density (Normal/NM/Hell) |
-| `MonUMin` / `MonUMin(N)` / `MonUMin(H)` | Min unique monsters |
-| `MonUMax` / `MonUMax(N)` / `MonUMax(H)` | Max unique monsters |
-| `Mon1-Mon25` | Monster types that can spawn |
-| `rangedspawn` | `1` if ranged spawning |
+| `Id` | Numeric level ID (referenced by `desecratedzones.json` TZ system) |
+| `SizeX` / `SizeX(N)` / `SizeX(H)` | Level width in tiles per difficulty |
+| `SizeY` / `SizeY(N)` / `SizeY(H)` | Level height in tiles per difficulty |
+| `MonDen` / `MonDen(N)` / `MonDen(H)` | Monster pack spawn probability per tile × 100,000; capped at 10,000 by engine |
+| `MonUMin` / `MonUMin(N)` / `MonUMin(H)` | Min champion/unique packs (empty = use MonUMax default; ignored if MonDen=0) |
+| `MonUMax` / `MonUMax(N)` / `MonUMax(H)` | Max champion/unique packs |
+| `mon1-mon25` | Monster types that can randomly spawn |
+| `nmon1-nmon25` | Nightmare monster overrides |
+| `umon1-umon25` | Unique/champion monster pool |
+| `cmon1-cmon4` | Champion monster types |
+| `NumMon` | Number of distinct monster types active (out of mon1-mon25) |
+| `rangedspawn` | `1` if ranged spawning allowed |
+
+**MonDen mechanics** — see `d2r-game-mechanics.md` "Monster Spawning System" for full details:
+
+- `MonDen / 100,000` = probability per walkable tile; larger maps get proportionally more packs
+- Engine clamps at 10,000 (10% per tile) — effective max multiplier ~14× for typical 700-density zones
+- MonDen=0 means zero packs spawn AND MonUMin is ignored (champion minimums not honored)
+- Several TZ-rotation zones have MonDen=0 in Normal (notably Bloody Foothills, Id=110); fix via a `minDensity` config using `Math.max(value, minDensity)`
+- Minimum non-zero vanilla density: **325** (Kurast streets, Travincal)
 
 ---
 
@@ -369,16 +385,16 @@ Use recursive helper functions (see `.claude/d2r-mod-examples.md`). Layout files
 
 In `local\lng\strings\`:
 
-| File                    | Contents                                 |
-| ----------------------- | ---------------------------------------- |
-| `item-names.json`       | Potion, gem, rune, scroll, tome names — most gem/skull keys live here |
-| `item-runes.json`       | Runeword names (keys like `r01`, `r02`…) |
+| File                    | Contents                                                                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `item-names.json`       | Potion, gem, rune, scroll, tome names — most gem/skull keys live here                                                                                                                               |
+| `item-runes.json`       | Runeword names (keys like `r01`, `r02`…)                                                                                                                                                            |
 | `item-nameaffixes.json` | Suffix/prefix affix names — **also** holds regular-quality gem names for Diamond/Emerald/Ruby/Sapphire (`gsw`, `gsg`, `gsr`, `gsb`); regular Topaz/Amethyst and all Skulls are in `item-names.json` |
-| `item-modifiers.json`   | Stat modifier descriptions               |
-| `item-quality.json`     | Quality names (Superior, Cracked, etc.)  |
-| `monsters.json`         | Monster and boss names                   |
-| `skills.json`           | Skill names                              |
-| `ui.json`               | UI text strings                          |
+| `item-modifiers.json`   | Stat modifier descriptions                                                                                                                                                                          |
+| `item-quality.json`     | Quality names (Superior, Cracked, etc.)                                                                                                                                                             |
+| `monsters.json`         | Monster and boss names                                                                                                                                                                              |
+| `skills.json`           | Skill names                                                                                                                                                                                         |
+| `ui.json`               | UI text strings                                                                                                                                                                                     |
 
 Each file is an array. Each entry has `id`, `Key`, and one key per language (`enUS`, `deDE`, `esES`, `frFR`, `itIT`, `jaJP`, `koKR`, `plPL`, `ptBR`, `ruRU`, `zhCN`, `zhTW`).
 

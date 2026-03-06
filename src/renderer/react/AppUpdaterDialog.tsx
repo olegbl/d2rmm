@@ -20,7 +20,8 @@ type UpdaterState =
   | { event: 'extract' }
   | { event: 'download' }
   | { event: 'download-progress'; bytesDownloaded: number; bytesTotal: number }
-  | { event: 'apply' };
+  | { event: 'apply' }
+  | { event: 'error'; message: string };
 
 function useUpdaterState(): UpdaterState | null {
   const [updaterState, setUpdaterState] = useState<UpdaterState | null>(null);
@@ -88,20 +89,22 @@ function ProgressDialog({
       <DialogTitle id="alert-dialog-title">Updating</DialogTitle>
       <DialogContent sx={{ width: 400 }}>
         <DialogContentText id="alert-dialog-description">
-          {updaterState.event === 'cleanup'
-            ? 'Cleaning up...'
-            : updaterState.event === 'download'
-              ? 'Downloading update...'
-              : updaterState.event === 'download-progress'
-                ? `Downloading update... ${Math.round(
-                    (updaterState.bytesDownloaded / updaterState.bytesTotal) *
-                      100,
-                  )}%`
-                : updaterState.event === 'extract'
-                  ? 'Extracting update...'
-                  : updaterState.event === 'apply'
-                    ? 'Applying update...'
-                    : 'Please wait...'}
+          {updaterState.event === 'error'
+            ? `Update failed: ${updaterState.message}`
+            : updaterState.event === 'cleanup'
+              ? 'Cleaning up...'
+              : updaterState.event === 'download'
+                ? 'Downloading update...'
+                : updaterState.event === 'download-progress'
+                  ? `Downloading update... ${Math.round(
+                      (updaterState.bytesDownloaded / updaterState.bytesTotal) *
+                        100,
+                    )}%`
+                  : updaterState.event === 'extract'
+                    ? 'Extracting update...'
+                    : updaterState.event === 'apply'
+                      ? 'Applying update...'
+                      : 'Please wait...'}
         </DialogContentText>
         {updaterState.event === 'download-progress' && (
           <LinearProgress

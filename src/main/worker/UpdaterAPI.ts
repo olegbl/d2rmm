@@ -88,11 +88,16 @@ async function getLatestPrerelease(): Promise<Release | null> {
 }
 
 export async function installUpdate(update: Update): Promise<void> {
-  const config = await getConfig();
-  await cleanupUpdate(config);
-  await downloadUpdate(config, update);
-  await extractUpdate(config);
-  await applyUpdate(config, update);
+  try {
+    const config = await getConfig();
+    await cleanupUpdate(config);
+    await downloadUpdate(config, update);
+    await extractUpdate(config);
+    await applyUpdate(config, update);
+  } catch (e) {
+    await EventAPI.send('updater', { event: 'error', message: String(e) });
+    throw e;
+  }
 }
 
 type Config = {
@@ -103,7 +108,8 @@ type Config = {
 
 async function getConfig(): Promise<Config> {
   const tempDirPath = path.join(getTempPath(), 'D2RMM', 'Updater');
-  const updateDirPath = path.join(tempDirPath, 'update');
+  const randomId = Math.random().toString(36).slice(2, 10);
+  const updateDirPath = path.join(tempDirPath, 'update', randomId);
   return {
     tempDirPath,
     updateZipPath: '',
@@ -115,7 +121,16 @@ async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
   console.log('[Updater] Cleaning up temporary directory');
   await EventAPI.send('updater', { event: 'cleanup' });
   if (existsSync(tempDirPath) && statSync(tempDirPath).isDirectory()) {
-    rmSync(tempDirPath, { recursive: true });
+    try {
+      rmSync(tempDirPath, { recursive: true });
+    } catch (e) {
+      // If we fail to clean up the "update" directory, that's okay
+      // because we'll be creating a new random directory inside
+      // so there shouldn't be any chance of a collision. We just
+      // want to delete it to clean things up and reduce disk space
+      // used.
+      console.warn('[Updater] Failed to clean up temporary directory:', e);
+    }
   }
 }
 

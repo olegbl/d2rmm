@@ -1,5 +1,6 @@
 import type { Mod } from 'bridge/BridgeAPI';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
+import { useTranslation } from 'react-i18next';
 import { Warning } from '@mui/icons-material';
 
 type Props = {
@@ -7,6 +8,8 @@ type Props = {
 };
 
 export function ModListDataModChip({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
+
   if (mod.info.type !== 'data') {
     return null;
   }
@@ -15,8 +18,8 @@ export function ModListDataModChip({ mod }: Props): JSX.Element | null {
     <ModListItemChip
       color="warning"
       icon={<Warning />}
-      label="data mod"
-      tooltip="This mod is a non-D2RMM data mod and may conflict with other mods or game updates. It is recommended to put it as high in the mod load order as possible."
+      label={t('modlist.chip.dataMod')}
+      tooltip={t('modlist.chip.dataMod.tooltip')}
     />
   );
 }

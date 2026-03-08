@@ -45,17 +45,7 @@ export function readHeader(
   char.header.active_arms = reader.ReadUInt16(); //  0x0, 0x0
 
   // [ 0x0028 0x0028 0x0018 ]
-  const classId = reader.ReadUInt8();
-
-  const classData = constants.classes[classId];
-  if (!classData) {
-    throw new Error(
-      `Invalid class ID ${classId} at byte position ${Math.floor(reader.offset / 8)}. ` +
-        `This may indicate a parsing error due to incorrect file format for version ${char.header.version} (0x${char.header.version.toString(16)}). ` +
-        `Valid class IDs are 0-${constants.classes.length - 1}.`,
-    );
-  }
-  char.header.class = classData.n;
+  char.header.class_id = reader.ReadUInt8();
 
   // [ 0x0029 0x0029 0x0019 ]
   reader.SkipBytes(2); // 0x10, 0x1E // TODO: NO SKIPPING
@@ -73,12 +63,7 @@ export function readHeader(
   reader.SkipBytes(4); // 0xff, 0xff, 0xff, 0xff // TODO: NO SKIPPING
 
   // [ 0x0038 0x0038 0x0028 ]
-  const assignedSkillsResult = _readAssignedSkills(
-    reader.ReadArray(64),
-    constants,
-  );
-  char.header.assigned_skills = assignedSkillsResult.names;
-  char.header.assigned_skill_ids = assignedSkillsResult.ids;
+  char.header.assigned_skill_ids = _readAssignedSkills(reader.ReadArray(64));
 
   // [ 0x0078 0x0078 0x0068 ]
   char.header.left_skill = constants.skills[reader.ReadUInt32()]?.s;
@@ -187,7 +172,7 @@ export function readHeader(
   char.header.waypoints_header_length = reader.ReadUInt16();
 
   // [ 0x0281 0x0281 0x0271 ]
-  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48));
+  char.header.waypoints = _readWaypointData(reader.ReadArray(0x48), constants);
 
   // [ 0x02c9 0x02c9 0x02b9 ]
   char.header.npcs_header_magic = reader.ReadArray(2); // 0x01, 0x77 ".w"
@@ -235,7 +220,7 @@ export function writeHeader(
   writer.WriteUInt16(char.header.active_arms);
 
   // [ 0x0028 0x0028 0x0018 ]
-  writer.WriteUInt8(_classId(char.header.class, constants));
+  writer.WriteUInt8(char.header.class_id);
 
   // [ 0x0029 0x0029 0x0019 ]
   writer.WriteArray(new Uint8Array([0x10, 0x1e]));
@@ -253,13 +238,7 @@ export function writeHeader(
   writer.WriteArray(new Uint8Array([0xff, 0xff, 0xff, 0xff]));
 
   // [ 0x0038 0x0038 0x0028 ]
-  writer.WriteArray(
-    _writeAssignedSkills(
-      char.header.assigned_skills,
-      char.header.assigned_skill_ids,
-      constants,
-    ),
-  );
+  writer.WriteArray(_writeAssignedSkills(char.header.assigned_skill_ids));
 
   // [ 0x0078 0x0078 0x0068 ]
   writer.WriteUInt32(_skillId(char.header.left_skill, constants));
@@ -367,7 +346,7 @@ export function writeHeader(
   writer.WriteUInt16(char.header.waypoints_header_length ?? 0x50);
 
   // [ 0x0281 0x0281 0x02da ]
-  writer.WriteArray(_writeWaypointData(char.header.waypoints));
+  writer.WriteArray(_writeWaypointData(char.header.waypoints, constants));
 
   // [ 0x02c9 0x02c9 0x0322 ]
   writer.WriteBytes(
@@ -572,43 +551,22 @@ function _writeCharMenuAppearance(
   return writer.ToArray();
 }
 
-function _readAssignedSkills(
-  bytes: Uint8Array,
-  constants: types.IConstantData,
-): { names: string[]; ids: number[] } {
-  const names = [] as string[];
+function _readAssignedSkills(bytes: Uint8Array): number[] {
   const ids = [] as number[];
   const reader = new BitReader(bytes);
   for (let i = 0; i < 16; i++) {
     const skillId = reader.ReadUInt32();
     ids.push(skillId);
-    const skill = constants.skills[skillId];
-    if (skill) {
-      names.push(skill.s);
-    }
   }
-  return { names, ids };
+  return ids;
 }
 
-function _writeAssignedSkills(
-  skills: string[],
-  skillIds: number[] | undefined,
-  constants: types.IConstantData,
-): Uint8Array {
+function _writeAssignedSkills(skillIds: number[]): Uint8Array {
   const writer = new BitWriter(64);
   writer.length = 64 * 8;
-  skills = skills || [];
   for (let i = 0; i < 16; i++) {
-    if (skillIds != null && i < skillIds.length) {
-      // Use the raw stored ID for faithful round-tripping
-      writer.WriteUInt32(skillIds[i]);
-    } else {
-      // Fall back to name lookup (for mods that set assigned_skills directly)
-      const skillId = _skillId(skills[i], constants);
-      writer.WriteUInt32(skillId > 0 ? skillId : 0xffffffff);
-    }
+    writer.WriteUInt32(skillIds[i]);
   }
-
   return writer.ToArray();
 }
 
@@ -784,144 +742,87 @@ function _writeQuest(quest: types.IQuest): Uint8Array {
   return writer.ToArray();
 }
 
-function _readWaypointData(bytes: Uint8Array): types.IWaypointData {
+function _readWaypointData(
+  bytes: Uint8Array,
+  constants: types.IConstantData,
+): types.IWaypointData {
   const waypoints = {} as types.IWaypointData;
   const reader = new BitReader(bytes);
   for (let i = 0; i < difficulties.length; i++) {
     waypoints[difficulties[i] as keyof typeof waypoints] = _readWaypoints(
       reader.ReadArray(24),
+      constants,
     );
   }
   return waypoints;
 }
 
-function _readWaypoints(bytes: Uint8Array): types.IWaypoints {
+function _readActWaypoints(
+  reader: BitReader,
+  levels: string[],
+): types.IActWaypoints {
+  const act: types.IActWaypoints = {};
+  for (const level of levels) {
+    act[level] = reader.ReadBit() === 1;
+  }
+  return act;
+}
+
+function _readWaypoints(
+  bytes: Uint8Array,
+  constants: types.IConstantData,
+): types.IWaypoints {
   const reader = new BitReader(bytes);
-  const waypoints = {} as types.IWaypoints;
+  const waypoints: types.IWaypoints = { acts: [] };
 
   waypoints.unknown_header = reader.ReadBytes(2);
-
-  waypoints.act_i = {} as types.IActIWaypoints;
-  waypoints.act_i.rogue_encampement = reader.ReadBit() === 1;
-  waypoints.act_i.cold_plains = reader.ReadBit() === 1;
-  waypoints.act_i.stony_field = reader.ReadBit() === 1;
-  waypoints.act_i.dark_woods = reader.ReadBit() === 1;
-  waypoints.act_i.black_marsh = reader.ReadBit() === 1;
-  waypoints.act_i.outer_cloister = reader.ReadBit() === 1;
-  waypoints.act_i.jail_lvl_1 = reader.ReadBit() === 1;
-  waypoints.act_i.inner_cloister = reader.ReadBit() === 1;
-  waypoints.act_i.catacombs_lvl_2 = reader.ReadBit() === 1;
-
-  waypoints.act_ii = {} as types.IActIIWaypoints;
-  waypoints.act_ii.lut_gholein = reader.ReadBit() === 1;
-  waypoints.act_ii.sewers_lvl_2 = reader.ReadBit() === 1;
-  waypoints.act_ii.dry_hills = reader.ReadBit() === 1;
-  waypoints.act_ii.halls_of_the_dead_lvl_2 = reader.ReadBit() === 1;
-  waypoints.act_ii.far_oasis = reader.ReadBit() === 1;
-  waypoints.act_ii.lost_city = reader.ReadBit() === 1;
-  waypoints.act_ii.palace_cellar_lvl_1 = reader.ReadBit() === 1;
-  waypoints.act_ii.arcane_sanctuary = reader.ReadBit() === 1;
-  waypoints.act_ii.canyon_of_the_magi = reader.ReadBit() === 1;
-
-  waypoints.act_iii = {} as types.IActIIIWaypoints;
-  waypoints.act_iii.kurast_docks = reader.ReadBit() === 1;
-  waypoints.act_iii.spider_forest = reader.ReadBit() === 1;
-  waypoints.act_iii.great_marsh = reader.ReadBit() === 1;
-  waypoints.act_iii.flayer_jungle = reader.ReadBit() === 1;
-  waypoints.act_iii.lower_kurast = reader.ReadBit() === 1;
-  waypoints.act_iii.kurast_bazaar = reader.ReadBit() === 1;
-  waypoints.act_iii.upper_kurast = reader.ReadBit() === 1;
-  waypoints.act_iii.travincal = reader.ReadBit() === 1;
-  waypoints.act_iii.durance_of_hate_lvl_2 = reader.ReadBit() === 1;
-
-  waypoints.act_iv = {} as types.IActIVWaypoints;
-  waypoints.act_iv.the_pandemonium_fortress = reader.ReadBit() === 1;
-  waypoints.act_iv.city_of_the_damned = reader.ReadBit() === 1;
-  waypoints.act_iv.river_of_flame = reader.ReadBit() === 1;
-
-  waypoints.act_v = {} as types.IActVWaypoints;
-  waypoints.act_v.harrogath = reader.ReadBit() === 1;
-  waypoints.act_v.frigid_highlands = reader.ReadBit() === 1;
-  waypoints.act_v.arreat_plateau = reader.ReadBit() === 1;
-  waypoints.act_v.crystalline_passage = reader.ReadBit() === 1;
-  waypoints.act_v.halls_of_pain = reader.ReadBit() === 1;
-  waypoints.act_v.glacial_trail = reader.ReadBit() === 1;
-  waypoints.act_v.frozen_tundra = reader.ReadBit() === 1;
-  waypoints.act_v.the_ancients_way = reader.ReadBit() === 1;
-  waypoints.act_v.worldstone_keep_lvl_2 = reader.ReadBit() === 1;
-
+  for (const levelNames of constants.waypoint_acts) {
+    waypoints.acts.push(_readActWaypoints(reader, levelNames));
+  }
   reader.Align();
-
   waypoints.unknown_trailing = reader.ReadBytes(17);
 
   return waypoints;
 }
 
-function _writeWaypointData(waypoints: types.IWaypointData): Uint8Array {
+function _writeWaypointData(
+  waypoints: types.IWaypointData,
+  constants: types.IConstantData,
+): Uint8Array {
   const writer = new BitWriter(72);
   writer.length = 72 * 8;
 
   for (let i = 0; i < difficulties.length; i++) {
     const difficultyWaypoints =
       waypoints[difficulties[i] as keyof typeof waypoints];
-    writer.WriteArray(_writeWaypoints(difficultyWaypoints));
+    writer.WriteArray(_writeWaypoints(difficultyWaypoints, constants));
   }
 
   return writer.ToArray();
 }
 
-function _writeWaypoints(waypoints: types.IWaypoints): Uint8Array {
+function _writeActWaypoints(
+  writer: BitWriter,
+  act: types.IActWaypoints,
+  levels: string[],
+): void {
+  for (const level of levels) {
+    writer.WriteBit(act[level] ? 1 : 0);
+  }
+}
+
+function _writeWaypoints(
+  waypoints: types.IWaypoints,
+  constants: types.IConstantData,
+): Uint8Array {
   const writer = new BitWriter(24);
   writer.length = 24 * 8;
 
   writer.WriteBytes(waypoints.unknown_header ?? new Uint8Array([0x02, 0x01]));
-
-  writer.WriteBit(+waypoints.act_i.rogue_encampement);
-  writer.WriteBit(+waypoints.act_i.cold_plains);
-  writer.WriteBit(+waypoints.act_i.stony_field);
-  writer.WriteBit(+waypoints.act_i.dark_woods);
-  writer.WriteBit(+waypoints.act_i.black_marsh);
-  writer.WriteBit(+waypoints.act_i.outer_cloister);
-  writer.WriteBit(+waypoints.act_i.jail_lvl_1);
-  writer.WriteBit(+waypoints.act_i.inner_cloister);
-  writer.WriteBit(+waypoints.act_i.catacombs_lvl_2);
-
-  writer.WriteBit(+waypoints.act_ii.lut_gholein);
-  writer.WriteBit(+waypoints.act_ii.sewers_lvl_2);
-  writer.WriteBit(+waypoints.act_ii.dry_hills);
-  writer.WriteBit(+waypoints.act_ii.halls_of_the_dead_lvl_2);
-  writer.WriteBit(+waypoints.act_ii.far_oasis);
-  writer.WriteBit(+waypoints.act_ii.lost_city);
-  writer.WriteBit(+waypoints.act_ii.palace_cellar_lvl_1);
-  writer.WriteBit(+waypoints.act_ii.arcane_sanctuary);
-  writer.WriteBit(+waypoints.act_ii.canyon_of_the_magi);
-
-  writer.WriteBit(+waypoints.act_iii.kurast_docks);
-  writer.WriteBit(+waypoints.act_iii.spider_forest);
-  writer.WriteBit(+waypoints.act_iii.great_marsh);
-  writer.WriteBit(+waypoints.act_iii.flayer_jungle);
-  writer.WriteBit(+waypoints.act_iii.lower_kurast);
-  writer.WriteBit(+waypoints.act_iii.kurast_bazaar);
-  writer.WriteBit(+waypoints.act_iii.upper_kurast);
-  writer.WriteBit(+waypoints.act_iii.travincal);
-  writer.WriteBit(+waypoints.act_iii.durance_of_hate_lvl_2);
-
-  writer.WriteBit(+waypoints.act_iv.the_pandemonium_fortress);
-  writer.WriteBit(+waypoints.act_iv.city_of_the_damned);
-  writer.WriteBit(+waypoints.act_iv.river_of_flame);
-
-  writer.WriteBit(+waypoints.act_v.harrogath);
-  writer.WriteBit(+waypoints.act_v.frigid_highlands);
-  writer.WriteBit(+waypoints.act_v.arreat_plateau);
-  writer.WriteBit(+waypoints.act_v.crystalline_passage);
-  writer.WriteBit(+waypoints.act_v.halls_of_pain);
-  writer.WriteBit(+waypoints.act_v.glacial_trail);
-  writer.WriteBit(+waypoints.act_v.frozen_tundra);
-  writer.WriteBit(+waypoints.act_v.the_ancients_way);
-  writer.WriteBit(+waypoints.act_v.worldstone_keep_lvl_2);
-
+  for (let i = 0; i < constants.waypoint_acts.length; i++) {
+    _writeActWaypoints(writer, waypoints.acts[i] ?? {}, constants.waypoint_acts[i]);
+  }
   writer.Align();
-
   writer.WriteBytes(waypoints.unknown_trailing ?? new Uint8Array(17));
 
   return writer.ToArray();
@@ -930,46 +831,46 @@ function _writeWaypoints(waypoints: types.IWaypoints): Uint8Array {
 // Ordered list of all 40 NPC slots per difficulty block (intro and congrats).
 // Unknown slots correspond to NPC bit positions that are preserved but not mapped to named NPCs.
 const NPC_SLOTS: ReadonlyArray<keyof types.INPCS> = [
-  'warriv_act_ii',  // bit 0
-  'unknown_1',      // bit 1
-  'charsi',         // bit 2
-  'warriv_act_i',   // bit 3
-  'kashya',         // bit 4
-  'akara',          // bit 5
-  'gheed',          // bit 6
-  'unknown_2',      // bit 7
-  'greiz',          // bit 8
-  'jerhyn',         // bit 9
-  'meshif_act_ii',  // bit 10
-  'geglash',        // bit 11
-  'lysnader',       // bit 12
-  'fara',           // bit 13
-  'drogan',         // bit 14
-  'unknown_3',      // bit 15
-  'alkor',          // bit 16
-  'hratli',         // bit 17
-  'ashera',         // bit 18
-  'unknown_4',      // bit 19
-  'unknown_5',      // bit 20
-  'cain_act_iii',   // bit 21
-  'unknown_6',      // bit 22
-  'elzix',          // bit 23
-  'malah',          // bit 24
-  'anya',           // bit 25
-  'unknown_7',      // bit 26
-  'natalya',        // bit 27
+  'warriv_act_ii', // bit 0
+  'unknown_1', // bit 1
+  'charsi', // bit 2
+  'warriv_act_i', // bit 3
+  'kashya', // bit 4
+  'akara', // bit 5
+  'gheed', // bit 6
+  'unknown_2', // bit 7
+  'greiz', // bit 8
+  'jerhyn', // bit 9
+  'meshif_act_ii', // bit 10
+  'geglash', // bit 11
+  'lysnader', // bit 12
+  'fara', // bit 13
+  'drogan', // bit 14
+  'unknown_3', // bit 15
+  'alkor', // bit 16
+  'hratli', // bit 17
+  'ashera', // bit 18
+  'unknown_4', // bit 19
+  'unknown_5', // bit 20
+  'cain_act_iii', // bit 21
+  'unknown_6', // bit 22
+  'elzix', // bit 23
+  'malah', // bit 24
+  'anya', // bit 25
+  'unknown_7', // bit 26
+  'natalya', // bit 27
   'meshif_act_iii', // bit 28
-  'unknown_8',      // bit 29
-  'unknown_9',      // bit 30
-  'ormus',          // bit 31
-  'unknown_10',     // bit 32
-  'unknown_11',     // bit 33
-  'unknown_12',     // bit 34
-  'unknown_13',     // bit 35
-  'unknown_14',     // bit 36
-  'cain_act_v',     // bit 37
-  'qualkehk',       // bit 38
-  'nihlathak',      // bit 39
+  'unknown_8', // bit 29
+  'unknown_9', // bit 30
+  'ormus', // bit 31
+  'unknown_10', // bit 32
+  'unknown_11', // bit 33
+  'unknown_12', // bit 34
+  'unknown_13', // bit 35
+  'unknown_14', // bit 36
+  'cain_act_v', // bit 37
+  'qualkehk', // bit 38
+  'nihlathak', // bit 39
 ];
 
 function _readNPCData(bytes: Uint8Array): types.INPCData {

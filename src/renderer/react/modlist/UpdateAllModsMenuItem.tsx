@@ -7,6 +7,7 @@ import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useToast from 'renderer/react/hooks/useToast';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SystemUpdateAlt } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
 
@@ -15,6 +16,7 @@ export default function UpdateAllModsMenuItem({
 }: {
   onHideMenu: () => void;
 }): JSX.Element | null {
+  const { t } = useTranslation();
   const showToast = useToast();
   const { nexusAuthState } = useNexusAuthState();
   const installMod = useModInstaller(nexusAuthState);
@@ -67,12 +69,12 @@ export default function UpdateAllModsMenuItem({
       } catch (error) {
         showToast({
           severity: 'error',
-          title: `Failed to update ${modName}`,
+          title: t('modlist.update.toast.failed', { name: modName }),
           description: error instanceof Error ? error.message : String(error),
         });
       }
     }
-  }, [onHideMenu, pendingUpdates, installMod, showToast]);
+  }, [onHideMenu, pendingUpdates, installMod, showToast, t]);
 
   if (pendingUpdates.length === 0) {
     return null;
@@ -81,7 +83,7 @@ export default function UpdateAllModsMenuItem({
   return (
     <MenuItem disableRipple={true} onClick={onUpdateAll}>
       <SystemUpdateAlt sx={{ marginRight: 1 }} />
-      Update All Mods ({pendingUpdates.length})
+      {t('modlist.menu.updateAll', { count: pendingUpdates.length })}
     </MenuItem>
   );
 }

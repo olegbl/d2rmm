@@ -6,6 +6,7 @@ import {
 } from 'renderer/react/context/ModsContext';
 import { MouseEvent, useCallback, useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
+import { useTranslation } from 'react-i18next';
 import { Close, DragIndicator, Edit, ExpandMore } from '@mui/icons-material';
 import {
   Box,
@@ -33,6 +34,7 @@ export default function ModListSectionHeader({
   sectionHeader,
   totalCount,
 }: Props) {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   // TODO: scroll list to end if needed on expand
@@ -141,12 +143,12 @@ export default function ModListSectionHeader({
                           sx={{ ml: 1 }}
                         />
                         <Box sx={{ flex: 1 }} />
-                        <Tooltip title="Rename Section Header">
+                        <Tooltip title={t('modlist.sectionHeader.rename')}>
                           <IconButton onClick={onStartRenaming}>
                             <Edit />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete Section Header">
+                        <Tooltip title={t('modlist.sectionHeader.delete')}>
                           <IconButton onClick={onDelete}>
                             <Close />
                           </IconButton>

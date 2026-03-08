@@ -1,4 +1,5 @@
 import type { ILogLevel } from 'bridge/ConsoleAPI';
+import i18n from 'renderer/i18n';
 import { useIsInstalling } from 'renderer/react/context/InstallContext';
 import {
   useLogLevels,
@@ -13,6 +14,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactVirtualizedAutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { Clear } from '@mui/icons-material';
@@ -63,7 +65,8 @@ function prettyPrintData(data: unknown): string {
 
 type Props = Record<string, never>;
 
-export default function ModManagerSettings(_props: Props): JSX.Element {
+export default function ModManagerLogs(_props: Props): JSX.Element {
+  const { t } = useTranslation();
   const logs = useLogs();
   const { clear } = useLogger();
   const [isInstalling] = useIsInstalling();
@@ -161,7 +164,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 WebkitBoxOrient: 'vertical',
               },
             }}
-            secondary={new Date(log.timestamp).toLocaleTimeString()}
+            secondary={new Date(log.timestamp).toLocaleTimeString(
+              i18n.resolvedLanguage,
+            )}
           />
         </ListItemButton>
       );
@@ -181,6 +186,19 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       listRef.current?.scrollToItem(filteredLogs.length - 1, 'end');
     }
   }, [isInstalling, filteredLogs]);
+
+  const drawerTitle =
+    selectedRowIndex === -1
+      ? ''
+      : filteredLogs[selectedRowIndex].level === 'error'
+        ? t('logs.drawer.error')
+        : filteredLogs[selectedRowIndex].level === 'warn'
+          ? t('logs.drawer.warn')
+          : filteredLogs[selectedRowIndex].level === 'log'
+            ? t('logs.drawer.info')
+            : filteredLogs[selectedRowIndex].level === 'debug'
+              ? t('logs.drawer.debug')
+              : '';
 
   return (
     <>
@@ -226,7 +244,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             ),
           }}
           onChange={(event) => setFilter(event.target.value)}
-          placeholder="Search..."
+          placeholder={t('logs.search')}
           size="small"
           sx={{
             flex: '0 1 auto',
@@ -253,22 +271,22 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
         >
           <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="error">
             <ErrorOutlineIcon color="error" sx={{ marginRight: 1 }} />
-            Error
+            {t('logs.level.error')}
           </ToggleButton>
           <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="warn">
             <ReportProblemOutlinedIcon
               color="warning"
               sx={{ marginRight: 1 }}
             />
-            Warning
+            {t('logs.level.warn')}
           </ToggleButton>
           <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="log">
             <InfoOutlinedIcon color="primary" sx={{ marginRight: 1 }} />
-            Info
+            {t('logs.level.info')}
           </ToggleButton>
           <ToggleButton sx={{ paddingLeft: 1, paddingRight: 1 }} value="debug">
             <PendingOutlinedIcon color="disabled" sx={{ marginRight: 1 }} />
-            Debug
+            {t('logs.level.debug')}
           </ToggleButton>
         </ToggleButtonGroup>
         <ButtonGroup>
@@ -277,10 +295,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             startIcon={<DownloadIcon />}
             variant="outlined"
           >
-            Export
+            {t('logs.export')}
           </Button>
           <Button onClick={onClear} startIcon={<Clear />} variant="outlined">
-            Clear
+            {t('logs.clear')}
           </Button>
         </ButtonGroup>
         <Menu
@@ -288,7 +306,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           onClose={onCloseExportMenu}
           open={exportAnchorEl != null}
         >
-          <MenuItem onClick={onCopy}>Copy to clipboard</MenuItem>
+          <MenuItem onClick={onCopy}>{t('logs.copy')}</MenuItem>
         </Menu>
       </Box>
       <Drawer
@@ -301,15 +319,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             <AppBar position="static">
               <Toolbar>
                 <Typography component="div" variant="h6">
-                  {filteredLogs[selectedRowIndex].level === 'error'
-                    ? 'Error'
-                    : filteredLogs[selectedRowIndex].level === 'warn'
-                      ? 'Warning'
-                      : filteredLogs[selectedRowIndex].level === 'log'
-                        ? 'Info'
-                        : filteredLogs[selectedRowIndex].level === 'debug'
-                          ? 'Debug'
-                          : ''}
+                  {drawerTitle}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <IconButton

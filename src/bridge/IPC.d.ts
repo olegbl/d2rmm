@@ -28,6 +28,8 @@ export type IPCMessageErrorResponse = {
     name: string;
     message: string;
     stack: string | undefined;
+    i18nKey?: string;
+    i18nArgs?: Record<string, string | number>;
   };
 };
 

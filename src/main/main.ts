@@ -13,6 +13,7 @@ import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
 import { initUpdateInstallerAPI } from './UpdateInstallerAPI';
 import { getWorkers, spawnNewWorker } from './Workers';
+import { initI18n, readLocaleConfigSync } from './i18n';
 import { initPreferences } from './preferences';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
@@ -195,6 +196,10 @@ import { CURRENT_VERSION } from './version';
   });
 
   initPreferences();
+
+  const locale =
+    readLocaleConfigSync(app.getPath('userData')) ?? app.getLocale();
+  initI18n(locale).catch(console.error);
 
   app
     .whenReady()

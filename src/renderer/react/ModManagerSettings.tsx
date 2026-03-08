@@ -1,6 +1,11 @@
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import ShellAPI from 'renderer/ShellAPI';
+import i18n, {
+  LOCALE_DISPLAY_NAMES,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from 'renderer/i18n';
 import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -22,8 +27,10 @@ import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
+import useSavedState from 'renderer/react/hooks/useSavedState';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -79,6 +86,7 @@ const StyledAccordionDetails = styled(AccordionDetails)(() => ({}));
 type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
+  const { t } = useTranslation();
   const [extraArgs, setExtraArgs] = useExtraGameLaunchArgs();
   const [rawGamePath, setRawGamePath] = useGamePath();
   const gamePath = useSanitizedGamePath();
@@ -98,6 +106,24 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     useIsFocused();
 
   const [themeMode, setThemeMode] = useThemeMode();
+
+  const [locale, setLocale] = useSavedState<Locale>('locale', 'en-US');
+
+  const onLocaleChange = useCallback(
+    async (newLocale: Locale): Promise<void> => {
+      setLocale(newLocale);
+      await i18n.changeLanguage(newLocale);
+      try {
+        const LocaleAPI = (await import('renderer/BridgeAPI')).default;
+        await (
+          LocaleAPI as unknown as { setLocale: (l: string) => Promise<void> }
+        ).setLocale(newLocale);
+      } catch {
+        // LocaleAPI may not be available in all environments
+      }
+    },
+    [setLocale],
+  );
 
   const dataSource = isPreExtractedData ? 'directory' : 'casc';
 
@@ -158,34 +184,32 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="general-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>General</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.general.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="general-content">
           <Typography color="text.secondary" variant="subtitle2">
-            Specify the directory where Diablo II: Resurrected is installed.
-            &quot;D2R.exe&quot; should in in this directory.
+            {t('settings.general.gameDir.description')}
           </Typography>
           <TextField
             error={!isValidGamePath}
             fullWidth={true}
             helperText={
-              isValidGamePath
-                ? null
-                : "This doesn't look like a valid D2R game directory. Could not find D2R.exe inside."
+              isValidGamePath ? null : t('settings.general.gameDir.error')
             }
-            label="Game Directory"
+            label={t('settings.general.gameDir.label')}
             onChange={(event) => setRawGamePath(event.target.value)}
             value={rawGamePath}
             variant="filled"
           />
           <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
           <Typography color="text.secondary" variant="subtitle2">
-            Specify where D2RMM should pull the game&apos;s data from when
-            installing mods.
+            {t('settings.general.dataSource.description')}
           </Typography>
           <TextField
             fullWidth={true}
-            label="Game Data Source"
+            label={t('settings.general.dataSource.label')}
             onChange={(event) =>
               setIsPreExtractedData(event.target.value === 'directory')
             }
@@ -193,15 +217,18 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             value={dataSource}
             variant="filled"
           >
-            <MenuItem value="casc">Casc Archive</MenuItem>
-            <MenuItem value="directory">Pre-Extracted Data</MenuItem>
+            <MenuItem value="casc">
+              {t('settings.general.dataSource.casc')}
+            </MenuItem>
+            <MenuItem value="directory">
+              {t('settings.general.dataSource.directory')}
+            </MenuItem>
           </TextField>
           {dataSource === 'directory' ? (
             <>
               <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
               <Typography color="text.secondary" variant="subtitle2">
-                Specify the location of the directory that contains
-                pre-extracted data from Diablo II: Resurrected.
+                {t('settings.general.dataDir.description')}
               </Typography>
               <TextField
                 error={!isValidPreExtractedDataPath}
@@ -209,9 +236,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 helperText={
                   isValidPreExtractedDataPath
                     ? null
-                    : "This doesn't look like a valid D2R game data directory. Could not find the global directory inside. Are you sure you extracted the game data to this directory using CascView?"
+                    : t('settings.general.dataDir.error')
                 }
-                label="Data Directory"
+                label={t('settings.general.dataDir.label')}
                 onChange={(event) =>
                   setPreExtractedDataPath(event.target.value)
                 }
@@ -220,11 +247,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               />
               {isIdenticalInputAndOutput ? (
                 <Alert severity="error">
-                  It looks like you are reading pre-extracted game data from the
-                  same directory that D2RMM will generate output modded files
-                  into ("{outputPath}"). Are you <strong>sure</strong> you want
-                  to do this? This will most likely lead to completely broken
-                  behavior.
+                  {t('settings.general.dataDir.sameAsOutput', {
+                    path: outputPath,
+                  })}
                 </Alert>
               ) : null}
             </>
@@ -233,12 +258,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             <>
               <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
               <Typography color="text.secondary" variant="subtitle2">
-                Specify the name of the Diablo II: Resurrected MPQ data mod that
-                D2RMM will generate when mods are installed.
+                {t('settings.general.outputModName.description')}
               </Typography>
               <TextField
                 fullWidth={true}
-                label="Output Mod Name"
+                label={t('settings.general.outputModName.label')}
                 onChange={(event) =>
                   setOutputModName(
                     event.target.value.replace(/[^a-zA-Z0-9-_]/g, ''),
@@ -252,19 +276,17 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           {!isDirectMode && outputModName.trim() === '' ? (
             <Alert severity="warning">
               <Typography>
-                The Output Mod Name is empty. This will almost certainly break
-                your game. Are you sure this is right?
+                {t('settings.general.outputModName.empty')}
               </Typography>
             </Alert>
           ) : null}
           <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
           <Typography color="text.secondary" variant="subtitle2">
-            Specify where D2RMM should read save files from when installing
-            mods.
+            {t('settings.general.savesPath.description')}
           </Typography>
           <TextField
             fullWidth={true}
-            label="Save Data Path"
+            label={t('settings.general.savesPath.label')}
             onBlur={onSavesPathBlur}
             onChange={(event) => setSavesPath(event.target.value)}
             onFocus={onSavesPathFocus}
@@ -275,7 +297,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           {!finalSavesPath.startsWith(baseSavesPath) ? (
             <Alert severity="warning">
               <Typography>
-                Your save path is not within &ldquo;
+                {t('settings.general.savesPath.outsideBase', {
+                  path: baseSavesPath,
+                })}{' '}
                 <Link
                   href="#"
                   onClick={() => {
@@ -293,21 +317,33 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           <Divider sx={{ marginTop: 2, marginBottom: 1 }} />
           <Alert severity="info" sx={{ marginTop: 2 }}>
             <Typography color="text.secondary" variant="subtitle2">
-              Generated files will be located in &ldquo;
+              {
+                t('settings.general.outputPath.info', { path: '\x00' }).split(
+                  '\x00',
+                )[0]
+              }
               <Link
                 href="#"
                 onClick={() => {
                   ShellAPI.showItemInFolder(outputPath).catch(console.error);
                 }}
               >
-                {outputPath}\
+                {outputPath}
               </Link>
-              &rdquo;.
+              {
+                t('settings.general.outputPath.info', { path: '\x00' }).split(
+                  '\x00',
+                )[1]
+              }
             </Typography>
           </Alert>
           <Alert severity="info" sx={{ marginTop: 1 }}>
             <Typography color="text.secondary" variant="subtitle2">
-              Save game files and user preferences will be located in &ldquo;
+              {
+                t('settings.general.savesLocation.info', {
+                  path: '\x00',
+                }).split('\x00')[0]
+              }
               <Link
                 href="#"
                 onClick={() => {
@@ -316,9 +352,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   );
                 }}
               >
-                {finalSavesPath}\
+                {finalSavesPath}
               </Link>
-              &rdquo;.
+              {
+                t('settings.general.savesLocation.info', {
+                  path: '\x00',
+                }).split('\x00')[1]
+              }
             </Typography>
           </Alert>
           <InstallBeforeRunSettings />
@@ -335,15 +375,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="direct-mode-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>Direct Mode</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.directMode.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="direct-mode-content">
           <Typography color="text.secondary" variant="subtitle2">
-            Instead of generating files in &lt;D2R&gt;/mods/, generate them in
-            &lt;D2R&gt;/data/ so that you can use -direct -txt when running the
-            game. You will still need to manually extract game data to
-            &lt;D2R&gt;/data/ using CascView in order to use &quot;-direct&quot;
-            with Diablo II: Resurrected.
+            {t('settings.directMode.description')}
           </Typography>
           <ListItemButton
             onClick={() => {
@@ -363,18 +401,15 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             </ListItemIcon>
             <ListItemText
               id="enable-direct-mode"
-              primary="Enable Direct Mode"
+              primary={t('settings.directMode.enable')}
             />
           </ListItemButton>
           {!isDirectMode ? null : (
             <Typography color="text.secondary" variant="subtitle2">
-              Generated files will be located in &ldquo;{outputPath}\&rdquo;.
+              {t('settings.directMode.outputPath', { path: outputPath })}
             </Typography>
           )}
-          <Alert severity="warning">
-            Do <strong>not</strong> turn this on if you do not know what you are
-            doing.
-          </Alert>
+          <Alert severity="warning">{t('settings.directMode.warning')}</Alert>
         </StyledAccordionDetails>
       </StyledAccordion>
       <StyledAccordion
@@ -388,16 +423,17 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="launcher-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>Game Launcher</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.launcher.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="launcher-content">
           <Typography color="text.secondary" variant="subtitle2">
-            Specify the extra arguments you&apos;d like to pass to Diablo II:
-            Resurrected when starting it via D2RMM.
+            {t('settings.launcher.description')}
           </Typography>
           <TextField
             fullWidth={true}
-            label="Extra Game Args"
+            label={t('settings.launcher.extraArgs.label')}
             onChange={(event) => setExtraArgs(event.target.value.split(' '))}
             value={extraArgs.join(' ')}
             variant="filled"
@@ -424,7 +460,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   tabIndex={-1}
                 />
               </ListItemIcon>
-              <ListItemText id="enable-respec" primary={`Include "${arg}"`} />
+              <ListItemText
+                id="enable-respec"
+                primary={t('settings.launcher.arg.include', { arg })}
+              />
             </ListItemButton>
           ))}
         </StyledAccordionDetails>
@@ -440,20 +479,43 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="display-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>Display</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.display.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="display-content">
           <TextField
             fullWidth={true}
-            label="Theme"
+            label={t('settings.display.theme.label')}
             onChange={(event) => setThemeMode(event.target.value as IThemeMode)}
             select={true}
             value={themeMode}
             variant="filled"
           >
-            <MenuItem value="system">System</MenuItem>
-            <MenuItem value="light">Light</MenuItem>
-            <MenuItem value="dark">Dark</MenuItem>
+            <MenuItem value="system">
+              {t('settings.display.theme.system')}
+            </MenuItem>
+            <MenuItem value="light">
+              {t('settings.display.theme.light')}
+            </MenuItem>
+            <MenuItem value="dark">{t('settings.display.theme.dark')}</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth={true}
+            label={t('settings.display.language.label')}
+            onChange={(event) =>
+              onLocaleChange(event.target.value as Locale).catch(console.error)
+            }
+            select={true}
+            sx={{ marginTop: 2 }}
+            value={locale}
+            variant="filled"
+          >
+            {SUPPORTED_LOCALES.map((l) => (
+              <MenuItem key={l} value={l}>
+                {LOCALE_DISPLAY_NAMES[l]}
+              </MenuItem>
+            ))}
           </TextField>
         </StyledAccordionDetails>
       </StyledAccordion>
@@ -468,24 +530,22 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="nexus-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>Nexus Mods</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.nexus.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="nexus-content">
           <Stack spacing={2} sx={{ marginTop: 1 }}>
             {nexusAuthState.apiKey == null ? (
               <Alert severity="warning">
-                <Typography>
-                  You are not signed in to Nexus Mods. You will not be able to
-                  check for mod updates or download mod updates directly via
-                  D2RMM (for premium Nexus Mods users).
-                </Typography>
+                <Typography>{t('settings.nexus.signedOut')}</Typography>
                 <Button
                   color="warning"
                   onClick={nexusSignIn}
                   sx={{ marginTop: 1 }}
                   variant="contained"
                 >
-                  Sign In
+                  {t('settings.nexus.signIn')}
                 </Button>
               </Alert>
             ) : (
@@ -498,30 +558,32 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 {nexusAuthState.name ? (
                   <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                     <Typography>
-                      Logged in as {nexusAuthState.name} ({nexusAuthState.email}
-                      )
+                      {t('settings.nexus.loggedIn', {
+                        name: nexusAuthState.name,
+                        email: nexusAuthState.email,
+                      })}
                     </Typography>
                     <Box sx={{ flex: 1 }} />
                     <Tooltip
                       title={
                         nexusAuthState.isPremium
                           ? undefined
-                          : 'Free users cannot initiate mod downloads from within D2RMM. You must go to Nexus Mods website in order to download or update mods.'
+                          : t('settings.nexus.free.tooltip')
                       }
                     >
                       <Chip
                         color={nexusAuthState.isPremium ? 'success' : 'warning'}
                         label={
                           nexusAuthState.isPremium
-                            ? 'Premium User'
-                            : 'Free User'
+                            ? t('settings.nexus.premium')
+                            : t('settings.nexus.free')
                         }
                         size="small"
                       />
                     </Tooltip>
                   </Box>
                 ) : (
-                  <Typography>Logged in. Loading details...</Typography>
+                  <Typography>{t('settings.nexus.loggingIn')}</Typography>
                 )}
                 {nexusApiState != null && (
                   <>
@@ -544,37 +606,31 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   sx={{ marginTop: 1 }}
                   variant="outlined"
                 >
-                  Sign Out
+                  {t('settings.nexus.signOut')}
                 </Button>
               </Alert>
             )}
             {isRegisteredAsNxmProtocolHandler ? (
               <Alert severity="info">
-                <Typography>
-                  D2RMM is registered as the handler for nxm:// URLs.
-                </Typography>
+                <Typography>{t('settings.nexus.nxm.registered')}</Typography>
                 <Button
                   onClick={unregisterAsNxmProtocolHandler}
                   sx={{ marginTop: 1 }}
                   variant="outlined"
                 >
-                  Unregister as Handler
+                  {t('settings.nexus.nxm.unregister')}
                 </Button>
               </Alert>
             ) : (
               <Alert severity="warning">
-                <Typography>
-                  D2RMM is not registered as the handler for nxm:// URLs. You
-                  will not be able to download mods directly via D2RMM when
-                  using Mod Manager links on Nexus Mods.
-                </Typography>
+                <Typography>{t('settings.nexus.nxm.notRegistered')}</Typography>
                 <Button
                   color="warning"
                   onClick={registerAsNxmProtocolHandler}
                   sx={{ marginTop: 1 }}
                   variant="outlined"
                 >
-                  Register as Handler
+                  {t('settings.nexus.nxm.register')}
                 </Button>
               </Alert>
             )}
@@ -592,7 +648,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           expandIcon={<ExpandMore />}
           id="updates-header"
         >
-          <Typography sx={{ marginLeft: 1 }}>Updates</Typography>
+          <Typography sx={{ marginLeft: 1 }}>
+            {t('settings.updates.title')}
+          </Typography>
         </StyledAccordionSummary>
         <StyledAccordionDetails id="updates-content">
           <ListItemButton
@@ -613,14 +671,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             </ListItemIcon>
             <ListItemText
               id="enable-app-updater-dialog"
-              primary="Enable D2RMM Update Notifications"
+              primary={t('settings.updates.enableNotifications')}
             />
           </ListItemButton>
           {update == null ? null : (
             <Alert severity="warning">
               <Typography>
-                <strong>New Update Available</strong> Do you want to update to
-                version {update!.version} of D2RMM?
+                {t('settings.updates.available', { version: update.version })}
               </Typography>
               <Button
                 color="warning"
@@ -628,7 +685,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 sx={{ marginTop: 1 }}
                 variant="contained"
               >
-                Update
+                {t('settings.updates.update')}
               </Button>
             </Alert>
           )}
@@ -649,6 +706,7 @@ function NexusRequestLimit({
   reset: string;
   type: string;
 }): JSX.Element {
+  const { t } = useTranslation();
   const remainingInt = parseInt(remaining, 10);
   const limitInt = parseInt(limit, 10);
   const usedPercent = (remainingInt / limitInt) * 100;
@@ -661,11 +719,13 @@ function NexusRequestLimit({
         variant="determinate"
       />
       <Box sx={{ alignItems: 'center', display: 'flex', flexDirection: 'row' }}>
-        <Box>
-          {remaining} / {limit} {type} requests remaining
-        </Box>
+        <Box>{t('settings.nexus.requests', { remaining, limit, type })}</Box>
         <Box sx={{ flex: 1 }} />
-        <Box>resets at {resetStringForCurrentLocale}</Box>
+        <Box>
+          {t('settings.nexus.requests.reset', {
+            time: resetStringForCurrentLocale,
+          })}
+        </Box>
       </Box>
     </Box>
   );

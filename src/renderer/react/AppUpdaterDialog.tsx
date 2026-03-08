@@ -5,6 +5,7 @@ import {
   useDialogContext,
 } from 'renderer/react/context/DialogContext';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -38,6 +39,7 @@ function NotificationDialog({
   onInstall: () => void;
   version: string;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   const onIgnore = useCallback(() => {
@@ -52,16 +54,18 @@ function NotificationDialog({
       onClose={onIgnore}
       open={isOpen}
     >
-      <DialogTitle id="alert-dialog-title">New Update Available</DialogTitle>
+      <DialogTitle id="alert-dialog-title">
+        {t('updater.notification.title')}
+      </DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          Do you want to update to version {version} of D2RMM?
+          {t('updater.notification.description', { version })}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onIgnore}>Ignore</Button>
+        <Button onClick={onIgnore}>{t('updater.notification.ignore')}</Button>
         <Button onClick={onInstall} variant="contained">
-          Update
+          {t('updater.notification.update')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -73,11 +77,32 @@ function ProgressDialog({
 }: {
   updaterState: UpdaterState | null;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   if (updaterState == null) {
     return null;
   }
+
+  const progressText =
+    updaterState.event === 'error'
+      ? t('updater.progress.error', { message: updaterState.message })
+      : updaterState.event === 'cleanup'
+        ? t('updater.progress.cleanup')
+        : updaterState.event === 'download'
+          ? t('updater.progress.download')
+          : updaterState.event === 'download-progress'
+            ? t('updater.progress.downloadProgress', {
+                percent: Math.round(
+                  (updaterState.bytesDownloaded / updaterState.bytesTotal) *
+                    100,
+                ),
+              })
+            : updaterState.event === 'extract'
+              ? t('updater.progress.extract')
+              : updaterState.event === 'apply'
+                ? t('updater.progress.apply')
+                : t('updater.progress.wait');
 
   return (
     <Dialog
@@ -86,25 +111,12 @@ function ProgressDialog({
       onClose={onClose}
       open={isOpen}
     >
-      <DialogTitle id="alert-dialog-title">Updating</DialogTitle>
+      <DialogTitle id="alert-dialog-title">
+        {t('updater.progress.title')}
+      </DialogTitle>
       <DialogContent sx={{ width: 400 }}>
         <DialogContentText id="alert-dialog-description">
-          {updaterState.event === 'error'
-            ? `Update failed: ${updaterState.message}`
-            : updaterState.event === 'cleanup'
-              ? 'Cleaning up...'
-              : updaterState.event === 'download'
-                ? 'Downloading update...'
-                : updaterState.event === 'download-progress'
-                  ? `Downloading update... ${Math.round(
-                      (updaterState.bytesDownloaded / updaterState.bytesTotal) *
-                        100,
-                    )}%`
-                  : updaterState.event === 'extract'
-                    ? 'Extracting update...'
-                    : updaterState.event === 'apply'
-                      ? 'Applying update...'
-                      : 'Please wait...'}
+          {progressText}
         </DialogContentText>
         {updaterState.event === 'download-progress' && (
           <LinearProgress

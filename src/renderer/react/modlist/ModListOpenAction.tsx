@@ -4,9 +4,11 @@ import ShellAPI from 'renderer/ShellAPI';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import resolvePath from 'renderer/utils/resolvePath';
+import { useTranslation } from 'react-i18next';
 import { Folder } from '@mui/icons-material';
 
 export function ModListOpenMenuItem({ mod }: { mod: Mod }) {
+  const { t } = useTranslation();
   const appPath = getAppPath();
   const modPath = resolvePath(appPath, 'mods', mod.id);
 
@@ -18,5 +20,11 @@ export function ModListOpenMenuItem({ mod }: { mod: Mod }) {
     );
   }, [mod.id]);
 
-  return <ModListMenuItem icon={<Folder />} label="Open" onClick={onOpen} />;
+  return (
+    <ModListMenuItem
+      icon={<Folder />}
+      label={t('modlist.action.open')}
+      onClick={onOpen}
+    />
+  );
 }

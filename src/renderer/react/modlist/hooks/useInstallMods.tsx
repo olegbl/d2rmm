@@ -1,5 +1,6 @@
 import type { IInstallModsOptions } from 'bridge/BridgeAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
+import { te } from 'renderer/i18n';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useIsInstalling } from 'renderer/react/context/InstallContext';
@@ -17,10 +18,12 @@ import { useFinalSavesPath } from 'renderer/react/context/SavesPathContext';
 import { useTabState } from 'renderer/react/context/TabContext';
 import useToast from 'renderer/react/hooks/useToast';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function useInstallMods(
   isUninstall: boolean = false,
 ): () => Promise<boolean> {
+  const { t } = useTranslation();
   const showToast = useToast();
   const dataPath = useDataPath();
   const gamePath = useSanitizedGamePath();
@@ -34,8 +37,6 @@ export default function useInstallMods(
   const [, setInstalledMods] = useInstalledMods();
   const [, setIsInstalling] = useIsInstalling();
   const savesPath = useFinalSavesPath();
-
-  const label = isUninstall ? 'Uninstall' : 'Install';
 
   const [, setTab] = useTabState();
 
@@ -67,13 +68,25 @@ export default function useInstallMods(
       if (modsToInstall.length === 0) {
         showToast({
           severity: 'success',
-          title: `No Mods ${label}ed`,
+          title: t(
+            isUninstall
+              ? 'install.toast.noMods.uninstall'
+              : 'install.toast.noMods.install',
+          ),
         });
       } else if (modsInstalled.length > 0) {
         showToast({
           severity:
             modsInstalled.length < modsToInstall.length ? 'warning' : 'success',
-          title: `${modsInstalled.length}/${modsToInstall.length} Mods ${label}ed`,
+          title: t(
+            isUninstall
+              ? 'install.toast.success.uninstall'
+              : 'install.toast.success.install',
+            {
+              installed: modsInstalled.length,
+              total: modsToInstall.length,
+            },
+          ),
         });
       }
       return true;
@@ -82,8 +95,12 @@ export default function useInstallMods(
       console.error(String(error));
       showToast({
         severity: 'error',
-        title: `Error When ${label}ing Mods`,
-        description: String(error),
+        title: t(
+          isUninstall
+            ? 'install.toast.error.uninstall'
+            : 'install.toast.error.install',
+        ),
+        description: te(error),
       });
       // switch to the logs tab so user can see what happened
       setTab('logs');
@@ -95,7 +112,6 @@ export default function useInstallMods(
     isDirectMode,
     isPreExtractedData,
     isUninstall,
-    label,
     logger,
     modsToInstall,
     outputModName,
@@ -106,5 +122,6 @@ export default function useInstallMods(
     setIsInstalling,
     setTab,
     showToast,
+    t,
   ]);
 }

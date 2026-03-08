@@ -544,17 +544,6 @@ export async function readItem(
       }
       if (item.given_runeword) {
         item.runeword_id = reader.ReadUInt16(12);
-        // TODO: stop parsing runeword_name here
-        //fix delerium on d2gs??? why is this a thing?
-        if (item.runeword_id == 2718) {
-          item.runeword_id = 48;
-        }
-        if (item.runeword_id == 2786) {
-          item.runeword_id = 173;
-        }
-        if (constants.runewords[item.runeword_id]) {
-          item.runeword_name = constants.runewords[item.runeword_id]!.n!;
-        }
         item._unknown_data.runeword_extra_4 = reader.ReadUInt8(4);
       }
 
@@ -860,7 +849,10 @@ export async function writeItem(
     }
 
     if (item.type === 'tbk' || item.type === 'ibk') {
-      writer.WriteUInt8(item._unknown_data.tome_extra_5 ?? (item.type === 'ibk' ? 1 : 0), 5);
+      writer.WriteUInt8(
+        item._unknown_data.tome_extra_5 ?? (item.type === 'ibk' ? 1 : 0),
+        5,
+      );
     }
 
     writer.WriteUInt8(item.timestamp, 1);

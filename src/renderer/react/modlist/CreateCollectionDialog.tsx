@@ -16,6 +16,7 @@ import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useToast from 'renderer/react/hooks/useToast';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Box,
@@ -45,6 +46,7 @@ import {
 } from '@mui/material';
 
 export default function CreateCollectionDialog(): JSX.Element {
+  const { t } = useTranslation();
   const { close } = useDialogContext();
   const { nexusAuthState } = useNexusAuthState();
   const [orderedItems] = useOrdereredItems();
@@ -112,7 +114,7 @@ export default function CreateCollectionDialog(): JSX.Element {
         .catch((error: unknown) => {
           showToast({
             severity: 'error',
-            title: 'Failed to load your collections',
+            title: t('collection.toast.loadFailed'),
             description: error instanceof Error ? error.message : String(error),
           });
         });
@@ -126,13 +128,16 @@ export default function CreateCollectionDialog(): JSX.Element {
 
   const onSubmit = useAsyncCallback(async () => {
     if (mode === 'create' && title.trim() === '') {
-      showToast({ severity: 'warning', title: 'Please enter a title.' });
+      showToast({
+        severity: 'warning',
+        title: t('collection.toast.pleaseEnterTitle'),
+      });
       return;
     }
     if (mode === 'update' && selectedCollectionId == null) {
       showToast({
         severity: 'warning',
-        title: 'Please select a collection to update.',
+        title: t('collection.toast.pleaseSelectCollection'),
       });
       return;
     }
@@ -158,7 +163,10 @@ export default function CreateCollectionDialog(): JSX.Element {
     } catch (error) {
       showToast({
         severity: 'error',
-        title: `Failed to ${mode === 'create' ? 'create' : 'update'} collection`,
+        title:
+          mode === 'create'
+            ? t('collection.toast.createFailed')
+            : t('collection.toast.updateFailed'),
         description: error instanceof Error ? error.message : String(error),
       });
     } finally {
@@ -175,6 +183,7 @@ export default function CreateCollectionDialog(): JSX.Element {
     nexusAuthState,
     selectedCollectionId,
     showToast,
+    t,
     title,
   ]);
 
@@ -182,16 +191,19 @@ export default function CreateCollectionDialog(): JSX.Element {
     return (
       <Dialog fullWidth={true} maxWidth="sm" onClose={close} open={true}>
         <DialogTitle>
-          {mode === 'create' ? 'Collection Created!' : 'Collection Updated!'}
+          {mode === 'create'
+            ? t('collection.dialog.success.title.create')
+            : t('collection.dialog.success.title.update')}
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Your collection has been {mode === 'create' ? 'created' : 'updated'}
-            . You can manage it on Nexus Mods.
+            {mode === 'create'
+              ? t('collection.dialog.success.description.create')
+              : t('collection.dialog.success.description.update')}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={close}>Close</Button>
+          <Button onClick={close}>{t('collection.dialog.close')}</Button>
           <Button
             endIcon={<OpenInNewIcon />}
             onClick={() => {
@@ -199,7 +211,7 @@ export default function CreateCollectionDialog(): JSX.Element {
             }}
             variant="contained"
           >
-            View on Nexus Mods
+            {t('collection.dialog.view')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -210,8 +222,8 @@ export default function CreateCollectionDialog(): JSX.Element {
     <Dialog fullWidth={true} maxWidth="md" onClose={close} open={true}>
       <DialogTitle>
         {mode === 'create'
-          ? 'Create Nexus Mods Collection'
-          : 'Update Nexus Mods Collection'}
+          ? t('collection.dialog.title.create')
+          : t('collection.dialog.title.update')}
       </DialogTitle>
 
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -223,12 +235,12 @@ export default function CreateCollectionDialog(): JSX.Element {
         >
           <FormControlLabel
             control={<Radio />}
-            label="Create new collection"
+            label={t('collection.dialog.mode.create')}
             value="create"
           />
           <FormControlLabel
             control={<Radio />}
-            label="Update existing collection"
+            label={t('collection.dialog.mode.update')}
             value="update"
           />
         </RadioGroup>
@@ -244,7 +256,7 @@ export default function CreateCollectionDialog(): JSX.Element {
             value={selectedCollectionId ?? ''}
           >
             <MenuItem value="">
-              <em>Select a collection…</em>
+              <em>{t('collection.dialog.select_placeholder')}</em>
             </MenuItem>
             {myCollections.map((c) => (
               <MenuItem key={c.id} value={c.id}>
@@ -258,7 +270,7 @@ export default function CreateCollectionDialog(): JSX.Element {
         {mode === 'create' && (
           <TextField
             fullWidth={true}
-            label="Title"
+            label={t('collection.dialog.title_label')}
             onChange={(e) => setTitle(e.target.value)}
             required={true}
             value={title}
@@ -269,9 +281,13 @@ export default function CreateCollectionDialog(): JSX.Element {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Mod</TableCell>
-              <TableCell align="right">Role</TableCell>
-              <TableCell align="right">Config</TableCell>
+              <TableCell>{t('collection.dialog.table.mod')}</TableCell>
+              <TableCell align="right">
+                {t('collection.dialog.table.role')}
+              </TableCell>
+              <TableCell align="right">
+                {t('collection.dialog.table.config')}
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -287,7 +303,7 @@ export default function CreateCollectionDialog(): JSX.Element {
                       {!isNexusMod && (
                         <Chip
                           color="warning"
-                          label="Not on Nexus"
+                          label={t('collection.dialog.notOnNexus')}
                           size="small"
                         />
                       )}
@@ -308,9 +324,15 @@ export default function CreateCollectionDialog(): JSX.Element {
                       size="small"
                       value={modRoles[mod.id] ?? 'omit'}
                     >
-                      <ToggleButton value="required">Required</ToggleButton>
-                      <ToggleButton value="optional">Optional</ToggleButton>
-                      <ToggleButton value="omit">Omit</ToggleButton>
+                      <ToggleButton value="required">
+                        {t('collection.dialog.role.required')}
+                      </ToggleButton>
+                      <ToggleButton value="optional">
+                        {t('collection.dialog.role.optional')}
+                      </ToggleButton>
+                      <ToggleButton value="omit">
+                        {t('collection.dialog.role.omit')}
+                      </ToggleButton>
                     </ToggleButtonGroup>
                   </TableCell>
                   <TableCell align="right">
@@ -321,7 +343,9 @@ export default function CreateCollectionDialog(): JSX.Element {
                       return (
                         <Tooltip
                           title={
-                            hasConfig ? '' : 'No custom config for this mod'
+                            hasConfig
+                              ? ''
+                              : t('collection.dialog.config.noConfig')
                           }
                         >
                           <span>
@@ -338,7 +362,7 @@ export default function CreateCollectionDialog(): JSX.Element {
                               value={includeConfig ? true : null}
                             >
                               <ToggleButton value={true}>
-                                Include Config
+                                {t('collection.dialog.config.include')}
                               </ToggleButton>
                             </ToggleButtonGroup>
                           </span>
@@ -355,7 +379,7 @@ export default function CreateCollectionDialog(): JSX.Element {
 
       <DialogActions>
         <Button disabled={isSubmitting} onClick={close}>
-          Cancel
+          {t('collection.dialog.cancel')}
         </Button>
         <Button
           disabled={isSubmitting}
@@ -363,7 +387,9 @@ export default function CreateCollectionDialog(): JSX.Element {
           startIcon={isSubmitting ? <CircularProgress size={16} /> : undefined}
           variant="contained"
         >
-          {mode === 'create' ? 'Create Collection' : 'Update Collection'}
+          {mode === 'create'
+            ? t('collection.dialog.submit.create')
+            : t('collection.dialog.submit.update')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -10,11 +10,18 @@ export async function readSkills(
 ) {
   try {
     char.skills = [] as types.ISkill[];
-    const offset = SkillOffset[char.header.class];
+    const characterClassCode = constants.classes[char.header.class_id].c;
+    const offset = constants.skills.findIndex(
+      (skill) => skill && skill.c === characterClassCode,
+    );
+    const skillCount = constants.skills.filter(
+      (skill) => skill && skill.c === characterClassCode,
+    ).length;
 
-    if (offset === undefined) {
+    if (offset === -1 || skillCount === 0) {
+      const characterClass = constants.classes[char.header.class_id].n;
       throw new Error(
-        `Unknown character class '${char.header.class}'. Valid classes: ${Object.keys(SkillOffset).join(', ')}`,
+        `No skills found for character class '${characterClass}' (code: '${characterClassCode}')`,
       );
     }
 
@@ -31,25 +38,15 @@ export async function readSkills(
       );
     }
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < skillCount; i++) {
       const id = offset + i;
       try {
         const points = reader.ReadUInt8();
-        const skillData = constants.skills[id];
-        if (!skillData) {
-          throw new Error(
-            `Skill ID ${id} not found in skills.txt (skill ${i + 1} of 30 for ${char.header.class})`,
-          );
-        }
-        char.skills.push({
-          id: id,
-          points: points,
-          name: skillData.s,
-        } as types.ISkill);
+        char.skills.push({ id, points } as types.ISkill);
       } catch (error) {
         throw wrapParsingError(
           error,
-          `Failed to read skill ${i + 1} of 30 (ID: ${id})`,
+          `Failed to read skill ${i + 1} of ${skillCount} (ID: ${id})`,
         );
       }
     }
@@ -69,12 +66,10 @@ export async function writeSkills(
     const writer = new BitWriter();
     writer.WriteString('if', 2); //0x0000 [skills header = 0x69, 0x66 "if"]
     //probably array length checking/sorting of skills by id...
-    if (!char.skills || char.skills.length < 30) {
-      throw new Error(
-        `Character must have exactly 30 skills, but found ${char.skills?.length || 0}`,
-      );
+    if (!char.skills || char.skills.length === 0) {
+      throw new Error(`Character has no skills to write`);
     }
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < char.skills.length; i++) {
       writer.WriteUInt8(char.skills[i].points);
     }
     return writer.ToArray();
@@ -86,17 +81,3 @@ export async function writeSkills(
   }
 }
 
-interface ISkillOffset {
-  [key: string]: number;
-}
-
-const SkillOffset: ISkillOffset = {
-  Amazon: 6,
-  Sorceress: 36,
-  Necromancer: 66,
-  Paladin: 96,
-  Barbarian: 126,
-  Druid: 221,
-  Assassin: 251,
-  Warlock: 373,
-};

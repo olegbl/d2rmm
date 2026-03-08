@@ -9,6 +9,7 @@ import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import resolvePath from 'renderer/utils/resolvePath';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Delete } from '@mui/icons-material';
 import {
   Button,
@@ -25,6 +26,7 @@ function DeleteDialog({
   mod: Mod;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   const onDelete = useCallback(() => {
@@ -36,17 +38,17 @@ function DeleteDialog({
     <Dialog fullWidth={true} onClose={onClose} open={isOpen}>
       <DialogContent>
         <DialogContentText>
-          Are you sure you want to delete <strong>{mod.info.name}</strong>?
+          {t('modlist.delete.dialog.question', { name: mod.info.name })}
         </DialogContentText>
         <br />
         <DialogContentText>
-          This will permanently remove the mod's files from your disk drive.
+          {t('modlist.delete.dialog.warning')}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('modlist.delete.dialog.cancel')}</Button>
         <Button color="error" onClick={onDelete} variant="contained">
-          Delete
+          {t('modlist.delete.dialog.confirm')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -54,6 +56,7 @@ function DeleteDialog({
 }
 
 export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
+  const { t } = useTranslation();
   const [, refreshMods] = useMods();
 
   const onDelete = useAsyncCallback(async () => {
@@ -66,6 +69,10 @@ export function ModListDeleteMenuItem({ mod }: { mod: Mod }) {
   );
 
   return (
-    <ModListMenuItem icon={<Delete />} label="Delete" onClick={onOpenDialog} />
+    <ModListMenuItem
+      icon={<Delete />}
+      label={t('modlist.action.delete')}
+      onClick={onOpenDialog}
+    />
   );
 }

@@ -41,6 +41,7 @@ import { SelectedFileContextProvider } from 'renderer/react/ed2r/ED2RSelectedFil
 import useModDropZone from 'renderer/react/hooks/useModDropZone';
 import ModList from 'renderer/react/modlist/ModList';
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
@@ -74,6 +75,7 @@ function TabPanelBox({
 }
 
 function RootRoute() {
+  const { t } = useTranslation();
   const [tab, setTab] = useTabState();
   const { isDraggingOver, onDragEnter, onDragLeave, onDragOver, onDrop } =
     useModDropZone();
@@ -113,7 +115,7 @@ function RootRoute() {
               sx={{ color: 'common.white', fontWeight: 'bold' }}
               variant="h5"
             >
-              Drop .zip to install mod
+              {t('app.dropZone')}
             </Typography>
           </Box>
         )}
@@ -121,10 +123,10 @@ function RootRoute() {
           sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
         >
           <TabList onChange={(_event, value) => setTab(value)}>
-            <Tab label="Mods" value="mods" />
-            <Tab label="Saves" value="ed2r" />
-            <Tab label="Settings" value="settings" />
-            <Tab label="Logs" value="logs" />
+            <Tab label={t('tabs.mods')} value="mods" />
+            <Tab label={t('tabs.saves')} value="ed2r" />
+            <Tab label={t('tabs.settings')} value="settings" />
+            <Tab label={t('tabs.logs')} value="logs" />
           </TabList>
           <Box sx={{ flex: 1 }} />
           <InstallationProgressBar />

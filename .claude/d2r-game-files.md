@@ -19,6 +19,10 @@ When you need detailed column documentation beyond what's here:
 
 Many column names and mechanics are identical between D2 classic and D2R, with D2R adding new columns.
 
+## TSV Column Naming Conventions
+
+Columns whose names begin with `*` (e.g. `*StringName`, `*eol`) are **comments** — they are ignored by the game engine and should **not** be relied upon in code. Always use the real column (e.g. `LevelName` instead of `*StringName`).
+
 ## The Base File Rule
 
 **Always modify both the regular and `base\` variant of every Excel TSV file:**

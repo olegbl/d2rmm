@@ -1,6 +1,8 @@
 import { BitReader } from 'main/worker/third-party/d2s/binary/bitreader';
 
-export const DEBUG_D2S = false;
+// automatically turn on D2S debugging mode for dev builds
+export const DEBUG_D2S =
+  process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 
 export function extractRawBytes(
   reader: BitReader,

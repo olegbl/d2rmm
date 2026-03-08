@@ -3,6 +3,7 @@ import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import decompress from 'decompress';
 import { existsSync, mkdirSync, rmSync, statSync } from 'fs';
 import path from 'path';
+import { tl } from '../../shared/i18n-log';
 import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
@@ -51,7 +52,7 @@ async function getUpdate(): Promise<Update | null> {
     (isPreleaseEnabled ? await getLatestPrerelease() : null) ??
     (await getLatestRelease());
   if (release == null) {
-    console.debug('[Updater] No release found.');
+    console.debug(tl('updater.log.noRelease'));
   } else {
     const releaseVersion = release.tag_name.replace(/^v/, '');
 
@@ -59,7 +60,7 @@ async function getUpdate(): Promise<Update | null> {
     if (isSameVersionUpdateEnabled ? comparison >= 0 : comparison > 0) {
       const asset = release.assets.find((asset) => asset.name.endsWith('.zip'));
       if (asset != null) {
-        console.log('[Updater] New version available:', releaseVersion);
+        console.log(tl('updater.log.newVersion', { version: releaseVersion }));
         return {
           version: releaseVersion,
           url: asset.browser_download_url,
@@ -68,7 +69,7 @@ async function getUpdate(): Promise<Update | null> {
     }
   }
 
-  console.log('[Updater] No updates available.');
+  console.log(tl('updater.log.noUpdates'));
   return null;
 }
 
@@ -118,7 +119,7 @@ async function getConfig(): Promise<Config> {
 }
 
 async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
-  console.log('[Updater] Cleaning up temporary directory');
+  console.log(tl('updater.log.cleanup'));
   await EventAPI.send('updater', { event: 'cleanup' });
   if (existsSync(tempDirPath) && statSync(tempDirPath).isDirectory()) {
     try {
@@ -129,13 +130,13 @@ async function cleanupUpdate({ tempDirPath }: Config): Promise<void> {
       // so there shouldn't be any chance of a collision. We just
       // want to delete it to clean things up and reduce disk space
       // used.
-      console.warn('[Updater] Failed to clean up temporary directory:', e);
+      console.warn(tl('updater.log.cleanupFailed'), e);
     }
   }
 }
 
 async function downloadUpdate(config: Config, update: Update): Promise<void> {
-  console.log('[Updater] Downloading update');
+  console.log(tl('updater.log.downloading'));
   await EventAPI.send('updater', { event: 'download' });
   const { filePath } = await RequestAPI.downloadToFile(update.url, {
     fileName: 'update.zip',
@@ -148,7 +149,7 @@ async function downloadUpdate(config: Config, update: Update): Promise<void> {
     },
   });
   config.updateZipPath = filePath;
-  console.log(`[Updater] Downloaded update to ${config.updateZipPath}`);
+  console.log(tl('updater.log.downloaded', { path: config.updateZipPath }));
 }
 
 async function extractUpdate({
@@ -156,7 +157,7 @@ async function extractUpdate({
   updateZipPath,
   updateDirPath,
 }: Config): Promise<void> {
-  console.log('[Updater] Extracting update');
+  console.log(tl('updater.log.extracting'));
   await EventAPI.send('updater', { event: 'extract' });
   mkdirSync(path.dirname(tempDirPath), { recursive: true });
   process.noAsar = true;
@@ -169,7 +170,7 @@ async function applyUpdate(
   { updateDirPath }: Config,
   update: Update,
 ): Promise<void> {
-  console.log('[Updater] Applying update');
+  console.log(tl('updater.log.applying'));
   await EventAPI.send('updater', { event: 'apply' });
   const appExecutablePath = getExecutablePath();
   const appDirectoryPath = path.dirname(appExecutablePath);

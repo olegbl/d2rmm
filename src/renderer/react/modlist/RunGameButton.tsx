@@ -7,6 +7,7 @@ import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
 import useInstallMods from 'renderer/react/modlist/hooks/useInstallMods';
 import resolvePath from 'renderer/utils/resolvePath';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   PlayCircleFilled,
   PlayCircleOutlineOutlined,
@@ -16,10 +17,8 @@ import { Button, Tooltip } from '@mui/material';
 type Props = Record<string, never>;
 
 export default function RunGameButton(_props: Props): JSX.Element {
+  const { t } = useTranslation();
   const isInstallConfigChanged = useIsInstallConfigChanged();
-  const warning = isInstallConfigChanged
-    ? ' Install configuration has changed. Are you sure you want to run the game without triggering "Install Mods" first?'
-    : '';
 
   const gamePath = useSanitizedGamePath();
   const args = useGameLaunchArgs();
@@ -39,10 +38,12 @@ export default function RunGameButton(_props: Props): JSX.Element {
     await BridgeAPI.execute(pathD2rExe, args);
   }, [isInstallBeforeRunEnabled, onInstallMods, args, gamePath]);
 
+  const tooltipText = isInstallConfigChanged
+    ? `${t('run.tooltip', { command })} ${t('run.tooltip.unsaved')}`
+    : t('run.tooltip', { command });
+
   return (
-    <Tooltip
-      title={`Run Diablo II: Resurrected by launching "${command}".${warning}`}
-    >
+    <Tooltip title={tooltipText}>
       <Button
         onClick={onPress}
         startIcon={
@@ -54,7 +55,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
         }
         variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
       >
-        Run D2R
+        {t('run.button')}
       </Button>
     </Tooltip>
   );

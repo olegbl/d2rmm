@@ -31,6 +31,7 @@ import {
 } from 'source-map';
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
+import { createI18nError, tl } from '../../shared/i18n-log';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import { getCascLib, getLastCascLibError, readCString } from './CascLib';
 import { EventAPI } from './EventAPI';
@@ -295,10 +296,11 @@ export const BridgeAPI: IBridgeAPI = {
         }
       }
       if (!cascStorageIsOpen) {
-        throw createError(
-          'BridgeAPI.openStorage',
-          'Failed to open CASC storage',
-          getLastCascLibError(),
+        const detail = String(getLastCascLibError());
+        throw createI18nError(
+          `BridgeAPI.openStorage: Failed to open CASC storage: ${detail}`,
+          'worker.error.openStorage.failed',
+          { detail },
         );
       }
     }
@@ -313,10 +315,11 @@ export const BridgeAPI: IBridgeAPI = {
       if (getCascLib().CascCloseStorage(cascStorage)) {
         cascStorageIsOpen = false;
       } else {
-        throw createError(
-          'BridgeAPI.closeStorage',
-          'Failed to close CASC storage',
-          getLastCascLibError(),
+        const detail = String(getLastCascLibError());
+        throw createI18nError(
+          `BridgeAPI.closeStorage: Failed to close CASC storage: ${detail}`,
+          'worker.error.closeStorage.failed',
+          { detail },
         );
       }
     }
@@ -1168,6 +1171,8 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         path.join('global', 'excel', 'weapons.txt'),
         path.join('global', 'excel', 'misc.txt'),
         path.join('global', 'excel', 'gems.txt'),
+        path.join('global', 'excel', 'actinfo.txt'),
+        path.join('global', 'excel', 'levels.txt'),
       ];
 
       async function getGameFile(filePath: string): Promise<Buffer> {
@@ -1260,7 +1265,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           characterFilesData.push([file.name, parsedData]);
         } catch (e) {
           console.error(
-            `Failed to read character save data from "${file.name}".`,
+            tl('worker.ed2r.readCharacterFailed', { name: file.name }),
             (e as Error).message,
           );
           continue;
@@ -1288,7 +1293,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           stashFilesData.push([file.name, parsedData]);
         } catch (e) {
           console.error(
-            `Failed to read stash save data from "${file.name}".`,
+            tl('worker.ed2r.readStashFailed', { name: file.name }),
             (e as Error).message,
           );
           continue;
@@ -1315,7 +1320,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         'local/lng/strings/item-nameaffixes.json',
         'local/lng/strings/item-names.json',
         'local/lng/strings/item-runes.json',
+        'local/lng/strings/levels.json',
+        'local/lng/strings/monsters.json',
         'local/lng/strings/skills.json',
+        'local/lng/strings/ui.json',
       ]) {
         gameFiles[filePath] = parseJson(
           readCString(await getGameFile(filePath)),
@@ -1324,22 +1332,27 @@ const config = JSON.parse(D2RMM.getConfigJSON());
 
       // TSV
       for (const filePath of [
-        'global/excel/itemtypes.txt',
-        'global/excel/weapons.txt',
         'global/excel/armor.txt',
-        'global/excel/misc.txt',
-        'global/excel/uniqueitems.txt',
-        'global/excel/setitems.txt',
+        'global/excel/charstats.txt',
+        'global/excel/gems.txt',
         'global/excel/inventory.txt',
+        'global/excel/itemstatcost.txt',
+        'global/excel/itemtypes.txt',
         'global/excel/magicprefix.txt',
         'global/excel/magicsuffix.txt',
-        'global/excel/itemstatcost.txt',
-        'global/excel/properties.txt',
-        'global/excel/gems.txt',
-        'global/excel/skills.txt',
-        'global/excel/skilldesc.txt',
-        'global/excel/charstats.txt',
+        'global/excel/misc.txt',
         'global/excel/playerclass.txt',
+        'global/excel/properties.txt',
+        'global/excel/rareprefix.txt',
+        'global/excel/raresuffix.txt',
+        'global/excel/runes.txt',
+        'global/excel/setitems.txt',
+        'global/excel/skilldesc.txt',
+        'global/excel/skills.txt',
+        'global/excel/uniqueitems.txt',
+        'global/excel/weapons.txt',
+        'global/excel/actinfo.txt',
+        'global/excel/levels.txt',
       ]) {
         gameFiles[filePath] = parseTsv(
           readCString(await getGameFile(filePath)),
@@ -1391,7 +1404,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           const category = itemCodeToCategory[itemCode];
           if (category == null) {
             console.warn(
-              `Could not find category for item code "${itemCode}".`,
+              tl('worker.ed2r.categoryNotFound', { code: itemCode }),
             );
             return;
           }
@@ -1403,7 +1416,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           const dataURI = parseSprite(await getGameFile(filePath));
           if (dataURI == null) {
             console.warn(
-              `Could not convert sprite file to data URI for item code "${itemCode}".`,
+              tl('worker.ed2r.spriteConvertFailed', { code: itemCode }),
             );
             return;
           }
@@ -1547,15 +1560,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           }
         } catch (error) {
           if (error instanceof Error) {
-            console.error(`Mod encountered a compile error!\n${error.stack}`);
+            console.error(tl('worker.mod.compileError'), error.stack);
           }
           continue;
         }
         const scope = new Scope();
         try {
-          console.debug(
-            `${action.toLowerCase()}ing version ${runtime.mod.info.version}...`,
-          );
+          console.debug(`${action}ing version ${runtime.mod.info.version}`);
           console.debug(
             `Mod configuration: ${JSON.stringify(runtime.mod.config)}`,
           );
@@ -1588,7 +1599,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           console.debug(
             `Mod ${action.toLowerCase()} took ${Date.now() - startTime}ms.`,
           );
-          console.log(`Mod ${action.toLowerCase()}ed successfully.`);
+          console.log(
+            tl(
+              action === 'Install'
+                ? 'worker.mod.installed'
+                : 'worker.mod.uninstalled',
+            ),
+          );
         } catch (error) {
           if (error instanceof Error) {
             let message = error.message;
@@ -1606,7 +1623,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               );
               sourceMapConsumer.destroy();
             }
-            console.error(`Mod encountered a runtime error!\n${message}`);
+            console.error(tl('worker.mod.runtimeError'), message);
           }
         }
         scope.dispose();

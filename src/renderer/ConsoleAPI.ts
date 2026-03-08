@@ -1,9 +1,18 @@
 import type { ConsoleAPI, ConsoleArg, ILogLevel } from 'bridge/ConsoleAPI';
 import { consumeAPI, provideAPI } from 'renderer/IPC';
+import i18n from 'renderer/i18n';
+import { isI18nArg } from 'shared/i18n-log';
 
 export type ConsoleListener = (level: ILogLevel, args: ConsoleArg[]) => void;
 
 const LISTENERS = new Set<ConsoleListener>();
+
+/** Replace I18nArg markers with their translated string; all other args pass through. */
+function toDisplayArgs(args: ConsoleArg[]): ConsoleArg[] {
+  return args.map((a) =>
+    isI18nArg(a) ? (i18n.t(a.key, a.args ?? {}) as ConsoleArg) : a,
+  );
+}
 
 export async function initConsoleAPI(): Promise<void> {
   const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI', {}, true);
@@ -13,11 +22,12 @@ export async function initConsoleAPI(): Promise<void> {
   const consoleWrapper = { ...console };
   for (const level of ['debug', 'log', 'warn', 'error'] as const) {
     consoleWrapper[level] = (...args) => {
+      const displayArgs = toDisplayArgs(args);
       // print the message to the local console
-      localConsole[level](...args);
-      // notify the listeners
-      LISTENERS.forEach((listener) => listener(level, args));
-      // forward the message to other threads
+      localConsole[level](...displayArgs);
+      // notify the listeners (Logs tab)
+      LISTENERS.forEach((listener) => listener(level, displayArgs));
+      // forward the message to other threads (English + I18nArg intact)
       ConsoleAPI[level](...args);
     };
   }
@@ -28,24 +38,24 @@ export async function initConsoleAPI(): Promise<void> {
     'ConsoleAPI',
     {
       debug: async (...args: ConsoleArg[]) => {
-        localConsole.debug(...args);
-        // notify the listeners
-        LISTENERS.forEach((listener) => listener('debug', args));
+        const displayArgs = toDisplayArgs(args);
+        localConsole.debug(...displayArgs);
+        LISTENERS.forEach((listener) => listener('debug', displayArgs));
       },
       log: async (...args: ConsoleArg[]) => {
-        localConsole.log(...args);
-        // notify the listeners
-        LISTENERS.forEach((listener) => listener('log', args));
+        const displayArgs = toDisplayArgs(args);
+        localConsole.log(...displayArgs);
+        LISTENERS.forEach((listener) => listener('log', displayArgs));
       },
       warn: async (...args: ConsoleArg[]) => {
-        localConsole.warn(...args);
-        // notify the listeners
-        LISTENERS.forEach((listener) => listener('warn', args));
+        const displayArgs = toDisplayArgs(args);
+        localConsole.warn(...displayArgs);
+        LISTENERS.forEach((listener) => listener('warn', displayArgs));
       },
       error: async (...args: ConsoleArg[]) => {
-        localConsole.error(...args);
-        // notify the listeners
-        LISTENERS.forEach((listener) => listener('error', args));
+        const displayArgs = toDisplayArgs(args);
+        localConsole.error(...displayArgs);
+        LISTENERS.forEach((listener) => listener('error', displayArgs));
       },
     } as ConsoleAPI,
     true,

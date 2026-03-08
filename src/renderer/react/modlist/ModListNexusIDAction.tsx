@@ -8,6 +8,7 @@ import useModUpdate from 'renderer/react/context/hooks/useModUpdate';
 import getNexusModID from 'renderer/react/context/utils/getNexusModID';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -100,6 +101,7 @@ function ChangeIDDialog({
   onClear: () => void;
   onSubmit: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   const [id, setID] = useState(initialID);
@@ -124,7 +126,7 @@ function ChangeIDDialog({
         <TextField
           autoFocus={true}
           fullWidth={true}
-          label="Nexus Mods ID"
+          label={t('modlist.nexusId.dialog.label')}
           onChange={onChange}
           sx={{ marginTop: 1 }}
           type="number"
@@ -132,13 +134,19 @@ function ChangeIDDialog({
           variant="outlined"
         />
         <DialogContentText sx={{ marginTop: 1 }} variant="caption">
-          This ID can be found in the URL of the mod's Nexus Mods page.
+          {t('modlist.nexusId.dialog.hint')}
         </DialogContentText>
         <DialogActions>
-          {isClearable && <Button onClick={onClear}>Clear</Button>}
-          <Button onClick={onClose}>Cancel</Button>
+          {isClearable && (
+            <Button onClick={onClear}>
+              {t('modlist.nexusId.dialog.clear')}
+            </Button>
+          )}
+          <Button onClick={onClose}>
+            {t('modlist.nexusId.dialog.cancel')}
+          </Button>
           <Button onClick={onSubmit} variant="contained">
-            Save
+            {t('modlist.nexusId.dialog.save')}
           </Button>
         </DialogActions>
       </DialogContent>
@@ -153,6 +161,7 @@ type Props = {
 export default function ModListNexusIDMenuItem({
   mod,
 }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const [modConfigOverride, setModConfigOverride] = useModConfigOverride(
     mod.id,
   );
@@ -202,7 +211,7 @@ export default function ModListNexusIDMenuItem({
   return (
     <ModListMenuItem
       icon={<NexusMods />}
-      label="Nexus ID"
+      label={t('modlist.action.nexusId')}
       onClick={onOpenDialog}
     />
   );

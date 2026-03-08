@@ -4,13 +4,17 @@ import { initCascLib } from './CascLib';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
+import { initLocaleAPI } from './LocaleAPI';
 import { initModUpdaterAPI } from './ModUpdaterAPI';
 import { initUpdaterAPI } from './UpdaterAPI';
 import { initAsar } from './asar';
+import { initI18n } from './i18n';
 import { initQuickJS } from './quickjs';
 
 async function start(): Promise<void> {
   console.debug('[worker] Initializing...');
+  console.debug('[worker] Initializing i18n...');
+  await initI18n();
   console.debug('[worker] Initializing IPC...');
   await initIPC();
   console.debug('[worker] Initializing EventAPI...');
@@ -19,6 +23,8 @@ async function start(): Promise<void> {
   await initConsoleAPI();
   console.debug('[worker] Initializing AppInfoAPI...');
   await initAppInfoAPI();
+  console.debug('[worker] Initializing LocaleAPI...');
+  initLocaleAPI();
   console.debug('[worker] Initializing Asar...');
   await initAsar();
   console.debug('[worker] Initializing QuickJS...');

@@ -3,6 +3,7 @@ import { useSelectedMod } from 'renderer/react/context/ModsContext';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings } from '@mui/icons-material';
 
 function useConfigureMod(mod: Mod): () => void {
@@ -22,6 +23,7 @@ export function ModListSettingsChip({
   mod,
   isEnabled,
 }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const onConfigureMod = useConfigureMod(mod);
 
   if (mod.info.config == null) {
@@ -32,14 +34,15 @@ export function ModListSettingsChip({
     <ModListItemChip
       color={isEnabled ? 'primary' : undefined}
       icon={<Settings />}
-      label="settings"
+      label={t('modlist.chip.settings')}
       onClick={onConfigureMod}
-      tooltip="Configure Mod Settings"
+      tooltip={t('modlist.chip.settings.tooltip')}
     />
   );
 }
 
 export function ModListSettingsMenuItem({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const onConfigureMod = useConfigureMod(mod);
 
   if (mod.info.config == null) {
@@ -49,7 +52,7 @@ export function ModListSettingsMenuItem({ mod }: Props): JSX.Element | null {
   return (
     <ModListMenuItem
       icon={<Settings />}
-      label="Open Settings"
+      label={t('modlist.action.settings')}
       onClick={onConfigureMod}
     />
   );

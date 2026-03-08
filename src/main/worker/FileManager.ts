@@ -1,3 +1,4 @@
+import { tl } from '../../shared/i18n-log';
 import { InstallationRuntime } from './InstallationRuntime';
 
 export type FileOperationType = 'extract' | 'read' | 'write';
@@ -89,11 +90,11 @@ export class FileManager {
       // then this mod could be overwriting changes
       if (modsThatWroteThisFile.length > 0) {
         this.runtime.console.warn(
-          `Mod "${mod}" is modifying file "${
-            fileStatus.filePath
-          }" without reading it first. This file was previously modified by ${joinListInEnglish(
-            modsThatWroteThisFile.map((mod) => `"${mod}"`),
-          )} and these changes will be lost. Consider moving "${mod}" higher in the load order.`,
+          tl('worker.fileManager.writeWithoutRead.conflict', {
+            mod,
+            filePath: fileStatus.filePath,
+            mods: modsThatWroteThisFile.join(', '),
+          }),
         );
       }
       // otherwise, this mod could be overwriting game updates
@@ -105,7 +106,10 @@ export class FileManager {
         (await this.gameFile(filePath))
       ) {
         this.runtime.console.warn(
-          `Mod "${mod}" is modifying file "${fileStatus.filePath}" without reading it first. No other mods have written to this file, but make sure to update this mod whenever Diablo II updates.`,
+          tl('worker.fileManager.writeWithoutRead.noConflict', {
+            mod,
+            filePath: fileStatus.filePath,
+          }),
         );
       }
     }
@@ -136,14 +140,4 @@ export class FileManager {
         data: fileStatus.data,
       }));
   }
-}
-
-function joinListInEnglish(list: string[]): string {
-  if (list.length === 0) {
-    return '';
-  }
-  if (list.length === 1) {
-    return list[0];
-  }
-  return `${list.slice(0, -1).join(', ')}, and ${list.slice(-1)[0]}`;
 }

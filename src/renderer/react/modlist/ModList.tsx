@@ -22,6 +22,7 @@ import {
   useTransition,
 } from 'react';
 import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import { useTranslation } from 'react-i18next';
 import { Refresh } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import { LoadingButton } from '@mui/lab';
@@ -37,6 +38,7 @@ import {
 } from '@mui/material';
 
 export default function ModList(): JSX.Element {
+  const { t } = useTranslation();
   const [, startTransition] = useTransition();
 
   const modsPath = resolvePath(getAppPath(), 'mods', '');
@@ -161,18 +163,18 @@ export default function ModList(): JSX.Element {
               p: 4,
             }}
           >
-            <Typography variant="body1">No Mods Found</Typography>
+            <Typography variant="body1">{t('modlist.noMods')}</Typography>
             <Typography align="center" variant="body2">
-              Find and download mods at{' '}
+              {t('modlist.noMods.findMods')}{' '}
               <Link
                 href="https://www.nexusmods.com/games/diablo2resurrected/mods"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                Nexus Mods
+                {t('modlist.noMods.nexusLink')}
               </Link>
               .<br />
-              Extract them into{' '}
+              {t('modlist.noMods.extractInto')}{' '}
               <Link
                 href="#"
                 onClick={() => {
@@ -190,7 +192,7 @@ export default function ModList(): JSX.Element {
               startIcon={<Refresh />}
               variant="contained"
             >
-              Refresh Mod List
+              {t('modlist.refresh')}
             </LoadingButton>
           </Box>
         )}
@@ -224,7 +226,7 @@ export default function ModList(): JSX.Element {
             ),
           }}
           onChange={onChangeSearchQuery}
-          placeholder="Search..."
+          placeholder={t('modlist.search')}
           size="small"
           sx={{
             flex: '0 1 auto',
@@ -247,7 +249,7 @@ export default function ModList(): JSX.Element {
           {isDirectMode ? (
             <ModInstallButton
               isUninstall={true}
-              tooltip="Revert any files modified by the enabled mods back to their vanilla state."
+              tooltip={t('install.tooltip.uninstall')}
             />
           ) : null}
           <ModInstallButton />

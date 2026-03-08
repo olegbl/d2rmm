@@ -1,6 +1,7 @@
 import type { IItem, IMagicProperty } from 'bridge/third-party/d2s/d2/types';
 import { useGameFiles } from 'renderer/react/ed2r/ED2RGameFilesContext';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,7 +47,10 @@ type SkillInfo = {
 };
 
 type ClassInfo = {
+  /** Raw English class name from charstats.txt (e.g. "Amazon") — used as a data key for inventory.txt lookup. */
   name: string;
+  /** Localized display name from ui.json (e.g. "Amazone" in German). Falls back to `name`. */
+  displayName: string;
   code: string;
   allSkillsString: string;
   skillTabStrings: string[];
@@ -58,10 +62,33 @@ export type GameData = {
   magicalProperties: MagicalProperty[];
   skills: SkillInfo[];
   classes: ClassInfo[];
+  /** Per-act waypoint data derived from actinfo.txt + levels.txt. */
+  waypointActs: Array<{
+    index: number;
+    /** levels.json string key for the act's localized name (e.g. 'act1'). */
+    Name: string;
+    /** Waypoints in bit order, keyed by LevelName from levels.txt. */
+    waypoints: Array<{ LevelName: string }>;
+  }>;
   /** Raw TSV row from armor/weapons/misc keyed by item code */
   itemCodeToItem: { [code: string]: TSVDataRow };
   /** Category hierarchy keyed by raw item type code */
   itemCodeToCategories: { [code: string]: string[] };
+  /**
+   * String keys for rare prefix/suffix names, indexed by rare_name_id.
+   * raresuffix entries come first (ids 1..N), rareprefix entries follow.
+   */
+  rareNames: { [id: number]: string };
+  /** String keys for magic prefix names, indexed by magic_prefix id. */
+  magicPrefixNames: { [id: number]: string };
+  /** String keys for magic suffix names, indexed by magic_suffix id. */
+  magicSuffixNames: { [id: number]: string };
+  /** String keys for set item names, indexed by set_id. */
+  setItemNames: { [id: number]: string };
+  /** String keys for unique item names, indexed by unique_id. */
+  uniqueItemNames: { [id: number]: string };
+  /** String keys for runeword names, indexed by the computed runeword_id. */
+  runewordNames: { [id: number]: string };
 };
 
 // ---------------------------------------------------------------------------
@@ -110,7 +137,16 @@ const ITEM_PROPERTY_STAT_COUNT: {
 // Builders
 // ---------------------------------------------------------------------------
 
-function buildStrings(gameFiles: Record<string, unknown>): Strings {
+/** Converts a BCP 47 locale (e.g. 'en-US') to the D2R string column name (e.g. 'enUS'). */
+function localeToD2rCode(locale: string): string {
+  return locale.replace('-', '');
+}
+
+function buildStrings(
+  gameFiles: Record<string, unknown>,
+  locale: string,
+): Strings {
+  const d2rLocale = localeToD2rCode(locale);
   const result: Strings = {};
   for (const filePath of [
     'local/lng/strings/item-gems.json',
@@ -118,12 +154,15 @@ function buildStrings(gameFiles: Record<string, unknown>): Strings {
     'local/lng/strings/item-nameaffixes.json',
     'local/lng/strings/item-names.json',
     'local/lng/strings/item-runes.json',
+    'local/lng/strings/levels.json',
+    'local/lng/strings/monsters.json',
     'local/lng/strings/skills.json',
+    'local/lng/strings/ui.json',
   ]) {
-    const data = gameFiles[filePath] as { Key: string; enUS: string }[] | null;
+    const data = gameFiles[filePath] as Record<string, string>[] | null;
     if (data == null) continue;
     for (const entry of data) {
-      result[entry.Key] = entry.enUS;
+      result[entry.Key] = entry[d2rLocale] ?? entry.enUS;
     }
   }
   return result;
@@ -227,6 +266,7 @@ function buildClasses(
       const playerRow = playerclassTsv.rows[i];
       arr[id] = {
         name: clazz,
+        displayName: strings[clazz] ?? clazz,
         code: playerRow?.Code ?? '',
         allSkillsString: strings[row.StrAllSkills] ?? '',
         skillTabStrings: [
@@ -307,7 +347,136 @@ function buildCategoriesByCode(
   return result;
 }
 
-function buildGameData(gameFiles: Record<string, unknown>): GameData {
+/**
+ * Builds a string-key map for rare names (suffix then prefix), indexed by
+ * rare_name_id as stored in save files. Matches the ID layout in parser.ts.
+ */
+function buildRareNames(gameFiles: Record<string, unknown>): {
+  [id: number]: string;
+} {
+  const result: { [id: number]: string } = {};
+  let id = 1; // id 0 is unused (no rare name)
+  for (const filePath of [
+    'global/excel/raresuffix.txt',
+    'global/excel/rareprefix.txt',
+  ]) {
+    const tsv = gameFiles[filePath] as TSVData;
+    if (tsv == null) continue;
+    for (const row of tsv.rows) {
+      if (row.name) result[id++] = row.name;
+    }
+  }
+  return result;
+}
+
+/**
+ * Builds a string-key map for magic affix names (prefix or suffix), indexed
+ * by the affix id from the save file. id 0 is unused (no affix).
+ */
+function buildMagicAffixNames(tsv: TSVData | null): { [id: number]: string } {
+  const result: { [id: number]: string } = {};
+  if (tsv == null) return result;
+  let id = 1; // id 0 = no affix
+  for (const row of tsv.rows) {
+    const name = row.Name;
+    if (name && name !== 'Expansion') result[id++] = name;
+  }
+  return result;
+}
+
+/**
+ * Builds a string-key map for set or unique item names, indexed by set_id /
+ * unique_id from the save file.
+ */
+function buildSetOrUniqueItemNames(tsv: TSVData | null): {
+  [id: number]: string;
+} {
+  const result: { [id: number]: string } = {};
+  if (tsv == null) return result;
+  let id = 0;
+  for (const row of tsv.rows) {
+    const index = row.index;
+    if (index && index !== 'Expansion') result[id++] = index;
+  }
+  return result;
+}
+
+/**
+ * Builds a string-key map for runeword names, indexed by the computed
+ * runeword_id as stored in save files. Matches the ID layout in parser.ts.
+ */
+function buildRunewordNames(tsv: TSVData | null): { [id: number]: string } {
+  const result: { [id: number]: string } = {};
+  if (tsv == null) return result;
+  for (const row of tsv.rows) {
+    const name = row.Name;
+    if (name) {
+      let id = +name.substring(8);
+      if (id > 75) {
+        id += 25;
+      } else {
+        id += 26;
+      }
+      // TODO: why is this a thing?
+      id =
+        {
+          [2718]: 48, // delirium
+          [2786]: 173, // mosaic
+        }[id] ?? id;
+      result[id] = name;
+    }
+  }
+  return result;
+}
+
+function buildWaypointActs(
+  gameFiles: Record<string, unknown>,
+): GameData['waypointActs'] {
+  const actinfoTsv = gameFiles['global/excel/actinfo.txt'] as TSVData | null;
+  const levelsTsv = gameFiles['global/excel/levels.txt'] as TSVData | null;
+  if (actinfoTsv == null || levelsTsv == null) {
+    return [];
+  }
+
+  // Build Name → LevelName from levels.txt
+  const nameToLevelName = new Map<string, string>();
+  for (const row of levelsTsv.rows) {
+    if (row.Name && row.LevelName) {
+      nameToLevelName.set(row.Name, row.LevelName);
+    }
+  }
+
+  const result: GameData['waypointActs'] = [];
+
+  for (const row of actinfoTsv.rows) {
+    const actNumber = row.act;
+    if (!actNumber) continue;
+    const waypoints: Array<{ LevelName: string }> = [];
+    for (let j = 1; j <= 9; j++) {
+      const levelName = row[`waypoint${j}`];
+      if (!levelName) break;
+      const resolvedLevelName = nameToLevelName.get(levelName);
+      if (resolvedLevelName) waypoints.push({ LevelName: resolvedLevelName });
+    }
+    result.push({ index: result.length, Name: `act${actNumber}`, waypoints });
+  }
+
+  return result;
+}
+
+function buildGameData(
+  gameFiles: Record<string, unknown>,
+  locale: string,
+): GameData {
+  const emptyMaps = {
+    rareNames: {} as { [id: number]: string },
+    magicPrefixNames: {} as { [id: number]: string },
+    magicSuffixNames: {} as { [id: number]: string },
+    setItemNames: {} as { [id: number]: string },
+    uniqueItemNames: {} as { [id: number]: string },
+    runewordNames: {} as { [id: number]: string },
+  };
+
   if (Object.keys(gameFiles).length === 0) {
     return {
       strings: {},
@@ -316,10 +485,12 @@ function buildGameData(gameFiles: Record<string, unknown>): GameData {
       classes: [],
       itemCodeToItem: {},
       itemCodeToCategories: {},
+      waypointActs: [],
+      ...emptyMaps,
     };
   }
 
-  const strings = buildStrings(gameFiles);
+  const strings = buildStrings(gameFiles, locale);
   const skillDescs = buildSkillDescs(
     gameFiles['global/excel/skilldesc.txt'] as TSVData,
     strings,
@@ -347,6 +518,23 @@ function buildGameData(gameFiles: Record<string, unknown>): GameData {
       itemCodeToItem,
       categoryHierarchy,
     ),
+    rareNames: buildRareNames(gameFiles),
+    magicPrefixNames: buildMagicAffixNames(
+      gameFiles['global/excel/magicprefix.txt'] as TSVData,
+    ),
+    magicSuffixNames: buildMagicAffixNames(
+      gameFiles['global/excel/magicsuffix.txt'] as TSVData,
+    ),
+    setItemNames: buildSetOrUniqueItemNames(
+      gameFiles['global/excel/setitems.txt'] as TSVData,
+    ),
+    uniqueItemNames: buildSetOrUniqueItemNames(
+      gameFiles['global/excel/uniqueitems.txt'] as TSVData,
+    ),
+    runewordNames: buildRunewordNames(
+      gameFiles['global/excel/runes.txt'] as TSVData,
+    ),
+    waypointActs: buildWaypointActs(gameFiles),
   };
 }
 
@@ -366,7 +554,11 @@ export function GameDataContextProvider({
   children: React.ReactNode;
 }): React.ReactNode {
   const { gameFiles } = useGameFiles();
-  const gameData = useMemo(() => buildGameData(gameFiles), [gameFiles]);
+  const { i18n } = useTranslation();
+  const gameData = useMemo(
+    () => buildGameData(gameFiles, i18n.language),
+    [gameFiles, i18n.language],
+  );
 
   const context = useMemo(() => ({ gameData }), [gameData]);
 
@@ -585,7 +777,7 @@ export function enhanceAttributeDescription(
       }
       property.description = descString!.replace(/%d/gi, () => {
         const v = property.values[count++];
-        return v as any;
+        return String(v);
       });
     } else {
       descFuncHandler(
@@ -628,7 +820,7 @@ function classFromCode(
   return data.classes.find((e) => e.code === code);
 }
 
-function sprintf(str: string, ...args: any[]): string {
+function sprintf(str: string, ...args: unknown[]): string {
   let i = 0;
   return str
     .replace(/%\+?d|%\+?s/gi, (m) => {

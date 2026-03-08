@@ -8,21 +8,21 @@ Add full UI localization to D2RMM, supporting the same 13 languages that D2R sup
 
 ## D2R Language Codes
 
-| D2R code | BCP 47    | Language                  |
-|----------|-----------|---------------------------|
-| enUS     | en-US     | English (US)              |
-| deDE     | de-DE     | German                    |
-| frFR     | fr-FR     | French                    |
-| esES     | es-ES     | Spanish (Spain)           |
-| esMX     | es-MX     | Spanish (Mexico)          |
-| itIT     | it-IT     | Italian                   |
-| plPL     | pl-PL     | Polish                    |
-| ptBR     | pt-BR     | Portuguese (Brazil)       |
-| ruRU     | ru-RU     | Russian                   |
-| koKR     | ko-KR     | Korean                    |
-| zhTW     | zh-TW     | Chinese (Traditional)     |
-| zhCN     | zh-CN     | Chinese (Simplified)      |
-| jaJP     | ja-JP     | Japanese                  |
+| D2R code | BCP 47 | Language              |
+| -------- | ------ | --------------------- |
+| enUS     | en-US  | English (US)          |
+| deDE     | de-DE  | German                |
+| frFR     | fr-FR  | French                |
+| esES     | es-ES  | Spanish (Spain)       |
+| esMX     | es-MX  | Spanish (Mexico)      |
+| itIT     | it-IT  | Italian               |
+| plPL     | pl-PL  | Polish                |
+| ptBR     | pt-BR  | Portuguese (Brazil)   |
+| ruRU     | ru-RU  | Russian               |
+| koKR     | ko-KR  | Korean                |
+| zhTW     | zh-TW  | Chinese (Traditional) |
+| zhCN     | zh-CN  | Chinese (Simplified)  |
+| jaJP     | ja-JP  | Japanese              |
 
 We use BCP 47 internally (matches Electron/browser conventions). The D2R code mapping is kept for documentation.
 
@@ -33,6 +33,7 @@ We use BCP 47 internally (matches Electron/browser conventions). The D2R code ma
 **`i18next`** (core) + **`react-i18next`** (renderer bindings).
 
 Reasons:
+
 - Industry standard, excellent TypeScript support
 - Built-in printf-style interpolation: `"Installed {{count}} mods"`
 - Pluralization: `_one` / `_other` key suffixes (no code changes needed)
@@ -41,6 +42,7 @@ Reasons:
 - Works in Node.js (main + worker) and browser (renderer) with same API
 
 Install:
+
 ```bash
 # in release/app/
 yarn add i18next react-i18next
@@ -171,10 +173,10 @@ Dot-notation, noun-first, snake_case leaves:
 Use i18next's built-in `{{variable}}` interpolation:
 
 ```typescript
-t('install.success', { count: 5 })
+t('install.success', { count: 5 });
 // → "Installed 5 mods"
 
-t('install.error', { name: 'MyMod', error: 'File not found' })
+t('install.error', { name: 'MyMod', error: 'File not found' });
 // → "Failed to install mod \"MyMod\": File not found"
 ```
 
@@ -272,6 +274,7 @@ When the user changes locale in Settings:
 ### New Bridge API: `LocaleAPI`
 
 `src/bridge/LocaleAPI.d.ts`:
+
 ```typescript
 export type ILocaleAPI = {
   setLocale(locale: string): Promise<void>;
@@ -373,18 +376,22 @@ In `src/main/ConsoleAPI.ts`, filter `I18nArg` from file writes:
 // Main's own console (writes to file):
 consoleWrapper[level] = (...args) => {
   const fileArgs = args.filter((a) => !isI18nArg(a));
-  localConsole[level](...fileArgs);  // electron-log → d2rmm.log (English only)
-  ConsoleAPI[level](...args);        // broadcast with I18nArg intact
+  localConsole[level](...fileArgs); // electron-log → d2rmm.log (English only)
+  ConsoleAPI[level](...args); // broadcast with I18nArg intact
 };
 
 // Receiving from worker:
-provideAPI('ConsoleAPI', {
-  log: async (...args) => {
-    const fileArgs = args.filter((a) => !isI18nArg(a));
-    localConsole.log(...fileArgs);   // file: English only
-    // (renderer receives directly via broadcast — not re-forwarded from here)
+provideAPI(
+  'ConsoleAPI',
+  {
+    log: async (...args) => {
+      const fileArgs = args.filter((a) => !isI18nArg(a));
+      localConsole.log(...fileArgs); // file: English only
+      // (renderer receives directly via broadcast — not re-forwarded from here)
+    },
   },
-}, true);
+  true,
+);
 ```
 
 ### Renderer ConsoleAPI Changes
@@ -432,6 +439,7 @@ throw Object.assign(new Error(`Mod "${name}" not found`), {
 ```
 
 Renderer catches via hook and re-translates:
+
 ```typescript
 catch (error) {
   const msg = error.i18nKey
@@ -469,8 +477,8 @@ type IInstallStatus = {
 Add to `ModManagerSettings.tsx` (Settings tab):
 
 ```tsx
-import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LOCALES, Locale } from 'renderer/i18n';
+import { useTranslation } from 'react-i18next';
 
 function LanguageSettings() {
   const { t, i18n } = useTranslation();
@@ -490,7 +498,9 @@ function LanguageSettings() {
       onChange={(e) => handleChange(e.target.value as Locale)}
     >
       {SUPPORTED_LOCALES.map((l) => (
-        <MenuItem key={l} value={l}>{LOCALE_DISPLAY_NAMES[l]}</MenuItem>
+        <MenuItem key={l} value={l}>
+          {LOCALE_DISPLAY_NAMES[l]}
+        </MenuItem>
       ))}
     </TextField>
   );
@@ -514,12 +524,14 @@ For Phase 1, static imports are simpler.
 ### Path Aliases
 
 The `locales/` directory needs a webpack alias:
+
 ```typescript
 // In webpack configs:
 'locales': path.join(srcPath, 'locales'),
 ```
 
 And a `tsconfig.json` path:
+
 ```json
 "paths": {
   "locales/*": ["src/locales/*"]
@@ -575,20 +587,20 @@ And a `tsconfig.json` path:
 
 Key files requiring string extraction (renderer only):
 
-| File | Approximate string count | Notes |
-|------|--------------------------|-------|
-| `App.tsx` | 3 | Tab labels, drop zone text |
-| `ModManagerSettings.tsx` | ~40 | Settings labels, descriptions, placeholders |
-| `ModList.tsx` | ~10 | Empty state, section labels |
-| `modlist/ModListMenu.tsx` | ~15 | Context menu items |
-| `modlist/ModInstallButton.tsx` | ~5 | Button labels, states |
-| `modlist/RunGameButton.tsx` | ~5 | Button labels |
-| `modlist/CreateCollectionDialog.tsx` | ~20 | Dialog labels, form fields |
-| `InstallationProgressBar.tsx` | ~5 | Progress labels |
-| `AppUpdaterDialog.tsx` | ~10 | Update dialog |
-| `ErrorBoundary.tsx` | ~5 | Error messages |
-| `ed2r/` (save editor) | ~30 | Save editor UI |
-| Context hooks (toast messages) | ~30 | Error/success toasts |
+| File                                 | Approximate string count | Notes                                       |
+| ------------------------------------ | ------------------------ | ------------------------------------------- |
+| `App.tsx`                            | 3                        | Tab labels, drop zone text                  |
+| `ModManagerSettings.tsx`             | ~40                      | Settings labels, descriptions, placeholders |
+| `ModList.tsx`                        | ~10                      | Empty state, section labels                 |
+| `modlist/ModListMenu.tsx`            | ~15                      | Context menu items                          |
+| `modlist/ModInstallButton.tsx`       | ~5                       | Button labels, states                       |
+| `modlist/RunGameButton.tsx`          | ~5                       | Button labels                               |
+| `modlist/CreateCollectionDialog.tsx` | ~20                      | Dialog labels, form fields                  |
+| `InstallationProgressBar.tsx`        | ~5                       | Progress labels                             |
+| `AppUpdaterDialog.tsx`               | ~10                      | Update dialog                               |
+| `ErrorBoundary.tsx`                  | ~5                       | Error messages                              |
+| `ed2r/` (save editor)                | ~30                      | Save editor UI                              |
+| Context hooks (toast messages)       | ~30                      | Error/success toasts                        |
 
 **Total estimate**: ~180–220 user-visible strings in renderer.
 
@@ -596,19 +608,19 @@ Key files requiring string extraction (renderer only):
 
 ## Key Decisions & Rationale
 
-| Decision | Rationale |
-|----------|-----------|
-| i18next over alternatives | Battle-tested, excellent TS, works in Node+browser, printf built-in |
-| File-based locale config (not electron-store) | Synchronously readable at main boot without async/await or app.ready wait |
-| `process.env.LOCALE` for worker | Locale available before IPC is established |
-| Static JSON imports (Phase 1) | Simple, type-safe; runtime file loading is a Phase 2 optimization |
-| Renderer-first (Phase 1) | 95% of user-visible strings are in renderer; highest ROI |
-| Key-based errors in worker | Avoids coupling worker locale init to renderer locale; clean separation |
-| BCP 47 locale codes | Matches Electron/browser standards; maps cleanly to D2R codes |
-| Native display names in dropdown | Users must be able to find their language even if UI is in wrong language |
-| `I18nArg` marker in console args | Lets main strip to English for file writes; renderer translates for Logs tab display; no new IPC channel needed |
-| English always in `d2rmm.log` | Bug reports submitted by non-English users remain readable by developers |
-| `console.debug()` stays English | Dev-only tracing logs; not shown to users by default; no localization overhead |
+| Decision                                      | Rationale                                                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| i18next over alternatives                     | Battle-tested, excellent TS, works in Node+browser, printf built-in                                             |
+| File-based locale config (not electron-store) | Synchronously readable at main boot without async/await or app.ready wait                                       |
+| `process.env.LOCALE` for worker               | Locale available before IPC is established                                                                      |
+| Static JSON imports (Phase 1)                 | Simple, type-safe; runtime file loading is a Phase 2 optimization                                               |
+| Renderer-first (Phase 1)                      | 95% of user-visible strings are in renderer; highest ROI                                                        |
+| Key-based errors in worker                    | Avoids coupling worker locale init to renderer locale; clean separation                                         |
+| BCP 47 locale codes                           | Matches Electron/browser standards; maps cleanly to D2R codes                                                   |
+| Native display names in dropdown              | Users must be able to find their language even if UI is in wrong language                                       |
+| `I18nArg` marker in console args              | Lets main strip to English for file writes; renderer translates for Logs tab display; no new IPC channel needed |
+| English always in `d2rmm.log`                 | Bug reports submitted by non-English users remain readable by developers                                        |
+| `console.debug()` stays English               | Dev-only tracing logs; not shown to users by default; no localization overhead                                  |
 
 ---
 
@@ -623,3 +635,13 @@ Key files requiring string extraction (renderer only):
 4. **RTL languages**: D2R doesn't include any RTL languages, so no RTL layout support needed.
 
 5. **Font support**: CJK languages (Chinese, Japanese, Korean) require fonts that render those characters. MUI uses system fonts by default — this should work on systems where these languages are installed, but verify on Windows with English locale (may need font fallback config in MUI theme).
+
+---
+
+## Pending Work
+
+- There are still a number of errors that are not localized in d2s that use wrapParsingError.
+- Localization for mods (configs).
+- Update .md files to instruct Claude on how to localize new strings.
+- Document the \x00 pattern for splitting localization strings.
+- Convert this plan into an architecture document once implementation is done.

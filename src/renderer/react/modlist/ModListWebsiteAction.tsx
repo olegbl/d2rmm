@@ -3,6 +3,7 @@ import ShellAPI from 'renderer/ShellAPI';
 import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@mui/icons-material';
 
 function useOpenWebsite(mod: Mod): () => void {
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function ModListWebsiteChip({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const onOpenWebsite = useOpenWebsite(mod);
 
   if (mod.info.website == null) {
@@ -27,14 +29,15 @@ export function ModListWebsiteChip({ mod }: Props): JSX.Element | null {
   return (
     <ModListItemChip
       icon={<Link />}
-      label="site"
+      label={t('modlist.chip.website')}
       onClick={onOpenWebsite}
-      tooltip="Visit Website"
+      tooltip={t('modlist.chip.website.tooltip')}
     />
   );
 }
 
 export function ModListWebsiteMenuItem({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const onOpenWebsite = useOpenWebsite(mod);
 
   if (mod.info.website == null) {
@@ -44,7 +47,7 @@ export function ModListWebsiteMenuItem({ mod }: Props): JSX.Element | null {
   return (
     <ModListMenuItem
       icon={<Link />}
-      label="Visit Website"
+      label={t('modlist.action.website')}
       onClick={onOpenWebsite}
     />
   );

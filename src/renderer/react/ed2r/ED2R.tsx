@@ -7,6 +7,7 @@ import type {
 } from 'bridge/third-party/d2s/d2/types';
 import BridgeAPI from 'renderer/BridgeAPI';
 import ShellAPI from 'renderer/ShellAPI';
+import i18n from 'renderer/i18n';
 import ErrorBoundary from 'renderer/react/ErrorBoundary';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
@@ -24,6 +25,10 @@ import {
   EquippedID,
   LocationID,
 } from 'renderer/react/ed2r/ED2RConstants';
+import {
+  type GameData,
+  useGameData,
+} from 'renderer/react/ed2r/ED2RGameDataContext';
 import {
   GameFiles,
   useGameFiles,
@@ -59,9 +64,10 @@ import resolvePath from 'renderer/utils/resolvePath';
 import { DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
 import { PropsOf } from '@emotion/react';
 import { Fragment, forwardRef, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Circle,
-  Close,
+  Delete,
   Refresh,
   RefreshOutlined,
   Save,
@@ -128,6 +134,7 @@ function useRuntimeOptions(): IInstallModsOptions {
 }
 
 export default function ED2R(): React.ReactNode {
+  const { t } = useTranslation();
   const runtimeModOptions = useRuntimeOptions();
 
   const { setGameFiles } = useGameFiles();
@@ -226,7 +233,7 @@ export default function ED2R(): React.ReactNode {
                 >
                   <Box sx={{ flex: '1 1 0' }} />
                   {isLoaded ? (
-                    <Tooltip title="Reload all save file data.">
+                    <Tooltip title={t('ed2r.tooltip.reload')}>
                       <IconButton
                         onClick={async () => {
                           // TODO: add confirmation modal if there are changes
@@ -249,7 +256,7 @@ export default function ED2R(): React.ReactNode {
                   onClick={() => setSelectedFileName(file.fileName)}
                   secondaryAction={
                     file.edited ? (
-                      <Tooltip title="This file has been modified but has not been saved yet.">
+                      <Tooltip title={t('ed2r.tooltip.unsaved')}>
                         <IconButton disableRipple={true}>
                           <Circle
                             color="primary"
@@ -307,20 +314,10 @@ export default function ED2R(): React.ReactNode {
                 }}
               >
                 <Typography sx={{ fontWeight: 700 }} variant="h6">
-                  Experimental Save Editor — Use with Caution
+                  {t('ed2r.warning.title')}
                 </Typography>
                 <Typography sx={{ mt: 1 }} variant="body2">
-                  This save editor is experimental. Back up your save files
-                  before making changes. Data loss or corruption may occur.
-                </Typography>
-                <Typography sx={{ mt: 1 }} variant="body2">
-                  Characters and stash tabs for the Reign of the Warlock realm
-                  may not be fully parseable yet. Support for this expansion is
-                  a work in progress.
-                </Typography>
-                <Typography sx={{ mt: 1 }} variant="body2">
-                  Not all save files may be parseable. Report issues on D2RMM's
-                  Nexus page.
+                  {t('ed2r.warning.body')}
                 </Typography>
               </Box>
               <LoadingButton
@@ -329,11 +326,11 @@ export default function ED2R(): React.ReactNode {
                 onClick={onLoad}
                 variant="contained"
               >
-                Load save data
+                {t('ed2r.loadSaveData')}
               </LoadingButton>
             </>
           ) : selectedFile == null ? (
-            <Typography variant="body2">No file selected.</Typography>
+            <Typography variant="body2">{t('ed2r.noFileSelected')}</Typography>
           ) : selectedFile.type === 'character' ? (
             <Character
               file={selectedFile}
@@ -421,6 +418,7 @@ function Stash({
   onCommit: (newValue: StashFile) => unknown;
   onRevert: () => unknown;
 }): React.ReactNode {
+  const { t } = useTranslation();
   const runtimeModOptions = useRuntimeOptions();
 
   const savesPath = useFinalSavesPath();
@@ -497,37 +495,27 @@ function Stash({
                 <Tab
                   key={index}
                   label={
-                    <span>
-                      {file.stash.pages[index]?.sectionType === 1
-                        ? 'Materials'
-                        : file.stash.pages[index]?.sectionType === 2
-                          ? 'Chronicle'
-                          : `Page ${index + 1}`}
-                      {file.stash.pages[index]?.sectionType === 0 &&
-                        tabIndices.filter(
-                          (i) => file.stash.pages[i]?.sectionType === 0,
-                        ).length > 3 && (
-                          <Tooltip title="Delete this stash tab">
-                            <IconButton
-                              onClick={() => handleDeleteTab(index)}
-                              size="small"
-                              sx={{ ml: 1 }}
-                            >
-                              <Close fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                    </span>
+                    file.stash.pages[index]?.sectionType === 1
+                      ? t('ed2r.stash.tab.materials')
+                      : file.stash.pages[index]?.sectionType === 2
+                        ? t('ed2r.stash.tab.chronicle')
+                        : index + 1
                   }
                   value={String(index)}
                 />
               ))}
-            <Tab label="Raw" value="raw" />
+            <Tab label={t('ed2r.tab.raw')} value="raw" />
           </TabList>
         </Box>
         <Divider />
         {tabIndices.map((index) => (
-          <StashTab key={index} file={file} index={index} onChange={onChange} />
+          <StashTab
+            key={index}
+            file={file}
+            index={index}
+            onChange={onChange}
+            onDelete={() => handleDeleteTab(index)}
+          />
         ))}
         <TabPanelBox value="raw">
           <textarea
@@ -544,7 +532,14 @@ function Stash({
         <Divider />
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
           <Typography variant="body2">
-            File{' '}
+            {
+              t('ed2r.fileLoaded', {
+                fileName: '\x00',
+                time: new Date(file.readTime).toLocaleTimeString(
+                  i18n.resolvedLanguage,
+                ),
+              }).split('\x00')[0]
+            }
             <Link
               href="#"
               onClick={() => {
@@ -554,8 +549,15 @@ function Stash({
               }}
             >
               {file.fileName}
-            </Link>{' '}
-            loaded at {new Date(file.readTime).toLocaleTimeString()}
+            </Link>
+            {
+              t('ed2r.fileLoaded', {
+                fileName: '\x00',
+                time: new Date(file.readTime).toLocaleTimeString(
+                  i18n.resolvedLanguage,
+                ),
+              }).split('\x00')[1]
+            }
           </Typography>
           <Box sx={{ flex: '1 1 0' }} />
           <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
@@ -567,7 +569,7 @@ function Stash({
                 }}
                 startIcon={<Refresh />}
               >
-                Revert
+                {t('ed2r.action.revert')}
               </Button>
             ) : null}
             <Button
@@ -583,7 +585,7 @@ function Stash({
               startIcon={file.edited ? <Save /> : <SaveOutlined />}
               variant={file.edited ? 'contained' : 'outlined'}
             >
-              Save
+              {t('ed2r.action.save')}
             </Button>
           </ButtonGroup>
         </Box>
@@ -595,11 +597,14 @@ function Stash({
 function StashTab({
   file,
   index,
+  onDelete,
 }: {
   file: StashFile;
   index: number;
   onChange: (newValue: StashFile) => unknown;
+  onDelete: () => unknown;
 }): React.ReactNode {
+  const { t } = useTranslation();
   const { gameFiles } = useGameFiles();
 
   const page = file.stash.pages[index];
@@ -607,7 +612,9 @@ function StashTab({
   if (page == null) {
     // this should never happen
     return (
-      <TabPanelBox value={String(index)}>Stash page not found.</TabPanelBox>
+      <TabPanelBox value={String(index)}>
+        {t('ed2r.stash.pageNotFound')}
+      </TabPanelBox>
     );
   }
 
@@ -649,6 +656,21 @@ function StashTab({
               />
             ))}
         </InventoryGrid>
+        {page.sectionType === 0 && (
+          <span>
+            <Tooltip title={t('ed2r.tooltip.deleteTab')}>
+              <Button
+                color="error"
+                onClick={onDelete}
+                sx={{ mt: 2 }}
+                variant="contained"
+              >
+                <Delete fontSize="small" sx={{ mr: 1 }} />
+                {t('ed2r.action.delete')}
+              </Button>
+            </Tooltip>
+          </span>
+        )}
       </TabPanelBox>
     </StashTabContextProvider>
   );
@@ -966,6 +988,7 @@ function AdvancedStashSlot({
         : 'rgba(255, 0, 0, 0.3)'
       : undefined;
 
+  const { t } = useTranslation();
   const { onChange } = useSaveFiles();
   const [contextMenuPos, setContextMenuPos] = useState<{
     x: number;
@@ -1098,17 +1121,19 @@ function AdvancedStashSlot({
         onClose={handleCloseMenu}
         open={contextMenuPos != null}
       >
-        <MenuItem onClick={handleDelete}>Delete</MenuItem>
-        <MenuItem onClick={handleOpenEditQty}>Edit Quantity</MenuItem>
+        <MenuItem onClick={handleDelete}>{t('ed2r.action.delete')}</MenuItem>
+        <MenuItem onClick={handleOpenEditQty}>
+          {t('ed2r.item.editQty')}
+        </MenuItem>
       </Menu>
       <Dialog onClose={() => setEditQtyOpen(false)} open={editQtyOpen}>
-        <DialogTitle>Edit Quantity</DialogTitle>
+        <DialogTitle>{t('ed2r.item.editQty')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus={true}
             fullWidth={true}
             inputProps={{ min: 0 }}
-            label="Quantity"
+            label={t('ed2r.item.quantity')}
             onChange={(e) => setEditQtyValue(e.target.value)}
             sx={{ mt: 1 }}
             type="number"
@@ -1116,9 +1141,11 @@ function AdvancedStashSlot({
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditQtyOpen(false)}>Cancel</Button>
+          <Button onClick={() => setEditQtyOpen(false)}>
+            {t('ed2r.action.cancel')}
+          </Button>
           <Button onClick={handleConfirmEditQty} variant="contained">
-            Confirm
+            {t('ed2r.action.confirm')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1152,6 +1179,7 @@ function Character({
 
   const savesPath = useFinalSavesPath();
 
+  const { t } = useTranslation();
   const [tab, setTab] = useSessionState<CharaterTab>(
     `ED2R-selected-tab:${file.fileName}`,
     'basic',
@@ -1181,15 +1209,15 @@ function Character({
             scrollButtons="auto"
             variant="scrollable"
           >
-            <Tab label="Basic" value="basic" />
-            <Tab label="Skills" value="skills" />
-            <Tab label="Equipment" value="equipment" />
-            <Tab label="Inventory" value="inventory" />
-            <Tab label="Stash" value="stash" />
-            <Tab label="Cube" value="cube" />
-            <Tab label="Mercenary" value="mercenary" />
-            <Tab label="Waypoints" value="waypoints" />
-            <Tab label="Raw" value="raw" />
+            <Tab label={t('ed2r.tab.basic')} value="basic" />
+            <Tab label={t('ed2r.tab.skills')} value="skills" />
+            <Tab label={t('ed2r.tab.equipment')} value="equipment" />
+            <Tab label={t('ed2r.tab.inventory')} value="inventory" />
+            <Tab label={t('ed2r.tab.stash')} value="stash" />
+            <Tab label={t('ed2r.tab.cube')} value="cube" />
+            <Tab label={t('ed2r.tab.mercenary')} value="mercenary" />
+            <Tab label={t('ed2r.tab.waypoints')} value="waypoints" />
+            <Tab label={t('ed2r.tab.raw')} value="raw" />
           </TabList>
         </Box>
         <Divider />
@@ -1216,7 +1244,14 @@ function Character({
         <Divider />
         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
           <Typography variant="body2">
-            File{' '}
+            {
+              t('ed2r.fileLoaded', {
+                fileName: '\x00',
+                time: new Date(file.readTime).toLocaleTimeString(
+                  i18n.resolvedLanguage,
+                ),
+              }).split('\x00')[0]
+            }
             <Link
               href="#"
               onClick={() => {
@@ -1226,8 +1261,15 @@ function Character({
               }}
             >
               {file.fileName}
-            </Link>{' '}
-            loaded at {new Date(file.readTime).toLocaleTimeString()}
+            </Link>
+            {
+              t('ed2r.fileLoaded', {
+                fileName: '\x00',
+                time: new Date(file.readTime).toLocaleTimeString(
+                  i18n.resolvedLanguage,
+                ),
+              }).split('\x00')[1]
+            }
           </Typography>
           <Box sx={{ flex: '1 1 0' }} />
           <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
@@ -1239,13 +1281,10 @@ function Character({
                 }}
                 startIcon={<Refresh />}
               >
-                Revert
+                {t('ed2r.action.revert')}
               </Button>
             ) : null}
-            <Tooltip
-              placement="top"
-              title="Your save file will also be backed up for you."
-            >
+            <Tooltip placement="top" title={t('ed2r.tooltip.backup')}>
               <span>
                 <Button
                   disabled={!file.edited}
@@ -1260,7 +1299,7 @@ function Character({
                   startIcon={file.edited ? <Save /> : <SaveOutlined />}
                   variant={file.edited ? 'contained' : 'outlined'}
                 >
-                  Save
+                  {t('ed2r.action.save')}
                 </Button>
               </span>
             </Tooltip>
@@ -1584,14 +1623,13 @@ function CharacterInventoryTab({
   onChange: (newValue: CharacterFile) => unknown;
 }): React.ReactNode {
   const { gameFiles } = useGameFiles();
+  const { gameData } = useGameData();
   const isExpansion = file.character.header.status.expansion;
   const inventory = gameFiles['global/excel/inventory.txt'] as TSVData;
+  const characterClass = gameData.classes[file.character.header.class_id].name;
   const inventoryRow = inventory.rows.find(
     (row) =>
-      row.class ===
-      (isExpansion
-        ? `${file.character.header.class}2`
-        : file.character.header.class),
+      row.class === (isExpansion ? `${characterClass}2` : characterClass),
   );
   const width = +(inventoryRow?.gridX ?? 10);
   const height = +(inventoryRow?.gridY ?? 4);
@@ -1763,7 +1801,11 @@ function getAssetPath(item: IItem, gameFiles: GameFiles): null | string {
   return null;
 }
 
-function getItemSprite(item: IItem, gameFiles: GameFiles): string {
+function getItemSprite(
+  item: IItem,
+  gameFiles: GameFiles,
+  gameData: GameData,
+): string {
   const assetPath = getAssetPath(item, gameFiles);
   const category =
     item.categories?.includes('Armor') || item.categories?.includes('Any Armor')
@@ -1784,7 +1826,7 @@ function getItemSprite(item: IItem, gameFiles: GameFiles): string {
     .shift();
   if (typeof asset !== 'string') {
     console.warn(
-      `Could not find sprite for item "${getItemName(item)}" (${assetFilePaths[0]}).`,
+      `Could not find sprite for item "${getItemName(item, gameData)}" (${assetFilePaths[0]}).`,
       item,
     );
     // TODO: question mark or something if sprite is not found
@@ -1847,6 +1889,7 @@ function InventoryGridItem({
     (draggedItem == null ? null : getUniqueItemID(draggedItem)) ===
     (item == null ? null : getUniqueItemID(item));
 
+  const { t } = useTranslation();
   const { onChange } = useSaveFiles();
   const { copyItem, cutItem } = useClipboardContext();
   const [contextMenuPos, setContextMenuPos] = useState<{
@@ -1963,9 +2006,9 @@ function InventoryGridItem({
         onClose={handleCloseMenu}
         open={contextMenuPos != null}
       >
-        <MenuItem onClick={handleCopy}>Copy</MenuItem>
-        <MenuItem onClick={handleCut}>Cut</MenuItem>
-        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+        <MenuItem onClick={handleCopy}>{t('ed2r.action.copy')}</MenuItem>
+        <MenuItem onClick={handleCut}>{t('ed2r.action.cut')}</MenuItem>
+        <MenuItem onClick={handleDelete}>{t('ed2r.action.delete')}</MenuItem>
       </Menu>
     </>
   );
@@ -1993,7 +2036,8 @@ const InventoryItem = forwardRef(function InventoryItem(
   ref,
 ): React.ReactNode {
   const { gameFiles } = useGameFiles();
-  const sprite = getItemSprite(item, gameFiles);
+  const { gameData } = useGameData();
+  const sprite = getItemSprite(item, gameFiles, gameData);
 
   return (
     <Box
@@ -2053,6 +2097,7 @@ function InventoryGrid({
   } & Partial<Exclude<IItemPosition, 'x' | 'y' | 'width' | 'height'>>
 >) {
   const { selectedFile: file } = useSelectedFileContext();
+  const { gameData } = useGameData();
   const stashTabIndex = useStashTabIndex();
 
   const itemPosition = useMemo(
@@ -2189,7 +2234,9 @@ function InventoryGrid({
         ? 'This item cannot fit here'
         : pasteValidation?.invalidReason ?? '';
   const pasteLabel =
-    clipboard != null ? `Paste "${getItemName(clipboard.item)}"` : 'Paste';
+    clipboard != null
+      ? `Paste "${getItemName(clipboard.item, gameData)}"`
+      : 'Paste';
 
   return (
     <Box
@@ -2300,17 +2347,18 @@ function CharacterWaypointsTab({
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
 }): React.ReactNode {
+  const { t } = useTranslation();
   const onChangeWaypoint = useCallback(
-    <
-      TDifficulty extends keyof IWaypointData,
-      TAct extends keyof IWaypoints,
-      TArea extends keyof IWaypoints[TAct],
-    >(
-      difficulty: TDifficulty,
-      act: TAct,
-      area: TArea,
+    (
+      difficulty: keyof IWaypointData,
+      actIndex: number,
+      area: string,
       value: boolean,
     ) => {
+      const waypoints = file.character.header.waypoints[difficulty];
+      const newActs = waypoints.acts.map((act, i) =>
+        i === actIndex ? { ...act, [area]: value } : act,
+      );
       onChange({
         ...file,
         character: {
@@ -2319,13 +2367,7 @@ function CharacterWaypointsTab({
             ...file.character.header,
             waypoints: {
               ...file.character.header.waypoints,
-              [difficulty]: {
-                ...file.character.header.waypoints[difficulty],
-                [act]: {
-                  ...file.character.header.waypoints[difficulty][act],
-                  [area]: value,
-                },
-              },
+              [difficulty]: { ...waypoints, acts: newActs },
             },
           },
         },
@@ -2345,49 +2387,29 @@ function CharacterWaypointsTab({
         }}
       >
         <Waypoints
-          label="Normal"
-          onChange={(act, area, value) =>
-            onChangeWaypoint('normal', act, area, value)
+          label={t('ed2r.difficulty.normal')}
+          onChange={(actIndex, area, value) =>
+            onChangeWaypoint('normal', actIndex, area, value)
           }
           waypoints={file.character.header.waypoints.normal}
         />
         <Waypoints
-          label="Nightmare"
-          onChange={(act, area, value) =>
-            onChangeWaypoint('nm', act, area, value)
+          label={t('ed2r.difficulty.nightmare')}
+          onChange={(actIndex, area, value) =>
+            onChangeWaypoint('nm', actIndex, area, value)
           }
           waypoints={file.character.header.waypoints.nm}
         />
         <Waypoints
-          label="Hell"
-          onChange={(act, area, value) =>
-            onChangeWaypoint('hell', act, area, value)
+          label={t('ed2r.difficulty.hell')}
+          onChange={(actIndex, area, value) =>
+            onChangeWaypoint('hell', actIndex, area, value)
           }
           waypoints={file.character.header.waypoints.hell}
         />
       </Box>
     </TabPanelBox>
   );
-}
-
-function getWaypointActLabel<TAct extends keyof IWaypoints>(act: TAct): string {
-  // TODO: get localized string from game files
-  return String(act)
-    .replace(/_/g, ' ')
-    .replace(/(^| )[a-z]/g, (value) => value.toUpperCase());
-}
-
-function getWaypointAreaLabel<
-  TAct extends keyof IWaypoints,
-  TArea extends keyof IWaypoints[TAct],
->(_act: TAct, area: TArea): string {
-  // TODO: get localized string from game files
-  return String(area)
-    .replace(/_/g, ' ')
-    .replace(/lvl/g, 'level')
-    .replace(/(^| )[a-z]/g, (value) => value.toUpperCase())
-    .replace(/Of/g, 'of')
-    .replace(/The/g, 'the');
 }
 
 function Waypoints({
@@ -2397,15 +2419,9 @@ function Waypoints({
 }: {
   label: string;
   waypoints: IWaypoints;
-  onChange: <
-    TAct extends keyof IWaypoints,
-    TArea extends keyof IWaypoints[TAct],
-  >(
-    act: TAct,
-    area: TArea,
-    value: boolean,
-  ) => unknown;
+  onChange: (actIndex: number, area: string, value: boolean) => unknown;
 }): React.ReactNode {
+  const { gameData } = useGameData();
   return (
     <Box
       sx={{
@@ -2419,28 +2435,28 @@ function Waypoints({
         <FormLabel component="legend" sx={{ marginBottom: 2 }}>
           {label}
         </FormLabel>
-        {(['act_i', 'act_ii', 'act_iii', 'act_iv', 'act_v'] as const).map(
-          (act) => {
-            return (
-              <Fragment key={act}>
-                <FormLabel component="legend">
-                  {getWaypointActLabel(act)}
-                </FormLabel>
-                {Object.keys(waypoints[act]).map((areaKey) => {
-                  const area = areaKey as keyof IWaypoints[keyof IWaypoints];
-                  return (
-                    <Waypoint
-                      key={area}
-                      label={getWaypointAreaLabel(act, area)}
-                      onChange={(newValue) => onChange(act, area, newValue)}
-                      value={waypoints[act][area]}
-                    />
-                  );
-                })}
-              </Fragment>
-            );
-          },
-        )}
+        {waypoints.acts.map((actWaypoints, actIndex) => {
+          const act = gameData.waypointActs[actIndex];
+          const actLabel =
+            act != null
+              ? gameData.strings[act.Name] ?? act.Name
+              : String(actIndex + 1);
+          return (
+            <Fragment key={actIndex}>
+              <FormLabel component="legend">{actLabel}</FormLabel>
+              {act?.waypoints.map(({ LevelName }) => (
+                <Waypoint
+                  key={LevelName}
+                  label={gameData.strings[LevelName] ?? LevelName}
+                  onChange={(newValue) =>
+                    onChange(actIndex, LevelName, newValue)
+                  }
+                  value={actWaypoints[LevelName] ?? false}
+                />
+              ))}
+            </Fragment>
+          );
+        })}
       </FormGroup>
     </Box>
   );
@@ -2475,25 +2491,16 @@ function CharacterBasicTab({
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
 }): React.ReactNode {
+  const { t } = useTranslation();
+  const { gameData } = useGameData();
+
   const header = file.character.header;
   const attributes = file.character.attributes || {};
 
   const prettyAttributeLabel = (key: string) => {
-    const MAP: { [k: string]: string } = {
-      strength: 'Strength',
-      dexterity: 'Dexterity',
-      vitality: 'Vitality',
-      energy: 'Energy',
-      max_stamina: 'Max Stamina',
-      max_hp: 'Max Life',
-      max_mana: 'Max Mana',
-      unused_stats: 'Unallocated Stat Points',
-      unused_skill_points: 'Unallocated Skill Points',
-      experience: 'Experience',
-      gold: 'Gold',
-      stashed_gold: 'Stashed Gold',
-    };
-    if (MAP[key]) return MAP[key];
+    const i18nKey = `ed2r.attr.${key}`;
+    const translated = t(i18nKey);
+    if (translated !== i18nKey) return translated;
     return key
       .replace(/_/g, ' ')
       .replace(/(^| )[a-z]/g, (s) => s.toUpperCase());
@@ -2504,7 +2511,7 @@ function CharacterBasicTab({
       <Box sx={{ padding: 2, overflowY: 'auto' }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <TextField
-            label="Name"
+            label={t('ed2r.field.name')}
             onChange={(e) =>
               onChange({
                 ...file,
@@ -2519,18 +2526,15 @@ function CharacterBasicTab({
           />
           <TextField
             disabled={true}
-            label="Class"
+            label={t('ed2r.field.class')}
             size="small"
-            value={header.class}
+            value={gameData.classes[header.class_id].displayName}
           />
-          <Tooltip
-            placement="top"
-            title="You can try downgrading realm if you want, but it'll probably result in a broken save file."
-          >
+          <Tooltip placement="top" title={t('ed2r.tooltip.realmDowngrade')}>
             <FormControl>
-              <InputLabel>Realm</InputLabel>
+              <InputLabel>{t('ed2r.field.realm')}</InputLabel>
               <Select
-                label="Realm"
+                label={t('ed2r.field.realm')}
                 onChange={(e) =>
                   onChange({
                     ...file,
@@ -2544,13 +2548,13 @@ function CharacterBasicTab({
                 value={file.character.header.realm}
               >
                 <MenuItem value={1}>
-                  <Box>Classic</Box>
+                  <Box>{t('ed2r.realm.classic')}</Box>
                 </MenuItem>
                 <MenuItem value={2}>
-                  <Box>Lord of Destruction</Box>
+                  <Box>{t('ed2r.realm.lod')}</Box>
                 </MenuItem>
                 <MenuItem value={3}>
-                  <Box>Reign of the Warlock</Box>
+                  <Box>{t('ed2r.realm.rotw')}</Box>
                 </MenuItem>
               </Select>
             </FormControl>
@@ -2562,7 +2566,7 @@ function CharacterBasicTab({
         >
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <TextField
-              label="Level"
+              label={t('ed2r.field.level')}
               onChange={(e) =>
                 onChange({
                   ...file,
@@ -2577,7 +2581,7 @@ function CharacterBasicTab({
               value={String(header.level ?? 0)}
             />
             <TextField
-              label="Experience"
+              label={t('ed2r.field.experience')}
               onChange={(e) =>
                 onChange({
                   ...file,
@@ -2620,7 +2624,7 @@ function CharacterBasicTab({
                   }
                 />
               }
-              label="Expansion"
+              label={t('ed2r.field.expansion')}
             />
             <FormControlLabel
               control={
@@ -2643,7 +2647,7 @@ function CharacterBasicTab({
                   }
                 />
               }
-              label="Hardcore"
+              label={t('ed2r.field.hardcore')}
             />
           </Box>
         </Box>
@@ -2651,7 +2655,9 @@ function CharacterBasicTab({
         <Box sx={{ my: 2 }} />
 
         <Box>
-          <FormLabel component="legend">Attributes</FormLabel>
+          <FormLabel component="legend">
+            {t('ed2r.section.attributes')}
+          </FormLabel>
           <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
             <TextField
               label={prettyAttributeLabel('strength')}
@@ -2744,7 +2750,7 @@ function CharacterBasicTab({
         <Box sx={{ my: 2 }} />
 
         <Box>
-          <FormLabel component="legend">Stats</FormLabel>
+          <FormLabel component="legend">{t('ed2r.section.stats')}</FormLabel>
           <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
             <TextField
               label={prettyAttributeLabel('max_hp')}
@@ -2803,7 +2809,7 @@ function CharacterBasicTab({
         <Box sx={{ my: 2 }} />
 
         <Box>
-          <FormLabel component="legend">Gold</FormLabel>
+          <FormLabel component="legend">{t('ed2r.section.gold')}</FormLabel>
           <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
             <TextField
               label={prettyAttributeLabel('gold')}
@@ -2853,6 +2859,8 @@ function CharacterSkillsTab({
   file: CharacterFile;
   onChange: (newValue: CharacterFile) => unknown;
 }): React.ReactNode {
+  const { t } = useTranslation();
+  const { gameData } = useGameData();
   const skills = file.character.skills || [];
   const attributes = file.character.attributes || {};
 
@@ -2866,9 +2874,9 @@ function CharacterSkillsTab({
       <Box sx={{ padding: 2, overflowY: 'auto' }}>
         <List>
           <ListItem sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <ListItemText primary="Unallocated Skill Points" />
+            <ListItemText primary={t('ed2r.field.unallocatedSkillPoints')} />
             <TextField
-              label="Points"
+              label={t('ed2r.field.points')}
               onChange={(e) =>
                 onChange({
                   ...file,
@@ -2892,9 +2900,11 @@ function CharacterSkillsTab({
               key={skill.id}
               sx={{ display: 'flex', gap: 2, alignItems: 'center' }}
             >
-              <ListItemText primary={skill.name ?? `#${skill.id}`} />
+              <ListItemText
+                primary={gameData.skills[skill.id]?.skillName ?? `#${skill.id}`}
+              />
               <TextField
-                label="Points"
+                label={t('ed2r.field.points')}
                 onChange={(e) => setSkillPoints(i, Number(e.target.value))}
                 size="small"
                 sx={{ width: 100 }}

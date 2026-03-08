@@ -709,12 +709,12 @@ export function enhanceItem(
     if (details.typeName) item.type_name = details.typeName;
     if (details.requiredStrength) item.reqstr = details.requiredStrength;
     if (details.requiredDexterity) item.reqdex = details.requiredDexterity;
-    if (details.inventoryFile) item.inv_file = details.inventoryFile as any;
+    if (details.inventoryFile) item.inv_file = +details.inventoryFile;
     if (details.inventoryHeight) item.inv_height = details.inventoryHeight;
     if (details.inventoryWidth) item.inv_width = details.inventoryWidth;
     if (details.inventoryTransform)
       item.inv_transform = details.inventoryTransform;
-    if (details.itemQuality) item.item_quality = details.itemQuality as any;
+    if (details.itemQuality) item.item_quality = details.itemQuality;
     if (details.categories) item.categories = details.categories;
     if (details.durability) {
       if (item.ethereal == 0) {
@@ -728,7 +728,7 @@ export function enhanceItem(
       }
     }
     if (item.multiple_pictures && details.inventoryGraphics) {
-      item.inv_file = details.inventoryGraphics[item.picture_id] as any;
+      item.inv_file = +details.inventoryGraphics[item.picture_id];
     }
     if (item.magic_prefix || item.magic_suffix) {
       if (
@@ -766,14 +766,14 @@ export function enhanceItem(
     } else if (item.unique_id) {
       const unq = data.uniqueItems[item.unique_id];
       if (details.uniqueInventoryFile)
-        item.inv_file = details.uniqueInventoryFile as any;
-      if (unq && unq.inventoryFile) item.inv_file = unq.inventoryFile as any;
+        item.inv_file = +details.uniqueInventoryFile;
+      if (unq && unq.inventoryFile) item.inv_file = +unq.inventoryFile;
       if (unq && unq.transformColor) item.transform_color = unq.transformColor;
     } else if (item.set_id) {
       const set = data.setItems[item.set_id];
       if (details.uniqueInventoryFile)
-        item.inv_file = details.uniqueInventoryFile as any;
-      if (set && set.inventoryFile) item.inv_file = set.inventoryFile as any;
+        item.inv_file = +details.uniqueInventoryFile;
+      if (set && set.inventoryFile) item.inv_file = +set.inventoryFile;
       if (set && set.transformColor) item.transform_color = set.transformColor;
     }
   }
@@ -901,7 +901,7 @@ function enhanceAttributeDescription(
       }
       property.description = descString!.replace(/%d/gi, () => {
         const v = property.values[count++];
-        return v as any;
+        return String(v);
       });
     } else {
       descFuncHandler(
@@ -933,7 +933,10 @@ function enhanceAttributeDescription(
   return magic_attributes;
 }
 
-function compactAttributes(mods: any[], data: EnhancerData): IMagicProperty[] {
+function compactAttributes(
+  mods: { m: string; p?: number; min?: number; max?: number }[],
+  data: EnhancerData,
+): IMagicProperty[] {
   const magic_attributes = [] as IMagicProperty[];
   for (const mod of mods) {
     const propStats = data.properties[mod.m] || [];
@@ -1130,7 +1133,7 @@ function descFuncHandler(
   }
 }
 
-function sprintf(str: string, ...args: any[]): string {
+function sprintf(str: string, ...args: unknown[]): string {
   let i = 0;
   return str
     .replace(/%\+?d|%\+?s/gi, (m) => {

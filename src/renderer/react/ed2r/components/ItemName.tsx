@@ -22,8 +22,6 @@ export function ItemName({ item }: { item: IItem }): React.ReactNode {
   const color = getItemColor(item, gameData, gameFiles);
 
   const lines = name
-    // remove localization feminine/masculine indicators
-    .replace(/(\[fs\]|\[ms\])/gm, '')
     // split into lines
     .split('\n')
     // split into tokens
@@ -47,52 +45,71 @@ export function ItemName({ item }: { item: IItem }): React.ReactNode {
     </span>
   ));
 }
-
-export function getItemName(item: IItem, gameData?: GameData): string {
-  let typeName = item.type_name;
-  if (gameData != null) {
-    const row = gameData.itemCodeToItem[item.type];
-    if (row != null) {
-      typeName = gameData.strings[row.namestr] ?? row.namestr;
-    }
-  }
+export function getItemName(item: IItem, gameData: GameData): string {
+  const row = gameData.itemCodeToItem[item.type];
+  const typeName =
+    row != null ? gameData.strings[row.namestr] ?? row.namestr : item.type_name;
 
   if (item.personalized) {
     return `${item.personalized_name}'s ${getItemName({ ...item, personalized: 0 }, gameData)}`;
   }
 
-  // TODO: item.runeword_id ("Runeword" + id*) runes.txt (Name -> Key) item-runes.json
-  //       * id > 75 -> +25
-  //         id <= 75 -> +25
-  //         etc...?
-  //         2718 -> 48 (delirium)
-  //         2786 -> 173 (mosaic)
-  if (item.runeword_name != null) {
-    // TODO: add recipe line
-    return `${item.runeword_name}\n${typeName}`;
+  if (item.given_runeword) {
+    return processLocalization([
+      gameData.strings[gameData.runewordNames[item.runeword_id]] ??
+        '<Unknown Runeword>',
+      typeName,
+    ]).join('\n');
   }
 
   switch (item.quality) {
     case Quality.LOW:
-      return `Low Quality ${typeName}`;
+      return processLocalization([
+        gameData.strings['Low Quality'] ?? 'Low Quality',
+        typeName,
+      ]).join(' ');
     case Quality.NORMAL:
-      return typeName;
+      return processLocalization([typeName]).join(' ');
     case Quality.SUPERIOR:
-      return `Superior ${typeName}`;
-    case Quality.MAGIC:
-      return [item.magic_prefix_name, typeName, item.magic_suffix_name]
-        .filter((value) => value != null)
-        .join(' ');
+      return processLocalization([
+        gameData.strings['Hiquality'] ?? 'Superior',
+        typeName,
+      ]).join(' ');
+    case Quality.MAGIC: {
+      const prefix = item.magic_prefix
+        ? gameData.strings[gameData.magicPrefixNames[item.magic_prefix]] ??
+          '<Unknown Magic Prefix>'
+        : null;
+      const suffix = item.magic_suffix
+        ? gameData.strings[gameData.magicSuffixNames[item.magic_suffix]] ??
+          '<Unknown Magic Suffix>'
+        : null;
+      return processLocalization([prefix, typeName, suffix]).join(' ');
+    }
     case Quality.CRAFTED:
-    case Quality.RARE:
-      return [item.rare_name, item.rare_name2]
-        .filter((value) => value != null)
-        .join(' ')
-        .concat(`\n${typeName}`);
+    case Quality.RARE: {
+      const rareName =
+        gameData.strings[gameData.rareNames[item.rare_name_id]] ??
+        '<Unknown Rare 1>';
+      const rareName2 =
+        gameData.strings[gameData.rareNames[item.rare_name_id2]] ??
+        '<Unknown Rare 2>';
+      return processLocalization([rareName, rareName2, typeName]).reduce(
+        (agg, val, idx) => agg + (idx === 2 ? '\n' : ' ') + val,
+        '',
+      );
+    }
     case Quality.SET:
-      return `${item.set_name}\n${typeName}`;
+      return processLocalization([
+        gameData.strings[gameData.setItemNames[item.set_id]] ?? '<Unknown Set>',
+        typeName,
+      ]).join('\n');
     case Quality.UNIQUE:
-      return `${item.unique_name}\n${typeName}`;
+      return processLocalization([
+        gameData.strings[gameData.uniqueItemNames[item.unique_id]] ??
+          '<Unknown Unique>',
+        typeName,
+      ]).join('\n');
   }
 
   return typeName;
@@ -106,7 +123,7 @@ export function getItemColor(
   const categories = gameData.itemCodeToCategories[item.type] ?? [];
   const profileHD = gameFiles['global/ui/layouts/_profilehd.json'] as ProfileHD;
 
-  if (item.runeword_name != null) {
+  if (item.given_runeword) {
     return getColor(profileHD.TooltipStyle.UniqueColor, profileHD);
   }
 
@@ -158,4 +175,41 @@ export function getItemColor(
   }
 
   return '#FFFFFF';
+}
+
+function processLocalization(arr: (string | null)[]): string[] {
+  // 1. Parse strings into objects
+  const parsed = (arr.filter((str) => str != null) as string[]).map((str) => {
+    const regex = /\[([a-z]+)\]([^[]+)/g;
+    const matches = [...str.matchAll(regex)];
+
+    // If no tags found, treat it as a "universal" string
+    if (matches.length === 0) {
+      return { value: str.trim() };
+    }
+
+    // Convert matches to a dictionary: { ms: "некачественный", fs: "некачественная", ... }
+    return Object.fromEntries(matches.map((m) => [m[1], m[2].trim()]));
+  });
+
+  // 2. Determine the "Anchor" (the most restrictive element)
+  // We ignore "universal" strings and find the one with the fewest keys
+  const taggedElements = parsed.filter((obj) => !obj.isUniversal);
+
+  if (taggedElements.length === 0) {
+    // All strings were plain text
+    return arr.filter((val) => val != null) as string[];
+  }
+
+  const anchor = taggedElements.reduce((prev, curr) =>
+    Object.keys(curr).length < Object.keys(prev).length ? curr : prev,
+  );
+
+  // 3. Choose the target key (e.g., 'ms')
+  const targetKey = Object.keys(anchor)[0];
+
+  // 4. Assemble the final string
+  return parsed.map(
+    (obj) => obj.value || obj[targetKey] || Object.values(obj)[0],
+  );
 }

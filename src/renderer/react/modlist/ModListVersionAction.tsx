@@ -6,6 +6,7 @@ import ModListItemChip from 'renderer/react/modlist/ModListItemChip';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import useModUpdater from 'renderer/react/modlist/hooks/useModUpdater';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, Update } from '@mui/icons-material';
 
 function useOpenWebsite(mod: Mod): () => void {
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function ModListVersionChip({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const {
     isUpdatePossible,
     isDownloadPossible,
@@ -75,17 +77,20 @@ export function ModListVersionChip({ mod }: Props): JSX.Element | null {
           ? undefined
           : isUpdateAvailable
             ? !isDownloadPossible
-              ? 'Update is Available'
-              : `Download Version ${latestUpdate?.version}`
+              ? t('modlist.action.version.updateAvailable')
+              : t('modlist.action.version.downloadWithVersion', {
+                  version: latestUpdate?.version,
+                })
             : isUpdateChecked
-              ? 'Recheck for Updates'
-              : 'Check for Updates'
+              ? t('modlist.action.version.recheck')
+              : t('modlist.action.version.check')
       }
     />
   );
 }
 
 export function ModListUpdateMenuItem({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const { isUpdatePossible, isUpdateChecked, onCheckForUpdates } =
     useModUpdater(mod);
 
@@ -96,13 +101,18 @@ export function ModListUpdateMenuItem({ mod }: Props): JSX.Element | null {
   return (
     <ModListMenuItem
       icon={<Update />}
-      label={isUpdateChecked ? 'Recheck for Updates' : 'Check for Updates'}
+      label={
+        isUpdateChecked
+          ? t('modlist.action.version.recheck')
+          : t('modlist.action.version.check')
+      }
       onClick={onCheckForUpdates}
     />
   );
 }
 
 export function ModListDownloadMenuItem({ mod }: Props): JSX.Element | null {
+  const { t } = useTranslation();
   const { downloads, isDownloadPossible, onDownloadVersion } =
     useModUpdater(mod);
 
@@ -111,12 +121,14 @@ export function ModListDownloadMenuItem({ mod }: Props): JSX.Element | null {
   }
 
   return (
-    <ModListMenuItem icon={<Download />} label="Download">
+    <ModListMenuItem icon={<Download />} label={t('modlist.action.download')}>
       {downloads.map((download) => (
         <ModListMenuItem
           key={download.version}
           icon={<Download />}
-          label={`Version ${download.version}`}
+          label={t('modlist.action.version.download', {
+            version: download.version,
+          })}
           onClick={async () => {
             await onDownloadVersion(download);
           }}

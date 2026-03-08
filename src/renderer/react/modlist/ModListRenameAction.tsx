@@ -6,6 +6,7 @@ import {
 import useModConfigOverride from 'renderer/react/context/hooks/useModConfigOverride';
 import ModListMenuItem from 'renderer/react/modlist/ModListMenuItem';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Edit } from '@mui/icons-material';
 import {
   Button,
@@ -26,6 +27,7 @@ function RenameDialog({
   onClear: () => void;
   onSubmit: (value: string) => void;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   const [name, setName] = useState(initialName);
@@ -50,7 +52,7 @@ function RenameDialog({
         <TextField
           autoFocus={true}
           fullWidth={true}
-          label="Mod Name"
+          label={t('modlist.rename.dialog.label')}
           onChange={onChange}
           sx={{ marginTop: 1 }}
           value={name}
@@ -58,10 +60,12 @@ function RenameDialog({
         />
       </DialogContent>
       <DialogActions>
-        {isClearable && <Button onClick={onClear}>Clear</Button>}
-        <Button onClick={onClose}>Cancel</Button>
+        {isClearable && (
+          <Button onClick={onClear}>{t('modlist.rename.dialog.clear')}</Button>
+        )}
+        <Button onClick={onClose}>{t('modlist.rename.dialog.cancel')}</Button>
         <Button onClick={onSubmit} variant="contained">
-          Save
+          {t('modlist.rename.dialog.save')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -69,6 +73,7 @@ function RenameDialog({
 }
 
 export function ModListRenameMenuItem({ mod }: { mod: Mod }) {
+  const { t } = useTranslation();
   const [modConfigOverride, setModConfigOverride] = useModConfigOverride(
     mod.id,
   );
@@ -98,6 +103,10 @@ export function ModListRenameMenuItem({ mod }: { mod: Mod }) {
   );
 
   return (
-    <ModListMenuItem icon={<Edit />} label="Rename" onClick={onOpenDialog} />
+    <ModListMenuItem
+      icon={<Edit />}
+      label={t('modlist.action.rename')}
+      onClick={onOpenDialog}
+    />
   );
 }

@@ -25,6 +25,8 @@ export type Buffers = Readonly<{
   'weapons.txt': string;
   'misc.txt': string;
   'gems.txt': string;
+  'actinfo.txt': string;
+  'levels.txt': string;
 }>;
 
 type TSV = {
@@ -50,6 +52,10 @@ export function readConstantData(buffers: Buffers): types.IConstantData {
     ...parseJSONStrings(getBuffer(buffers, 'skills.json')),
   };
 
+  constants.waypoint_acts = _readWaypointActs(
+    parseTSV(getBuffer(buffers, 'actinfo.txt')),
+    parseTSV(getBuffer(buffers, 'levels.txt')),
+  );
   constants.classes = _readClasses(
     parseTSV(getBuffer(buffers, 'charstats.txt')),
     parseTSV(getBuffer(buffers, 'playerclass.txt')),
@@ -180,6 +186,41 @@ function parseJSONStrings(file: string): Strings {
   }[];
   for (const str of data) {
     result[str.Key] = str.enUS;
+  }
+  return result;
+}
+
+function _readWaypointActs(actinfoTsv: TSV, levelsTsv: TSV): string[][] {
+  // Build Name → LevelName map from levels.txt
+  const cName = levelsTsv.header.indexOf('Name');
+  const cLevelName = levelsTsv.header.indexOf('LevelName');
+  const nameToLevelName = new Map<string, string>();
+  for (let i = 1; i < levelsTsv.lines.length; i++) {
+    const name = levelsTsv.lines[i][cName];
+    const levelName = levelsTsv.lines[i][cLevelName];
+    if (name && levelName) {
+      nameToLevelName.set(name, levelName);
+    }
+  }
+
+  // Collect waypoint columns (waypoint1..waypoint9)
+  const waypointCols: number[] = [];
+  for (let j = 1; j <= 9; j++) {
+    waypointCols.push(actinfoTsv.header.indexOf(`waypoint${j}`));
+  }
+
+  const result: string[][] = [];
+  for (let i = 1; i < actinfoTsv.lines.length; i++) {
+    const line = actinfoTsv.lines[i];
+    if (!line[0]) continue; // skip empty rows
+    const levelNames: string[] = [];
+    for (const col of waypointCols) {
+      const levelName = line[col];
+      if (!levelName) break; // trailing empty slots = end of this act's waypoints
+      const resolvedLevelName = nameToLevelName.get(levelName);
+      if (resolvedLevelName) levelNames.push(resolvedLevelName);
+    }
+    result.push(levelNames);
   }
   return result;
 }

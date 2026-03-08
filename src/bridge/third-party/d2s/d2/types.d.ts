@@ -15,13 +15,15 @@ export interface IConstantData {
   runewords: any[];
   set_items: any[];
   unq_items: any[];
+  /** Per-act waypoint level keys. waypoint_acts[actIndex] = array of *StringName values in bit order. */
+  waypoint_acts: string[][];
 }
 
 export interface ICorpse {
   items: IItem[];
-  unknown_4: number;    // 4 bytes, purpose unknown
-  x_position: number;  // 4 bytes, corpse x position on map
-  y_position: number;  // 4 bytes, corpse y position on map
+  unknown_4: number; // 4 bytes, purpose unknown
+  x_position: number; // 4 bytes, corpse x position on map
+  y_position: number; // 4 bytes, corpse y position on map
 }
 
 export interface ID2S {
@@ -75,46 +77,46 @@ export interface INPC {
 }
 
 export interface INPCS {
-  warriv_act_ii: INPC;  // bit 0
-  unknown_1: INPC;      // bit 1
-  charsi: INPC;         // bit 2
-  warriv_act_i: INPC;   // bit 3
-  kashya: INPC;         // bit 4
-  akara: INPC;          // bit 5
-  gheed: INPC;          // bit 6
-  unknown_2: INPC;      // bit 7
-  greiz: INPC;          // bit 8
-  jerhyn: INPC;         // bit 9
-  meshif_act_ii: INPC;  // bit 10
-  geglash: INPC;        // bit 11
-  lysnader: INPC;       // bit 12
-  fara: INPC;           // bit 13
-  drogan: INPC;         // bit 14
-  unknown_3: INPC;      // bit 15
-  alkor: INPC;          // bit 16
-  hratli: INPC;         // bit 17
-  ashera: INPC;         // bit 18
-  unknown_4: INPC;      // bit 19
-  unknown_5: INPC;      // bit 20
-  cain_act_iii: INPC;   // bit 21
-  unknown_6: INPC;      // bit 22
-  elzix: INPC;          // bit 23
-  malah: INPC;          // bit 24
-  anya: INPC;           // bit 25
-  unknown_7: INPC;      // bit 26
-  natalya: INPC;        // bit 27
+  warriv_act_ii: INPC; // bit 0
+  unknown_1: INPC; // bit 1
+  charsi: INPC; // bit 2
+  warriv_act_i: INPC; // bit 3
+  kashya: INPC; // bit 4
+  akara: INPC; // bit 5
+  gheed: INPC; // bit 6
+  unknown_2: INPC; // bit 7
+  greiz: INPC; // bit 8
+  jerhyn: INPC; // bit 9
+  meshif_act_ii: INPC; // bit 10
+  geglash: INPC; // bit 11
+  lysnader: INPC; // bit 12
+  fara: INPC; // bit 13
+  drogan: INPC; // bit 14
+  unknown_3: INPC; // bit 15
+  alkor: INPC; // bit 16
+  hratli: INPC; // bit 17
+  ashera: INPC; // bit 18
+  unknown_4: INPC; // bit 19
+  unknown_5: INPC; // bit 20
+  cain_act_iii: INPC; // bit 21
+  unknown_6: INPC; // bit 22
+  elzix: INPC; // bit 23
+  malah: INPC; // bit 24
+  anya: INPC; // bit 25
+  unknown_7: INPC; // bit 26
+  natalya: INPC; // bit 27
   meshif_act_iii: INPC; // bit 28
-  unknown_8: INPC;      // bit 29
-  unknown_9: INPC;      // bit 30
-  ormus: INPC;          // bit 31
-  unknown_10: INPC;     // bit 32
-  unknown_11: INPC;     // bit 33
-  unknown_12: INPC;     // bit 34
-  unknown_13: INPC;     // bit 35
-  unknown_14: INPC;     // bit 36
-  cain_act_v: INPC;     // bit 37
-  qualkehk: INPC;       // bit 38
-  nihlathak: INPC;      // bit 39
+  unknown_8: INPC; // bit 29
+  unknown_9: INPC; // bit 30
+  ormus: INPC; // bit 31
+  unknown_10: INPC; // bit 32
+  unknown_11: INPC; // bit 33
+  unknown_12: INPC; // bit 34
+  unknown_13: INPC; // bit 35
+  unknown_14: INPC; // bit 36
+  cain_act_v: INPC; // bit 37
+  qualkehk: INPC; // bit 38
+  nihlathak: INPC; // bit 39
 }
 
 export interface IQuest {
@@ -147,17 +149,8 @@ export interface IActIQuests {
   completed: number;
 }
 
-export interface IActIWaypoints {
-  rogue_encampement: boolean;
-  cold_plains: boolean;
-  stony_field: boolean;
-  dark_woods: boolean;
-  black_marsh: boolean;
-  outer_cloister: boolean;
-  jail_lvl_1: boolean;
-  inner_cloister: boolean;
-  catacombs_lvl_2: boolean;
-}
+/** Waypoint flags for an act, keyed by the *StringName from levels.txt. */
+export type IActWaypoints = { [levelName: string]: boolean };
 
 export interface IActIIQuests {
   introduced: number;
@@ -170,17 +163,6 @@ export interface IActIIQuests {
   completed: number;
 }
 
-export interface IActIIWaypoints {
-  lut_gholein: boolean;
-  sewers_lvl_2: boolean;
-  dry_hills: boolean;
-  halls_of_the_dead_lvl_2: boolean;
-  far_oasis: boolean;
-  lost_city: boolean;
-  palace_cellar_lvl_1: boolean;
-  arcane_sanctuary: boolean;
-  canyon_of_the_magi: boolean;
-}
 
 export interface IActIIIQuests {
   introduced: number;
@@ -193,17 +175,6 @@ export interface IActIIIQuests {
   completed: number;
 }
 
-export interface IActIIIWaypoints {
-  kurast_docks: boolean;
-  spider_forest: boolean;
-  great_marsh: boolean;
-  flayer_jungle: boolean;
-  lower_kurast: boolean;
-  kurast_bazaar: boolean;
-  upper_kurast: boolean;
-  travincal: boolean;
-  durance_of_hate_lvl_2: boolean;
-}
 
 export interface IActIVQuests {
   introduced: number;
@@ -213,11 +184,6 @@ export interface IActIVQuests {
   completed: number;
 }
 
-export interface IActIVWaypoints {
-  the_pandemonium_fortress: boolean;
-  city_of_the_damned: boolean;
-  river_of_flame: boolean;
-}
 
 export interface IActVQuests {
   introduced: number;
@@ -230,17 +196,6 @@ export interface IActVQuests {
   completed: number; // raw UInt16 — contains bitmask state beyond a simple boolean
 }
 
-export interface IActVWaypoints {
-  harrogath: boolean;
-  frigid_highlands: boolean;
-  arreat_plateau: boolean;
-  crystalline_passage: boolean;
-  halls_of_pain: boolean;
-  glacial_trail: boolean;
-  frozen_tundra: boolean;
-  the_ancients_way: boolean;
-  worldstone_keep_lvl_2: boolean;
-}
 
 export interface IQuests {
   act_i: IActIQuests;
@@ -255,11 +210,8 @@ export interface IQuests {
 }
 
 export interface IWaypoints {
-  act_i: IActIWaypoints;
-  act_ii: IActIIWaypoints;
-  act_iii: IActIIIWaypoints;
-  act_iv: IActIVWaypoints;
-  act_v: IActVWaypoints;
+  /** One entry per act (in order), each mapping *StringName → unlocked flag. */
+  acts: IActWaypoints[];
   unknown_header?: Uint8Array; // 2 bytes before waypoint bits (preserved for round-tripping)
   unknown_trailing?: Uint8Array; // 17 bytes after waypoint bits (preserved for round-tripping)
 }
@@ -268,7 +220,7 @@ export interface INPCData {
   normal: INPCS;
   nm: INPCS;
   hell: INPCS;
-  unknown_gap?: Uint8Array;      // 9 bytes between intro and congrats sections
+  unknown_gap?: Uint8Array; // 9 bytes between intro and congrats sections
   unknown_trailing?: Uint8Array; // 9 bytes after congrats section
 }
 
@@ -284,7 +236,7 @@ export interface IHeader {
   checksum: string;
   name: string;
   status: IStatus;
-  class: string;
+  class_id: number;
   created: number;
   last_played: number;
   menu_appearance: ICharMenuAppearance;
@@ -293,7 +245,6 @@ export interface IHeader {
   left_swap_skill: string;
   right_swap_skill: string;
   merc_id: string;
-  assigned_skills: string[];
   quests_normal: IQuests;
   quests_nm: IQuests;
   quests_hell: IQuests;
@@ -325,7 +276,7 @@ export interface IHeader {
   unknown_after_realm?: Uint8Array;
   unknown_after_name?: Uint8Array;
   // raw 32-bit skill IDs for the 16 hotkey slots (preserved verbatim for round-tripping)
-  assigned_skill_ids?: number[];
+  assigned_skill_ids: number[];
   // stat IDs in the order they appear in the save file (preserved for round-tripping)
   attributes_order?: number[];
 }
@@ -340,7 +291,6 @@ export interface IStatus {
 export interface ISkill {
   id: number;
   points: number;
-  name: string;
 }
 
 export interface IItem {
@@ -388,7 +338,6 @@ export interface IItem {
   magic_suffix: number;
   magic_suffix_name: string;
   runeword_id: number;
-  runeword_name: string;
   runeword_attributes: IMagicProperty[];
   set_id: number;
   set_name: string;

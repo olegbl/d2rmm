@@ -14,7 +14,7 @@
     "build:updater:mac": "pkg -t node22-macos-arm64 -o tools/updater src/updater/main.js",
     "build:config-schema": "npx typescript-json-schema --strictNullChecks --require --noExtraProps --aliasRefs --out \"mods/config-schema.json\" \"src/bridge/ModConfig.d.ts\" \"ModConfig\"",
     "rebuild": "npx @electron/rebuild --parallel --types prod,dev,optional --module-dir release/app",
-    "lint": "cross-env NODE_ENV=development eslint ./src/ --ext .js,.jsx,.ts,.tsx --cache --cache-strategy metadata",
+    "lint": "node lint.js",
     "prepackage": "node ./.erb/scripts/prepackage.js",
     "package": "ts-node ./.erb/scripts/clean.js dist && npm run build --no-warnings && electron-builder build --publish never",
     "postinstall": "ts-node .erb/scripts/check-native-dep.js && electron-builder install-app-deps && cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.dev.dll.ts && opencollective-postinstall",
@@ -27,9 +27,7 @@
     "docs": "typedoc"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "cross-env NODE_ENV=development eslint --cache"
-    ],
+    "*.{js,jsx,ts,tsx}": ["cross-env NODE_ENV=development eslint --cache"],
     "*.json,.{eslintrc,prettierrc}": [
       "prettier --ignore-path .eslintignore --parser json --write"
     ],
@@ -50,32 +48,22 @@
       "**/node_modules/@jitl/quickjs-wasmfile-release-asyncify/dist/{index.js,emscripten-module.mjs,emscripten-module.wasm}"
     ],
     "win": {
-      "target": [
-        "zip"
-      ]
+      "target": ["zip"]
     },
     "mac": {
       "target": [
         {
           "target": "dmg",
-          "arch": [
-            "arm64"
-          ]
+          "arch": ["arm64"]
         }
       ],
       "category": "public.app-category.utilities"
     },
     "protocols": {
       "name": "nxm",
-      "schemes": [
-        "nxm"
-      ]
+      "schemes": ["nxm"]
     },
-    "files": [
-      "dist",
-      "node_modules",
-      "package.json"
-    ],
+    "files": ["dist", "node_modules", "package.json"],
     "directories": {
       "app": "release/app",
       "buildResources": "assets",
@@ -85,39 +73,29 @@
       {
         "from": "assets",
         "to": "assets",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       },
       {
         "from": "node_modules/source-map/lib",
         "to": "app.asar.unpacked/dist/main",
-        "filter": [
-          "mappings.wasm"
-        ]
+        "filter": ["mappings.wasm"]
       }
     ],
     "extraFiles": [
       {
         "from": "extras",
         "to": "./",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       },
       {
         "from": "tools",
         "to": "tools",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       },
       {
         "from": "mods.empty",
         "to": "mods",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       }
     ],
     "afterSign": "./afterSign.js",
@@ -201,6 +179,7 @@
     "mini-css-extract-plugin": "^2.4.5",
     "opencollective-postinstall": "^2.0.3",
     "prettier": "^3.3.2",
+    "prettier-plugin-sort-json": "^4.2.0",
     "quickjs-emscripten": "^0.29.2",
     "react-refresh": "^0.14.2",
     "react-refresh-typescript": "^2.0.9",
@@ -330,10 +309,14 @@
   "prettier": {
     "overrides": [
       {
-        "files": [
-          ".prettierrc",
-          ".eslintrc"
-        ],
+        "files": ["package.json", ".prettierrc", ".eslintrc"],
+        "options": {
+          "parser": "json",
+          "plugins": []
+        }
+      },
+      {
+        "files": ["src/locales/*.json"],
         "options": {
           "parser": "json"
         }
@@ -341,6 +324,7 @@
     ],
     "singleQuote": true,
     "plugins": [
+      "prettier-plugin-sort-json",
       "@trivago/prettier-plugin-sort-imports"
     ],
     "importOrder": [

@@ -163,7 +163,6 @@ export interface IActIIQuests {
   completed: number;
 }
 
-
 export interface IActIIIQuests {
   introduced: number;
   lam_esens_tome: IQuest;
@@ -175,7 +174,6 @@ export interface IActIIIQuests {
   completed: number;
 }
 
-
 export interface IActIVQuests {
   introduced: number;
   the_fallen_angel: IQuest;
@@ -183,7 +181,6 @@ export interface IActIVQuests {
   hellforge: IQuest;
   completed: number;
 }
-
 
 export interface IActVQuests {
   introduced: number;
@@ -195,7 +192,6 @@ export interface IActVQuests {
   eve_of_destruction: IQuest;
   completed: number; // raw UInt16 — contains bitmask state beyond a simple boolean
 }
-
 
 export interface IQuests {
   act_i: IActIQuests;

@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "在位元組偏移量 {{offset}} 處找不到項目標頭“JM”（而是找到“{{found}}”）",
   "d2s.parse.items.listHeaderNotFound": "在位元組偏移量 {{offset}} 處找不到項目清單標頭「JM」（而是找到「{{found}}」）",
   "d2s.parse.items.mercHeaderNotFound": "在位元組偏移量 {{offset}} 處未找到僱傭兵物品清單標頭「jf」（而是找到「{{found}}」）",
-  "d2s.parse.items.missingBits": "統計資料「{{stat}}」（ID：{{id}}）在 itemstatcost.txt 中缺少「保存位元」欄位。這表示遊戲資料已損壞或不完整。",
+  "d2s.parse.items.missingBits": "統計資料「{{stat}}」（ID：{{id}}）在 itemstatcost.txt 中缺少「Save Bits」欄位。\n這表示遊戲資料已損壞或不完整。",
   "d2s.parse.items.parseItemFailed": "無法解析項目 {{item}}",
   "d2s.parse.items.readCorpseFailed": "無法讀取屍體 {{index}}（共 {{count}} 個）",
   "d2s.parse.items.readCorpseItemsFailed": "無法讀取 {{char}} 的屍體物品",

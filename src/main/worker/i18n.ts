@@ -13,8 +13,6 @@ import ruRU from '../../locales/ru-RU.json';
 import zhCN from '../../locales/zh-CN.json';
 import zhTW from '../../locales/zh-TW.json';
 
-export { isI18nConsoleArg } from '../../shared/i18n';
-
 export async function initI18n(): Promise<void> {
   const locale =
     // get locale passed from main thread

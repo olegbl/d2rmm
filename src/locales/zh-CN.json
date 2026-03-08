@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "在字节偏移量 {{offset}} 处未找到项目标头“JM”（而是找到“{{found}}”）",
   "d2s.parse.items.listHeaderNotFound": "在字节偏移量 {{offset}} 处未找到项目列表标头“JM”（而是找到“{{found}}”）",
   "d2s.parse.items.mercHeaderNotFound": "在字节偏移量 {{offset}} 处未找到雇佣兵物品列表标头“jf”（而是找到“{{found}}”）",
-  "d2s.parse.items.missingBits": "统计数据“{{stat}}”（ID：{{id}}）在 itemstatcost.txt 中缺少“保存位”字段。\n这表明游戏数据已损坏或不完整。",
+  "d2s.parse.items.missingBits": "统计数据“{{stat}}”（ID：{{id}}）在 itemstatcost.txt 中缺少“Save Bits”字段。\n这表明游戏数据已损坏或不完整。",
   "d2s.parse.items.parseItemFailed": "无法解析项目 {{item}}",
   "d2s.parse.items.readCorpseFailed": "无法读取尸体 {{index}}（共 {{count}} 个）",
   "d2s.parse.items.readCorpseItemsFailed": "无法读取 {{char}} 的尸体物品",

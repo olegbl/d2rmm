@@ -16,8 +16,7 @@ import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedData
 import { useFinalSavesPath } from 'renderer/react/context/SavesPathContext';
 import { useTabState } from 'renderer/react/context/TabContext';
 import useToast from 'renderer/react/hooks/useToast';
-import i18next from 'i18next';
-import { isI18nConsoleArg, isI18nError } from 'shared/i18n';
+import { localizeConsoleArgs } from 'shared/i18n';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -101,15 +100,7 @@ export default function useInstallMods(
             ? 'install.toast.error.uninstall'
             : 'install.toast.error.install',
         ),
-        description: isI18nError(error)
-          ? error.i18nChain
-              .map((entry) =>
-                isI18nConsoleArg(entry)
-                  ? i18next.t(entry.key, entry.args ?? {})
-                  : String(entry),
-              )
-              .join(':\n')
-          : String(error),
+        description: localizeConsoleArgs([error as ConsoleArg]).join(' '),
       });
       // switch to the logs tab so user can see what happened
       setTab('logs');

@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Cabeçalho do item 'JM' não encontrado (encontrado '{{found}}' em vez disso) no deslocamento de byte {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Cabeçalho da lista de itens 'JM' não encontrado (encontrado '{{found}}' em vez disso) no deslocamento de byte {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Cabeçalho da lista de itens mercenários 'jf' não encontrado (encontrado '{{found}}' em vez disso) no deslocamento de byte {{offset}}",
-  "d2s.parse.items.missingBits": "Stat \"{{stat}}\" (ID: {{id}}) não tem o campo \"Salvar bits\" em itemstatcost.txt. \nIsso indica dados de jogo corrompidos ou incompletos.",
+  "d2s.parse.items.missingBits": "Stat \"{{stat}}\" (ID: {{id}}) não tem o campo \"Save Bits\" em itemstatcost.txt.\nIsso indica dados de jogo corrompidos ou incompletos.",
   "d2s.parse.items.parseItemFailed": "Falha ao analisar o item {{item}}",
   "d2s.parse.items.readCorpseFailed": "Falha ao ler o cadáver {{index}} de {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "Falha ao ler os itens do cadáver de {{char}}",

@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Intestazione elemento 'JM' non trovata (trovato invece '{{found}}') all'offset byte {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Intestazione dell'elenco di elementi 'JM' non trovata (trovato invece '{{found}}') all'offset byte {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Intestazione dell'elenco di oggetti mercenari 'jf' non trovata (trovato invece '{{found}}') all'offset di byte {{offset}}",
-  "d2s.parse.items.missingBits": "Nella statistica \"{{stat}}\" (ID: {{id}}) manca il campo \"Salva bit\" in itemstatcost.txt. \nCiò indica dati di gioco danneggiati o incompleti.",
+  "d2s.parse.items.missingBits": "Nella statistica \"{{stat}}\" (ID: {{id}}) manca il campo \"Save Bits\" in itemstatcost.txt.\nCiò indica dati di gioco danneggiati o incompleti.",
   "d2s.parse.items.parseItemFailed": "Impossibile analizzare l'elemento {{item}}",
   "d2s.parse.items.readCorpseFailed": "Impossibile leggere il cadavere {{index}} di {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "Impossibile leggere gli elementi del cadavere per {{char}}",

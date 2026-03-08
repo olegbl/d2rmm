@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Item header 'JM' not found (found '{{found}}' instead) at byte offset {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Item list header 'JM' not found (found '{{found}}' instead) at byte offset {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Mercenary item list header 'jf' not found (found '{{found}}' instead) at byte offset {{offset}}",
-  "d2s.parse.items.missingBits": "Stat \"{{stat}}\" (ID: {{id}}) is missing \"Save Bits\" field in itemstatcost.txt. This indicates corrupted or incomplete game data.",
+  "d2s.parse.items.missingBits": "Stat \"{{stat}}\" (ID: {{id}}) is missing \"Save Bits\" field in itemstatcost.txt.\nThis indicates corrupted or incomplete game data.",
   "d2s.parse.items.parseItemFailed": "Failed to parse item {{item}}",
   "d2s.parse.items.readCorpseFailed": "Failed to read corpse {{index}} of {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "Failed to read corpse items for {{char}}",

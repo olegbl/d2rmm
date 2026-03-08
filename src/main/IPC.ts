@@ -117,7 +117,7 @@ export function registerWorker(worker: ChildProcess): void {
                   message: error.message,
                   stack: error.stack,
                   ...(isI18nError(error) && {
-                    i18nChain: error.i18nChain,
+                    __d2rmm_i18n_list: error.__d2rmm_i18n_list,
                   }),
                 },
               } as IPCMessageErrorResponse);
@@ -135,10 +135,12 @@ export function registerWorker(worker: ChildProcess): void {
           error.name = message.error.name;
           error.message = message.error.message;
           error.stack = message.error.stack;
-          if (message.error.i18nChain != null) {
+          if (message.error.__d2rmm_i18n_list != null) {
             (
-              error as Error & { i18nChain: typeof message.error.i18nChain }
-            ).i18nChain = message.error.i18nChain;
+              error as Error & {
+                __d2rmm_i18n_list: typeof message.error.__d2rmm_i18n_list;
+              }
+            ).__d2rmm_i18n_list = message.error.__d2rmm_i18n_list;
           }
           request.reject(error);
         } else {
@@ -193,7 +195,7 @@ export async function initIPC(mainWindow: BrowserWindow): Promise<void> {
                       message: error.message,
                       stack: error.stack,
                       ...(isI18nError(error) && {
-                        i18nChain: error.i18nChain,
+                        __d2rmm_i18n_list: error.__d2rmm_i18n_list,
                       }),
                     },
                   } as IPCMessageErrorResponse);

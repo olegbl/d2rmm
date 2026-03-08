@@ -29,7 +29,7 @@ export type IPCMessageErrorResponse = {
     name: string;
     message: string;
     stack: string | undefined;
-    i18nChain?: ConsoleArg[];
+    __d2rmm_i18n_list?: ConsoleArg[];
   };
 };
 

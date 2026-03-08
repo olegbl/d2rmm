@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Element-Header „JM“ nicht gefunden (stattdessen „{{found}}“ gefunden) bei Byte-Offset {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Elementlisten-Header „JM“ nicht gefunden (stattdessen „{{found}}“ gefunden) bei Byte-Offset {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Kopfzeile „jf“ der Söldnergegenstandsliste nicht gefunden (stattdessen „{{found}}“ gefunden) bei Byte-Offset {{offset}}",
-  "d2s.parse.items.missingBits": "In der Statistik „{{stat}}“ (ID: {{id}}) fehlt das Feld „Save Bits“ in itemstatcost.txt. \nDies weist auf beschädigte oder unvollständige Spieldaten hin.",
+  "d2s.parse.items.missingBits": "In der Statistik „{{stat}}“ (ID: {{id}}) fehlt das Feld „Save Bits“ in itemstatcost.txt.\nDies weist auf beschädigte oder unvollständige Spieldaten hin.",
   "d2s.parse.items.parseItemFailed": "Element {{item}} konnte nicht analysiert werden",
   "d2s.parse.items.readCorpseFailed": "Leiche {{index}} von {{count}} konnte nicht gelesen werden",
   "d2s.parse.items.readCorpseItemsFailed": "Leichenelemente für {{char}} konnten nicht gelesen werden",

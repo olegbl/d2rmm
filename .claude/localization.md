@@ -130,21 +130,20 @@ Dot-notation, feature-first, snake_case leaves:
 
 ```json
 {
-  "tabs.mods": "Mods",
-  "tabs.settings": "Settings",
-
-  "modlist.noMods": "No Mods Found",
-  "modlist.action.delete": "Delete",
-
-  "settings.general.gamePath.label": "Game Path",
-  "settings.general.gamePath.placeholder": "Path to Diablo II: Resurrected",
-
+  "common.cancel": "Cancel",
+  "common.ok": "OK",
   "install.button.install": "Install Mods",
   "install.success": "Installed {{count}} mod",
   "install.success_other": "Installed {{count}} mods",
 
-  "common.ok": "OK",
-  "common.cancel": "Cancel"
+  "modlist.action.delete": "Delete",
+
+  "modlist.noMods": "No Mods Found",
+  "settings.general.gamePath.label": "Game Path",
+  "settings.general.gamePath.placeholder": "Path to Diablo II: Resurrected",
+
+  "tabs.mods": "Mods",
+  "tabs.settings": "Settings"
 }
 ```
 
@@ -377,7 +376,7 @@ Debug messages are developer-facing (IPC tracing, init sequences). They are filt
 
 ```typescript
 export type I18nError = Error & {
-  i18nChain: ConsoleArg[]; // ordered outermost→innermost; elements are typically I18nConsoleArg
+  __d2rmm_i18n_list: ConsoleArg[]; // ordered outermost→innermost; elements are typically I18nConsoleArg
 };
 ```
 
@@ -402,22 +401,14 @@ The English message (all chained context) is always preserved in `error.message`
 
 ### Displaying errors in the renderer
 
-There is no single helper for display. Use `isI18nError()` + translate `i18nChain` manually:
+Use `localizeConsoleArgs()` to localize and pretty print errors for display:
 
 ```typescript
 import i18next from 'i18next';
 import { isI18nError, isI18nConsoleArg } from 'shared/i18n';
 
 catch (error) {
-  const message = isI18nError(error)
-    ? error.i18nChain
-        .map((entry) =>
-          isI18nConsoleArg(entry)
-            ? i18next.t(entry.key, entry.args ?? {})
-            : String(entry),
-        )
-        .join(':\n')
-    : String(error);
+  const message = localizeConsoleArgs([error]).join('\n');
   showToast({ severity: 'error', description: message });
 }
 ```

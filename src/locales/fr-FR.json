@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "En-tête d'élément 'JM' introuvable (trouvé '{{found}}' à la place) au décalage d'octet {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "En-tête de liste d'éléments 'JM' introuvable (trouvé '{{found}}' à la place) au décalage d'octet {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "En-tête de liste d'objets mercenaires 'jf' introuvable (trouvé '{{found}}' à la place) au décalage d'octets {{offset}}",
-  "d2s.parse.items.missingBits": "La statistique \"{{stat}}\" (ID : {{id}}) ne dispose pas du champ \"Save Bits\" dans itemsstatcost.txt. \nCela indique des données de jeu corrompues ou incomplètes.",
+  "d2s.parse.items.missingBits": "La statistique \"{{stat}}\" (ID : {{id}}) ne dispose pas du champ \"Save Bits\" dans itemsstatcost.txt.\nCela indique des données de jeu corrompues ou incomplètes.",
   "d2s.parse.items.parseItemFailed": "Échec de l'analyse de l'élément {{item}}",
   "d2s.parse.items.readCorpseFailed": "Échec de la lecture du cadavre {{index}} de {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "Échec de la lecture des éléments du cadavre pour {{char}}",

@@ -21,11 +21,11 @@ export type I18nConsoleArg = {
  * An Error subtype that carries a localized error chain so the renderer can
  * display a fully localized version of the error and its context.
  *
- * Each element of `i18nChain` is a ConsoleArg — typically an I18nConsoleArg
+ * Each element of `__d2rmm_i18n_list` is a ConsoleArg — typically an I18nConsoleArg
  * produced by tl(). The chain is ordered from outermost context to innermost
  * error (index 0 = outermost). The English `error.message` is preserved for
- * d2rmm.log; the renderer translates `i18nChain` to build the localized display.
+ * d2rmm.log; the renderer translates `__d2rmm_i18n_list` to build the localized display.
  */
 export type I18nError = Error & {
-  i18nChain: ConsoleArg[];
+  __d2rmm_i18n_list: ConsoleArg[];
 };

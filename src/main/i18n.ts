@@ -16,8 +16,6 @@ import ruRU from '../locales/ru-RU.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
 
-export { isI18nConsoleArg } from '../shared/i18n';
-
 export function getLocaleConfigPath(): string {
   return path.resolve(path.join(app.getPath('userData'), 'd2rmm-locale.json'));
 }

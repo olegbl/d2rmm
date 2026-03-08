@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "바이트 오프셋 {{offset}}에서 항목 헤더 'JM'을 찾을 수 없습니다(대신 '{{found}}'를 찾았습니다).",
   "d2s.parse.items.listHeaderNotFound": "항목 목록 헤더 'JM'을 찾을 수 없습니다(대신 '{{found}}'를 찾았습니다).",
   "d2s.parse.items.mercHeaderNotFound": "용병 항목 목록 헤더 'jf'를 찾을 수 없습니다(대신 '{{found}}'를 찾았습니다).",
-  "d2s.parse.items.missingBits": "통계 \"{{stat}}\"(ID: {{id}})의 itemstatcost.txt에 \"비트 저장\" 필드가 없습니다. \n이는 게임 데이터가 손상되었거나 불완전함을 나타냅니다.",
+  "d2s.parse.items.missingBits": "통계 \"{{stat}}\"(ID: {{id}})의 itemstatcost.txt에 \"Save Bits\" 필드가 없습니다.\n이는 게임 데이터가 손상되었거나 불완전함을 나타냅니다.",
   "d2s.parse.items.parseItemFailed": "{{item}} 항목을 구문 분석하지 못했습니다.",
   "d2s.parse.items.readCorpseFailed": "{{count}}개 중 시체 {{index}}개를 읽지 못했습니다.",
   "d2s.parse.items.readCorpseItemsFailed": "{{char}}의 시체 항목을 읽지 못했습니다.",

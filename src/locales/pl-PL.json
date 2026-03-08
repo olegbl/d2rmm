@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Nie znaleziono nagłówka elementu „JM” (zamiast tego znaleziono „{{found}}”) w przesunięciu bajtu {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Nie znaleziono nagłówka listy pozycji „JM” (zamiast tego znaleziono „{{found}}”) w przesunięciu bajtu {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Nie znaleziono nagłówka listy przedmiotów najemników „jf” (zamiast tego znaleziono „{{found}}”) w przesunięciu bajtu {{offset}}",
-  "d2s.parse.items.missingBits": "W statystyce „{{stat}}” (ID: {{id}}) brakuje pola „Zapisz bity” w pliku itemstatcost.txt. \nOznacza to uszkodzone lub niekompletne dane gry.",
+  "d2s.parse.items.missingBits": "W statystyce „{{stat}}” (ID: {{id}}) brakuje pola „Save Bits” w pliku itemstatcost.txt.\nOznacza to uszkodzone lub niekompletne dane gry.",
   "d2s.parse.items.parseItemFailed": "Nie udało się przeanalizować elementu {{item}}",
   "d2s.parse.items.readCorpseFailed": "Nie udało się odczytać zwłok {{index}} z {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "Nie udało się odczytać elementów zwłok dla {{char}}",

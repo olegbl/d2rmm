@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Encabezado del elemento 'JM' no encontrado (en su lugar se encontró '{{found}}') en el desplazamiento de bytes {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Encabezado de lista de elementos 'JM' no encontrado (en su lugar se encontró '{{found}}') en el desplazamiento de bytes {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Encabezado de la lista de elementos mercenarios 'jf' no encontrado (en su lugar se encontró '{{found}}') en el desplazamiento de bytes {{offset}}",
-  "d2s.parse.items.missingBits": "A la estadística \"{{stat}}\" (ID: {{id}}) le falta el campo \"Guardar bits\" en itemstatcost.txt. \nEsto indica datos del juego corruptos o incompletos.",
+  "d2s.parse.items.missingBits": "A la estadística \"{{stat}}\" (ID: {{id}}) le falta el campo \"Save Bits\" en itemstatcost.txt.\nEsto indica datos del juego corruptos o incompletos.",
   "d2s.parse.items.parseItemFailed": "No se pudo analizar el elemento {{item}}",
   "d2s.parse.items.readCorpseFailed": "No se pudo leer el cadáver {{index}} de {{count}}",
   "d2s.parse.items.readCorpseItemsFailed": "No se pudieron leer los elementos del cadáver de {{char}}",

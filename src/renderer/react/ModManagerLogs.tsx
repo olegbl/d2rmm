@@ -1,6 +1,5 @@
 import type { ILogLevel } from 'bridge/ConsoleAPI';
 import { LocaleAPI } from 'renderer/LocaleAPI';
-import { isI18nConsoleArg } from 'renderer/i18n';
 import { useIsInstalling } from 'renderer/react/context/InstallContext';
 import {
   useLogLevels,
@@ -8,6 +7,11 @@ import {
   useLogs,
 } from 'renderer/react/context/LogContext';
 import i18next from 'i18next';
+import {
+  isI18nError,
+  isI18nConsoleArg,
+  localizeConsoleArgs,
+} from 'shared/i18n';
 import {
   MouseEvent,
   useCallback,
@@ -51,14 +55,23 @@ import {
 
 const ROW_HEIGHT = 80;
 
-function prettyPrintData(data: unknown): string {
+function prettyPrintData(data: unknown, t: typeof i18next.t): string {
   if (isI18nConsoleArg(data)) {
-    return i18next.t(data.key, data.args);
+    return localizeConsoleArgs([data as ConsoleArg], t).join(' ');
+  }
+
+  if (isI18nError(data)) {
+    return localizeConsoleArgs([data as ConsoleArg], t).join(':\n\t');
+  }
+
+  if (data instanceof Error) {
+    return error.message;
   }
 
   if (Array.isArray(data)) {
-    return data.map(prettyPrintData).join(' ');
+    return data.map((arg) => prettyPrintData(arg, t)).join(' ');
   }
+
   if (typeof data === 'object') {
     try {
       return JSON.stringify(data);
@@ -66,6 +79,7 @@ function prettyPrintData(data: unknown): string {
       return String(data);
     }
   }
+
   return String(data);
 }
 
@@ -114,14 +128,14 @@ export default function ModManagerLogs(_props: Props): JSX.Element {
           .map((log) => [
             new Date(log.timestamp).toISOString(),
             log.level,
-            ...log.data.map(prettyPrintData),
+            ...log.data.map((arg) => prettyPrintData(arg, t)),
           ])
           .map((log) => log.join(','))
           .join('\n'),
       )
       .catch(console.error);
     onCloseExportMenu();
-  }, [logs, onCloseExportMenu]);
+  }, [logs, onCloseExportMenu, t]);
 
   const filteredLogs = useMemo(
     () =>
@@ -129,14 +143,14 @@ export default function ModManagerLogs(_props: Props): JSX.Element {
         .filter((log) => levels.includes(log.level))
         .map((log) => ({
           ...log,
-          text: log.data.map(prettyPrintData).join(' '),
+          text: log.data.map((arg) => prettyPrintData(arg, t)).join(' '),
         }))
         .filter(
           (log) =>
             filter === '' ||
             log.text.toLowerCase().includes(filter.toLowerCase()),
         ),
-    [logs, levels, filter],
+    [logs, levels, t, filter],
   );
 
   // @@

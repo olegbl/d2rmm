@@ -10,17 +10,18 @@ export function getTEnUS(): ReturnType<typeof i18next.getFixedT> {
 export function isI18nConsoleArg(arg: unknown): arg is I18nConsoleArg {
   return (
     typeof arg === 'object' &&
-    arg !== null &&
+    arg != null &&
     '__d2rmm_i18n' in arg &&
     (arg as I18nConsoleArg).__d2rmm_i18n === true
   );
 }
 
-export function isI18nError(error: unknown): error is I18nError {
+export function isI18nError(arg: unknown): arg is I18nError {
   return (
-    error instanceof Error &&
-    'i18nChain' in error &&
-    Array.isArray((error as I18nError).i18nChain)
+    typeof arg === 'object' &&
+    arg != null &&
+    '__d2rmm_i18n_list' in arg &&
+    Array.isArray((arg as I18nError).__d2rmm_i18n_list)
   );
 }
 
@@ -51,7 +52,7 @@ export function tl(
  *   If the inner error is an I18nError, its chain is preserved and extended.
  *
  * The full English message chain is always preserved in `error.message`
- * for d2rmm.log. The renderer translates `i18nChain` to build localized display.
+ * for d2rmm.log. The renderer translates `__d2rmm_i18n_list` to build localized display.
  *
  * @example
  *   // simple throw
@@ -71,22 +72,27 @@ export function te(
       ? contextMessage
       : `${contextMessage}:\n${error instanceof Error ? error.message : String(error)}`,
   ) as I18nError;
-  const innerChain: ConsoleArg[] = isI18nError(error) ? error.i18nChain : [];
-  newError.i18nChain = [tl(key, args), ...innerChain];
+  const innerChain: ConsoleArg[] = isI18nError(error)
+    ? error.__d2rmm_i18n_list
+    : [];
+  newError.__d2rmm_i18n_list = [tl(key, args), ...innerChain];
   if (error instanceof Error) {
     newError.stack = error.stack;
   }
   return newError;
 }
 
-export function localizeConsoleArgs(args: ConsoleArg[]): ConsoleArg[] {
-  return args.map((arg) =>
+export function localizeConsoleArgs(
+  args: ConsoleArg[],
+  t?: typeof i18next.t | null,
+): ConsoleArg[] {
+  return args.flatMap((arg) =>
     isI18nConsoleArg(arg)
-      ? (getTEnUS()(arg.key, arg.args) as ConsoleArg)
+      ? [(t ?? getTEnUS())(arg.key, arg.args)]
       : isI18nError(arg)
-        ? localizeConsoleArgs(arg.i18nChain)
+        ? localizeConsoleArgs(arg.__d2rmm_i18n_list, t)
         : arg instanceof Error
-          ? arg.stack
-          : arg,
+          ? [arg.stack]
+          : [arg],
   );
 }

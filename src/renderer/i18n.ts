@@ -14,8 +14,6 @@ import zhCN from 'locales/zh-CN.json';
 import zhTW from 'locales/zh-TW.json';
 import { initReactI18next } from 'react-i18next';
 
-export { isI18nConsoleArg } from 'shared/i18n';
-
 export const LOCALE_DISPLAY_NAMES = {
   'en-US': 'English (US)',
   'de-DE': 'Deutsch',

@@ -61,7 +61,7 @@
   "d2s.parse.items.itemHeaderNotFound": "Заголовок элемента 'JM' не найден (вместо этого найден '{{found}}') по смещению байтов {{offset}}",
   "d2s.parse.items.listHeaderNotFound": "Заголовок списка элементов 'JM' не найден (вместо этого найден '{{found}}') по смещению байтов {{offset}}",
   "d2s.parse.items.mercHeaderNotFound": "Заголовок списка предметов наемников 'jf' не найден (вместо этого найден '{{found}}') по смещению байтов {{offset}}",
-  "d2s.parse.items.missingBits": "В статистике «{{stat}}» (идентификатор: {{id}}) отсутствует поле «Сохранить биты» в itemstatcost.txt. \nЭто указывает на поврежденные или неполные игровые данные.",
+  "d2s.parse.items.missingBits": "В статистике «{{stat}}» (идентификатор: {{id}}) отсутствует поле «Save Bits» в itemstatcost.txt.\nЭто указывает на поврежденные или неполные игровые данные.",
   "d2s.parse.items.parseItemFailed": "Не удалось проанализировать элемент {{item}}.",
   "d2s.parse.items.readCorpseFailed": "Не удалось прочитать труп {{index}} из {{count}}.",
   "d2s.parse.items.readCorpseItemsFailed": "Не удалось прочитать предметы трупа для {{char}}.",

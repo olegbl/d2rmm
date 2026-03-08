@@ -181,7 +181,7 @@ Key types: `ICollectionPayload`, `ICollectionManifest` in [src/bridge/NexusModsA
 - Updater binaries are built by `prepackage` script, not checked into git
 - `@electron/rebuild` v4 requires Node ≥22.12.0
 
-More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/patterns.md](.claude/patterns.md) | [.claude/codebase-map.md](.claude/codebase-map.md)
+More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/patterns.md](.claude/patterns.md) | [.claude/codebase-map.md](.claude/codebase-map.md) | [.claude/localization.md](.claude/localization.md)
 
 ---
 

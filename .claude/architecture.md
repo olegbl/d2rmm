@@ -33,49 +33,17 @@ D2RMM runs three processes that communicate via a shared IPC/RPC system:
 
 ---
 
-## IPC System (`src/main/IPC.ts`)
+## IPC System
 
-### `provideAPI(namespace, api, broadcast?)`
-Registers an API handler in the current process. When a request arrives for `namespace`, it calls the matching method.
+**Full reference**: [.claude/ipc-architecture.md](.claude/ipc-architecture.md)
 
-```typescript
-provideAPI('MyAPI', {
-  doThing: async (arg: string): Promise<string> => {
-    return `result: ${arg}`;
-  },
-});
-```
-
-- `broadcast: true` — fire-and-forget; no response sent back (used for events)
-
-### `consumeAPI<T>(namespace, localAPI?, broadcast?)`
-Returns a Proxy that converts method calls into IPC requests and awaits responses.
-
-```typescript
-const api = consumeAPI<IMyAPI>('MyAPI');
-const result = await api.doThing('hello'); // → IPC round-trip
-```
-
-- The type parameter `T` must match the bridge interface in `src/bridge/`
-- `localAPI` — optional override methods handled locally (no IPC needed)
-
-### Message Schema (`src/bridge/IPC.d.ts`)
-```typescript
-// Request:  { id, namespace, api, args[] }
-// Success:  { id, result }
-// Error:    { id, error: { name, message, stack } }
-```
-
-`id` is generated as `"main:0"`, `"renderer:0"` etc. to track pending promises.
-
-### Type Constraints (`src/bridge/API.d.ts`)
-All API methods must:
-- Accept only `SerializableType` arguments
-- Return `Promise<SerializableType>` or `Promise<void>`
-
-`SerializableType` = `null | boolean | number | string | SerializableType[] | { [key: string]: SerializableType }`
-
-**No Buffers in bridge calls.** Binary data is passed as `number[]`.
+Quick summary:
+- `provideAPI(namespace, impl, broadcast?)` — registers a handler in the current process
+- `consumeAPI<T>(namespace, localAPI?, broadcast?)` — returns a Proxy that makes IPC calls
+- Main forwards all messages between renderer and worker; any thread can call any API
+- `broadcast: true` = fire-and-forget (no response); used for ConsoleAPI, EventAPI, LocaleAPI
+- All args/returns must be `SerializableType` — no Buffers, class instances, or functions
+- Import from `renderer/IPC` in renderer, `./IPC` in main and worker
 
 ---
 
@@ -253,6 +221,8 @@ showDialog('my-dialog', <MyDialog onClose={() => hideDialog('my-dialog')} />);
 
 ## Adding a New Worker API — Step by Step
 
+See [.claude/ipc-architecture.md](.claude/ipc-architecture.md) for the full IPC reference including all patterns (main-only APIs, broadcast APIs, local overrides, renderer-only APIs).
+
 1. **Type definition** — add interface to `src/bridge/MyNewAPI.d.ts`:
 ```typescript
 export type IMyNewAPI = {
@@ -271,7 +241,7 @@ export async function initMyNewAPI(): Promise<void> {
       // implementation
       return `result: ${arg}`;
     },
-  } satisfies IMyNewAPI);
+  } as IMyNewAPI);
 }
 ```
 
@@ -282,16 +252,24 @@ import { initMyNewAPI } from './MyNewAPI';
 await initMyNewAPI();
 ```
 
-4. **Consume in renderer** — create a hook in `src/renderer/react/context/hooks/`:
+4. **Consume in renderer** — create `src/renderer/MyNewAPI.ts`:
 ```typescript
-import { consumeAPI } from 'renderer/IPC'; // renderer-side consumeAPI
 import type { IMyNewAPI } from 'bridge/MyNewAPI';
+import { consumeAPI } from 'renderer/IPC';
+
+const MyNewAPI = consumeAPI<IMyNewAPI>('MyNewAPI');
+
+export default MyNewAPI;
+```
+
+Then import it wherever needed (hooks, context, components):
+```typescript
+import MyNewAPI from 'renderer/MyNewAPI';
 
 export function useMyNewAPI() {
-  const api = useMemo(() => consumeAPI<IMyNewAPI>('MyNewAPI'), []);
   const doSomething = useCallback(async (arg: string) => {
-    return api.doSomething(arg);
-  }, [api]);
+    return MyNewAPI.doSomething(arg);
+  }, []);
   return { doSomething };
 }
 ```

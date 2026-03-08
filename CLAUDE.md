@@ -113,20 +113,27 @@ Key config locations:
 
 ## IPC Quick Reference
 
+**Full IPC reference**: [.claude/ipc-architecture.md](.claude/ipc-architecture.md) — read this before writing any IPC code.
+
 ```typescript
 // In worker (src/main/worker/SomeAPI.ts):
 provideAPI('SomeAPI', {
   doThing: async (arg: string): Promise<Result> => { ... }
-});
+} as ISomeAPI);
 
-// In renderer hook:
-const api = consumeAPI<ISomeAPI>('SomeAPI');
-const result = await api.doThing('value');
+// In renderer — consumeAPI at MODULE SCOPE (not inside hooks/components):
+const SomeAPI = consumeAPI<ISomeAPI>('SomeAPI');
+
+// Then in a hook or component:
+const result = await SomeAPI.doThing('value');
 ```
 
-All arguments and return values must be serializable (no functions, no class instances, no Buffers — use number[] for binary).
+Key rules:
 
-Full IPC architecture details: [.claude/architecture.md](.claude/architecture.md)
+- All args/returns must be serializable (no functions, class instances, Buffers — use `number[]` for binary)
+- Import `provideAPI`/`consumeAPI` from the correct thread's IPC module (`renderer/IPC` in renderer, `./IPC` in main/worker)
+- `broadcast: true` on both sides for fire-and-forget APIs (ConsoleAPI, EventAPI, LocaleAPI pattern)
+- Use `as IMyAPI` (not `satisfies`) when passing the implementation object to `provideAPI`
 
 ---
 
@@ -181,7 +188,7 @@ Key types: `ICollectionPayload`, `ICollectionManifest` in [src/bridge/NexusModsA
 - Updater binaries are built by `prepackage` script, not checked into git
 - `@electron/rebuild` v4 requires Node ≥22.12.0
 
-More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/patterns.md](.claude/patterns.md) | [.claude/codebase-map.md](.claude/codebase-map.md) | [.claude/localization.md](.claude/localization.md)
+More details: [.claude/architecture.md](.claude/architecture.md) | [.claude/ipc-architecture.md](.claude/ipc-architecture.md) | [.claude/patterns.md](.claude/patterns.md) | [.claude/codebase-map.md](.claude/codebase-map.md) | [.claude/localization.md](.claude/localization.md)
 
 ---
 

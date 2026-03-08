@@ -1,6 +1,6 @@
 import type { ILocaleAPI } from 'bridge/LocaleAPI';
+import { consumeAPI, provideAPI } from 'renderer/IPC';
 import i18next from 'i18next';
-import { consumeAPI, provideAPI } from './IPC';
 
 function getLocale(): string {
   return i18next.resolvedLanguage ?? i18next.language;
@@ -9,6 +9,7 @@ function getLocale(): string {
 async function setLocale(locale: string): Promise<void> {
   await i18next.changeLanguage(locale);
 }
+
 export async function initLocaleAPI(): Promise<void> {
   provideAPI(
     'LocaleAPI',

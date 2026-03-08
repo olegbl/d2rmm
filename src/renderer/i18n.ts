@@ -15,25 +15,7 @@ import zhTW from 'locales/zh-TW.json';
 import { isI18nError } from 'shared/i18n-log';
 import { initReactI18next } from 'react-i18next';
 
-export const SUPPORTED_LOCALES = [
-  'en-US',
-  'de-DE',
-  'fr-FR',
-  'es-ES',
-  'es-MX',
-  'it-IT',
-  'pl-PL',
-  'pt-BR',
-  'ru-RU',
-  'ko-KR',
-  'zh-TW',
-  'zh-CN',
-  'ja-JP',
-] as const;
-
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
-
-export const LOCALE_DISPLAY_NAMES: Record<Locale, string> = {
+export const LOCALE_DISPLAY_NAMES = {
   'en-US': 'English (US)',
   'de-DE': 'Deutsch',
   'fr-FR': 'Français',
@@ -47,42 +29,17 @@ export const LOCALE_DISPLAY_NAMES: Record<Locale, string> = {
   'zh-TW': '繁體中文',
   'zh-CN': '简体中文',
   'ja-JP': '日本語',
-};
+} as const;
 
-/**
- * Maps an arbitrary locale string (e.g. from app.getLocale()) to the nearest
- * supported D2RMM locale, or 'en-US' as fallback.
- */
-export function getNearestSupportedLocale(locale: string): Locale {
-  // Exact match
-  if (SUPPORTED_LOCALES.includes(locale as Locale)) {
-    return locale as Locale;
-  }
-  // Language-only match (e.g. 'de' → 'de-DE', 'zh' → 'zh-CN')
-  const lang = locale.split('-')[0].toLowerCase();
-  const match = SUPPORTED_LOCALES.find((l) =>
-    l.toLowerCase().startsWith(lang + '-'),
-  );
-  return match ?? 'en-US';
-}
+export async function initI18n(): Promise<void> {
+  const locale =
+    // get locale passed from main thread
+    window.env.locale ??
+    // fall back to default locale for system
+    navigator.language ??
+    // fall back to English
+    'en-US';
 
-/**
- * Read the saved locale from localStorage, falling back to 'en-US'.
- * Called before React renders so we can't use useSavedState here.
- */
-export function getSavedLocale(): Locale {
-  try {
-    const saved = localStorage.getItem('locale');
-    if (saved != null && SUPPORTED_LOCALES.includes(saved as Locale)) {
-      return saved as Locale;
-    }
-  } catch {
-    // ignore
-  }
-  return 'en-US';
-}
-
-export async function initI18n(locale: Locale): Promise<void> {
   await i18n.use(initReactI18next).init({
     lng: locale,
     fallbackLng: 'en-US',

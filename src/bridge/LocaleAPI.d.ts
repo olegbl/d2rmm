@@ -1,12 +1,11 @@
 export type ILocaleAPI = {
   /**
-   * Persists the selected locale to disk (d2rmm-locale.json) so the main
-   * process and future worker instances can read it at startup.
+   * Sets t he currently active locale (and persists the change to disk).
    */
   setLocale(locale: string): Promise<void>;
 
   /**
-   * Returns the currently active locale for the worker process.
+   * Returns the currently active locale.
    */
-  getLocale(): Promise<string>;
+  getLocale(): string;
 };

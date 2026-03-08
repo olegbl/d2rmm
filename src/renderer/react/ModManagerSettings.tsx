@@ -1,11 +1,8 @@
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
+import { LocaleAPI } from 'renderer/LocaleAPI';
 import ShellAPI from 'renderer/ShellAPI';
-import i18n, {
-  LOCALE_DISPLAY_NAMES,
-  SUPPORTED_LOCALES,
-  type Locale,
-} from 'renderer/i18n';
+import i18n, { LOCALE_DISPLAY_NAMES } from 'renderer/i18n';
 import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -27,9 +24,8 @@ import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
-import useSavedState from 'renderer/react/hooks/useSavedState';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
@@ -107,20 +103,12 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
 
   const [themeMode, setThemeMode] = useThemeMode();
 
-  const [locale, setLocale] = useSavedState<Locale>('locale', 'en-US');
-
+  const [locale, setLocale] = useState(LocaleAPI.getLocale());
   const onLocaleChange = useCallback(
-    async (newLocale: Locale): Promise<void> => {
+    async (newLocale: string): Promise<void> => {
       setLocale(newLocale);
       await i18n.changeLanguage(newLocale);
-      try {
-        const LocaleAPI = (await import('renderer/BridgeAPI')).default;
-        await (
-          LocaleAPI as unknown as { setLocale: (l: string) => Promise<void> }
-        ).setLocale(newLocale);
-      } catch {
-        // LocaleAPI may not be available in all environments
-      }
+      await LocaleAPI.setLocale(newLocale);
     },
     [setLocale],
   );
@@ -504,16 +492,16 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             fullWidth={true}
             label={t('settings.display.language.label')}
             onChange={(event) =>
-              onLocaleChange(event.target.value as Locale).catch(console.error)
+              onLocaleChange(event.target.value).catch(console.error)
             }
             select={true}
             sx={{ marginTop: 2 }}
             value={locale}
             variant="filled"
           >
-            {SUPPORTED_LOCALES.map((l) => (
-              <MenuItem key={l} value={l}>
-                {LOCALE_DISPLAY_NAMES[l]}
+            {Object.entries(LOCALE_DISPLAY_NAMES).map(([locale, label]) => (
+              <MenuItem key={locale} value={locale}>
+                {label}
               </MenuItem>
             ))}
           </TextField>

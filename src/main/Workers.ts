@@ -3,7 +3,7 @@ import { app } from 'electron';
 import path from 'path';
 import { tl } from '../shared/i18n-log';
 import { registerWorker, unregisterWorker } from './IPC';
-import { readLocaleConfigSync } from './i18n';
+import { LocaleAPI } from './LocaleAPI';
 
 const workers: Set<ChildProcess> = new Set();
 
@@ -14,9 +14,7 @@ export function getWorkers(): Set<ChildProcess> {
 export async function spawnNewWorker(): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      const locale =
-        readLocaleConfigSync(app.getPath('userData')) ?? app.getLocale();
-      const workerEnv = { ...process.env, LOCALE: locale };
+      const workerEnv = { ...process.env, LOCALE: LocaleAPI.getLocale() };
       const worker = !app.isPackaged
         ? fork('./src/main/worker/worker.ts', [], {
             execArgv: ['-r', 'ts-node/register/transpile-only'],

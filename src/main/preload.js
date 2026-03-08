@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('IPCBridge', {
 
 contextBridge.exposeInMainWorld('env', {
   platform: process.platform,
+  locale:
+    process.argv.find((a) => a.startsWith('--locale='))?.split('=')?.[1] ??
+    null,
 });
 
 contextBridge.exposeInMainWorld('ElectronUtils', {

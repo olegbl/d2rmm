@@ -2,7 +2,8 @@ import { initAppInfoAPI } from 'renderer/AppInfoAPI';
 import { initConsoleAPI } from 'renderer/ConsoleAPI';
 import { initEventAPI } from 'renderer/EventAPI';
 import { initIPC } from 'renderer/IPC';
-import { getSavedLocale, initI18n } from 'renderer/i18n';
+import { initLocaleAPI } from 'renderer/LocaleAPI';
+import { initI18n } from 'renderer/i18n';
 import App from 'renderer/react/App';
 import { createRoot } from 'react-dom/client';
 
@@ -14,6 +15,8 @@ async function initUI(): Promise<void> {
 
 async function start(): Promise<void> {
   console.debug('[renderer] Initializing...');
+  console.debug('[renderer] Initializing i18n...');
+  await initI18n();
   console.debug('[renderer] Initializing IPC...');
   await initIPC();
   console.debug('[renderer] Initializing EventAPI...');
@@ -22,8 +25,8 @@ async function start(): Promise<void> {
   await initConsoleAPI();
   console.debug('[renderer] Initializing AppInfoAPI...');
   await initAppInfoAPI();
-  console.debug('[renderer] Initializing i18n...');
-  await initI18n(getSavedLocale());
+  console.debug('[worker] Initializing LocaleAPI...');
+  await initLocaleAPI();
   console.debug('[renderer] Initializing UI...');
   await initUI();
   console.debug('[renderer] Initialized');

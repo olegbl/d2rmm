@@ -1,6 +1,8 @@
 import type { ILocaleAPI } from 'bridge/LocaleAPI';
+import { writeFileSync } from 'fs';
 import i18next from 'i18next';
 import { consumeAPI, provideAPI } from './IPC';
+import { getLocaleConfigPath } from './i18n';
 
 function getLocale(): string {
   return i18next.resolvedLanguage ?? i18next.language;
@@ -8,7 +10,12 @@ function getLocale(): string {
 
 async function setLocale(locale: string): Promise<void> {
   await i18next.changeLanguage(locale);
+
+  // write locale to d2rmm-locale.json
+  const configPath = getLocaleConfigPath();
+  writeFileSync(configPath, JSON.stringify({ locale }, null, 2), 'utf8');
 }
+
 export async function initLocaleAPI(): Promise<void> {
   provideAPI(
     'LocaleAPI',

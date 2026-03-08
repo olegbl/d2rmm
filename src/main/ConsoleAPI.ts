@@ -19,9 +19,9 @@ export async function initConsoleAPI(): Promise<void> {
   const consoleWrapper = { ...console };
   for (const level of ['debug', 'log', 'warn', 'error'] as const) {
     consoleWrapper[level] = (...args) => {
-      // print English-only to local console (→ d2rmm.log)
+      // print English localization to local console (and d2rmm.log)
       localConsole[level](...toFileArgs(args));
-      // forward full args (including I18nArg) to renderer for translation
+      // forward full args to other threads
       ConsoleAPI[level](...args);
     };
   }

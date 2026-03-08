@@ -14,7 +14,14 @@ import zhCN from '../../locales/zh-CN.json';
 import zhTW from '../../locales/zh-TW.json';
 
 export async function initI18n(): Promise<void> {
-  const locale = process.env.LOCALE ?? 'en-US';
+  const locale =
+    // get locale passed from main thread
+    process.env.LOCALE ??
+    // fall back to default locale for system
+    navigator.language ??
+    // fall back to English
+    'en-US';
+
   await i18n.init({
     lng: locale,
     fallbackLng: 'en-US',
@@ -35,10 +42,6 @@ export async function initI18n(): Promise<void> {
     },
     interpolation: { escapeValue: false },
   });
-}
-
-export async function changeLocale(locale: string): Promise<void> {
-  await i18n.changeLanguage(locale);
 }
 
 export default i18n;

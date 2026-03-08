@@ -24,7 +24,7 @@ async function start(): Promise<void> {
   console.debug('[worker] Initializing AppInfoAPI...');
   await initAppInfoAPI();
   console.debug('[worker] Initializing LocaleAPI...');
-  initLocaleAPI();
+  await initLocaleAPI();
   console.debug('[worker] Initializing Asar...');
   await initAsar();
   console.debug('[worker] Initializing QuickJS...');

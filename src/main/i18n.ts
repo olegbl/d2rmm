@@ -1,5 +1,7 @@
+import { app } from 'electron';
 import fs from 'fs';
 import i18n from 'i18next';
+import path from 'path';
 import deDE from '../locales/de-DE.json';
 import enUS from '../locales/en-US.json';
 import esES from '../locales/es-ES.json';
@@ -14,14 +16,17 @@ import ruRU from '../locales/ru-RU.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
 
+export function getLocaleConfigPath(): string {
+  return path.resolve(path.join(app.getPath('userData'), 'd2rmm-locale.json'));
+}
+
 /**
  * Read the saved locale from d2rmm-locale.json synchronously.
  * Returns null if the file doesn't exist or can't be parsed.
  */
-export function readLocaleConfigSync(userDataPath: string): string | null {
+function getSavedLocale(): string | null {
   try {
-    const configPath = `${userDataPath}/d2rmm-locale.json`;
-    const raw = fs.readFileSync(configPath, 'utf8');
+    const raw = fs.readFileSync(getLocaleConfigPath(), 'utf8');
     const parsed = JSON.parse(raw) as { locale?: unknown };
     return typeof parsed.locale === 'string' ? parsed.locale : null;
   } catch {
@@ -29,7 +34,20 @@ export function readLocaleConfigSync(userDataPath: string): string | null {
   }
 }
 
-export async function initI18n(locale: string): Promise<void> {
+export function getInitialLocale(): string {
+  return (
+    // get locale saved to d2rmm-locale.json
+    getSavedLocale() ??
+    // fall back to default locale for system
+    navigator.language ??
+    // fall back to English
+    'en-US'
+  );
+}
+
+export async function initI18n(): Promise<void> {
+  const locale = getInitialLocale();
+
   await i18n.init({
     lng: locale,
     fallbackLng: 'en-US',
@@ -50,10 +68,6 @@ export async function initI18n(locale: string): Promise<void> {
     },
     interpolation: { escapeValue: false },
   });
-}
-
-export async function changeLocale(locale: string): Promise<void> {
-  await i18n.changeLanguage(locale);
 }
 
 export default i18n;

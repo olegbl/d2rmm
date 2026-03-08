@@ -635,13 +635,3 @@ Key files requiring string extraction (renderer only):
 4. **RTL languages**: D2R doesn't include any RTL languages, so no RTL layout support needed.
 
 5. **Font support**: CJK languages (Chinese, Japanese, Korean) require fonts that render those characters. MUI uses system fonts by default — this should work on systems where these languages are installed, but verify on Windows with English locale (may need font fallback config in MUI theme).
-
----
-
-## Pending Work
-
-- There are still a number of errors that are not localized in d2s that use wrapParsingError.
-- Localization for mods (configs).
-- Update .md files to instruct Claude on how to localize new strings.
-- Document the \x00 pattern for splitting localization strings.
-- Convert this plan into an architecture document once implementation is done.

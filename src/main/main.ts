@@ -7,13 +7,14 @@ import { initAppInfoAPI } from './AppInfoAPI';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
 import { initIPC } from './IPC';
+import { initLocaleAPI } from './LocaleAPI';
 import { initNxmProtocolAPI } from './NxmProtocolAPI';
 import { RendererIPCAPI } from './RendererIPCAPI';
 import { initRequestAPI } from './RequestAPI';
 import { initShellAPI } from './ShellAPI';
 import { initUpdateInstallerAPI } from './UpdateInstallerAPI';
 import { getWorkers, spawnNewWorker } from './Workers';
-import { initI18n, readLocaleConfigSync } from './i18n';
+import { getInitialLocale, initI18n } from './i18n';
 import { initPreferences } from './preferences';
 import { resolveHtmlPath } from './util';
 import { CURRENT_VERSION } from './version';
@@ -95,6 +96,7 @@ import { CURRENT_VERSION } from './version';
       webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         contextIsolation: true,
+        additionalArguments: [`--locale=${getInitialLocale()}`],
       },
     });
     mainWindow.setTitle(
@@ -131,6 +133,8 @@ import { CURRENT_VERSION } from './version';
     await initConsoleAPI();
     console.debug('[main] Initializing AppInfoAPI...');
     await initAppInfoAPI();
+    console.debug('[worker] Initializing LocaleAPI...');
+    await initLocaleAPI();
     console.debug('[main] Initializing ShellAPI...');
     await initShellAPI();
     console.debug('[main] Initializing RequestAPI...');
@@ -197,9 +201,8 @@ import { CURRENT_VERSION } from './version';
 
   initPreferences();
 
-  const locale =
-    readLocaleConfigSync(app.getPath('userData')) ?? app.getLocale();
-  initI18n(locale).catch(console.error);
+  console.debug('[main] Initializing i18n...');
+  initI18n().catch(console.error);
 
   app
     .whenReady()

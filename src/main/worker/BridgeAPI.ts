@@ -31,7 +31,7 @@ import {
 } from 'source-map';
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
-import { createI18nError, tl } from '../../shared/i18n-log';
+import { te, tl } from '../../shared/i18n';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import { getCascLib, getLastCascLibError, readCString } from './CascLib';
 import { EventAPI } from './EventAPI';
@@ -80,9 +80,10 @@ function validatePathIsSafe(allowedRoot: string, absolutePath: string): string {
   absolutePath = path.resolve(absolutePath);
 
   if (!absolutePath.startsWith(allowedRoot)) {
-    throw new Error(
-      `Path "${absolutePath}" points outside of allowed directory "${allowedRoot}".`,
-    );
+    throw te('worker.bridgeapi.validatePath.outsideAllowed', {
+      path: absolutePath,
+      allowedRoot,
+    });
   }
 
   return absolutePath;
@@ -116,9 +117,10 @@ function resolvePath(inputPath: string, relative: Relative): string {
         path.resolve(getOutputPath(), inputPath),
       );
     default:
-      throw new Error(
-        `Invalid relative value "${relative}" for path "${inputPath}".`,
-      );
+      throw te('worker.bridgeapi.resolvePath.invalidRelative', {
+        relative,
+        inputPath,
+      });
   }
 }
 
@@ -174,18 +176,6 @@ function copyDirSync(
   }
 
   return result;
-}
-
-function createError(
-  method: string,
-  message: string,
-  errorCode?: unknown,
-): Error {
-  const prefix = `${method}: ${message}`;
-  if (errorCode != null) {
-    return new Error(`${prefix}: ${String(errorCode)}`);
-  }
-  return new Error(prefix);
 }
 
 // TODO: use CascFindFirstFile & CascFindNextFile to implement an "extractFiles" API
@@ -276,7 +266,7 @@ export const BridgeAPI: IBridgeAPI = {
 
       return 0;
     } catch (error) {
-      throw createError('BridgeAPI.execute', 'Failed to execute file', error);
+      throw te('worker.bridgeapi.execute.failed', null, error);
     }
   },
 
@@ -297,11 +287,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
       if (!cascStorageIsOpen) {
         const detail = String(getLastCascLibError());
-        throw createI18nError(
-          `BridgeAPI.openStorage: Failed to open CASC storage: ${detail}`,
-          'worker.error.openStorage.failed',
-          { detail },
-        );
+        throw te('worker.error.openStorage.failed', { detail });
       }
     }
 
@@ -316,11 +302,7 @@ export const BridgeAPI: IBridgeAPI = {
         cascStorageIsOpen = false;
       } else {
         const detail = String(getLastCascLibError());
-        throw createI18nError(
-          `BridgeAPI.closeStorage: Failed to close CASC storage: ${detail}`,
-          'worker.error.closeStorage.failed',
-          { detail },
-        );
+        throw te('worker.error.closeStorage.failed', { detail });
       }
     }
 
@@ -334,7 +316,7 @@ export const BridgeAPI: IBridgeAPI = {
 
     try {
       if (!cascStorageIsOpen) {
-        throw createError('BridgeAPI.isGameFile', 'CASC storage is not open');
+        throw te('worker.bridgeapi.isGameFile.cascNotOpen');
       }
 
       const fileOut: unknown[] = [null];
@@ -352,11 +334,7 @@ export const BridgeAPI: IBridgeAPI = {
 
       getCascLib().CascCloseFile(fileOut[0]);
     } catch (e) {
-      throw createError(
-        'BridgeAPI.isGameFile',
-        'Failed to check if a file exists in CASC storage',
-        String(e),
-      );
+      throw te('worker.bridgeapi.isGameFile.checkFailed', null, e);
     }
 
     return true;
@@ -368,10 +346,7 @@ export const BridgeAPI: IBridgeAPI = {
 
     try {
       if (!cascStorageIsOpen) {
-        throw createError(
-          'BridgeAPI.extractFileToMemory',
-          'CASC storage is not open',
-        );
+        throw te('worker.bridgeapi.extractFileToMemory.cascNotOpen');
       }
 
       const fileOut: unknown[] = [null];
@@ -384,11 +359,10 @@ export const BridgeAPI: IBridgeAPI = {
           fileOut,
         )
       ) {
-        throw createError(
-          'BridgeAPI.extractFileToMemory',
-          `Failed to open file in CASC storage (${filePath})`,
-          getLastCascLibError(),
-        );
+        throw te('worker.bridgeapi.extractFileToMemory.openFailed', {
+          filePath,
+          cascError: String(getLastCascLibError()),
+        });
       }
 
       const file = fileOut[0];
@@ -401,26 +375,20 @@ export const BridgeAPI: IBridgeAPI = {
       if (getCascLib().CascReadFile(file, buffer, size, bytesReadOut)) {
         output = Buffer.from(buffer.buffer, 0, bytesReadOut[0]);
       } else {
-        throw createError(
-          'BridgeAPI.extractFileToMemory',
-          `Failed to read file in CASC storage (${filePath})`,
-          getLastCascLibError(),
-        );
+        throw te('worker.bridgeapi.extractFileToMemory.readFailed', {
+          filePath,
+          cascError: String(getLastCascLibError()),
+        });
       }
 
       if (!getCascLib().CascCloseFile(file)) {
-        throw createError(
-          'BridgeAPI.extractFileToMemory',
-          `Failed to close file in CASC storage (${filePath})`,
-          getLastCascLibError(),
-        );
+        throw te('worker.bridgeapi.extractFileToMemory.closeFailed', {
+          filePath,
+          cascError: String(getLastCascLibError()),
+        });
       }
     } catch (e) {
-      throw createError(
-        'BridgeAPI.extractFileToMemory',
-        'Failed to extract file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.extractFileToMemory.extractFailed', null, e);
     }
 
     return output;
@@ -435,11 +403,7 @@ export const BridgeAPI: IBridgeAPI = {
         return true;
       }
     } catch (e) {
-      throw createError(
-        'BridgeAPI.createDirectory',
-        'Failed to create directory',
-        String(e),
-      );
+      throw te('worker.bridgeapi.createDirectory.failed', null, e);
     }
 
     return false;
@@ -458,11 +422,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
       return [];
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readDirectory',
-        'Failed to read directory',
-        String(e),
-      );
+      throw te('worker.bridgeapi.readDirectory.failed', null, e);
     }
   },
 
@@ -484,11 +444,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
       return [];
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readModDirectory',
-        'Failed to read directory',
-        String(e),
-      );
+      throw te('worker.bridgeapi.readModDirectory.failed', null, e);
     }
   },
 
@@ -507,7 +463,7 @@ export const BridgeAPI: IBridgeAPI = {
         });
       }
     } catch (e) {
-      throw createError('BridgeAPI.readFile', 'Failed to read file', String(e));
+      throw te('worker.bridgeapi.readFile.failed', null, e);
     }
 
     return null;
@@ -524,11 +480,7 @@ export const BridgeAPI: IBridgeAPI = {
         flag: 'w',
       });
     } catch (e) {
-      throw createError(
-        'BridgeAPI.writeFile',
-        'Failed to write file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.writeFile.failed', null, e);
     }
 
     return 0;
@@ -543,11 +495,7 @@ export const BridgeAPI: IBridgeAPI = {
         return buffer.toString('utf-8');
       }
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readTextFile',
-        'Failed to read file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.readTextFile.failed', null, e);
     }
 
     return null;
@@ -564,11 +512,7 @@ export const BridgeAPI: IBridgeAPI = {
       const buffer = Buffer.from(data, 'utf-8');
       return await BridgeAPI.writeFile(inputPath, relative, buffer);
     } catch (e) {
-      throw createError(
-        'BridgeAPI.writeTextFile',
-        'Failed to write file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.writeTextFile.failed', null, e);
     }
   },
 
@@ -584,11 +528,7 @@ export const BridgeAPI: IBridgeAPI = {
         return [...buffer.values()];
       }
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readBinaryFile',
-        'Failed to read file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.readBinaryFile.failed', null, e);
     }
 
     return null;
@@ -604,11 +544,7 @@ export const BridgeAPI: IBridgeAPI = {
       const buffer = Buffer.from(data);
       return await BridgeAPI.writeFile(inputPath, relative, buffer);
     } catch (e) {
-      throw createError(
-        'BridgeAPI.writeBinaryFile',
-        'Failed to write file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.writeBinaryFile.failed', null, e);
     }
   },
 
@@ -618,11 +554,7 @@ export const BridgeAPI: IBridgeAPI = {
     try {
       return parseTsv(textData);
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readTsv',
-        'Failed to parse file',
-        e instanceof Error ? e.toString() : String(e),
-      );
+      throw te('worker.bridgeapi.readTsv.parseFailed', null, e);
     }
   },
 
@@ -638,11 +570,7 @@ export const BridgeAPI: IBridgeAPI = {
     try {
       return parseJson(textData);
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readJson',
-        'Failed to parse file',
-        e instanceof Error ? e.toString() : String(e),
-      );
+      throw te('worker.bridgeapi.readJson.parseFailed', null, e);
     }
   },
 
@@ -683,11 +611,7 @@ export const BridgeAPI: IBridgeAPI = {
         return 0;
       }
     } catch (e) {
-      throw createError(
-        'BridgeAPI.deleteFile',
-        'Failed to delete file',
-        String(e),
-      );
+      throw te('worker.bridgeapi.deleteFile.failed', null, e);
     }
 
     // file doesn't exist
@@ -720,11 +644,10 @@ export const BridgeAPI: IBridgeAPI = {
           overwrite,
         });
         if (errors.length > 0) {
-          throw createError(
-            'BridgeAPI.copyFile',
-            `${errors.length} error(s) while copying directory`,
-            errors.join('\n'),
-          );
+          throw te('worker.bridgeapi.copyFile.dirCopyErrors', {
+            count: errors.length,
+            errors: errors.join('\n'),
+          });
         }
         outCopiedFiles?.push(...copiedFiles);
       } else {
@@ -739,7 +662,7 @@ export const BridgeAPI: IBridgeAPI = {
         outCopiedFiles?.push({ fromPath, toPath });
       }
     } catch (e) {
-      throw createError('BridgeAPI.copyFile', 'Failed to copy file', String(e));
+      throw te('worker.bridgeapi.copyFile.failed', null, e);
     }
 
     // file copied successfully
@@ -775,7 +698,7 @@ export const BridgeAPI: IBridgeAPI = {
     }
 
     if (result == null) {
-      throw createError('BridgeAPI.readModInfo', 'Failed to read mod config');
+      throw te('worker.bridgeapi.readModInfo.readFailed');
     }
 
     try {
@@ -785,11 +708,7 @@ export const BridgeAPI: IBridgeAPI = {
         ...JSON.parse(result),
       };
     } catch (e) {
-      throw createError(
-        'BridgeAPI.readModInfo',
-        'Failed to parse mod config',
-        String(e),
-      );
+      throw te('worker.bridgeapi.readModInfo.parseFailed', null, e);
     }
   },
 
@@ -805,11 +724,7 @@ export const BridgeAPI: IBridgeAPI = {
       try {
         return JSON.parse(result);
       } catch (e) {
-        throw createError(
-          'BridgeAPI.readModConfig',
-          'Failed to parse mod config',
-          String(e),
-        );
+        throw te('worker.bridgeapi.readModConfig.parseFailed', null, e);
       }
     }
 
@@ -842,11 +757,7 @@ export const BridgeAPI: IBridgeAPI = {
       if (existsSync(absoluteFilePath)) {
         const result = await BridgeAPI.readTextFile(relativeFilePath, 'App');
         if (typeof result !== 'string') {
-          throw createError(
-            'BridgeAPI.readModCode',
-            'Failed to read source code.',
-            result,
-          );
+          throw te('worker.bridgeapi.readModCode.readSourceFailed');
         }
 
         const code = `(function(){\nconst config = JSON.parse(D2RMM.getConfigJSON());\n${result}\n})()`;
@@ -936,11 +847,9 @@ export const BridgeAPI: IBridgeAPI = {
             'App',
           );
           if (typeof sourceCode !== 'string') {
-            throw createError(
-              'BridgeAPI.readModCode',
-              `Failed to read ${relativeFilePath}`,
-              sourceCode,
-            );
+            throw te('worker.bridgeapi.readModCode.readModuleSourceFailed', {
+              file: relativeFilePath,
+            });
           }
 
           const moduleWithSourceCode = { ...module, sourceCode };
@@ -1062,18 +971,11 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           .concat("\nrequire.load('./mod');");
         return [code, sourceMapGenerator.toString()];
       } catch (error) {
-        throw createError(
-          'BridgeAPI.readModCode',
-          'Failed to compile mod',
-          error,
-        );
+        throw te('worker.bridgeapi.readModCode.compileFailed', null, error);
       }
     }
 
-    throw createError(
-      'BridgeAPI.readModCode',
-      'Could not find source code (mod.ts or mod.js).',
-    );
+    throw te('worker.bridgeapi.readModCode.noSourceFound');
   },
 
   // TODO: improve API signatures for ED2R APIs
@@ -1103,10 +1005,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           : null;
 
       if (rawData == null) {
-        throw createError(
-          'BridgeAPI.writeSaveFile',
-          'Invalid file name (does not end in d2s or d2i).',
-        );
+        throw te('worker.bridgeapi.writeSaveFile.invalidFileName');
       }
 
       // TODO: base this off of when the file was first read instead
@@ -1180,20 +1079,16 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         if (existsSync(path.resolve(getOutputPath(), filePath))) {
           const buffer = await BridgeAPI.readFile(filePath, 'Output');
           if (buffer == null) {
-            throw createError(
-              'BridgeAPI.readD2SData',
-              'Failed to read file',
-              path.resolve(getOutputPath(), filePath),
-            );
+            throw te('worker.bridgeapi.readD2SData.readOutputFailed', {
+              path: path.resolve(getOutputPath(), filePath),
+            });
           }
           return buffer;
         } else {
           if (runtime!.options.isDirectMode) {
-            throw createError(
-              'BridgeAPI.readD2SData',
-              'Failed to find file',
-              path.resolve(getOutputPath(), filePath),
-            );
+            throw te('worker.bridgeapi.readD2SData.findOutputFailed', {
+              path: path.resolve(getOutputPath(), filePath),
+            });
           }
         }
 
@@ -1205,19 +1100,15 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               'PreExtractedData',
             );
             if (buffer == null) {
-              throw createError(
-                'BridgeAPI.readD2SData',
-                'Failed to read file',
-                path.resolve(getPreExtractedDataPath(), filePath),
-              );
+              throw te('worker.bridgeapi.readD2SData.readPreExtractedFailed', {
+                path: path.resolve(getPreExtractedDataPath(), filePath),
+              });
             }
             return buffer;
           } else {
-            throw createError(
-              'BridgeAPI.readD2SData',
-              'Failed to find file',
-              path.resolve(getPreExtractedDataPath(), filePath),
-            );
+            throw te('worker.bridgeapi.readD2SData.findPreExtractedFailed', {
+              path: path.resolve(getPreExtractedDataPath(), filePath),
+            });
           }
         }
         // read file from Casc archive
@@ -1228,11 +1119,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           return buffer;
         }
 
-        throw createError(
-          'BridgeAPI.readD2SData',
-          'Failed to find file',
-          filePath,
-        );
+        throw te('worker.bridgeapi.readD2SData.findFailed', { path: filePath });
       }
 
       const buffers: { [key: string]: string } = {};
@@ -1259,14 +1146,14 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         try {
           const rawData = await BridgeAPI.readBinaryFile(file.name, 'Saves');
           if (rawData == null) {
-            throw new Error(`File content could not be read.`);
+            throw te('worker.bridgeapi.readD2SData.fileContentNotRead');
           }
           const parsedData = await d2s.read(new Uint8Array(rawData));
           characterFilesData.push([file.name, parsedData]);
         } catch (e) {
           console.error(
             tl('worker.ed2r.readCharacterFailed', { name: file.name }),
-            (e as Error).message,
+            e,
           );
           continue;
         }
@@ -1281,7 +1168,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         try {
           const rawData = await BridgeAPI.readBinaryFile(file.name, 'Saves');
           if (rawData == null) {
-            throw new Error(`File content could not be read.`);
+            throw te('worker.bridgeapi.readD2SData.fileContentNotRead');
           }
           const parsedData = await d2s.stash.read(
             new Uint8Array(rawData),
@@ -1294,7 +1181,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         } catch (e) {
           console.error(
             tl('worker.ed2r.readStashFailed', { name: file.name }),
-            (e as Error).message,
+            e,
           );
           continue;
         }
@@ -1424,7 +1311,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
         } catch (e) {
           console.debug(
             `Could not get sprite data for item code "${itemCode}"`,
-            (e as Error).message,
+            e,
           );
         }
       }
@@ -1554,13 +1441,13 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               throw result;
             }
             if (result == null) {
-              throw new Error('Could not read code from mod.js or mod.ts.');
+              throw te('worker.bridgeapi.installMods.readCodeFailed');
             }
             [code, sourceMap] = result;
           }
         } catch (error) {
           if (error instanceof Error) {
-            console.error(tl('worker.mod.compileError'), error.stack);
+            console.error(tl('worker.mod.compileError'), error);
           }
           continue;
         }

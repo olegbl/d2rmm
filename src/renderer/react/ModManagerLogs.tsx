@@ -1,11 +1,13 @@
 import type { ILogLevel } from 'bridge/ConsoleAPI';
-import i18n from 'renderer/i18n';
+import { LocaleAPI } from 'renderer/LocaleAPI';
+import { isI18nConsoleArg } from 'renderer/i18n';
 import { useIsInstalling } from 'renderer/react/context/InstallContext';
 import {
   useLogLevels,
   useLogger,
   useLogs,
 } from 'renderer/react/context/LogContext';
+import i18next from 'i18next';
 import {
   MouseEvent,
   useCallback,
@@ -50,6 +52,10 @@ import {
 const ROW_HEIGHT = 80;
 
 function prettyPrintData(data: unknown): string {
+  if (isI18nConsoleArg(data)) {
+    return i18next.t(data.key, data.args);
+  }
+
   if (Array.isArray(data)) {
     return data.map(prettyPrintData).join(' ');
   }
@@ -133,6 +139,9 @@ export default function ModManagerLogs(_props: Props): JSX.Element {
     [logs, levels, filter],
   );
 
+  // @@
+  // window.logs = logs;
+
   const renderRow = useCallback(
     ({ style, index }: ListChildComponentProps) => {
       const log = filteredLogs[index];
@@ -165,7 +174,7 @@ export default function ModManagerLogs(_props: Props): JSX.Element {
               },
             }}
             secondary={new Date(log.timestamp).toLocaleTimeString(
-              i18n.resolvedLanguage,
+              LocaleAPI.getLocale(),
             )}
           />
         </ListItemButton>

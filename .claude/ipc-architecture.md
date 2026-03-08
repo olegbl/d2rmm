@@ -31,6 +31,7 @@ D2RMM runs three processes. They communicate via a unified request/response syst
 ```
 
 **The Main process is a message bus.** When it receives a message from renderer or worker, it:
+
 1. Checks if it has a registered handler for the namespace — if yes, calls it
 2. Forwards the raw message to all other threads regardless
 
@@ -119,10 +120,14 @@ All API arguments and return values must be `SerializableType` (defined in `src/
 
 ```typescript
 type SerializableType =
-  | undefined | null | boolean | number | string
+  | undefined
+  | null
+  | boolean
+  | number
+  | string
   | SerializableType[]
   | { [key: string]: SerializableType }
-  | IAnyInterface;   // escape hatch for interface types
+  | IAnyInterface; // escape hatch for interface types
 ```
 
 **No Buffers, class instances, or functions** can cross the bridge. Binary data must be passed as `number[]`.
@@ -152,6 +157,7 @@ The same thread can both provide AND consume a broadcast API to handle its own l
 The worker provides the implementation. Main and renderer consume it.
 
 **`src/bridge/MyAPI.d.ts`** (type definition shared by all threads):
+
 ```typescript
 export type IMyAPI = {
   doSomething: (path: string) => Promise<string>;
@@ -159,6 +165,7 @@ export type IMyAPI = {
 ```
 
 **`src/main/worker/MyAPI.ts`** (implementation in worker):
+
 ```typescript
 import type { IMyAPI } from 'bridge/MyAPI';
 import { provideAPI } from './IPC';
@@ -174,6 +181,7 @@ export async function initMyAPI(): Promise<void> {
 ```
 
 **`src/renderer/MyAPI.ts`** (consumed in renderer — mirrors the bridge/worker split):
+
 ```typescript
 import type { IMyAPI } from 'bridge/MyAPI';
 import { consumeAPI } from 'renderer/IPC';
@@ -184,6 +192,7 @@ export default MyAPI;
 ```
 
 Then import it wherever needed:
+
 ```typescript
 import MyAPI from 'renderer/MyAPI';
 
@@ -192,8 +201,10 @@ const result = await MyAPI.doSomething('/some/path');
 ```
 
 Register in `src/main/worker/worker.ts`:
+
 ```typescript
 import { initMyAPI } from './MyAPI';
+
 // in start():
 await initMyAPI();
 ```
@@ -205,6 +216,7 @@ await initMyAPI();
 Main provides the implementation (requires Electron APIs). Worker and renderer consume it.
 
 **`src/main/MyAPI.ts`** (implementation in main):
+
 ```typescript
 import type { IMyAPI } from 'bridge/MyAPI';
 import { provideAPI } from './IPC';
@@ -219,6 +231,7 @@ export async function initMyAPI(): Promise<void> {
 ```
 
 **`src/main/worker/MyAPI.ts`** (consumed in worker, module-level):
+
 ```typescript
 import type { IMyAPI } from 'bridge/MyAPI';
 import { consumeAPI } from './IPC';
@@ -248,11 +261,15 @@ export const MyBroadcastAPI = consumeAPI<IMyAPI>('MyBroadcastAPI', {}, true);
 
 // Provider: receives broadcasts from other threads
 export async function initMyBroadcastAPI(): Promise<void> {
-  provideAPI('MyBroadcastAPI', {
-    notify: async (value: string): Promise<void> => {
-      // Handle the notification locally in this thread
-    },
-  } as IMyAPI, true);
+  provideAPI(
+    'MyBroadcastAPI',
+    {
+      notify: async (value: string): Promise<void> => {
+        // Handle the notification locally in this thread
+      },
+    } as IMyAPI,
+    true,
+  );
 }
 ```
 
@@ -302,13 +319,14 @@ try {
 }
 ```
 
-For localized errors in worker/main code, use `createI18nError` from `shared/i18n-log`. The `i18nKey` and `i18nArgs` fields are preserved through the IPC boundary. In renderer error display, use `te(error)` from `renderer/i18n` to translate them.
+For localized errors in worker/main code, use `createI18nError` from `shared/i18n`. The `i18nKey` and `i18nArgs` fields are preserved through the IPC boundary. In renderer error display, use `te(error)` from `renderer/i18n` to translate them.
 
 ---
 
 ## Initialization Order
 
 **Worker** (`src/main/worker/worker.ts`):
+
 ```
 initIPC()          → sets up process.on('message') handler — must be first
 initEventAPI()     → provides EventAPI (broadcast)
@@ -329,21 +347,21 @@ initModUpdaterAPI()→ provides ModUpdaterAPI
 
 ## Registered APIs by Thread
 
-| Namespace | Provided In | Consumed In | Broadcast |
-|-----------|-------------|-------------|-----------|
-| `BridgeAPI` | Worker | Renderer | No |
-| `ModUpdaterAPI` | Worker | Renderer | No |
-| `UpdaterAPI` | Worker | Renderer | No |
-| `RequestAPI` | Worker | — (internal) | No |
-| `AppInfoAPI` | Main | Worker, Renderer | No |
-| `ShellAPI` | Main | Renderer | No |
-| `NxmProtocolAPI` | Main | Renderer | No |
-| `UpdateInstallerAPI` | Main | Renderer | No |
-| `ElectronUtilsAPI` | Main | Renderer | No |
-| `ConsoleAPI` | Main + Renderer | Worker + Main + Renderer | Yes |
-| `EventAPI` | Main + Renderer + Worker | Main + Renderer + Worker | Yes |
-| `LocaleAPI` | Main + Renderer + Worker | Main + Renderer + Worker | Yes |
-| `RendererIPCAPI` | Renderer | Main | No |
+| Namespace            | Provided In              | Consumed In              | Broadcast |
+| -------------------- | ------------------------ | ------------------------ | --------- |
+| `BridgeAPI`          | Worker                   | Renderer                 | No        |
+| `ModUpdaterAPI`      | Worker                   | Renderer                 | No        |
+| `UpdaterAPI`         | Worker                   | Renderer                 | No        |
+| `RequestAPI`         | Worker                   | — (internal)             | No        |
+| `AppInfoAPI`         | Main                     | Worker, Renderer         | No        |
+| `ShellAPI`           | Main                     | Renderer                 | No        |
+| `NxmProtocolAPI`     | Main                     | Renderer                 | No        |
+| `UpdateInstallerAPI` | Main                     | Renderer                 | No        |
+| `ElectronUtilsAPI`   | Main                     | Renderer                 | No        |
+| `ConsoleAPI`         | Main + Renderer          | Worker + Main + Renderer | Yes       |
+| `EventAPI`           | Main + Renderer + Worker | Main + Renderer + Worker | Yes       |
+| `LocaleAPI`          | Main + Renderer + Worker | Main + Renderer + Worker | Yes       |
+| `RendererIPCAPI`     | Renderer                 | Main                     | No        |
 
 ---
 

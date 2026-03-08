@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import fs from 'fs';
-import i18n from 'i18next';
+import i18next from 'i18next';
 import path from 'path';
 import deDE from '../locales/de-DE.json';
 import enUS from '../locales/en-US.json';
@@ -15,6 +15,8 @@ import ptBR from '../locales/pt-BR.json';
 import ruRU from '../locales/ru-RU.json';
 import zhCN from '../locales/zh-CN.json';
 import zhTW from '../locales/zh-TW.json';
+
+export { isI18nConsoleArg } from '../shared/i18n';
 
 export function getLocaleConfigPath(): string {
   return path.resolve(path.join(app.getPath('userData'), 'd2rmm-locale.json'));
@@ -48,7 +50,7 @@ export function getInitialLocale(): string {
 export async function initI18n(): Promise<void> {
   const locale = getInitialLocale();
 
-  await i18n.init({
+  await i18next.init({
     lng: locale,
     fallbackLng: 'en-US',
     resources: {
@@ -69,5 +71,3 @@ export async function initI18n(): Promise<void> {
     interpolation: { escapeValue: false },
   });
 }
-
-export default i18n;

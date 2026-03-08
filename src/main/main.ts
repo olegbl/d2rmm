@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import log from 'electron-log/main';
 import path from 'path';
 import 'regenerator-runtime/runtime';
+import { tl } from '../shared/i18n';
 import { initAppInfoAPI } from './AppInfoAPI';
 import { initConsoleAPI } from './ConsoleAPI';
 import { initEventAPI } from './EventAPI';
@@ -150,9 +151,7 @@ import { CURRENT_VERSION } from './version';
       await spawnNewWorker();
       console.debug('[main] Worker spawned successfully!');
     } catch (e) {
-      console.error(
-        `Catastrophic failure! Failed to start worker: ${e}. You should restart D2RMM.`,
-      );
+      console.error(tl('main.worker.spawnFailed'), e);
       app.quit();
     }
 

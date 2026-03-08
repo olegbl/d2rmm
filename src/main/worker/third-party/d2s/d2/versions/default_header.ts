@@ -360,11 +360,6 @@ export function writeHeader(
   writer.WriteArray(_writeNPCData(char.header.npcs));
 }
 
-function _classId(name: string, constants: types.IConstantData): number {
-  if (!name) return -1;
-  return constants.classes.findIndex((c) => c && c.n == name);
-}
-
 function _skillId(name: string, constants: types.IConstantData): number {
   //default to "attack" if empty string or can't find spellname.
   if (name === '') return 0;
@@ -820,7 +815,11 @@ function _writeWaypoints(
 
   writer.WriteBytes(waypoints.unknown_header ?? new Uint8Array([0x02, 0x01]));
   for (let i = 0; i < constants.waypoint_acts.length; i++) {
-    _writeActWaypoints(writer, waypoints.acts[i] ?? {}, constants.waypoint_acts[i]);
+    _writeActWaypoints(
+      writer,
+      waypoints.acts[i] ?? {},
+      constants.waypoint_acts[i],
+    );
   }
   writer.Align();
   writer.WriteBytes(waypoints.unknown_trailing ?? new Uint8Array(17));

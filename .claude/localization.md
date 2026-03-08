@@ -237,8 +237,9 @@ When the user switches language at runtime, the renderer calls `i18n.changeLangu
 
 ```typescript
 import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
 import enUS from 'locales/en-US.json';
+import { initReactI18next } from 'react-i18next';
+
 // ... all 13 locales
 
 export async function initI18n(): Promise<void> {
@@ -246,13 +247,11 @@ export async function initI18n(): Promise<void> {
   await i18n.use(initReactI18next).init({
     lng: locale,
     fallbackLng: 'en-US',
-    resources: { 'en-US': { translation: enUS }, /* ... */ },
+    resources: { 'en-US': { translation: enUS } /* ... */ },
     interpolation: { escapeValue: false }, // React handles XSS
   });
 }
 
-// te(): translates an error — uses I18nError key if present, falls back to String(error)
-export function te(error: unknown): string { ... }
 export default i18n;
 ```
 
@@ -322,7 +321,7 @@ Log messages flow from worker → main → renderer. Main writes them to `d2rmm.
 
 ### Solution: `I18nArg` Marker
 
-`src/shared/i18n-log.ts` defines an `I18nArg` type — a plain serializable object that passes through the IPC bridge invisibly within the existing `ConsoleArg` type.
+`src/bridge/i18n.ts` defines an `I18nArg` type — a plain serializable object that passes through the IPC bridge invisibly within the existing `ConsoleArg` type.
 
 ```typescript
 export type I18nArg = {
@@ -341,7 +340,7 @@ export function tl(
 **Usage** (worker or main):
 
 ```typescript
-import { tl } from 'shared/i18n-log';
+import { tl } from 'shared/i18n';
 
 console.log(tl('install.success', { count: 3 }));
 console.error(tl('worker.mod.compileError'), error.stack);
@@ -374,43 +373,54 @@ Debug messages are developer-facing (IPC tracing, init sequences). They are filt
 
 ### `I18nError` — structured errors across IPC
 
-`src/shared/i18n-log.ts` also defines `I18nError`: an `Error` subclass that carries a translation key so the renderer can display a localized message while the English `error.message` is written to the log file.
+`src/bridge/i18n.d.ts` defines `I18nError`: an `Error` subclass that carries a localized error chain so the renderer can display a fully localized version of the error and its context. The English `error.message` is preserved for `d2rmm.log`.
 
 ```typescript
 export type I18nError = Error & {
-  i18nKey: string;
-  i18nArgs?: Record<string, string | number>;
+  i18nChain: ConsoleArg[]; // ordered outermost→innermost; elements are typically I18nConsoleArg
 };
-
-// Factory:
-export function createI18nError(
-  message: string, // English — written to d2rmm.log
-  i18nKey: string,
-  i18nArgs?: Record<string, string | number>,
-): I18nError;
 ```
 
-**Usage** (worker):
+### Creating errors — `te()` from `shared/i18n`
+
+`te(key, args?, error?)` creates (or wraps) an `I18nError` for throwing. Import from `shared/i18n`.
+
+- Without `error`: creates a new error with a single-entry chain.
+- With `error`: wraps an inner error, prepending a new entry to its chain (chain grows by 1).
 
 ```typescript
-throw createI18nError(
-  `Mod "${name}" not found`, // English for d2rmm.log
-  'errors.modNotFound',
-  { name },
-);
+import { te } from 'shared/i18n';
+
+// Simple throw
+throw te('worker.error.openStorage.failed', { detail });
+
+// Wrapping a caught error (chain grows by 1)
+throw te('d2s.parse.header.readFailed', null, caughtError);
 ```
 
-**Rendering** (renderer hooks):
+The English message (all chained context) is always preserved in `error.message` for `d2rmm.log`.
+
+### Displaying errors in the renderer
+
+There is no single helper for display. Use `isI18nError()` + translate `i18nChain` manually:
 
 ```typescript
-import { te } from 'renderer/i18n';
+import i18next from 'i18next';
+import { isI18nError, isI18nConsoleArg } from 'shared/i18n';
 
 catch (error) {
-  showToast(te(error)); // translates I18nError; falls back to String(error)
+  const message = isI18nError(error)
+    ? error.i18nChain
+        .map((entry) =>
+          isI18nConsoleArg(entry)
+            ? i18next.t(entry.key, entry.args ?? {})
+            : String(entry),
+        )
+        .join(':\n')
+    : String(error);
+  showToast({ severity: 'error', description: message });
 }
 ```
-
-`te()` (translate-error) is exported from `src/renderer/i18n.ts`.
 
 ---
 

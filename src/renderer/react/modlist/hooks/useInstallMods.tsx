@@ -1,6 +1,5 @@
 import type { IInstallModsOptions } from 'bridge/BridgeAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
-import { te } from 'renderer/i18n';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useIsInstalling } from 'renderer/react/context/InstallContext';
@@ -17,6 +16,8 @@ import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedData
 import { useFinalSavesPath } from 'renderer/react/context/SavesPathContext';
 import { useTabState } from 'renderer/react/context/TabContext';
 import useToast from 'renderer/react/hooks/useToast';
+import i18next from 'i18next';
+import { isI18nConsoleArg, isI18nError } from 'shared/i18n';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -92,7 +93,7 @@ export default function useInstallMods(
       return true;
     } catch (error) {
       setIsInstalling(false);
-      console.error(String(error));
+      console.error(error);
       showToast({
         severity: 'error',
         title: t(
@@ -100,7 +101,15 @@ export default function useInstallMods(
             ? 'install.toast.error.uninstall'
             : 'install.toast.error.install',
         ),
-        description: te(error),
+        description: isI18nError(error)
+          ? error.i18nChain
+              .map((entry) =>
+                isI18nConsoleArg(entry)
+                  ? i18next.t(entry.key, entry.args ?? {})
+                  : String(entry),
+              )
+              .join(':\n')
+          : String(error),
       });
       // switch to the logs tab so user can see what happened
       setTab('logs');

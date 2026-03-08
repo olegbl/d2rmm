@@ -3,7 +3,7 @@ import type { IUpdaterAPI, Update } from 'bridge/Updater';
 import decompress from 'decompress';
 import { existsSync, mkdirSync, rmSync, statSync } from 'fs';
 import path from 'path';
-import { tl } from '../../shared/i18n-log';
+import { tl } from '../../shared/i18n';
 import { CURRENT_VERSION, compareVersions } from '../version';
 import { getExecutablePath, getIsPackaged, getTempPath } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';

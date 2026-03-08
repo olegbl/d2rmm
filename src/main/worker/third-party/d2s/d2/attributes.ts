@@ -1,7 +1,8 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
+import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { wrapParsingError, formatCharContext } from './errors';
+import { formatCharContext } from './errors';
 
 //todo use constants.magical_properties and csvBits
 export async function readAttributes(
@@ -15,14 +16,12 @@ export async function readAttributes(
     if (header != 'gf') {
       // header is not present in first save after char is created
       if (char.header.level === 1) {
-        const classData = constants.classes.find(
-          (c) => c.n === char.header.class,
-        )?.a;
+        const classData = constants.classes[char.header.class_id];
 
         if (!classData) {
-          throw new Error(
-            `Cannot find class data for class '${char.header.class}'. Class may not be supported.`,
-          );
+          throw te('d2s.parse.attrs.classNotFound', {
+            class: char.header.class_id,
+          });
         }
 
         char.attributes = {
@@ -48,9 +47,11 @@ export async function readAttributes(
       }
 
       const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-      throw new Error(
-        `Attribute header 'gf' not found (found '${header}' instead) at byte offset ${byteOffset}. ${formatCharContext(char)}`,
-      );
+      throw te('d2s.parse.attrs.headerNotFound', {
+        found: header,
+        offset: byteOffset,
+        char: formatCharContext(char),
+      });
     }
     char.header.attributes_order = [];
     let id = reader.ReadUInt16(9);
@@ -60,9 +61,11 @@ export async function readAttributes(
       const field = constants.magical_properties[id];
       if (field === undefined) {
         const byteOffset = Math.floor((reader.offset - 9) / 8);
-        throw new Error(
-          `Invalid attribute stat ID ${id} at byte offset ${byteOffset}. This stat ID is not defined in itemstatcost.txt. ${formatCharContext(char)}`,
-        );
+        throw te('d2s.parse.attrs.invalidStatId', {
+          id,
+          offset: byteOffset,
+          char: formatCharContext(char),
+        });
       }
       const size = field.cB;
       try {
@@ -74,9 +77,13 @@ export async function readAttributes(
             256;
         }
       } catch (error) {
-        throw wrapParsingError(
+        throw te(
+          'd2s.parse.attrs.readAttrFailed',
+          {
+            attr: field.s,
+            id,
+          },
           error,
-          `Failed to read attribute '${field.s}' (ID: ${id})`,
         );
       }
       // bitoffset += size;
@@ -85,9 +92,12 @@ export async function readAttributes(
 
     reader.Align();
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.attrs.readFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to read character attributes for ${formatCharContext(char)}`,
     );
   }
 }
@@ -113,9 +123,7 @@ export async function writeAttributes(
     for (const i of order) {
       const property = constants.magical_properties[i];
       if (property === undefined) {
-        throw new Error(
-          `Cannot write attribute: stat ID ${i} is not defined in itemstatcost.txt`,
-        );
+        throw te('d2s.parse.attrs.unknownWriteStatId', { id: i });
       }
       let value =
         char.attributes[Attributes[property.s as keyof typeof Attributes]];
@@ -135,9 +143,12 @@ export async function writeAttributes(
     writer.Align();
     return writer.ToArray();
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.attrs.writeFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to write character attributes for ${formatCharContext(char)}`,
     );
   }
 }

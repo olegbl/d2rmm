@@ -1,8 +1,8 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
+import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { getConstantData } from './constants';
-import { wrapParsingError } from './errors';
 import * as items from './items';
 
 const defaultConfig = {} as types.IConfig;
@@ -44,9 +44,12 @@ export async function read(
             sectionType,
           );
         } catch (error) {
-          throw wrapParsingError(
+          throw te(
+            'd2s.parse.stash.parseSectionFailed',
+            {
+              section: pageCount,
+            },
             error,
-            `Failed to parse stash section ${pageCount}`,
           );
         }
       }
@@ -86,9 +89,10 @@ function readStashHeader(
     case 0x4d545343: // CSTM
       stash.version = reader.ReadString(2);
       if (stash.version !== '01' && stash.version !== '02') {
-        throw new Error(
-          `unkown stash version ${stash.version} at position ${reader.offset - 2 * 8}`,
-        );
+        throw te('d2s.parse.stash.unknownVersion', {
+          version: stash.version,
+          position: reader.offset - 2 * 8,
+        });
       }
 
       stash.type =
@@ -111,9 +115,9 @@ function readStashHeader(
       stash.pageCount = reader.ReadUInt32();
       return { sectionSize: 0, sectionType: 0 };
     default:
-      throw new Error(
-        `shared stash header 'SSS' / 0xAA55AA55 / private stash header 'CSTM' not found at position ${reader.offset - 3 * 8}`,
-      );
+      throw te('d2s.parse.stash.headerNotFound', {
+        position: reader.offset - 3 * 8,
+      });
   }
 }
 
@@ -129,9 +133,13 @@ async function readStashPages(
     try {
       await readStashPage(stash, reader, version, realm, constants);
     } catch (error) {
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.stash.parsePageFailed',
+        {
+          index: i + 1,
+          count: stash.pageCount,
+        },
         error,
-        `Failed to parse stash page ${i + 1} of ${stash.pageCount}`,
       );
     }
   }
@@ -151,9 +159,9 @@ async function readStashPage(
   };
   const header = reader.ReadString(2);
   if (header !== 'ST') {
-    throw new Error(
-      `can not read stash page header ST at position ${reader.offset - 2 * 8}`,
-    );
+    throw te('d2s.parse.stash.pageHeaderNotFound', {
+      position: reader.offset - 2 * 8,
+    });
   }
 
   page.type = reader.ReadUInt32();

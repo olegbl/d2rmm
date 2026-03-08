@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import i18next from 'i18next';
 import deDE from '../../locales/de-DE.json';
 import enUS from '../../locales/en-US.json';
 import esES from '../../locales/es-ES.json';
@@ -13,6 +13,8 @@ import ruRU from '../../locales/ru-RU.json';
 import zhCN from '../../locales/zh-CN.json';
 import zhTW from '../../locales/zh-TW.json';
 
+export { isI18nConsoleArg } from '../../shared/i18n';
+
 export async function initI18n(): Promise<void> {
   const locale =
     // get locale passed from main thread
@@ -22,7 +24,7 @@ export async function initI18n(): Promise<void> {
     // fall back to English
     'en-US';
 
-  await i18n.init({
+  await i18next.init({
     lng: locale,
     fallbackLng: 'en-US',
     resources: {
@@ -43,5 +45,3 @@ export async function initI18n(): Promise<void> {
     interpolation: { escapeValue: false },
   });
 }
-
-export default i18n;

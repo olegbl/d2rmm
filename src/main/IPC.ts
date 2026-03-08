@@ -11,7 +11,7 @@ import type {
 } from 'bridge/IPC';
 import { ChildProcess } from 'child_process';
 import { BrowserWindow, ipcMain } from 'electron';
-import { isI18nError } from '../shared/i18n-log';
+import { isI18nError } from '../shared/i18n';
 
 const REGISTERED_APIS: Map<
   string,
@@ -117,8 +117,7 @@ export function registerWorker(worker: ChildProcess): void {
                   message: error.message,
                   stack: error.stack,
                   ...(isI18nError(error) && {
-                    i18nKey: error.i18nKey,
-                    i18nArgs: error.i18nArgs,
+                    i18nChain: error.i18nChain,
                   }),
                 },
               } as IPCMessageErrorResponse);
@@ -136,16 +135,10 @@ export function registerWorker(worker: ChildProcess): void {
           error.name = message.error.name;
           error.message = message.error.message;
           error.stack = message.error.stack;
-          if (message.error.i18nKey != null) {
+          if (message.error.i18nChain != null) {
             (
-              error as Error & {
-                i18nKey: string;
-                i18nArgs?: Record<string, string | number>;
-              }
-            ).i18nKey = message.error.i18nKey;
-            (
-              error as Error & { i18nArgs?: Record<string, string | number> }
-            ).i18nArgs = message.error.i18nArgs;
+              error as Error & { i18nChain: typeof message.error.i18nChain }
+            ).i18nChain = message.error.i18nChain;
           }
           request.reject(error);
         } else {
@@ -200,8 +193,7 @@ export async function initIPC(mainWindow: BrowserWindow): Promise<void> {
                       message: error.message,
                       stack: error.stack,
                       ...(isI18nError(error) && {
-                        i18nKey: error.i18nKey,
-                        i18nArgs: error.i18nArgs,
+                        i18nChain: error.i18nChain,
                       }),
                     },
                   } as IPCMessageErrorResponse);

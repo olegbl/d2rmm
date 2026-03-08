@@ -5,7 +5,9 @@ import {
 } from 'renderer/react/context/DialogContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useSavedState from 'renderer/react/hooks/useSavedState';
+import { tl } from 'shared/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -22,6 +24,7 @@ function RegistrarDialog({
   onAgree: () => void;
   onDisagree: () => void;
 }) {
+  const { t } = useTranslation();
   const { close: onClose, isOpen } = useDialogContext();
 
   const onDisagree = useCallback(() => {
@@ -31,16 +34,14 @@ function RegistrarDialog({
 
   return (
     <Dialog onClose={onClose} open={isOpen}>
-      <DialogTitle>Nexus Mods Handler</DialogTitle>
+      <DialogTitle>{t('nxm.dialog.title')}</DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          Would you like to set D2RMM as the default handler for nxm:// links?
-        </DialogContentText>
+        <DialogContentText>{t('nxm.dialog.content')}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onDisagree}>Disagree</Button>
+        <Button onClick={onDisagree}>{t('nxm.dialog.disagree')}</Button>
         <Button autoFocus={true} onClick={onAgree}>
-          Agree
+          {t('nxm.dialog.agree')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -66,7 +67,7 @@ export default function useNxmProtocolRegistrar(): [
     const success = await NxmProtocolAPI.register();
     setIsRegistered(success);
     if (!success) {
-      console.error('Failed to register as nxm:// protocol handler.');
+      console.error(tl('nxm.register.failed'));
     }
   }, [setIsRejected]);
 
@@ -75,7 +76,7 @@ export default function useNxmProtocolRegistrar(): [
     const success = await NxmProtocolAPI.unregister();
     setIsRegistered(!success);
     if (!success) {
-      console.error('Failed to unregister as nxm:// protocol handler.');
+      console.error(tl('nxm.unregister.failed'));
     }
   }, [setIsRejected]);
 

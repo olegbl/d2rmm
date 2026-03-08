@@ -6,8 +6,8 @@ import type {
   IWaypoints,
 } from 'bridge/third-party/d2s/d2/types';
 import BridgeAPI from 'renderer/BridgeAPI';
+import { LocaleAPI } from 'renderer/LocaleAPI';
 import ShellAPI from 'renderer/ShellAPI';
-import i18n from 'renderer/i18n';
 import ErrorBoundary from 'renderer/react/ErrorBoundary';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
@@ -536,7 +536,7 @@ function Stash({
               t('ed2r.fileLoaded', {
                 fileName: '\x00',
                 time: new Date(file.readTime).toLocaleTimeString(
-                  i18n.resolvedLanguage,
+                  LocaleAPI.getLocale(),
                 ),
               }).split('\x00')[0]
             }
@@ -554,7 +554,7 @@ function Stash({
               t('ed2r.fileLoaded', {
                 fileName: '\x00',
                 time: new Date(file.readTime).toLocaleTimeString(
-                  i18n.resolvedLanguage,
+                  LocaleAPI.getLocale(),
                 ),
               }).split('\x00')[1]
             }
@@ -1248,7 +1248,7 @@ function Character({
               t('ed2r.fileLoaded', {
                 fileName: '\x00',
                 time: new Date(file.readTime).toLocaleTimeString(
-                  i18n.resolvedLanguage,
+                  LocaleAPI.getLocale(),
                 ),
               }).split('\x00')[0]
             }
@@ -1266,7 +1266,7 @@ function Character({
               t('ed2r.fileLoaded', {
                 fileName: '\x00',
                 time: new Date(file.readTime).toLocaleTimeString(
-                  i18n.resolvedLanguage,
+                  LocaleAPI.getLocale(),
                 ),
               }).split('\x00')[1]
             }

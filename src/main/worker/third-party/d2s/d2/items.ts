@@ -1,8 +1,9 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
+import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { DEBUG_D2S, extractRawBytes } from './debug';
-import { wrapParsingError, formatCharContext } from './errors';
+import { formatCharContext } from './errors';
 
 enum ItemType {
   Armor = 0x01,
@@ -78,9 +79,10 @@ export async function readMercItems(
       }
 
       const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-      throw new Error(
-        `Mercenary item list header 'jf' not found (found '${header}' instead) at byte offset ${byteOffset}`,
-      );
+      throw te('d2s.parse.items.mercHeaderNotFound', {
+        found: header,
+        offset: byteOffset,
+      });
     }
     if (char.header.merc_id && parseInt(char.header.merc_id, 16) !== 0) {
       char.merc_items = await readItems(
@@ -93,9 +95,12 @@ export async function readMercItems(
       );
     }
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.items.readMercFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to read mercenary items for ${formatCharContext(char)}`,
     );
   }
 }
@@ -137,9 +142,10 @@ export async function readGolemItems(
       }
 
       const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-      throw new Error(
-        `Golem item header 'kf' not found (found '${header}' instead) at byte offset ${byteOffset}`,
-      );
+      throw te('d2s.parse.items.golemHeaderNotFound', {
+        found: header,
+        offset: byteOffset,
+      });
     }
     const has_golem = reader.ReadUInt8();
     if (has_golem === 1) {
@@ -153,9 +159,12 @@ export async function readGolemItems(
       );
     }
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.items.readGolemFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to read golem item for ${formatCharContext(char)}`,
     );
   }
 }
@@ -200,9 +209,10 @@ export async function readCorpseItems(
       }
 
       const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-      throw new Error(
-        `Corpse item list header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
-      );
+      throw te('d2s.parse.items.corpseHeaderNotFound', {
+        found: header,
+        offset: byteOffset,
+      });
     }
     const count = reader.ReadUInt16(); //0x0002 [corpse count]
     for (let i = 0; i < count; i++) {
@@ -220,16 +230,23 @@ export async function readCorpseItems(
         );
         char.corpses.push({ items, unknown_4, x_position, y_position });
       } catch (error) {
-        throw wrapParsingError(
+        throw te(
+          'd2s.parse.items.readCorpseFailed',
+          {
+            index: i + 1,
+            count,
+          },
           error,
-          `Failed to read corpse ${i + 1} of ${count}`,
         );
       }
     }
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.items.readCorpseItemsFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to read corpse items for ${formatCharContext(char)}`,
     );
   }
 }
@@ -277,9 +294,10 @@ export async function readItems(
     }
 
     const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-    throw new Error(
-      `Item list header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
-    );
+    throw te('d2s.parse.items.listHeaderNotFound', {
+      found: header,
+      offset: byteOffset,
+    });
   }
   const count = reader.ReadUInt16(); //0x0002
 
@@ -292,7 +310,14 @@ export async function readItems(
       if (DEBUG_D2S) {
         console.warn('Previously parsed items', items);
       }
-      throw wrapParsingError(error, `Failed to read item ${i + 1} of ${count}`);
+      throw te(
+        'd2s.parse.items.readItemFailed',
+        {
+          index: i + 1,
+          count,
+        },
+        error,
+      );
     }
   }
   return items;
@@ -339,9 +364,10 @@ export async function readItem(
       const header = reader.ReadString(2); //0x0000 [item header = 0x4a, 0x4d "JM"]
       if (header !== 'JM') {
         const byteOffset = Math.floor((reader.offset - 2 * 8) / 8);
-        throw new Error(
-          `Item header 'JM' not found (found '${header}' instead) at byte offset ${byteOffset}`,
-        );
+        throw te('d2s.parse.items.itemHeaderNotFound', {
+          found: header,
+          offset: byteOffset,
+        });
       }
     }
 
@@ -537,9 +563,12 @@ export async function readItem(
         ];
         const qualityName =
           qualityNames[item.quality] || `Unknown(${item.quality})`;
-        throw wrapParsingError(
+        throw te(
+          'd2s.parse.items.readQualityFailed',
+          {
+            quality: qualityName,
+          },
           error,
-          `Failed to read quality-specific data for ${qualityName} quality item`,
         );
       }
       if (item.given_runeword) {
@@ -637,7 +666,7 @@ export async function readItem(
           }
         }
       } catch (error) {
-        throw wrapParsingError(error, `Failed to read magical properties`);
+        throw te('d2s.parse.items.readMagicPropsFailed', null, error);
       }
     }
 
@@ -667,9 +696,10 @@ export async function readItem(
             await readItem(reader, version, realm, constants, config, item),
           );
         } catch (error) {
-          throw wrapParsingError(
+          throw te(
+            'd2s.parse.items.readSocketedItemFailed',
+            { index: i + 1, count: item.nr_of_items_in_sockets },
             error,
-            `Failed to read socketed item ${i + 1} of ${item.nr_of_items_in_sockets}`,
           );
         }
       }
@@ -677,9 +707,12 @@ export async function readItem(
 
     return item;
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.items.parseItemFailed',
+      {
+        item: JSON.stringify(item),
+      },
       error,
-      `Failed to parse item ${JSON.stringify(item)}`,
     );
   }
 }
@@ -974,9 +1007,10 @@ export function _readMagicProperties(
     const propertyStartOffset = reader.offset - 9;
 
     if (constants.magical_properties[id] == null) {
-      throw new Error(
-        `Stat ID ${id} is not defined in itemstatcost.txt (attempted to read at offset ${propertyStartOffset}). This may indicate corrupted save data or unsupported game version.`,
-      );
+      throw te('d2s.parse.items.unknownStatId', {
+        id,
+        offset: propertyStartOffset,
+      });
     }
 
     try {
@@ -984,9 +1018,13 @@ export function _readMagicProperties(
       for (let i = 0; i < num_of_properties; i++) {
         const prop = constants.magical_properties[id + i];
         if (prop == null) {
-          throw new Error(
-            `Stat ID ${id + i} is not defined in itemstatcost.txt (property ${i + 1} of ${num_of_properties} for stat ${id} at offset ${reader.offset})`,
-          );
+          throw te('d2s.parse.items.unknownSubStatId', {
+            id: id + i,
+            propIndex: i + 1,
+            propCount: num_of_properties,
+            statId: id,
+            offset: reader.offset,
+          });
         }
         if (prop.sP) {
           let param = reader.ReadUInt16(prop.sP);
@@ -1014,9 +1052,10 @@ export function _readMagicProperties(
           values.push(param);
         }
         if (!prop.sB) {
-          throw new Error(
-            `Stat "${prop.s}" (ID: ${id}) is missing "Save Bits" field in itemstatcost.txt. This indicates corrupted or incomplete game data.`,
-          );
+          throw te('d2s.parse.items.missingBits', {
+            stat: prop.s,
+            id,
+          });
         }
         let v = reader.ReadUInt16(prop.sB);
         if (prop.sA) {
@@ -1039,9 +1078,14 @@ export function _readMagicProperties(
       } as types.IMagicProperty);
     } catch (error) {
       const statName = constants.magical_properties[id]?.s || `Unknown(${id})`;
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.items.readMagicPropFailed',
+        {
+          stat: statName,
+          id,
+          offset: propertyStartOffset,
+        },
         error,
-        `Failed to read magical property '${statName}' (stat ID: ${id}) starting at offset ${propertyStartOffset}`,
       );
     }
     id = reader.ReadUInt16(9);
@@ -1064,9 +1108,9 @@ export function _writeMagicProperties(
       for (let j = 0; j < num_of_properties; j++) {
         const prop = constants.magical_properties[property!.id + j];
         if (prop == null) {
-          throw new Error(
-            `Cannot find Magical Property for id: ${property.id}`,
-          );
+          throw te('d2s.parse.items.writeUnknownPropId', {
+            id: property.id,
+          });
         }
         if (prop.sP) {
           let param = property.values[valueIdx++]!;
@@ -1103,9 +1147,10 @@ export function _writeMagicProperties(
             break;
         }
         if (!prop.sB) {
-          throw new Error(
-            `Save Bits is undefined for stat: ${property.id}:${prop.s}`,
-          );
+          throw te('d2s.parse.items.writeMissingBits', {
+            id: property.id,
+            stat: prop.s,
+          });
         }
         writer.WriteUInt32(v, prop.sB);
       }

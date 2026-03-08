@@ -1,4 +1,5 @@
 import { deflateSync } from 'zlib';
+import { te } from '../../shared/i18n';
 
 /**
  * Given a Buffer containing the binary data of a .sprite file,
@@ -23,9 +24,7 @@ export function parseSprite(data: Buffer): string | null {
       return null;
     }
   } catch (e) {
-    (e as Error).message =
-      `Failed to convert sprite to data URI. Data length = ${data.length}. ${(e as Error).message}`;
-    throw e;
+    throw te('worker.spriteParser.convertFailed', { length: data.length }, e);
   }
 
   // TODO: question mark, or something

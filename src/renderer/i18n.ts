@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import i18next from 'i18next';
 import deDE from 'locales/de-DE.json';
 import enUS from 'locales/en-US.json';
 import esES from 'locales/es-ES.json';
@@ -12,8 +12,9 @@ import ptBR from 'locales/pt-BR.json';
 import ruRU from 'locales/ru-RU.json';
 import zhCN from 'locales/zh-CN.json';
 import zhTW from 'locales/zh-TW.json';
-import { isI18nError } from 'shared/i18n-log';
 import { initReactI18next } from 'react-i18next';
+
+export { isI18nConsoleArg } from 'shared/i18n';
 
 export const LOCALE_DISPLAY_NAMES = {
   'en-US': 'English (US)',
@@ -40,7 +41,7 @@ export async function initI18n(): Promise<void> {
     // fall back to English
     'en-US';
 
-  await i18n.use(initReactI18next).init({
+  await i18next.use(initReactI18next).init({
     lng: locale,
     fallbackLng: 'en-US',
     resources: {
@@ -64,17 +65,3 @@ export async function initI18n(): Promise<void> {
     },
   });
 }
-
-/**
- * Translate an error to a display string.
- * If the error carries i18n metadata (I18nError), uses i18next for translation.
- * Otherwise falls back to String(error).
- */
-export function te(error: unknown): string {
-  if (isI18nError(error)) {
-    return i18n.t(error.i18nKey, error.i18nArgs ?? {});
-  }
-  return String(error);
-}
-
-export default i18n;

@@ -1,15 +1,6 @@
 import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
-import { isI18nArg } from '../shared/i18n-log';
+import { localizeConsoleArgs } from '../shared/i18n';
 import { consumeAPI, provideAPI } from './IPC';
-import i18n from './i18n';
-
-/** Replace I18nArg markers with their English text; all other args pass through. */
-function toFileArgs(args: ConsoleArg[]): ConsoleArg[] {
-  const tEn = i18n.getFixedT('en-US');
-  return args.map((a) =>
-    isI18nArg(a) ? (tEn(a.key, a.args) as ConsoleArg) : a,
-  );
-}
 
 export async function initConsoleAPI(): Promise<void> {
   const ConsoleAPI = consumeAPI<ConsoleAPI>('ConsoleAPI', {}, true);
@@ -20,7 +11,7 @@ export async function initConsoleAPI(): Promise<void> {
   for (const level of ['debug', 'log', 'warn', 'error'] as const) {
     consoleWrapper[level] = (...args) => {
       // print English localization to local console (and d2rmm.log)
-      localConsole[level](...toFileArgs(args));
+      localConsole[level](...localizeConsoleArgs(args));
       // forward full args to other threads
       ConsoleAPI[level](...args);
     };
@@ -32,16 +23,16 @@ export async function initConsoleAPI(): Promise<void> {
     'ConsoleAPI',
     {
       debug: async (...args: ConsoleArg[]) => {
-        localConsole.debug(...toFileArgs(args));
+        localConsole.debug(...localizeConsoleArgs(args));
       },
       log: async (...args: ConsoleArg[]) => {
-        localConsole.log(...toFileArgs(args));
+        localConsole.log(...localizeConsoleArgs(args));
       },
       warn: async (...args: ConsoleArg[]) => {
-        localConsole.warn(...toFileArgs(args));
+        localConsole.warn(...localizeConsoleArgs(args));
       },
       error: async (...args: ConsoleArg[]) => {
-        localConsole.error(...toFileArgs(args));
+        localConsole.error(...localizeConsoleArgs(args));
       },
     } as ConsoleAPI,
     true,

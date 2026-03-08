@@ -1,7 +1,7 @@
 import { ChildProcess, fork } from 'child_process';
 import { app } from 'electron';
 import path from 'path';
-import { tl } from '../shared/i18n-log';
+import { tl } from '../shared/i18n';
 import { registerWorker, unregisterWorker } from './IPC';
 import { LocaleAPI } from './LocaleAPI';
 

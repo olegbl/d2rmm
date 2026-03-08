@@ -4,6 +4,7 @@ import {
   INexusAuthState,
   ISetNexusAuthState,
 } from 'renderer/react/context/NexusModsContext';
+import { te, tl } from 'shared/i18n';
 import { v4 as uuidv4 } from 'uuid';
 import { useCallback, useContext } from 'react';
 
@@ -22,7 +23,7 @@ export default function useNexusAuthState(): {
 } {
   const context = useContext(Context);
   if (context == null) {
-    throw new Error('No nexus mods context available.');
+    throw te('nexus.auth.noContext');
   }
 
   const nexusSignIn = useCallback((): void => {
@@ -54,7 +55,7 @@ export default function useNexusAuthState(): {
         data?: { connection_token?: string; api_key?: string } | null;
       };
       if (!response.success && response.error != null) {
-        console.error(`Error when signing in to Nexus Mods: ${response.error}`);
+        console.error(tl('nexus.auth.signInError', { error: response.error }));
       }
       if (response.success && response.data?.api_key != null) {
         const apiKey = response.data.api_key;

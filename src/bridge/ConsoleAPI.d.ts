@@ -6,7 +6,7 @@ export type ILogLevel = 'error' | 'warn' | 'log' | 'debug';
  * to restrict the types of the arguments to a subset that can be
  * serialized and deserialized across these boundaries.
  */
-type ConsoleArg =
+export type ConsoleArg =
   | undefined
   | null
   | Error

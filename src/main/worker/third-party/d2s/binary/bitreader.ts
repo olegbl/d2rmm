@@ -1,3 +1,5 @@
+import { te } from '../../../../../shared/i18n';
+
 export class BitReader {
   public littleEndian = true;
   public bits: Uint8Array;
@@ -21,9 +23,11 @@ export class BitReader {
   public ReadBit(): number {
     if (this.offset >= this.bits.length) {
       const byteOffset = Math.floor(this.offset / 8);
-      throw new Error(
-        `Attempted to read beyond end of buffer at byte offset ${byteOffset} (bit offset ${this.offset}). Buffer size: ${this.bits.length / 8} bytes.`,
-      );
+      throw te('d2s.binary.readBit.overflow', {
+        byteOffset,
+        bitOffset: this.offset,
+        bufferSize: this.bits.length / 8,
+      });
     }
     return this.bits[this.offset++];
   }
@@ -33,9 +37,12 @@ export class BitReader {
       const byteOffset = Math.floor(this.offset / 8);
       const bytesNeeded = Math.ceil(count / 8);
       const bytesAvailable = Math.floor((this.bits.length - this.offset) / 8);
-      throw new Error(
-        `Attempted to read ${count} bits (${bytesNeeded} bytes) starting at byte offset ${byteOffset}, but only ${bytesAvailable} bytes available.`,
-      );
+      throw te('d2s.binary.readBitArray.overflow', {
+        count,
+        bytesNeeded,
+        byteOffset,
+        bytesAvailable,
+      });
     }
     const bits = new Uint8Array(count);
     for (let i = 0; i < count; i++) {
@@ -100,9 +107,11 @@ export class BitReader {
       return new TextDecoder().decode(buffer);
     } catch (error) {
       const byteOffset = Math.floor(this.offset / 8);
-      throw new Error(
-        `Failed to read ${bytes}-byte string at byte offset ${byteOffset}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw te('d2s.binary.readString.failed', {
+        bytes,
+        byteOffset,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

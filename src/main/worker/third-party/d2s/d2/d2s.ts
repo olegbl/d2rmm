@@ -1,10 +1,11 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
+import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { readAttributes, writeAttributes } from './attributes';
 import { getConstantData } from './constants';
 import { DEBUG_D2S } from './debug';
-import { wrapParsingError, formatCharContext } from './errors';
+import { formatCharContext } from './errors';
 import {
   readHeader,
   readHeaderData,
@@ -34,7 +35,7 @@ async function read(
     try {
       await readHeader(char, reader);
     } catch (error) {
-      throw wrapParsingError(error, 'Failed to parse D2S file header');
+      throw te('d2s.parse.d2s.headerFailed', null, error);
     }
 
     try {
@@ -43,48 +44,60 @@ async function read(
         constants = getConstantData(char.header.version);
       }
     } catch (error) {
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.d2s.constantsFailed',
+        {
+          version: char.header.version,
+        },
         error,
-        `Failed to load game data constants for version ${char.header.version}`,
       );
     }
 
     try {
       await readHeaderData(char, reader, constants);
     } catch (error) {
-      throw wrapParsingError(error, 'Failed to parse character header data');
+      throw te('d2s.parse.d2s.headerDataFailed', null, error);
     }
 
     try {
       await readAttributes(char, reader, constants);
     } catch (error) {
-      throw wrapParsingError(error, 'Failed to parse character attributes');
+      throw te('d2s.parse.d2s.attributesFailed', null, error);
     }
 
     try {
       await readSkills(char, reader, constants);
     } catch (error) {
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.d2s.skillsFailed',
+        {
+          char: formatCharContext(char),
+        },
         error,
-        `Failed to parse character skills for ${formatCharContext(char)}`,
       );
     }
 
     try {
       await items.readCharItems(char, reader, constants, config);
     } catch (error) {
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.d2s.charItemsFailed',
+        {
+          char: formatCharContext(char),
+        },
         error,
-        `Failed to parse character items for ${formatCharContext(char)}`,
       );
     }
 
     try {
       await items.readCorpseItems(char, reader, constants, config);
     } catch (error) {
-      throw wrapParsingError(
+      throw te(
+        'd2s.parse.d2s.corpseItemsFailed',
+        {
+          char: formatCharContext(char),
+        },
         error,
-        `Failed to parse corpse items for ${formatCharContext(char)}`,
       );
     }
 
@@ -92,18 +105,24 @@ async function read(
       try {
         await items.readMercItems(char, reader, constants, config);
       } catch (error) {
-        throw wrapParsingError(
+        throw te(
+          'd2s.parse.d2s.mercItemsFailed',
+          {
+            char: formatCharContext(char),
+          },
           error,
-          `Failed to parse mercenary items for ${formatCharContext(char)}`,
         );
       }
 
       try {
         await items.readGolemItems(char, reader, constants, config);
       } catch (error) {
-        throw wrapParsingError(
+        throw te(
+          'd2s.parse.d2s.golemItemFailed',
+          {
+            char: formatCharContext(char),
+          },
           error,
-          `Failed to parse golem item for ${formatCharContext(char)}`,
         );
       }
     }
@@ -113,9 +132,12 @@ async function read(
     if (DEBUG_D2S) {
       console.warn('Character read so far', char);
     }
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.d2s.readCharFailed',
+      {
+        char: formatCharContext(char),
+      },
       error,
-      `Failed to read character ${formatCharContext(char)}`,
     );
   }
 }
@@ -142,9 +164,12 @@ async function readItem(
     );
     return item;
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.d2s.parseItemFailed',
+      {
+        version,
+      },
       error,
-      `Failed to parse item from buffer (version ${version})`,
     );
   }
 }

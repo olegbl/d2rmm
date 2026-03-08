@@ -2,7 +2,7 @@ import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import { LocaleAPI } from 'renderer/LocaleAPI';
 import ShellAPI from 'renderer/ShellAPI';
-import i18n, { LOCALE_DISPLAY_NAMES } from 'renderer/i18n';
+import { LOCALE_DISPLAY_NAMES } from 'renderer/i18n';
 import { useAppUpdaterContext } from 'renderer/react/context/AppUpdaterContext';
 import { useDataPath } from 'renderer/react/context/DataPathContext';
 import { useExtraGameLaunchArgs } from 'renderer/react/context/ExtraGameLaunchArgsContext';
@@ -25,6 +25,7 @@ import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
+import i18next from 'i18next';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -107,7 +108,9 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const onLocaleChange = useCallback(
     async (newLocale: string): Promise<void> => {
       setLocale(newLocale);
-      await i18n.changeLanguage(newLocale);
+      // set locale in renderer thread
+      await i18next.changeLanguage(newLocale);
+      // set locale in main/worker threads
       await LocaleAPI.setLocale(newLocale);
     },
     [setLocale],

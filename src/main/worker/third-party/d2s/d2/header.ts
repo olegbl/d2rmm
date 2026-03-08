@@ -1,7 +1,7 @@
 import type * as types from 'bridge/third-party/d2s/d2/types.d';
+import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
-import { wrapParsingError } from './errors';
 import * as header from './versions/default_header';
 
 export async function readHeader(char: types.ID2S, reader: BitReader) {
@@ -10,14 +10,14 @@ export async function readHeader(char: types.ID2S, reader: BitReader) {
     // 0x0000
     char.header.identifier = reader.ReadUInt32().toString(16).padStart(8, '0');
     if (char.header.identifier != 'aa55aa55') {
-      throw new Error(
-        `Invalid D2S file identifier '0x${char.header.identifier}' (expected 'aa55aa55'). This may not be a valid Diablo II save file.`,
-      );
+      throw te('d2s.parse.header.invalidIdentifier', {
+        id: char.header.identifier,
+      });
     }
     // 0x0004
     char.header.version = reader.ReadUInt32();
   } catch (error) {
-    throw wrapParsingError(error, 'Failed to read D2S file header');
+    throw te('d2s.parse.header.readFailed', null, error);
   }
 }
 
@@ -29,15 +29,19 @@ export async function readHeaderData(
   try {
     const v = header;
     if (v == null) {
-      throw new Error(
-        `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this parser.`,
-      );
+      throw te('d2s.parse.header.unsupportedVersion.read', {
+        version: char.header.version,
+        hex: char.header.version.toString(16),
+      });
     }
     v.readHeader(char, reader, constants);
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.header.readDataFailed',
+      {
+        version: char.header.version,
+      },
       error,
-      `Failed to read header data for version ${char.header.version}`,
     );
   }
 }
@@ -59,17 +63,21 @@ export async function writeHeaderData(
     const writer = new BitWriter();
     const v = header;
     if (v == null) {
-      throw new Error(
-        `Unsupported D2S file version: ${char.header.version} (0x${char.header.version.toString(16)}). This version may not be supported by this writer.`,
-      );
+      throw te('d2s.parse.header.unsupportedVersion.write', {
+        version: char.header.version,
+        hex: char.header.version.toString(16),
+      });
     }
     v.writeHeader(char, writer, constants);
 
     return writer.ToArray();
   } catch (error) {
-    throw wrapParsingError(
+    throw te(
+      'd2s.parse.header.writeDataFailed',
+      {
+        version: char.header.version,
+      },
       error,
-      `Failed to write header data for version ${char.header.version}`,
     );
   }
 }

@@ -49,7 +49,7 @@ if (require.main === module) {
   try {
     main().then().catch(console.error);
   } catch (e) {
-    console.error(e && e.stack ? e.stack : e);
+    console.error(e);
     process.exit(1);
   }
 }

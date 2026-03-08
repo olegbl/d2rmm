@@ -1,4 +1,4 @@
-import { tl } from '../../shared/i18n-log';
+import { tl } from '../../shared/i18n';
 import { InstallationRuntime } from './InstallationRuntime';
 
 export type FileOperationType = 'extract' | 'read' | 'write';

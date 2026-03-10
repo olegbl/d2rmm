@@ -101,7 +101,12 @@ async function read(
       );
     }
 
-    if (char.header.status.expansion) {
+    if (
+      // this feels a bit janky...
+      char.header.status.expansion ||
+      char.header.realm === 2 ||
+      char.header.realm === 3
+    ) {
       try {
         await items.readMercItems(char, reader, constants, config);
       } catch (error) {
@@ -126,7 +131,19 @@ async function read(
         );
       }
 
-      // TODO: Warlock Demon?
+      if (char.header.version === 0x69 && char.header.realm === 3) {
+        try {
+          await readDemonData(char, reader, constants, config);
+        } catch (error) {
+          throw te(
+            'd2s.parse.d2s.demonDataFailed',
+            {
+              char: formatCharContext(char),
+            },
+            error,
+          );
+        }
+      }
     }
 
     return char;
@@ -197,9 +214,16 @@ async function write(
   writer.WriteArray(await writeSkills(data, constants));
   writer.WriteArray(await items.writeCharItems(data, constants, config));
   writer.WriteArray(await items.writeCorpseItem(data, constants, config));
-  if (data.header.status.expansion) {
+  if (
+    data.header.status.expansion ||
+    data.header.realm === 2 ||
+    data.header.realm === 3
+  ) {
     writer.WriteArray(await items.writeMercItems(data, constants, config));
     writer.WriteArray(await items.writeGolemItems(data, constants, config));
+    if (data.header.version === 0x69 && data.header.realm === 3) {
+      writer.WriteArray(await writeDemonData(data, constants, config));
+    }
   }
   await fixHeader(writer);
   return writer.ToArray();
@@ -224,3 +248,49 @@ async function writeItem(
 }
 
 export { reader, writer, read, write, readItem, writeItem };
+
+async function readDemonData(
+  char: types.ID2S,
+  reader: BitReader,
+  _constants: types.IConstantData,
+  _config: types.IConfig,
+) {
+  try {
+    const header = reader.ReadString(4); // 0x0000 : 0x01 0x00 0x6c 0x66
+    if (header === '\x01\x00lf') {
+      char.has_demon = reader.ReadUInt16(); // wtf lol, in yr 2000 this would have been 1 bit
+      if (char.has_demon) {
+        // the demon section seems to always be 928 bits
+        // and ends with a 0x1FF followed by 3 0 bits
+        char.demon = reader.ReadBitArray(928); // 0x0004
+      }
+    } else {
+      throw te('d2s.parse.demon.demonHeaderNotFound', {
+        found: header,
+        offset: Math.floor((reader.offset - 2 * 8) / 8),
+      });
+    }
+  } catch (error) {
+    throw te(
+      'd2s.parse.demon.readDemonFailed',
+      {
+        char: formatCharContext(char),
+      },
+      error,
+    );
+  }
+}
+
+async function writeDemonData(
+  char: types.ID2S,
+  _constants: types.IConstantData,
+  _config: types.IConfig,
+): Promise<Uint8Array> {
+  const writer = new BitWriter();
+  writer.WriteString('\x01\x00lf', 4);
+  writer.WriteUInt16(char.has_demon);
+  if (char.has_demon) {
+    writer.WriteBits(char.demon, char.demon.length);
+  }
+  return writer.ToArray();
+}

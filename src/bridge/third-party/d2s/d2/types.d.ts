@@ -35,6 +35,8 @@ export interface ID2S {
   corpses: ICorpse[];
   merc_items: IItem[];
   golem_item: IItem;
+  has_demon: number;
+  demon: Uint8Array;
 }
 
 export interface IAttributes {
@@ -282,6 +284,10 @@ export interface IStatus {
   died: boolean;
   hardcore: boolean;
   ladder: boolean;
+  b1: boolean;
+  b2: boolean;
+  b5: boolean;
+  b8: boolean;
 }
 
 export interface ISkill {

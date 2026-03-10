@@ -370,19 +370,27 @@ function _skillId(name: string, constants: types.IConstantData): number {
 
 function _readStatus(byte: number): types.IStatus {
   const status = {} as types.IStatus;
+  status.b1 = ((byte >>> 0) & 1) === 1;
+  status.b2 = ((byte >>> 1) & 1) === 1;
   status.hardcore = ((byte >>> 2) & 1) === 1;
   status.died = ((byte >>> 3) & 1) === 1;
+  status.b5 = ((byte >>> 4) & 1) === 1;
   status.expansion = ((byte >>> 5) & 1) === 1;
   status.ladder = ((byte >>> 6) & 1) === 1;
+  status.b8 = ((byte >>> 7) & 1) === 1;
   return status;
 }
 
 function _writeStatus(status: types.IStatus): Uint8Array {
   const arr = new Uint8Array(1);
+  arr[0] |= status.b1 ? 1 << 0 : 0;
+  arr[0] |= status.b2 ? 1 << 1 : 0;
   arr[0] |= status.hardcore ? 1 << 2 : 0;
   arr[0] |= status.died ? 1 << 3 : 0;
+  arr[0] |= status.b5 ? 1 << 4 : 0;
   arr[0] |= status.expansion ? 1 << 5 : 0;
   arr[0] |= status.ladder ? 1 << 6 : 0;
+  arr[0] |= status.b8 ? 1 << 7 : 0;
   return arr;
 }
 

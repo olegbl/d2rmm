@@ -33,7 +33,7 @@ export async function read(
       if (sectionType === 2) {
         // Advanced tab metadata section (RotW) - store raw bytes for write-back
         const dataBytes = sectionSize - 64; // 64 = header size
-        stash.advancedTabData = reader.ReadBytes(dataBytes);
+        stash.chronicle = reader.ReadBytes(dataBytes);
       } else {
         try {
           await readStashPart(
@@ -235,10 +235,8 @@ export async function write(
         await writeStashSection(data, version, realm, constants, config, page),
       );
     }
-    if (data.advancedTabData) {
-      writer.WriteArray(
-        writeAdvancedTabSection(data, version, data.advancedTabData),
-      );
+    if (data.chronicle) {
+      writer.WriteArray(writeChronicle(data, version, data.chronicle));
     }
   } else {
     writer.WriteArray(await writeStashHeader(data));
@@ -296,10 +294,10 @@ async function writeStashSection(
   return writer.ToArray();
 }
 
-function writeAdvancedTabSection(
+function writeChronicle(
   data: types.IStash,
   version: number,
-  advancedTabData: Uint8Array,
+  chronicle: Uint8Array,
 ): Uint8Array {
   const writer = new BitWriter();
   writer.WriteUInt32(0xaa55aa55);
@@ -308,9 +306,9 @@ function writeAdvancedTabSection(
   writer.WriteUInt32(data.sharedGold);
   writer.WriteUInt32(0); // total section size in bytes, patched below
   const padding = new Uint8Array(44);
-  padding[0] = 2; // advanced tab metadata section marker
+  padding[0] = 2; // chronicle metadata section marker
   writer.WriteBytes(padding);
-  writer.WriteBytes(advancedTabData);
+  writer.WriteBytes(chronicle);
   const size = writer.offset;
   writer.SeekByte(16);
   writer.WriteUInt32(Math.ceil(size / 8));

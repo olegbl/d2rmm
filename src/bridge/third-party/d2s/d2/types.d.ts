@@ -425,7 +425,7 @@ export interface IStash {
   sharedGold: number;
   kind: number;
   pages: IStashPage[];
-  advancedTabData?: Uint8Array; // raw bytes for the RotW advanced tab metadata section
+  chronicle?: Uint8Array;
 }
 
 export interface IStashPage {

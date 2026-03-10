@@ -274,16 +274,14 @@ export default function ED2R(): React.ReactNode {
                         file.type === 'character'
                           ? file.character.header.name
                           : file.type === 'stash'
-                            ? [
-                                file.fileName.startsWith('Modern')
-                                  ? 'RotW'
-                                  : 'LoD',
-                                file.fileName.includes('HardCore')
-                                  ? 'Hardcore'
-                                  : 'Softcore',
-                                'Stash',
-                              ].join(' ')
-                            : 'Unknown'
+                            ? file.fileName.startsWith('Modern')
+                              ? file.fileName.includes('HardCore')
+                                ? t('ed2r.stash.tab.rotw.hardcore')
+                                : t('ed2r.stash.tab.rotw.softcore')
+                              : file.fileName.includes('HardCore')
+                                ? t('ed2r.stash.tab.lod.hardcore')
+                                : t('ed2r.stash.tab.lod.softcore')
+                            : t('ed2r.stash.tab.unknown')
                       }
                       secondary={file.fileName}
                     />
@@ -2105,6 +2103,7 @@ function InventoryGrid({
     y?: number;
   } & Partial<Exclude<IItemPosition, 'x' | 'y' | 'width' | 'height'>>
 >) {
+  const { t } = useTranslation();
   const { selectedFile: file } = useSelectedFileContext();
   const { gameData } = useGameData();
   const stashTabIndex = useStashTabIndex();
@@ -2238,14 +2237,16 @@ function InventoryGrid({
     pasteValidation?.conflictingItem != null;
   const pasteTooltip =
     clipboard == null
-      ? 'No item in clipboard'
+      ? t('ed2r.item.copyPaste.noItemInClipboard')
       : pasteValidation?.conflictingItem != null
-        ? 'This item cannot fit here'
+        ? t('ed2r.item.copyPaste.itemCannotFit')
         : pasteValidation?.invalidReason ?? '';
   const pasteLabel =
     clipboard != null
-      ? `Paste "${getItemName(clipboard.item, gameData)}"`
-      : 'Paste';
+      ? t('ed2r.item.copyPaste.pasteItem', {
+          name: getItemName(clipboard.item, gameData),
+        })
+      : t('ed2r.item.copyPaste.paste');
 
   return (
     <Box

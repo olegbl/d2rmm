@@ -371,10 +371,6 @@ export async function readItem(
       }
     }
 
-    //1.10-1.14d
-    //[flags:32][version:10][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:32])([sockets:3])
-    //1.15
-    //[flags:32][version:3][mode:3]([invloc:4][x:4][y:4][page:3])([itemcode:variable])([sockets:3])
     item._unknown_data.b0_3 = reader.ReadBitArray(4);
     item.identified = reader.ReadBit();
     item._unknown_data.b5_10 = reader.ReadBitArray(6);
@@ -391,7 +387,9 @@ export async function readItem(
     item.personalized = reader.ReadBit();
     item._unknown_data.b25 = reader.ReadBitArray(1);
     item.given_runeword = reader.ReadBit();
-    item._unknown_data.b27_31 = reader.ReadBitArray(5);
+    item._unknown_data.b27 = reader.ReadBitArray(1);
+    item.has_chronicle_data = reader.ReadBit() === 1;
+    item._unknown_data.b29_31 = reader.ReadBitArray(3);
 
     if (version <= 0x60) {
       item.version = reader.ReadUInt16(10).toString(10);
@@ -618,7 +616,13 @@ export async function readItem(
         }
       }
 
-      if (constants.stackables[item.type]) {
+      if (version >= 0x69) {
+        item.has_quantity = reader.ReadBit() === 1;
+      } else {
+        item.has_quantity = constants.stackables[item.type];
+      }
+
+      if (item.has_quantity) {
         item.quantity = reader.ReadUInt16(9);
       }
 
@@ -637,10 +641,6 @@ export async function readItem(
         item._unknown_data.plist_flag = plist_flag;
       }
 
-      if (version >= 0x69) {
-        item._unknown_data.v105_extra_bit_1 = reader.ReadBitArray(1);
-      }
-
       //magical properties
       try {
         let magic_attributes = _readMagicProperties(reader, constants);
@@ -649,20 +649,16 @@ export async function readItem(
         while (plist_flag > 0) {
           if (plist_flag & 1) {
             item.set_list_count += 1;
-            magic_attributes = _readMagicProperties(reader, constants);
-            if (item.set_attributes) {
-              item.set_attributes.push(magic_attributes);
-            } else {
-              item.set_attributes = [magic_attributes];
-            }
+            item.set_attributes ??= [];
+            item.set_attributes.push(_readMagicProperties(reader, constants));
           }
           plist_flag >>>= 1;
         }
 
         if (item.given_runeword === 1) {
-          magic_attributes = _readMagicProperties(reader, constants);
-          if (magic_attributes && magic_attributes.length > 0) {
-            item.runeword_attributes = magic_attributes;
+          const runewordAttributes = _readMagicProperties(reader, constants);
+          if (runewordAttributes && runewordAttributes.length > 0) {
+            item.runeword_attributes = runewordAttributes;
           }
         }
       } catch (error) {
@@ -670,18 +666,16 @@ export async function readItem(
       }
     }
 
-    if (version >= 0x69) {
-      item._unknown_data.v105_extra_bit_2 = reader.ReadBitArray(1);
+    if (version >= 0x69 && item.has_chronicle_data) {
+      // sometimes, even identified items have chronicle data
+      item.chronicle_source = reader.ReadUInt16();
+      item.chronicle_timestamp = reader.ReadUInt32();
+      item.chronicle_suffix = reader.ReadBitArray(4);
     }
 
-    if (
-      version >= 0x69 &&
-      realm === 3 // RotW
-    ) {
-      if (
-        constants.other_items[item.type] &&
-        constants.other_items[item.type].AdvancedStashStackable
-      ) {
+    if (version >= 0x69) {
+      item.has_advanced_stash_quantity = reader.ReadBit() === 1;
+      if (item.has_advanced_stash_quantity) {
         item.advanced_stash_quantity = reader.ReadUInt8(8);
       }
     }
@@ -752,7 +746,9 @@ export async function writeItem(
   writer.WriteBit(item.personalized);
   writer.WriteBits(item._unknown_data.b25 || new Uint8Array(1), 1); //IFLAG_LOWQUALITY
   writer.WriteBit(item.given_runeword);
-  writer.WriteBits(item._unknown_data.b27_31 || new Uint8Array(5), 5);
+  writer.WriteBits(item._unknown_data.b27 || new Uint8Array(1), 1);
+  writer.WriteBit(item.has_chronicle_data ? 1 : 0);
+  writer.WriteBits(item._unknown_data.b29_31 || new Uint8Array(3), 3);
 
   const itemVersion = item.version != null ? item.version : '101';
   if (version <= 0x60) {
@@ -914,7 +910,11 @@ export async function writeItem(
       }
     }
 
-    if (constants.stackables[item.type]) {
+    if (version >= 0x69) {
+      writer.WriteBit(item.has_quantity ? 1 : 0);
+    }
+
+    if (item.has_quantity) {
       writer.WriteUInt16(item.quantity, 9);
     }
 
@@ -930,13 +930,6 @@ export async function writeItem(
       writer.WriteUInt8(item._unknown_data.plist_flag || plist_flag, 5);
     }
 
-    if (version >= 0x69) {
-      writer.WriteBits(
-        item._unknown_data.v105_extra_bit_1 ?? new Uint8Array([0]),
-        1,
-      );
-    }
-
     _writeMagicProperties(writer, item.magic_attributes, constants);
     if (item.set_attributes && item.set_attributes.length > 0) {
       for (let i = 0; i < item.set_attributes.length; i++) {
@@ -949,21 +942,15 @@ export async function writeItem(
     }
   }
 
-  if (version >= 0x69) {
-    writer.WriteBits(
-      item._unknown_data.v105_extra_bit_2 ?? new Uint8Array([0]),
-      1,
-    );
+  if (version >= 0x69 && item.has_chronicle_data) {
+    writer.WriteUInt16(item.chronicle_source ?? 0);
+    writer.WriteUInt32(item.chronicle_timestamp ?? 0);
+    writer.WriteBits(item.chronicle_suffix ?? new Uint8Array([0, 0, 0, 0]), 4);
   }
 
-  if (
-    version >= 0x69 &&
-    realm === 3 // RotW
-  ) {
-    if (
-      constants.other_items[item.type] &&
-      constants.other_items[item.type].AdvancedStashStackable
-    ) {
+  if (version >= 0x69) {
+    writer.WriteBit(item.advanced_stash_quantity ? 1 : 0);
+    if (item.has_advanced_stash_quantity) {
       writer.WriteUInt8(item.advanced_stash_quantity ?? 1, 8);
     }
   }

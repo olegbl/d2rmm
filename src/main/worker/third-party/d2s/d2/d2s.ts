@@ -125,6 +125,8 @@ async function read(
           error,
         );
       }
+
+      // TODO: Warlock Demon?
     }
 
     return char;

@@ -3,6 +3,7 @@ import { te } from '../../../../../shared/i18n';
 import { BitReader } from '../binary/bitreader';
 import { BitWriter } from '../binary/bitwriter';
 import { getConstantData } from './constants';
+import { DEBUG_D2S } from './debug';
 import * as items from './items';
 
 const defaultConfig = {} as types.IConfig;
@@ -167,13 +168,20 @@ async function readStashPage(
   page.type = reader.ReadUInt32();
 
   page.name = reader.ReadNullTerminatedString();
-  page.items = await items.readItems(
-    reader,
-    version,
-    realm,
-    constants,
-    defaultConfig,
-  );
+  try {
+    page.items = await items.readItems(
+      reader,
+      version,
+      realm,
+      constants,
+      defaultConfig,
+    );
+  } catch (e) {
+    if (DEBUG_D2S) {
+      console.warn('Previously parsed stash page', page);
+    }
+    throw e; // TODO: wrap & translate
+  }
   stash.pages.push(page);
 }
 
@@ -191,13 +199,20 @@ async function readStashPart(
     type: 0,
     sectionType,
   };
-  page.items = await items.readItems(
-    reader,
-    version,
-    realm,
-    constants,
-    defaultConfig,
-  );
+  try {
+    page.items = await items.readItems(
+      reader,
+      version,
+      realm,
+      constants,
+      defaultConfig,
+    );
+  } catch (e) {
+    if (DEBUG_D2S) {
+      console.warn('Previously parsed stash page', page);
+    }
+    throw e; // TODO: wrap & translate
+  }
   stash.pages.push(page);
 }
 

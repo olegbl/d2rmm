@@ -153,9 +153,6 @@ export default function ModManagerLogs(_props: Props): JSX.Element {
     [logs, levels, t, filter],
   );
 
-  // @@
-  // window.logs = logs;
-
   const renderRow = useCallback(
     ({ style, index }: ListChildComponentProps) => {
       const log = filteredLogs[index];

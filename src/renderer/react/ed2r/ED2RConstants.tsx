@@ -4,6 +4,8 @@ export enum LocationID {
   NONE = 0,
   EQUIPPED = 1,
   BELT = 2,
+  CURSOR = 4,
+  ITEM = 6, // socketed?
 }
 
 export enum AltPositionID {

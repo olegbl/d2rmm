@@ -328,6 +328,7 @@ export interface IItem {
   max_durability: number;
   current_durability: number;
   total_nr_of_sockets: number;
+  has_quantity: boolean;
   quantity: number;
   magic_prefix: number;
   magic_prefix_name: string;
@@ -369,10 +370,9 @@ export interface IItem {
     b18_20?: Uint8Array;
     b23?: Uint8Array;
     b25?: Uint8Array;
-    b27_31?: Uint8Array;
+    b27?: Uint8Array;
+    b29_31?: Uint8Array;
     plist_flag?: number;
-    v105_extra_bit_1?: Uint8Array;
-    v105_extra_bit_2?: Uint8Array;
     runeword_extra_4?: number; // 4 bits after runeword_id (preserved verbatim)
     tome_extra_5?: number; // 5 bits for tome items (tbk/ibk, preserved verbatim)
   };
@@ -381,7 +381,12 @@ export interface IItem {
   displayed_magic_attributes: IMagicProperty[];
   displayed_runeword_attributes: IMagicProperty[];
   displayed_combined_magic_attributes: IMagicProperty[];
+  has_advanced_stash_quantity: boolean;
   advanced_stash_quantity?: number;
+  has_chronicle_data: boolean;
+  chronicle_source?: number;
+  chronicle_timestamp?: number;
+  chronicle_suffix?: Uint8Array;
 }
 
 export interface IWeaponDamage {

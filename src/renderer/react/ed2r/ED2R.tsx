@@ -270,12 +270,19 @@ export default function ED2R(): React.ReactNode {
                   <ListItemButton selected={file.fileName === selectedFileName}>
                     <ListItemText
                       primary={
+                        // TODO: localize
                         file.type === 'character'
                           ? file.character.header.name
                           : file.type === 'stash'
-                            ? file.fileName.includes('HardCore')
-                              ? 'Stash (Hardcore)'
-                              : 'Stash (Softcore)'
+                            ? [
+                                file.fileName.startsWith('Modern')
+                                  ? 'RotW'
+                                  : 'LoD',
+                                file.fileName.includes('HardCore')
+                                  ? 'Hardcore'
+                                  : 'Softcore',
+                                'Stash',
+                              ].join(' ')
                             : 'Unknown'
                       }
                       secondary={file.fileName}
@@ -798,17 +805,6 @@ function AdvancedStashTab({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-              {['pk1', 'pk2', 'pk3'].map((code) => (
-                <AdvancedStashSlot
-                  key={code}
-                  file={file}
-                  height={2}
-                  item={itemsByType.get(code)}
-                  itemCode={code}
-                />
-              ))}
-            </Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
               {['ua1', 'ua2', 'ua3', 'ua4', 'ua5'].map((code) => (
                 <AdvancedStashSlot
                   key={code}
@@ -819,18 +815,19 @@ function AdvancedStashTab({
                 />
               ))}
             </Box>
-          </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-              {['dhn', 'bey', 'mbr'].map((code) => (
+              {['pk1', 'pk2', 'pk3'].map((code) => (
                 <AdvancedStashSlot
                   key={code}
                   file={file}
+                  height={2}
                   item={itemsByType.get(code)}
                   itemCode={code}
                 />
               ))}
             </Box>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
               {['xa1', 'xa2', 'xa3', 'xa4', 'xa5'].map((code) => (
                 <AdvancedStashSlot
@@ -841,10 +838,20 @@ function AdvancedStashTab({
                 />
               ))}
             </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
+              {['dhn', 'bey', 'mbr'].map((code) => (
+                <AdvancedStashSlot
+                  key={code}
+                  file={file}
+                  item={itemsByType.get(code)}
+                  itemCode={code}
+                />
+              ))}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', flexWrap: 'row', gap: 2 }}>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-              {['rvs', 'rvl', 'toa'].map((code) => (
+              {['toa', 'tes', 'ceh', 'bet', 'fed'].map((code) => (
                 <AdvancedStashSlot
                   key={code}
                   file={file}
@@ -854,7 +861,7 @@ function AdvancedStashTab({
               ))}
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: '2px' }}>
-              {['tes', 'ceh', 'bet', 'fed'].map((code) => (
+              {['rvs', 'rvl'].map((code) => (
                 <AdvancedStashSlot
                   key={code}
                   file={file}
@@ -2038,6 +2045,8 @@ const InventoryItem = forwardRef(function InventoryItem(
   const { gameFiles } = useGameFiles();
   const { gameData } = useGameData();
   const sprite = getItemSprite(item, gameFiles, gameData);
+
+  // TODO: handle item.transform_color
 
   return (
     <Box

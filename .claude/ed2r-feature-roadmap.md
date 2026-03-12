@@ -6,6 +6,8 @@ This document lists planned features for the ED2R save file editor, grouped by a
 
 ## Current State (Already Implemented)
 
+> Last updated: 2026-03-11
+
 - Load/save `.d2s` character files and shared/private stash files
 - **Basic tab**: character name, level, experience, realm, status flags (hardcore, expansion, died, ladder); strength, dexterity, vitality, energy, unspent stat/skill points, HP/mana/stamina, on-character gold, stashed gold, deaths counter
 - **Skills tab**: view and edit skill point allocations (including unallocated points)
@@ -22,6 +24,7 @@ This document lists planned features for the ED2R save file editor, grouped by a
 - Shared/private stash with multiple pages; stash tab add/delete
 - Advanced stash tabs (Materials, Gems, Runes) with quantity editing
 - Unsaved-change indicator; auto-backup before write; revert to disk
+- **Undo/Redo** (§7.1) — global history stack (up to 50 entries); Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z; Undo and Redo buttons in both Character and Stash toolbars; single undo step for drags (including cross-file and swap chains); history cleared on save or revert
 
 ---
 
@@ -213,9 +216,9 @@ The save tracks which NPC introductions and congratulations messages the charact
 
 ## 7. UX / Quality of Life
 
-### 7.1 Undo / Redo
+### 7.1 Undo / Redo ✅ *Implemented*
 
-A session-level undo/redo stack (Ctrl+Z / Ctrl+Y) for all edit operations within a file. Significant engineering effort but the most impactful UX improvement. If planned, design the command pattern early — retrofitting is expensive.
+Global history stack (max 50 entries) stored in `ED2RSaveFilesContext`. History entries are `{ [fileName]: SaveFile }` snapshots, supporting atomic multi-file undo (e.g. cross-file drag, future Repair All). Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z keyboard shortcuts; Undo and Redo buttons in both toolbars. Drag is a single undo step via `pushHistory` at drag-start + `extendHistory` at drag-end (replaces the frame rather than pushing). History cleared on save or revert.
 
 ### 7.2 Stash Diff View
 
@@ -250,6 +253,6 @@ The existing context menu has copy/cut/delete/quantity. Extend it with:
 - **Quest editing** (§2) — data model fully exists; only the UI tab is missing — low risk
 - **Shared stash gold** (§3.2) — `IStash.sharedGold` is parsed; trivial single-field addition
 - **Stash tab reorder/duplicate** (§3.1) — self-contained, low risk
-- **Undo/redo** (§7.1) — design the command pattern early if in scope; retrofitting is expensive
+- **Undo/redo** (§7.1) — ✅ implemented; future multi-file mutations (Repair All, etc.) should use `pushHistory(entry)` + `onChangeSilent()` so all changes undo atomically in one step
 - **Item search** (§4.3) — read-only across all loaded data; low risk, high value
 - The `@dschu012/d2s` library (already used) handles binary parsing/serialization; item property IDs and value ranges come from `itemstatcost.txt` which is already loaded into `GameData`

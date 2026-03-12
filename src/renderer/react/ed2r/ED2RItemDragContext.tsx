@@ -190,7 +190,8 @@ export function ItemDragContextProvider({
 }: {
   children: React.ReactNode;
 }): JSX.Element {
-  const { onChange } = useSaveFiles();
+  const { onChangeSilent, pushHistory, extendHistory, undoSilent } =
+    useSaveFiles();
 
   const [draggedItem, setDraggedItem] = React.useState<IItem | null>(null);
   const draggedItemRef = useRef<IItem | null>(null);
@@ -227,7 +228,8 @@ export function ItemDragContextProvider({
           draggedPositionRef.current != null &&
           hoveredPositionRef.current != null
         ) {
-          let newToFile = hoveredPositionRef.current.file;
+          const preDragDstFile = hoveredPositionRef.current.file;
+          let newToFile = preDragDstFile;
 
           // add the dragged item to its new position
           {
@@ -407,8 +409,11 @@ export function ItemDragContextProvider({
               };
             }
 
-            // update destination file (dragged item added, overlapping item removed)
-            onChange(newToFile);
+            // Extend the history entry started at drag-start with the dst
+            // file's pre-drop state. No-op if src and dst are the same file
+            // (key already present from drag-start).
+            extendHistory({ [preDragDstFile.fileName]: preDragDstFile });
+            onChangeSilent(newToFile);
 
             const newDraggedPosition = {
               ...hoveredPositionRef.current,
@@ -425,8 +430,10 @@ export function ItemDragContextProvider({
             hoveredPositionRef.current = newDraggedPosition;
             return false; // don't end drag
           } else {
-            // update destination file
-            onChange(newToFile);
+            // Extend the history entry started at drag-start with the dst
+            // file's pre-drop state. No-op if src and dst are the same file.
+            extendHistory({ [preDragDstFile.fileName]: preDragDstFile });
+            onChangeSilent(newToFile);
 
             draggedItemInitialOffsetRef.current = null;
             setDraggedItem(null);
@@ -445,98 +452,11 @@ export function ItemDragContextProvider({
   return (
     <DndContext
       onDragCancel={(_event) => {
-        // The item was removed from its source file at drag start, so we must
-        // restore it when the drag is cancelled to avoid losing the item.
-        if (
-          draggedItemRef.current != null &&
-          draggedPositionRef.current != null
-        ) {
-          const item = draggedItemRef.current;
-          const position = draggedPositionRef.current;
-          let restoredFile = position.file;
-
-          if (position.isAdvancedStash && restoredFile.type === 'stash') {
-            // add 1 quantity back to the advanced stash slot
-            const existingItem = restoredFile.stash.pages[
-              position.stashTabIndex
-            ]?.items.find((i) => i.type === position.acceptedItemType);
-            if (existingItem != null) {
-              restoredFile = {
-                ...restoredFile,
-                stash: {
-                  ...restoredFile.stash,
-                  pages: restoredFile.stash.pages.map((page, index) =>
-                    index === position.stashTabIndex
-                      ? {
-                          ...page,
-                          items: page.items.map((i) =>
-                            i.type === position.acceptedItemType
-                              ? {
-                                  ...i,
-                                  advanced_stash_quantity:
-                                    (i.advanced_stash_quantity ?? 0) + 1,
-                                }
-                              : i,
-                          ),
-                        }
-                      : page,
-                  ),
-                },
-                edited: true,
-              };
-            } else {
-              restoredFile = {
-                ...restoredFile,
-                stash: {
-                  ...restoredFile.stash,
-                  pages: restoredFile.stash.pages.map((page, index) =>
-                    index === position.stashTabIndex
-                      ? { ...page, items: page.items.concat([item]) }
-                      : page,
-                  ),
-                },
-                edited: true,
-              };
-            }
-          } else if (restoredFile.type === 'character') {
-            if (position.isMerc) {
-              restoredFile = {
-                ...restoredFile,
-                character: {
-                  ...restoredFile.character,
-                  merc_items: (restoredFile.character.merc_items ?? []).concat([
-                    item,
-                  ]),
-                },
-                edited: true,
-              };
-            } else {
-              restoredFile = {
-                ...restoredFile,
-                character: {
-                  ...restoredFile.character,
-                  items: restoredFile.character.items.concat([item]),
-                },
-                edited: true,
-              };
-            }
-          } else if (restoredFile.type === 'stash') {
-            restoredFile = {
-              ...restoredFile,
-              stash: {
-                ...restoredFile.stash,
-                pages: restoredFile.stash.pages.map((page, index) =>
-                  index === position.stashTabIndex
-                    ? { ...page, items: page.items.concat([item]) }
-                    : page,
-                ),
-              },
-              edited: true,
-            };
-          }
-
-          onChange(restoredFile);
-        }
+        // The item was removed from its source file at drag-start (via
+        // onChangeSilent), and a history entry was pushed at that point.
+        // undoSilent() pops that entry and restores all affected files to
+        // their pre-drag state without pushing onto the redo stack.
+        undoSilent();
 
         draggedItemInitialOffsetRef.current = null;
         setDraggedItem(null);
@@ -721,7 +641,11 @@ export function ItemDragContextProvider({
               edited: true,
             };
           }
-          onChange(newFile);
+          // Push the pre-drag source file state as a new history entry.
+          // Drag-end will extend this same entry with the destination file's
+          // pre-drop state, giving a single atomic undo step for the whole drag.
+          pushHistory({ [itemPosition.file.fileName]: itemPosition.file });
+          onChangeSilent(newFile);
 
           const updatedPosition = { ...itemPosition, file: newFile };
           setDraggedItem(item);

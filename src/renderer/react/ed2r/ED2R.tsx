@@ -63,15 +63,24 @@ import { getItemName, ItemName } from 'renderer/react/ed2r/components/ItemName';
 import resolvePath from 'renderer/utils/resolvePath';
 import { DragOverlay, useDroppable, useDraggable } from '@dnd-kit/core';
 import { PropsOf } from '@emotion/react';
-import { Fragment, forwardRef, useCallback, useMemo, useState } from 'react';
+import {
+  Fragment,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Circle,
   Delete,
+  Redo,
   Refresh,
   RefreshOutlined,
   Save,
   SaveOutlined,
+  Undo,
 } from '@mui/icons-material';
 import { LoadingButton, TabContext, TabList, TabPanel } from '@mui/lab';
 import {
@@ -146,7 +155,31 @@ export default function ED2R(): React.ReactNode {
     onCommit,
     onRevert,
     onReset,
+    onUndo,
+    onRedo,
   } = useSaveFiles();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      // Don't intercept Ctrl+Z/Y when focus is inside a text input.
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && !e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        onUndo();
+      } else if (ctrl && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
+        e.preventDefault();
+        onRedo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onUndo, onRedo]);
   const { selectedFile, selectedFileName, setSelectedFileName } =
     useSelectedFileContext();
 
@@ -425,6 +458,7 @@ function Stash({
 }): React.ReactNode {
   const { t } = useTranslation();
   const runtimeModOptions = useRuntimeOptions();
+  const { canUndo, canRedo, onUndo, onRedo } = useSaveFiles();
 
   const savesPath = useFinalSavesPath();
 
@@ -566,6 +600,12 @@ function Stash({
           </Typography>
           <Box sx={{ flex: '1 1 0' }} />
           <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
+            <Button disabled={!canUndo} onClick={onUndo} startIcon={<Undo />}>
+              {t('ed2r.action.undo')}
+            </Button>
+            <Button disabled={!canRedo} onClick={onRedo} startIcon={<Redo />}>
+              {t('ed2r.action.redo')}
+            </Button>
             {file.edited ? (
               <Button
                 onClick={() => {
@@ -1185,6 +1225,7 @@ function Character({
   const savesPath = useFinalSavesPath();
 
   const { t } = useTranslation();
+  const { canUndo, canRedo, onUndo, onRedo } = useSaveFiles();
   const [tab, setTab] = useSessionState<CharaterTab>(
     `ED2R-selected-tab:${file.fileName}`,
     'basic',
@@ -1278,6 +1319,12 @@ function Character({
           </Typography>
           <Box sx={{ flex: '1 1 0' }} />
           <ButtonGroup sx={{ flex: '0 0 auto' }} variant="outlined">
+            <Button disabled={!canUndo} onClick={onUndo} startIcon={<Undo />}>
+              {t('ed2r.action.undo')}
+            </Button>
+            <Button disabled={!canRedo} onClick={onRedo} startIcon={<Redo />}>
+              {t('ed2r.action.redo')}
+            </Button>
             {file.edited ? (
               <Button
                 onClick={() => {

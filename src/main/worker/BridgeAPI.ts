@@ -1557,13 +1557,17 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             isRelative,
           });
 
-          await BridgeAPI.writeJson(
+          await BridgeAPI.writeTxt(
             path.join(runtime.options.mergedPath, '..', 'modinfo.json'),
             'None',
-            {
-              name: runtime.options.outputModName,
-              savepath: finalSavesPath,
-            },
+            JSON.stringify(
+              {
+                name: runtime.options.outputModName,
+                savepath: finalSavesPath,
+              },
+              null,
+              2,
+            ),
           );
         }
 

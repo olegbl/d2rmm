@@ -1275,7 +1275,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       const setItems = gameFiles['global/excel/setitems.txt'] as TSVData;
       for (const setItem of setItems.rows) {
         const assetID = getAssetCodeFromIndex(setItem.index);
-        assetIDToItemCodes[assetID] = setItem.code;
+        assetIDToItemCodes[assetID] = setItem.item;
       }
       const uniqueItems = gameFiles['global/excel/uniqueitems.txt'] as TSVData;
       for (const uniqueItem of uniqueItems.rows) {

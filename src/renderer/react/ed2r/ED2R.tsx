@@ -676,7 +676,7 @@ function StashTab({
   const isExpansion = true; // Classic doesn't have shared stashes
   const inventory = gameFiles['global/excel/inventory.txt'] as TSVData;
   const inventoryRow = inventory.rows.find(
-    (row) => row.class === (isExpansion ? 'Bank Page 1' : 'Big Bank Page 1'),
+    (row) => row.class === (isExpansion ? 'Big Bank Page 1' : 'Bank Page 1'),
   );
   const width = +(inventoryRow?.gridX ?? (isExpansion ? 10 : 6));
   const height = +(inventoryRow?.gridY ?? (isExpansion ? 10 : 4));
@@ -1720,7 +1720,7 @@ function CharacterStashTab({
   const isExpansion = file.character.header.status.expansion;
   const inventory = gameFiles['global/excel/inventory.txt'] as TSVData;
   const inventoryRow = inventory.rows.find(
-    (row) => row.class === (isExpansion ? 'Bank Page 1' : 'Big Bank Page 1'),
+    (row) => row.class === (isExpansion ? 'Big Bank Page 1' : 'Bank Page 1'),
     // TODO: what are "Bank Page2" and "Big Bank Page2" for?
   );
   const width = +(inventoryRow?.gridX ?? (isExpansion ? 10 : 6));

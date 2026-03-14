@@ -25,14 +25,8 @@ import {
   EquippedID,
   LocationID,
 } from 'renderer/react/ed2r/ED2RConstants';
-import {
-  type GameData,
-  useGameData,
-} from 'renderer/react/ed2r/ED2RGameDataContext';
-import {
-  GameFiles,
-  useGameFiles,
-} from 'renderer/react/ed2r/ED2RGameFilesContext';
+import { useGameData } from 'renderer/react/ed2r/ED2RGameDataContext';
+import { useGameFiles } from 'renderer/react/ed2r/ED2RGameFilesContext';
 import {
   IItemPosition,
   getContainerItems,
@@ -44,9 +38,11 @@ import {
   getUniqueItemID,
   getUniqueItemPositionID,
 } from 'renderer/react/ed2r/ED2RItemPosition';
+import { ItemTooltip } from 'renderer/react/ed2r/ED2RItemTooltip';
 import {
   enhanceCharacter,
   enhanceStashPage,
+  getItemSprite,
 } from 'renderer/react/ed2r/ED2RSaveFileUtils';
 import {
   CharacterFile,
@@ -54,6 +50,7 @@ import {
   useSaveFiles,
 } from 'renderer/react/ed2r/ED2RSaveFilesContext';
 import { useSelectedFileContext } from 'renderer/react/ed2r/ED2RSelectedFileContext';
+import { StagingAreaPanel } from 'renderer/react/ed2r/ED2RStagingAreaPanel';
 import {
   StashTabContextProvider,
   useStashTabIndex,
@@ -102,10 +99,7 @@ import {
   ListSubheader,
   Tab,
   Tooltip,
-  TooltipProps,
   Typography,
-  styled,
-  tooltipClasses,
   Select,
   MenuItem,
   Menu,
@@ -389,6 +383,7 @@ export default function ED2R(): React.ReactNode {
             />
           ) : null}
         </Box>
+        {isLoaded && <StagingAreaPanel />}
       </Box>
       <DraggedItemOverlay />
     </>
@@ -1791,102 +1786,6 @@ function CharacterCubeTab({
   );
 }
 
-const InventoryGridItemTooltip = styled(
-  ({ className, ...props }: TooltipProps) => (
-    <Tooltip {...props} arrow={true} classes={{ popper: className }} />
-  ),
-)(({ theme }) => ({
-  [`& .${tooltipClasses.arrow}`]: {
-    color: theme.palette.common.black,
-  },
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: theme.palette.common.black,
-    maxWidth: 'none',
-  },
-}));
-
-function getAssetIDFromIndex(index: string): string {
-  return index.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
-}
-
-function getAssetPath(item: IItem, gameFiles: GameFiles): null | string {
-  const itemClass =
-    item.item_quality == 'normal'
-      ? 'normal'
-      : item.item_quality == 'exceptional'
-        ? 'uber'
-        : item.item_quality == 'elite'
-          ? 'ultra'
-          : 'normal';
-
-  if (item.unique_name != null) {
-    const assetID = getAssetIDFromIndex(item.unique_name);
-    for (const entry of gameFiles['hd/items/uniques.json'] as {
-      [assetID: string]: { normal: string; uber: string; ultra: string };
-    }[]) {
-      if (entry[assetID] != null) {
-        return entry[assetID][itemClass];
-      }
-    }
-  }
-
-  if (item.set_name != null) {
-    const assetID = getAssetIDFromIndex(item.set_name);
-    for (const entry of gameFiles['hd/items/sets.json'] as {
-      [assetID: string]: { normal: string; uber: string; ultra: string };
-    }[]) {
-      if (entry[assetID] != null) {
-        return entry[assetID][itemClass];
-      }
-    }
-  }
-
-  const assetID = item.type;
-  for (const entry of gameFiles['hd/items/items.json'] as {
-    [assetID: string]: { asset: string };
-  }[]) {
-    if (entry[assetID] != null) {
-      return entry[assetID].asset;
-    }
-  }
-
-  return null;
-}
-
-function getItemSprite(
-  item: IItem,
-  gameFiles: GameFiles,
-  gameData: GameData,
-): string {
-  const assetPath = getAssetPath(item, gameFiles);
-  const category =
-    item.categories?.includes('Armor') || item.categories?.includes('Any Armor')
-      ? 'armor'
-      : item.categories?.includes('Weapon') ||
-          item.categories?.includes('Any Weapon')
-        ? 'weapon'
-        : 'misc';
-  const assetFilePaths = (
-    item.multiple_pictures ? [item.picture_id + 1, ''] : ['']
-  ).map(
-    (suffix) =>
-      `hd/global/ui/items/${category}/${assetPath}${suffix}.lowend.sprite`,
-  );
-  const asset = assetFilePaths
-    .map((assetFilePath) => gameFiles[assetFilePath])
-    .filter((value) => value != null)
-    .shift();
-  if (typeof asset !== 'string') {
-    console.warn(
-      `Could not find sprite for item "${getItemName(item, gameData)}" (${assetFilePaths[0]}).`,
-      item,
-    );
-    // TODO: question mark or something if sprite is not found
-    return '';
-  }
-  return asset;
-}
-
 function InventoryGridItem({
   height,
   item,
@@ -1942,7 +1841,13 @@ function InventoryGridItem({
     (item == null ? null : getUniqueItemID(item));
 
   const { t } = useTranslation();
-  const { onChange } = useSaveFiles();
+  const {
+    onChange,
+    onChangeSilent,
+    pushHistory,
+    stagingItems,
+    setStagingItemsSilent,
+  } = useSaveFiles();
   const { copyItem, cutItem } = useClipboardContext();
   const [contextMenuPos, setContextMenuPos] = useState<{
     x: number;
@@ -1957,6 +1862,63 @@ function InventoryGridItem({
   y ??= item.position_y;
   width ??= item.inv_width;
   height ??= item.inv_height;
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      e.stopPropagation(); // prevents ClickSensor from starting a drag
+      if (itemPosition == null || file == null) return;
+
+      // Build the new file state with the item removed.
+      const removeID = getUniqueItemID(item);
+      let newFile = file;
+      if (file.type === 'character') {
+        newFile = {
+          ...file,
+          character: {
+            ...file.character,
+            items: file.character.items.filter(
+              (i) => getUniqueItemID(i) !== removeID,
+            ),
+            merc_items: file.character.merc_items?.filter(
+              (i) => getUniqueItemID(i) !== removeID,
+            ),
+          },
+          edited: true,
+        };
+      } else if (file.type === 'stash') {
+        newFile = {
+          ...file,
+          stash: {
+            ...file.stash,
+            pages: file.stash.pages.map((page, index) =>
+              index === stashTabIndex
+                ? {
+                    ...page,
+                    items: page.items.filter(
+                      (i) => getUniqueItemID(i) !== removeID,
+                    ),
+                  }
+                : page,
+            ),
+          },
+          edited: true,
+        };
+      }
+
+      // Atomic: remove from file + add to staging in one undo step.
+      pushHistory({
+        files: { [file.fileName]: file },
+        staging: stagingItems,
+      });
+      onChangeSilent(newFile);
+      setStagingItemsSilent([...stagingItems, item]);
+      return;
+    }
+    // Pass through to dnd-kit's ClickSensor listener for normal drag.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (listeners as any)?.onPointerDown?.(e);
+  };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2018,7 +1980,7 @@ function InventoryGridItem({
 
   return (
     <>
-      <InventoryGridItemTooltip
+      <ItemTooltip
         title={
           <Box sx={{ padding: 2 }}>
             <Typography
@@ -2043,11 +2005,12 @@ function InventoryGridItem({
           isInOverlay={false}
           item={item}
           onContextMenu={handleContextMenu}
+          onPointerDown={handlePointerDown}
           width={width}
           x={x}
           y={y}
         />
-      </InventoryGridItemTooltip>
+      </ItemTooltip>
       <Menu
         anchorPosition={
           contextMenuPos != null

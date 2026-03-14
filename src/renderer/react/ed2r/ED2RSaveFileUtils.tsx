@@ -5,7 +5,9 @@ import type {
   IStashPage,
   IWeaponDamage,
 } from 'bridge/third-party/d2s/d2/types';
+import type { GameData } from 'renderer/react/ed2r/ED2RGameDataContext';
 import type { GameFiles } from 'renderer/react/ed2r/ED2RGameFilesContext';
+import { getItemName } from 'renderer/react/ed2r/components/ItemName';
 
 // ---------------------------------------------------------------------------
 // Types for the lookup indexes we build from raw game files
@@ -1256,4 +1258,90 @@ function groupAttributes(
     }
   }
   return combined_magic_attributes;
+}
+
+// ---------------------------------------------------------------------------
+// Item sprite helpers
+// ---------------------------------------------------------------------------
+
+function getAssetIDFromIndex(index: string): string {
+  return index.toLowerCase().replace(/'/g, '').replace(/ /g, '_');
+}
+
+function getAssetPath(item: IItem, gameFiles: GameFiles): null | string {
+  const itemClass =
+    item.item_quality == 'normal'
+      ? 'normal'
+      : item.item_quality == 'exceptional'
+        ? 'uber'
+        : item.item_quality == 'elite'
+          ? 'ultra'
+          : 'normal';
+
+  if (item.unique_name != null) {
+    const assetID = getAssetIDFromIndex(item.unique_name);
+    for (const entry of gameFiles['hd/items/uniques.json'] as {
+      [assetID: string]: { normal: string; uber: string; ultra: string };
+    }[]) {
+      if (entry[assetID] != null) {
+        return entry[assetID][itemClass];
+      }
+    }
+  }
+
+  if (item.set_name != null) {
+    const assetID = getAssetIDFromIndex(item.set_name);
+    for (const entry of gameFiles['hd/items/sets.json'] as {
+      [assetID: string]: { normal: string; uber: string; ultra: string };
+    }[]) {
+      if (entry[assetID] != null) {
+        return entry[assetID][itemClass];
+      }
+    }
+  }
+
+  const assetID = item.type;
+  for (const entry of gameFiles['hd/items/items.json'] as {
+    [assetID: string]: { asset: string };
+  }[]) {
+    if (entry[assetID] != null) {
+      return entry[assetID].asset;
+    }
+  }
+
+  return null;
+}
+
+export function getItemSprite(
+  item: IItem,
+  gameFiles: GameFiles,
+  gameData: GameData,
+): string {
+  const assetPath = getAssetPath(item, gameFiles);
+  const category =
+    item.categories?.includes('Armor') || item.categories?.includes('Any Armor')
+      ? 'armor'
+      : item.categories?.includes('Weapon') ||
+          item.categories?.includes('Any Weapon')
+        ? 'weapon'
+        : 'misc';
+  const assetFilePaths = (
+    item.multiple_pictures ? [item.picture_id + 1, ''] : ['']
+  ).map(
+    (suffix) =>
+      `hd/global/ui/items/${category}/${assetPath}${suffix}.lowend.sprite`,
+  );
+  const asset = assetFilePaths
+    .map((assetFilePath) => gameFiles[assetFilePath])
+    .filter((value) => value != null)
+    .shift();
+  if (typeof asset !== 'string') {
+    console.warn(
+      `Could not find sprite for item "${getItemName(item, gameData)}" (${assetFilePaths[0]}).`,
+      item,
+    );
+    // TODO: question mark or something if sprite is not found
+    return '';
+  }
+  return asset;
 }

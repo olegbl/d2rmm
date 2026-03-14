@@ -13,6 +13,7 @@ import {
 } from 'renderer/react/ed2r/ED2RItemPosition';
 import {
   SaveFile,
+  StashFile,
   useSaveFiles,
 } from 'renderer/react/ed2r/ED2RSaveFilesContext';
 import { DndContext, useSensor, useSensors } from '@dnd-kit/core';
@@ -34,6 +35,26 @@ export type IItemPosition = Readonly<{
   x: number;
   y: number;
 }>;
+
+/**
+ * Sentinel file used as a placeholder `file` in `IItemPosition` for items
+ * being dragged out of the staging area. It is never read or modified.
+ */
+export const STAGING_SENTINEL_FILE: StashFile = {
+  type: 'stash',
+  fileName: '__staging_area__',
+  stash: {
+    version: '',
+    type: 'shared',
+    pageCount: 0,
+    sharedGold: 0,
+    kind: 0,
+    pages: [],
+  },
+  edited: false,
+  readTime: 0,
+  saveTime: null,
+};
 
 export type IItemDragContext = Readonly<{
   draggedItem: IItem | null;
@@ -190,8 +211,14 @@ export function ItemDragContextProvider({
 }: {
   children: React.ReactNode;
 }): JSX.Element {
-  const { onChangeSilent, pushHistory, extendHistory, undoSilent } =
-    useSaveFiles();
+  const {
+    onChangeSilent,
+    pushHistory,
+    extendHistory,
+    undoSilent,
+    stagingItems,
+    setStagingItemsSilent,
+  } = useSaveFiles();
 
   const [draggedItem, setDraggedItem] = React.useState<IItem | null>(null);
   const draggedItemRef = useRef<IItem | null>(null);
@@ -204,6 +231,14 @@ export function ItemDragContextProvider({
   const hoveredPositionRef = useRef<IItemPosition | null>(null);
 
   const draggedPositionRef = useRef<IItemPosition | null>(null);
+
+  // Tracks whether the current drag originated from the staging area.
+  const dragFromStagingRef = useRef(false);
+  // Tracks whether the cursor is currently over the staging drop zone.
+  const dragOverStagingRef = useRef(false);
+  // Stable ref so the statically-cached onAttemptDragEnd can read staging items.
+  const stagingItemsRef = useRef(stagingItems);
+  stagingItemsRef.current = stagingItems;
 
   const context = useMemo(
     () => ({
@@ -218,8 +253,41 @@ export function ItemDragContextProvider({
       // NOTE: this function is statically cached
       //       and will not be updated on render
       onAttemptDragEnd: () => {
+        // Handle drop on the staging area.
+        if (dragOverStagingRef.current) {
+          if (dragFromStagingRef.current) {
+            // Staging → staging: undo the removal so item returns to staging.
+            undoSilent();
+          } else {
+            // Inventory → staging: keep the source file removal, add to staging.
+            extendHistory({ staging: stagingItemsRef.current });
+            setStagingItemsSilent([
+              ...stagingItemsRef.current,
+              draggedItemRef.current!,
+            ]);
+          }
+          draggedItemInitialOffsetRef.current = null;
+          dragFromStagingRef.current = false;
+          dragOverStagingRef.current = false;
+          setDraggedItem(null);
+          draggedItemRef.current = null;
+          draggedPositionRef.current = null;
+          setHoveredPosition(null);
+          hoveredPositionRef.current = null;
+          return true;
+        }
+
         // if the current hovered position isn't valid
         if (!(hoveredPositionRef.current?.isValid ?? false)) {
+          return false;
+        }
+
+        // When dragging from staging, disallow swaps — the displaced item
+        // has no natural "previous position" to return to.
+        if (
+          dragFromStagingRef.current &&
+          hoveredPositionRef.current?.overlappingItem != null
+        ) {
           return false;
         }
 
@@ -360,6 +428,7 @@ export function ItemDragContextProvider({
 
           // pick up overlapping item, if any — remove it from the destination
           // file immediately so the save state stays consistent
+          // (only for non-staging drags; staging drags disallow swaps above)
           if (hoveredPositionRef.current.overlappingItem != null) {
             const newDraggedItem = hoveredPositionRef.current.overlappingItem;
             const overlappingItemID = getUniqueItemID(newDraggedItem);
@@ -412,7 +481,9 @@ export function ItemDragContextProvider({
             // Extend the history entry started at drag-start with the dst
             // file's pre-drop state. No-op if src and dst are the same file
             // (key already present from drag-start).
-            extendHistory({ [preDragDstFile.fileName]: preDragDstFile });
+            extendHistory({
+              files: { [preDragDstFile.fileName]: preDragDstFile },
+            });
             onChangeSilent(newToFile);
 
             const newDraggedPosition = {
@@ -431,8 +502,12 @@ export function ItemDragContextProvider({
             return false; // don't end drag
           } else {
             // Extend the history entry started at drag-start with the dst
-            // file's pre-drop state. No-op if src and dst are the same file.
-            extendHistory({ [preDragDstFile.fileName]: preDragDstFile });
+            // file's pre-drop state. No-op if src and dst are the same file
+            // (for staging drags: the source entry has no files key, so this
+            // always adds the destination).
+            extendHistory({
+              files: { [preDragDstFile.fileName]: preDragDstFile },
+            });
             onChangeSilent(newToFile);
 
             draggedItemInitialOffsetRef.current = null;
@@ -452,13 +527,15 @@ export function ItemDragContextProvider({
   return (
     <DndContext
       onDragCancel={(_event) => {
-        // The item was removed from its source file at drag-start (via
-        // onChangeSilent), and a history entry was pushed at that point.
-        // undoSilent() pops that entry and restores all affected files to
-        // their pre-drag state without pushing onto the redo stack.
+        // The item was removed from its source (file or staging) at drag-start,
+        // and a history entry was pushed at that point.
+        // undoSilent() pops that entry and restores all affected state
+        // (files and/or staging) without pushing onto the redo stack.
         undoSilent();
 
         draggedItemInitialOffsetRef.current = null;
+        dragFromStagingRef.current = false;
+        dragOverStagingRef.current = false;
         setDraggedItem(null);
         draggedItemRef.current = null;
         draggedPositionRef.current = null;
@@ -549,9 +626,11 @@ export function ItemDragContextProvider({
             x,
             y,
           };
+          dragOverStagingRef.current = false;
           setHoveredPosition(newHoveredPosition);
           hoveredPositionRef.current = newHoveredPosition;
         } else {
+          dragOverStagingRef.current = event.over?.id === 'staging-drop-zone';
           setHoveredPosition(null);
           hoveredPositionRef.current = null;
         }
@@ -561,6 +640,32 @@ export function ItemDragContextProvider({
           let item = event.active.data.current.item as IItem;
           const itemPosition = event.active.data.current
             .itemPosition as IItemPosition;
+          const fromStaging = event.active.data.current.fromStaging === true;
+
+          dragFromStagingRef.current = fromStaging;
+
+          if (fromStaging) {
+            // Item is coming from the staging area — push staging state to
+            // history and remove the item from staging. No file is modified.
+            pushHistory({ staging: stagingItemsRef.current });
+            setStagingItemsSilent(
+              stagingItemsRef.current.filter(
+                (i) => getUniqueItemID(i) !== getUniqueItemID(item),
+              ),
+            );
+
+            const updatedPosition: IItemPosition = {
+              ...itemPosition,
+              width: item.inv_width,
+              height: item.inv_height,
+            };
+            setDraggedItem(item);
+            draggedItemRef.current = item;
+            draggedPositionRef.current = updatedPosition;
+            setHoveredPosition(updatedPosition);
+            hoveredPositionRef.current = updatedPosition;
+            return;
+          }
 
           // when picking up from an advanced stash slot,
           // pick up a single item instead of the whole stack
@@ -644,7 +749,9 @@ export function ItemDragContextProvider({
           // Push the pre-drag source file state as a new history entry.
           // Drag-end will extend this same entry with the destination file's
           // pre-drop state, giving a single atomic undo step for the whole drag.
-          pushHistory({ [itemPosition.file.fileName]: itemPosition.file });
+          pushHistory({
+            files: { [itemPosition.file.fileName]: itemPosition.file },
+          });
           onChangeSilent(newFile);
 
           const updatedPosition = { ...itemPosition, file: newFile };

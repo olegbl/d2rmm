@@ -65,7 +65,7 @@ function prettyPrintData(data: unknown, t: typeof i18next.t): string {
   }
 
   if (data instanceof Error) {
-    return error.message;
+    return data.message;
   }
 
   if (Array.isArray(data)) {

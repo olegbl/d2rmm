@@ -115,7 +115,14 @@ function ModListItemContent({ isEnabled, isReorderEnabled, mod }: Props) {
             <Box sx={{ display: 'flex', flexDirection: 'row' }}>
               <Typography>{mod.info.name}</Typography>
               {mod.info.description == null ? null : (
-                <Tooltip title={mod.info.description}>
+                <Tooltip
+                  title={mod.info.description.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {i > 0 && <br />}
+                      {line}
+                    </span>
+                  ))}
+                >
                   <Help color="disabled" sx={{ ml: 1 }} />
                 </Tooltip>
               )}

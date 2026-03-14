@@ -6,7 +6,7 @@ This document lists planned features for the ED2R save file editor, grouped by a
 
 ## Current State (Already Implemented)
 
-> Last updated: 2026-03-11
+> Last updated: 2026-03-13
 
 - Load/save `.d2s` character files and shared/private stash files
 - **Basic tab**: character name, level, experience, realm, status flags (hardcore, expansion, died, ladder); strength, dexterity, vitality, energy, unspent stat/skill points, HP/mana/stamina, on-character gold, stashed gold, deaths counter
@@ -24,7 +24,8 @@ This document lists planned features for the ED2R save file editor, grouped by a
 - Shared/private stash with multiple pages; stash tab add/delete
 - Advanced stash tabs (Materials, Gems, Runes) with quantity editing
 - Unsaved-change indicator; auto-backup before write; revert to disk
-- **Undo/Redo** (§7.1) — global history stack (up to 50 entries); Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z; Undo and Redo buttons in both Character and Stash toolbars; single undo step for drags (including cross-file and swap chains); history cleared on save or revert
+- **Undo/Redo** (§7.1) — global history stack (up to 50 entries); Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z; Undo and Redo buttons in both Character and Stash toolbars; single undo step for drags (including cross-file and swap chains); history cleared on save; revert is itself undoable
+- **Item Staging Area** (§4.2) — collapsible right sidebar; Ctrl+click any item → moves to staging; drag from staging → drop into any inventory grid; drag back to staging panel to return; right-click → Delete; Ctrl+click staged item → auto-places in current visible grid (top-left valid position); fully integrated with undo/redo (staging changes and file changes are atomic); panel hidden on non-item tabs (basic/skills/waypoints/raw)
 
 ---
 
@@ -143,9 +144,9 @@ Allow copying an item to the clipboard as a JSON string (the same structure as t
 
 Keyboard shortcut (e.g. Shift+click or Alt+click) to instantly move an item to a user-configured preferred destination (e.g. "always send to shared stash tab 1"). Complements the existing cross-file clipboard.
 
-### 4.2 Item Staging Area (Virtual Container)
+### 4.2 Item Staging Area (Virtual Container) ✅ *Implemented*
 
-Ctrl+click moves an item to a persistent virtual staging area that is always visible regardless of which file is currently selected. Users can stage items from Character A, switch to Character B, and drag them out of the staging area. The staging area is local to the session and is not persisted to disk — it works purely as an in-app transfer buffer.
+Ctrl+click moves an item to a persistent virtual staging area (collapsible right sidebar) that is always visible regardless of which file is currently selected. Users can stage items from Character A, switch to Character B, and drag them out of the staging area. The staging area is local to the session and is not persisted to disk — it works purely as an in-app transfer buffer. Fully integrated with undo/redo; Ctrl+click a staged item to auto-place it in the current visible grid; drag staged items back to the staging panel to return them.
 
 ### 4.3 Item Search
 
@@ -218,7 +219,7 @@ The save tracks which NPC introductions and congratulations messages the charact
 
 ### 7.1 Undo / Redo ✅ *Implemented*
 
-Global history stack (max 50 entries) stored in `ED2RSaveFilesContext`. History entries are `{ [fileName]: SaveFile }` snapshots, supporting atomic multi-file undo (e.g. cross-file drag, future Repair All). Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z keyboard shortcuts; Undo and Redo buttons in both toolbars. Drag is a single undo step via `pushHistory` at drag-start + `extendHistory` at drag-end (replaces the frame rather than pushing). History cleared on save or revert.
+Global history stack (max 50 entries) stored in `ED2RSaveFilesContext`. History entries are `{ files?: { [fileName]: SaveFile }; staging?: IItem[] }` snapshots, supporting atomic multi-file + staging undo (e.g. cross-file drag, Ctrl+click to/from staging). Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z keyboard shortcuts; Undo and Redo buttons in both toolbars. Drag is a single undo step via `pushHistory` at drag-start + `extendHistory` at drag-end. Revert is itself undoable (pushes current state before reverting). History cleared on save.
 
 ### 7.2 Stash Diff View
 

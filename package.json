@@ -235,6 +235,8 @@
     "npm": ">=9.x"
   },
   "resolutions": {
+    "@typescript-eslint/eslint-plugin": "^7",
+    "@typescript-eslint/parser": "^7",
     "@babel/runtime": "^7.28.6",
     "@babel/traverse": "^7.29.0",
     "async": "^3.2.6",
@@ -271,6 +273,8 @@
     "yargs": "^17.7.2"
   },
   "overrides": {
+    "@typescript-eslint/eslint-plugin": "^7",
+    "@typescript-eslint/parser": "^7",
     "@babel/runtime": "^7.28.6",
     "@babel/traverse": "^7.29.0",
     "async": "^3.2.6",

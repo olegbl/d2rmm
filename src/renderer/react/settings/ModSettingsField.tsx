@@ -122,7 +122,14 @@ export default function ModSettingsField({
           <Typography>{field.name}</Typography>
         </FormLabel>
         {field.description == null ? null : (
-          <Tooltip title={field.description}>
+          <Tooltip
+            title={field.description.split('\n').map((line, i) => (
+              <span key={i}>
+                {i > 0 && <br />}
+                {line}
+              </span>
+            ))}
+          >
             <Help color="disabled" fontSize="small" sx={{ marginLeft: 1 }} />
           </Tooltip>
         )}

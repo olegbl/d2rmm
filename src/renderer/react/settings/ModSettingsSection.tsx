@@ -241,7 +241,14 @@ export default function ModSettingsSection({
           >
             <Typography>{section.name}</Typography>
             {section.description == null ? null : (
-              <Tooltip title={section.description}>
+              <Tooltip
+                title={section.description.split('\n').map((line, i) => (
+                  <span key={i}>
+                    {i > 0 && <br />}
+                    {line}
+                  </span>
+                ))}
+              >
                 <Help
                   color="disabled"
                   fontSize="small"

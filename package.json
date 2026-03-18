@@ -29,15 +29,9 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": ["cross-env NODE_ENV=development eslint --cache"],
-    "*.json,.{eslintrc,prettierrc}": [
-      "prettier --ignore-path .eslintignore --parser json --write"
-    ],
-    "*.{css,scss}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ],
-    "*.{html,md,yml}": [
-      "prettier --ignore-path .eslintignore --single-quote --write"
-    ]
+    "*.json,.{eslintrc,prettierrc}": ["prettier --parser json --write"],
+    "*.{css,scss}": ["prettier --single-quote --write"],
+    "*.{html,md,yml}": ["prettier --single-quote --write"]
   },
   "build": {
     "productName": "D2RMM",
@@ -124,6 +118,7 @@
   "homepage": "https://github.com/olegbl/d2rmm#readme",
   "devDependencies": {
     "@electron/rebuild": "^4.0.3",
+    "@eslint/js": "^9",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.15",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.1",
     "@testing-library/jest-dom": "^5.16.1",
@@ -141,8 +136,8 @@
     "@types/terser-webpack-plugin": "^5.0.4",
     "@types/uuid": "^10.0.0",
     "@types/webpack-env": "^1.16.3",
-    "@typescript-eslint/eslint-plugin": "^7",
-    "@typescript-eslint/parser": "^7",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
     "@yao-pkg/pkg": "^6.14.1",
     "CascLib": "https://github.com/ladislav-zezula/CascLib.git",
     "browserslist-config-erb": "^0.0.3",
@@ -157,21 +152,19 @@
     "electron": "^35.0.0",
     "electron-builder": "^24.9.0",
     "electron-devtools-installer": "^3.2.0",
-    "eslint": "^8.5.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-erb": "^4.0.3",
-    "eslint-import-resolver-typescript": "^2.5.0",
-    "eslint-import-resolver-webpack": "^0.13.2",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-import-resolver-typescript": "^3",
     "eslint-plugin-compat": "^4.0.0",
-    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jest": "^25.3.2",
     "eslint-plugin-jsx-a11y": "^6.5.1",
     "eslint-plugin-no-relative-import-paths": "^1.5.5",
-    "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-promise": "^6.0.0",
-    "eslint-plugin-react": "^7.28.0",
-    "eslint-plugin-react-hooks": "^4.3.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5",
     "file-loader": "^6.2.0",
+    "globals": "^16",
     "html-webpack-plugin": "^5.5.0",
     "husky": "^7.0.4",
     "identity-obj-proxy": "^3.0.0",
@@ -193,6 +186,7 @@
     "ts-loader": "^9.2.6",
     "ts-node": "^10.4.0",
     "typescript": "^5.0",
+    "typescript-eslint": "^8",
     "url-loader": "^4.1.1",
     "webpack": "^5.105.3",
     "webpack-bundle-analyzer": "^4.5.0",
@@ -235,8 +229,8 @@
     "npm": ">=9.x"
   },
   "resolutions": {
-    "@typescript-eslint/eslint-plugin": "^7",
-    "@typescript-eslint/parser": "^7",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
     "@babel/runtime": "^7.28.6",
     "@babel/traverse": "^7.29.0",
     "async": "^3.2.6",
@@ -273,8 +267,8 @@
     "yargs": "^17.7.2"
   },
   "overrides": {
-    "@typescript-eslint/eslint-plugin": "^7",
-    "@typescript-eslint/parser": "^7",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
     "@babel/runtime": "^7.28.6",
     "@babel/traverse": "^7.29.0",
     "async": "^3.2.6",

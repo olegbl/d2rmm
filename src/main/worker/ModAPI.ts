@@ -40,7 +40,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       }
       runtime.fileManager.setData(filePath, buffer);
       await runtime.fileManager.extract(filePath, runtime.mod.id);
-    } catch (e) {
+    } catch {
       // if we failed to extract the file, that's okay, it may not be a vanilla file
     }
   }

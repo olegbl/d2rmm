@@ -5,6 +5,9 @@ on:
     branches:
       - master
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
@@ -18,7 +21,7 @@ jobs:
 
       - name: Get versions and compute alias
         id: check_versions
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const { execSync } = require('child_process');
@@ -68,7 +71,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -79,7 +82,7 @@ jobs:
           architecture: 'x64'
 
       - name: Install MSBuild
-        uses: microsoft/setup-msbuild@v1.3.1
+        uses: microsoft/setup-msbuild@v3
 
       # GitHub git dependencies don't work in GitHub Action workflows,
       # so we remove CascLib from package.json and clone it manually instead.
@@ -149,7 +152,7 @@ jobs:
           path: artifacts
 
       - name: Delete release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const releaseName = "D2RMM ${{ needs.check-version.outputs.current_version }}";
@@ -170,7 +173,7 @@ jobs:
             }
 
       - name: Delete tag
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const tagName = "v${{ needs.check-version.outputs.current_version }}";
@@ -190,7 +193,7 @@ jobs:
             }
 
       - name: Create tag
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const tagName = "v${{ needs.check-version.outputs.current_version }}";
@@ -220,7 +223,7 @@ jobs:
           generateReleaseNotes: false
 
       - name: Publish pre-release
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const tagName = "v${{ needs.check-version.outputs.current_version }}";
@@ -276,7 +279,7 @@ jobs:
 
       - name: Create alias tag
         if: needs.check-version.outputs.version_to_alias != ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const aliasTag = "v${{ needs.check-version.outputs.version_to_alias }}";
@@ -334,7 +337,7 @@ jobs:
 
       - name: Publish alias pre-release
         if: needs.check-version.outputs.version_to_alias != ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const aliasTag = "v${{ needs.check-version.outputs.version_to_alias }}";
@@ -366,7 +369,7 @@ jobs:
 
       - name: Finalize alias pre-release
         if: needs.check-version.outputs.version_to_release != ''
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             const previousTag = "v${{ needs.check-version.outputs.version_to_release }}";
@@ -416,7 +419,7 @@ jobs:
         run: npm run docs
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs

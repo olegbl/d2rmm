@@ -69,6 +69,10 @@ export function getCascLib(): ICascLib {
   return CASC_LIB;
 }
 
+// Flags for CascOpenStorage (from CascLib.h CASC_FEATURE_*)
+// https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
+export const CASC_FEATURE_ALLOW_DOWNLOAD = 0x00002000; // Allow CDN download of missing manifests (ENCODING/DOWNLOAD/ROOT), but not game files
+
 // CascLib Error Codes for GetCascError()
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascPort.h#L230
 // https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-

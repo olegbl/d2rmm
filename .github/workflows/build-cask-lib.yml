@@ -1,0 +1,48 @@
+name: Package and Release
+
+on:
+  pull_request:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          architecture: 'x64'
+
+      - name: Install MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      # GitHub git dependencies don't work in GitHub Action workflows,
+      # so we remove CascLib from package.json and clone it manually instead.
+      - name: Remove CascLib from package.json
+        run: npm remove CascLib --force
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Clone CascLib source
+        run: git clone https://github.com/ladislav-zezula/CascLib.git node_modules/CascLib
+
+      - name: Build package
+        run: npm run build:casclib:win
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: casclib-win
+          path: tools/CascLib.dll

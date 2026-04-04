@@ -22,34 +22,25 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       return;
     }
 
-    try {
-      let buffer: Buffer;
-      if (runtime.options.isPreExtractedData) {
-        // read from pre-extracted source into memory
-        const result = await runtime.BridgeAPI.readFile(
-          filePath,
-          'PreExtractedData',
-        );
-        if (result == null) {
-          throw new Error(
-            `file "${filePath}" was not found in pre-extracted data`,
-          );
-        }
-        buffer = result;
-      } else {
-        // extract from CASC into memory
-        buffer = await runtime.BridgeAPI.extractFileToMemory(filePath);
-      }
-      runtime.fileManager.setData(filePath, buffer);
-      await runtime.fileManager.extract(filePath, runtime.mod.id);
-    } catch (e) {
-      // if we failed to extract the file, that's okay, it may not be a vanilla file
-      // and may not need to be extracted ; however, log the error in case there is
-      // an issue that we need to debug
-      console.debug(
-        `file "${filePath}" could not be extracted: ${e instanceof Error ? e.message : String(e)}`,
+    let buffer: Buffer;
+    if (runtime.options.isPreExtractedData) {
+      // read from pre-extracted source into memory
+      const result = await runtime.BridgeAPI.readFile(
+        filePath,
+        'PreExtractedData',
       );
+      if (result == null) {
+        throw new Error(
+          `Failed to find file "${filePath}" in pre-extracted data`,
+        );
+      }
+      buffer = result;
+    } else {
+      // extract from CASC into memory
+      buffer = await runtime.BridgeAPI.extractFileToMemory(filePath);
     }
+    runtime.fileManager.setData(filePath, buffer);
+    await runtime.fileManager.extract(filePath, runtime.mod.id);
   }
 
   return {
@@ -88,11 +79,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
       if (buffer == null) {
-        const exists = runtime.fileManager.exists(filePath);
-        const extracted = runtime.fileManager.extracted(filePath);
-        const modified = runtime.fileManager.modified(filePath);
-        const details = JSON.stringify({ exists, extracted, modified });
-        throw new Error(`file "${filePath}" was not extracted (${details})`);
+        throw new Error(`Failed to read file "${filePath}"`);
       }
       await runtime.fileManager.read(filePath, runtime.mod.id);
       let rawText = readCString(buffer);
@@ -117,11 +104,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
       if (buffer == null) {
-        const exists = runtime.fileManager.exists(filePath);
-        const extracted = runtime.fileManager.extracted(filePath);
-        const modified = runtime.fileManager.modified(filePath);
-        const details = JSON.stringify({ exists, extracted, modified });
-        throw new Error(`file "${filePath}" was not extracted (${details})`);
+        throw new Error(`Failed to read file "${filePath}"`);
       }
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return parseJson(readCString(buffer));
@@ -161,11 +144,7 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
       if (buffer == null) {
-        const exists = runtime.fileManager.exists(filePath);
-        const extracted = runtime.fileManager.extracted(filePath);
-        const modified = runtime.fileManager.modified(filePath);
-        const details = JSON.stringify({ exists, extracted, modified });
-        throw new Error(`file "${filePath}" was not extracted (${details})`);
+        throw new Error(`Failed to read file "${filePath}"`);
       }
       await runtime.fileManager.read(filePath, runtime.mod.id);
       return readCString(buffer);

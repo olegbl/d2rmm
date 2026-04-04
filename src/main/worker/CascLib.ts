@@ -4,6 +4,41 @@ import { getAppPath } from './AppInfoAPI';
 
 // http://www.zezula.net/en/casc/casclib.html
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
+
+// Mirrors CASC_OPEN_STORAGE_ARGS from CascLib.h
+// All pointer fields we don't use are typed as void * and passed as null.
+const CascOpenStorageArgsType = koffi.struct('CASC_OPEN_STORAGE_ARGS', {
+  Size: 'size_t',
+  szLocalPath: 'void *',
+  szCodeName: 'void *',
+  szRegion: 'void *',
+  PfnProgressCallback: 'void *',
+  PtrProgressParam: 'void *',
+  PfnProductCallback: 'void *',
+  PtrProductParam: 'void *',
+  dwLocaleMask: 'uint32',
+  dwFlags: 'uint32',
+  szBuildKey: 'void *',
+  szCdnHostUrl: 'void *',
+});
+
+export function makeCascOpenStorageArgs(flags: number): object {
+  return {
+    Size: koffi.sizeof(CascOpenStorageArgsType),
+    szLocalPath: null,
+    szCodeName: null,
+    szRegion: null,
+    PfnProgressCallback: null,
+    PtrProgressParam: null,
+    PfnProductCallback: null,
+    PtrProductParam: null,
+    dwLocaleMask: 0,
+    dwFlags: flags,
+    szBuildKey: null,
+    szCdnHostUrl: null,
+  };
+}
+
 export type ICascLib = {
   CascCloseFile: (handle: unknown) => boolean;
   CascCloseStorage: (storage: unknown) => boolean;
@@ -21,7 +56,7 @@ export type ICascLib = {
   ) => boolean;
   CascOpenStorageEx: (
     path: string,
-    flags: null,
+    args: object,
     online: boolean,
     storageOut: unknown[],
   ) => boolean;
@@ -65,7 +100,7 @@ export async function initCascLib(): Promise<void> {
       'bool CascOpenStorage(str path, int flags, _Out_ void **storage)',
     ),
     CascOpenStorageEx: lib.func(
-      'bool CascOpenStorageEx(str path, int flags, bool online, _Out_ void **storage)',
+      'bool CascOpenStorageEx(str path, CASC_OPEN_STORAGE_ARGS *args, bool online, _Out_ void **storage)',
     ),
     CascReadFile: lib.func(
       'bool CascReadFile(void *file, void *buffer, int size, _Out_ uint32_t *bytesRead)',

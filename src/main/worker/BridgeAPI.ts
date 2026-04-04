@@ -37,6 +37,7 @@ import {
   CASC_FEATURE_ALLOW_DOWNLOAD,
   getCascLib,
   getLastCascLibError,
+  makeCascOpenStorageArgs,
   readCString,
 } from './CascLib';
 import { EventAPI } from './EventAPI';
@@ -291,7 +292,7 @@ export const BridgeAPI: IBridgeAPI = {
         if (
           getCascLib().CascOpenStorageEx(
             storagePath,
-            CASC_FEATURE_ALLOW_DOWNLOAD,
+            makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD),
             online,
             storageOut,
           )

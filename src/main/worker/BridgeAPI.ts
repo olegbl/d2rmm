@@ -287,18 +287,24 @@ export const BridgeAPI: IBridgeAPI = {
         ...PATHS.map((p) => [p, false] as const),
         ...PATHS.map((p) => [p, true] as const),
       ];
+      const options = makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD);
       for (const [storagePath, online] of attempts) {
         const storageOut: unknown[] = [null];
         if (
           getCascLib().CascOpenStorageEx(
             storagePath,
-            makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD),
+            options,
             online,
             storageOut,
           )
         ) {
           cascStorage = storageOut[0];
           cascStorageIsOpen = true;
+          console.debug('BridgeAPI.openStorage success', {
+            storagePath,
+            online,
+            options,
+          });
           break;
         }
       }

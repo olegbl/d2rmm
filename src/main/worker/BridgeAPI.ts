@@ -35,6 +35,7 @@ import { te, tl } from '../../shared/i18n';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import {
   CASC_FEATURE_ALLOW_DOWNLOAD,
+  CASC_FEATURE_ONLINE,
   getCascLib,
   getLastCascLibError,
   makeCascOpenStorageArgs,
@@ -292,7 +293,11 @@ export const BridgeAPI: IBridgeAPI = {
         if (
           getCascLib().CascOpenStorageEx(
             storagePath,
-            makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD),
+            makeCascOpenStorageArgs(
+              online
+                ? CASC_FEATURE_ALLOW_DOWNLOAD | CASC_FEATURE_ONLINE
+                : CASC_FEATURE_ALLOW_DOWNLOAD,
+            ),
             online,
             storageOut,
           )

@@ -391,6 +391,10 @@ export const BridgeAPI: IBridgeAPI = {
 
       if (getCascLib().CascReadFile(file, buffer, size, bytesReadOut)) {
         output = Buffer.from(buffer.buffer, 0, bytesReadOut[0]);
+        console.debug('BridgeAPI.extractFileToMemory', {
+          filePath,
+          bytesRead: bytesReadOut[0],
+        });
       } else {
         throw te('worker.bridgeapi.extractFileToMemory.readFailed', {
           filePath,

@@ -42,8 +42,13 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       }
       runtime.fileManager.setData(filePath, buffer);
       await runtime.fileManager.extract(filePath, runtime.mod.id);
-    } catch {
+    } catch (e) {
       // if we failed to extract the file, that's okay, it may not be a vanilla file
+      // and may not need to be extracted ; however, log the error in case there is
+      // an issue that we need to debug
+      console.debug(
+        `file "${filePath}" could not be extracted: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 

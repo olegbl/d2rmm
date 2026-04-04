@@ -365,6 +365,7 @@ const KnownWindowsErrorCodes: { [code: number]: string } = {
   402: 'ERROR_PROCESS_MODE_ALREADY_BACKGROUND: The process is already in background processing mode.',
   403: 'ERROR_PROCESS_MODE_NOT_BACKGROUND: The process is not in background processing mode.',
   487: 'ERROR_INVALID_ADDRESS: Attempt to access invalid address.',
+  4350: 'ERROR_FILE_OFFLINE: This file is currently not available for use on this computer.',
 };
 
 export function getLastCascLibError(): string {

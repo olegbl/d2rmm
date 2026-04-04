@@ -33,7 +33,12 @@ import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
 import { te, tl } from '../../shared/i18n';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
-import { CASC_FEATURE_ALLOW_DOWNLOAD, getCascLib, getLastCascLibError, readCString } from './CascLib';
+import {
+  CASC_FEATURE_ALLOW_DOWNLOAD,
+  getCascLib,
+  getLastCascLibError,
+  readCString,
+} from './CascLib';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { InstallationRuntime } from './InstallationRuntime';
@@ -279,7 +284,13 @@ export const BridgeAPI: IBridgeAPI = {
     if (!cascStorageIsOpen) {
       for (const path of PATHS) {
         const storageOut: unknown[] = [null];
-        if (getCascLib().CascOpenStorage(path, CASC_FEATURE_ALLOW_DOWNLOAD, storageOut)) {
+        if (
+          getCascLib().CascOpenStorage(
+            path,
+            CASC_FEATURE_ALLOW_DOWNLOAD,
+            storageOut,
+          )
+        ) {
           cascStorage = storageOut[0];
           cascStorageIsOpen = true;
           break;
@@ -1534,6 +1545,24 @@ const config = JSON.parse(D2RMM.getConfigJSON());
             path.join(runtime.options.mergedPath, '..'),
             'None',
           );
+
+          // write dataversionbuild.txt to output mod folder
+          {
+            const filePath = path.join('global', 'dataversionbuild.txt');
+            try {
+              const fileContent = runtime.options.isPreExtractedData
+                ? await BridgeAPI.readFile(filePath, 'PreExtractedData')
+                : await BridgeAPI.extractFileToMemory(filePath);
+              if (fileContent != null) {
+                await BridgeAPI.writeFile(filePath, 'Output', fileContent);
+              }
+            } catch (e) {
+              console.debug(
+                'dataversionbuild.txt not found in game data, skipping',
+                e,
+              );
+            }
+          }
 
           // create output directory and write modinfo
           await BridgeAPI.createDirectory(runtime.options.mergedPath);

@@ -423,8 +423,9 @@ export const BridgeAPI: IBridgeAPI = {
               errorCode,
             },
           );
+          const gamePath = cascStorageOpenedGamePath;
           await BridgeAPI.closeStorage();
-          await BridgeAPI.openStorage(cascStorageOpenedGamePath, true);
+          await BridgeAPI.openStorage(gamePath, true);
           return BridgeAPI.extractFileToMemory(filePath);
         }
         throw te('worker.bridgeapi.extractFileToMemory.readFailed', {

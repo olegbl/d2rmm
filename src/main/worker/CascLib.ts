@@ -117,6 +117,11 @@ export function getCascLib(): ICascLib {
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
 export const CASC_FEATURE_ALLOW_DOWNLOAD = 0x00002000; // Allow CDN download of missing manifests (ENCODING/DOWNLOAD/ROOT), but not game files
 
+// Error codes returned by GetCascError()
+// On Windows these are winerror.h values; on macOS/Linux they are the CascPort.h fallbacks.
+export const CASC_ERROR_FILE_OFFLINE =
+  process.platform === 'win32' ? 4350 : 1007; // File exists in index but is not locally available
+
 // CascLib Error Codes for GetCascError()
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascPort.h#L230
 // https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
@@ -368,12 +373,11 @@ const KnownWindowsErrorCodes: { [code: number]: string } = {
   4350: 'ERROR_FILE_OFFLINE: This file is currently not available for use on this computer.',
 };
 
-export function getLastCascLibError(): string {
-  let errorCode = getCascLib().GetCascError();
+export function getLastCascLibError(errorCode: number | null = null): string {
+  errorCode ??= getCascLib().GetCascError();
   if (typeof errorCode === 'string') {
     errorCode = parseInt(errorCode, 10);
   }
-
   const message = KnownWindowsErrorCodes[errorCode] ?? `UNKNOWN ERROR`;
   return `CascLib error code ${errorCode}: ${message}`;
 }

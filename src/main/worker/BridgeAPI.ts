@@ -34,6 +34,7 @@ import packageManifest from '../../../release/app/package.json';
 import { te, tl } from '../../shared/i18n';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import {
+  CASC_ERROR_FILE_OFFLINE,
   CASC_FEATURE_ALLOW_DOWNLOAD,
   getCascLib,
   getLastCascLibError,
@@ -190,6 +191,8 @@ function copyDirSync(
 
 let cascStorage: unknown = null;
 let cascStorageIsOpen = false;
+let cascStorageOpenedOnline: boolean | null = null;
+let cascStorageOpenedGamePath: string | null = null;
 
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
@@ -276,17 +279,20 @@ export const BridgeAPI: IBridgeAPI = {
     }
   },
 
-  openStorage: async (gamePath: string) => {
-    console.debug('BridgeAPI.openStorage', { gamePath });
+  openStorage: async (gamePath: string, forceOnline = false) => {
+    console.debug('BridgeAPI.openStorage', { gamePath, forceOnline });
 
     // what do these mean? who knows!
     const PATHS = [`${gamePath}:osi`, `${gamePath}:`, `${gamePath}`];
 
     if (!cascStorageIsOpen) {
-      const attempts = [
-        ...PATHS.map((p) => [p, false] as const),
-        ...PATHS.map((p) => [p, true] as const),
-      ];
+      const attempts = forceOnline
+        ? PATHS.map((p) => [p, true] as const)
+        : [
+            // try to open offline first since it's faster
+            ...PATHS.map((p) => [p, false] as const),
+            ...PATHS.map((p) => [p, true] as const),
+          ];
       const options = makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD);
       for (const [storagePath, online] of attempts) {
         const storageOut: unknown[] = [null];
@@ -300,10 +306,11 @@ export const BridgeAPI: IBridgeAPI = {
         ) {
           cascStorage = storageOut[0];
           cascStorageIsOpen = true;
+          cascStorageOpenedOnline = online;
+          cascStorageOpenedGamePath = gamePath;
           console.debug('BridgeAPI.openStorage success', {
             storagePath,
             online,
-            options,
           });
           break;
         }
@@ -323,6 +330,8 @@ export const BridgeAPI: IBridgeAPI = {
     if (cascStorageIsOpen) {
       if (getCascLib().CascCloseStorage(cascStorage)) {
         cascStorageIsOpen = false;
+        cascStorageOpenedOnline = null;
+        cascStorageOpenedGamePath = null;
       } else {
         const detail = String(getLastCascLibError());
         throw te('worker.error.closeStorage.failed', { detail });
@@ -395,18 +404,40 @@ export const BridgeAPI: IBridgeAPI = {
       const size = 10 * 1024 * 1024;
       const buffer = Buffer.alloc(size);
 
-      if (getCascLib().CascReadFile(file, buffer, size, bytesReadOut)) {
-        output = Buffer.from(buffer.buffer, 0, bytesReadOut[0]);
-        console.debug('BridgeAPI.extractFileToMemory', {
-          filePath,
-          bytesRead: bytesReadOut[0],
-        });
-      } else {
+      if (!getCascLib().CascReadFile(file, buffer, size, bytesReadOut)) {
+        const errorCode = getCascLib().GetCascError();
+        getCascLib().CascCloseFile(file);
+
+        // If we failed to read the file because it's not locally cached
+        // try reopening the storage in online mode and retrying the read
+        if (
+          errorCode === CASC_ERROR_FILE_OFFLINE &&
+          cascStorageOpenedOnline === false &&
+          cascStorageOpenedGamePath != null
+        ) {
+          console.debug(
+            'BridgeAPI.extractFileToMemory',
+            'file not available offline - retrying with online storage',
+            {
+              filePath,
+              errorCode,
+            },
+          );
+          await BridgeAPI.closeStorage();
+          await BridgeAPI.openStorage(cascStorageOpenedGamePath, true);
+          return BridgeAPI.extractFileToMemory(filePath);
+        }
         throw te('worker.bridgeapi.extractFileToMemory.readFailed', {
           filePath,
-          cascError: String(getLastCascLibError()),
+          cascError: String(getLastCascLibError(errorCode)),
         });
       }
+
+      output = Buffer.from(buffer.buffer, 0, bytesReadOut[0]);
+      console.debug('BridgeAPI.extractFileToMemory', {
+        filePath,
+        bytesRead: bytesReadOut[0],
+      });
 
       if (!getCascLib().CascCloseFile(file)) {
         throw te('worker.bridgeapi.extractFileToMemory.closeFailed', {

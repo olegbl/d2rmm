@@ -59,7 +59,7 @@ export type IBridgeAPI = {
     modsToInstall: Mod[],
     options: IInstallModsOptions,
   ) => Promise<string[]>;
-  openStorage: (gamePath: string) => Promise<boolean>;
+  openStorage: (gamePath: string, forceOnline?: boolean) => Promise<boolean>;
   readDirectory: (
     filePath: string,
   ) => Promise<{ name: string; isDirectory: boolean }[]>;

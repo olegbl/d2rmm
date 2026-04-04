@@ -282,12 +282,17 @@ export const BridgeAPI: IBridgeAPI = {
     const PATHS = [`${gamePath}:osi`, `${gamePath}:`, `${gamePath}`];
 
     if (!cascStorageIsOpen) {
-      for (const path of PATHS) {
+      const attempts = [
+        ...PATHS.map((p) => [p, false] as const),
+        ...PATHS.map((p) => [p, true] as const),
+      ];
+      for (const [storagePath, online] of attempts) {
         const storageOut: unknown[] = [null];
         if (
-          getCascLib().CascOpenStorage(
-            path,
+          getCascLib().CascOpenStorageEx(
+            storagePath,
             CASC_FEATURE_ALLOW_DOWNLOAD,
+            online,
             storageOut,
           )
         ) {

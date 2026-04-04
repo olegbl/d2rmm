@@ -19,6 +19,12 @@ export type ICascLib = {
     flags: number,
     storageOut: unknown[],
   ) => boolean;
+  CascOpenStorageEx: (
+    path: string,
+    flags: null,
+    online: boolean,
+    storageOut: unknown[],
+  ) => boolean;
   CascReadFile: (
     file: unknown,
     buffer: Buffer,
@@ -58,6 +64,9 @@ export async function initCascLib(): Promise<void> {
     CascOpenStorage: lib.func(
       'bool CascOpenStorage(str path, int flags, _Out_ void **storage)',
     ),
+    CascOpenStorageEx: lib.func(
+      'bool CascOpenStorageEx(str path, int flags, bool online, _Out_ void **storage)',
+    ),
     CascReadFile: lib.func(
       'bool CascReadFile(void *file, void *buffer, int size, _Out_ uint32_t *bytesRead)',
     ),
@@ -69,7 +78,7 @@ export function getCascLib(): ICascLib {
   return CASC_LIB;
 }
 
-// Flags for CascOpenStorage (from CascLib.h CASC_FEATURE_*)
+// Flags for CascOpenStorageEx (from CascLib.h CASC_FEATURE_*)
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
 export const CASC_FEATURE_ALLOW_DOWNLOAD = 0x00002000; // Allow CDN download of missing manifests (ENCODING/DOWNLOAD/ROOT), but not game files
 

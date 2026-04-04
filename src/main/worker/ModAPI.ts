@@ -31,7 +31,9 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
           'PreExtractedData',
         );
         if (result == null) {
-          throw new Error(`file "${filePath}" was not found`);
+          throw new Error(
+            `file "${filePath}" was not found in pre-extracted data`,
+          );
         }
         buffer = result;
       } else {
@@ -81,15 +83,18 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
       if (buffer == null) {
-        throw new Error(`File "${filePath}" not found`);
+        const exists = runtime.fileManager.exists(filePath);
+        const extracted = runtime.fileManager.extracted(filePath);
+        const modified = runtime.fileManager.modified(filePath);
+        const details = JSON.stringify({ exists, extracted, modified });
+        throw new Error(`file "${filePath}" was not extracted (${details})`);
       }
+      await runtime.fileManager.read(filePath, runtime.mod.id);
       let rawText = readCString(buffer);
       if (options?.removeCarriageReturns) {
         rawText = rawText?.replace(/\r\n/g, '\n');
       }
-      const result = parseTsv(rawText);
-      await runtime.fileManager.read(filePath, runtime.mod.id);
-      return result;
+      return parseTsv(rawText);
     },
     writeTsv: async (filePath, data, options) => {
       filePath = processPathForPlatform(filePath);
@@ -107,11 +112,14 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
       if (buffer == null) {
-        throw new Error(`File "${filePath}" not found`);
+        const exists = runtime.fileManager.exists(filePath);
+        const extracted = runtime.fileManager.extracted(filePath);
+        const modified = runtime.fileManager.modified(filePath);
+        const details = JSON.stringify({ exists, extracted, modified });
+        throw new Error(`file "${filePath}" was not extracted (${details})`);
       }
-      const result = parseJson(readCString(buffer));
       await runtime.fileManager.read(filePath, runtime.mod.id);
-      return result;
+      return parseJson(readCString(buffer));
     },
     writeJson: async (filePath, data) => {
       filePath = processPathForPlatform(filePath);
@@ -147,10 +155,14 @@ export function getModAPI(runtime: InstallationRuntime): AsyncModAPI {
       console.debug('D2RMM.readTxt', filePath);
       await tryExtractFile(filePath);
       const buffer = runtime.fileManager.getData(filePath);
-      await runtime.fileManager.read(filePath, runtime.mod.id);
       if (buffer == null) {
-        return '';
+        const exists = runtime.fileManager.exists(filePath);
+        const extracted = runtime.fileManager.extracted(filePath);
+        const modified = runtime.fileManager.modified(filePath);
+        const details = JSON.stringify({ exists, extracted, modified });
+        throw new Error(`file "${filePath}" was not extracted (${details})`);
       }
+      await runtime.fileManager.read(filePath, runtime.mod.id);
       return readCString(buffer);
     },
     writeTxt: async (filePath, data) => {

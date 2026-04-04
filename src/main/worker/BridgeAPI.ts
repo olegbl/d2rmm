@@ -190,6 +190,32 @@ function copyDirSync(
 
 let cascStorage: unknown = null;
 let cascStorageIsOpen = false;
+// The virtual path prefix used by CascOpenFile for this storage session.
+// Different game distributions (Battle.net vs Steam) may use different prefixes.
+// null means it hasn't been probed yet.
+let cascFilePathPrefix: string | null = null;
+
+const CASC_FILE_PATH_PREFIXES = ['data:data', ''];
+
+function openCascFile(filePath: string, fileOut: unknown[]): boolean {
+  // If we already know the working prefix, use it directly.
+  if (cascFilePathPrefix !== null) {
+    const virtualPath =
+      cascFilePathPrefix === ''
+        ? filePath
+        : path.join(cascFilePathPrefix, filePath);
+    return getCascLib().CascOpenFile(cascStorage, virtualPath, 0, 0, fileOut);
+  }
+  // Otherwise probe each prefix until one works, then cache it.
+  for (const prefix of CASC_FILE_PATH_PREFIXES) {
+    const virtualPath = prefix === '' ? filePath : path.join(prefix, filePath);
+    if (getCascLib().CascOpenFile(cascStorage, virtualPath, 0, 0, fileOut)) {
+      cascFilePathPrefix = prefix;
+      return true;
+    }
+  }
+  return false;
+}
 
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
@@ -317,6 +343,7 @@ export const BridgeAPI: IBridgeAPI = {
     if (cascStorageIsOpen) {
       if (getCascLib().CascCloseStorage(cascStorage)) {
         cascStorageIsOpen = false;
+        cascFilePathPrefix = null;
       } else {
         const detail = String(getLastCascLibError());
         throw te('worker.error.closeStorage.failed', { detail });
@@ -337,15 +364,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
 
       const fileOut: unknown[] = [null];
-      if (
-        !getCascLib().CascOpenFile(
-          cascStorage,
-          path.join('data:data', filePath),
-          0,
-          0,
-          fileOut,
-        )
-      ) {
+      if (!openCascFile(filePath, fileOut)) {
         return false;
       }
 
@@ -367,15 +386,7 @@ export const BridgeAPI: IBridgeAPI = {
       }
 
       const fileOut: unknown[] = [null];
-      if (
-        !getCascLib().CascOpenFile(
-          cascStorage,
-          path.join('data:data', filePath),
-          0,
-          0,
-          fileOut,
-        )
-      ) {
+      if (!openCascFile(filePath, fileOut)) {
         throw te('worker.bridgeapi.extractFileToMemory.openFailed', {
           filePath,
           cascError: String(getLastCascLibError()),

@@ -36,6 +36,7 @@ import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
 import {
   CASC_ERROR_FILE_OFFLINE,
   CASC_FEATURE_ALLOW_DOWNLOAD,
+  CASC_FEATURE_ONLINE,
   getCascLib,
   getLastCascLibError,
   makeCascOpenStorageArgs,
@@ -293,8 +294,12 @@ export const BridgeAPI: IBridgeAPI = {
             ...PATHS.map((p) => [p, false] as const),
             ...PATHS.map((p) => [p, true] as const),
           ];
-      const options = makeCascOpenStorageArgs(CASC_FEATURE_ALLOW_DOWNLOAD);
       for (const [storagePath, online] of attempts) {
+        const options = makeCascOpenStorageArgs(
+          online
+            ? CASC_FEATURE_ONLINE | CASC_FEATURE_ALLOW_DOWNLOAD
+            : CASC_FEATURE_ALLOW_DOWNLOAD,
+        );
         const storageOut: unknown[] = [null];
         if (
           getCascLib().CascOpenStorageEx(

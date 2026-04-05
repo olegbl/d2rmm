@@ -115,6 +115,7 @@ export function getCascLib(): ICascLib {
 
 // Flags for CascOpenStorageEx (from CascLib.h CASC_FEATURE_*)
 // https://github.com/ladislav-zezula/CascLib/blob/master/src/CascLib.h
+export const CASC_FEATURE_ONLINE = 0x00000400; // Load missing game files from online CDNs
 export const CASC_FEATURE_ALLOW_DOWNLOAD = 0x00002000; // Allow CDN download of missing manifests (ENCODING/DOWNLOAD/ROOT), but not game files
 
 // Error codes returned by GetCascError()

@@ -218,6 +218,7 @@
   "modlist.menu.addSection": "Add Section Header",
   "modlist.menu.checkUpdates": "Check for Mod Updates",
   "modlist.menu.createCollection": "Create Nexus Mods Collection",
+  "modlist.menu.openModsDirectory": "Open Mods Directory",
   "modlist.menu.refresh": "Refresh Mod List",
   "modlist.menu.updateAll": "Update All Mods ({{count}})",
   "modlist.nexusId.dialog.cancel": "Cancel",

@@ -218,6 +218,7 @@
   "modlist.menu.addSection": "添加分节标题",
   "modlist.menu.checkUpdates": "检查模组更新",
   "modlist.menu.createCollection": "创建 Nexus Mods 合集",
+  "modlist.menu.openModsDirectory": "打开模组文件夹",
   "modlist.menu.refresh": "刷新模组列表",
   "modlist.menu.updateAll": "更新全部模组 ({{count}})",
   "modlist.nexusId.dialog.cancel": "取消",

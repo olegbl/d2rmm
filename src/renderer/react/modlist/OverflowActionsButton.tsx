@@ -3,6 +3,7 @@ import CheckForAllModUpdatesMenuItem from 'renderer/react/modlist/CheckForAllMod
 import CreateCollectionMenuItem from 'renderer/react/modlist/CreateCollectionMenuItem';
 import RefreshModListMenuItem from 'renderer/react/modlist/RefreshModListMenuItem';
 import UpdateAllModsMenuItem from 'renderer/react/modlist/UpdateAllModsMenuItem';
+import OpenModsDirectoryMenuItem from 'renderer/react/modlist/OpenModsDirectoryMenuItem';
 import { useCallback, useState } from 'react';
 import { MoreVert } from '@mui/icons-material';
 import { Button, Menu } from '@mui/material';
@@ -40,6 +41,7 @@ export default function OverflowActionsButton(_props: Props): JSX.Element {
         onClose={onHideMenu}
         open={isMenuShown}
       >
+        <OpenModsDirectoryMenuItem onHideMenu={onHideMenu} />
         <RefreshModListMenuItem onHideMenu={onHideMenu} />
         <CheckForAllModUpdatesMenuItem onHideMenu={onHideMenu} />
         <UpdateAllModsMenuItem onHideMenu={onHideMenu} />

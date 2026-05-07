@@ -82,7 +82,8 @@ export async function initCascLib(): Promise<void> {
       libName = 'CascLib.dylib';
       break;
     case 'linux':
-      throw new Error("CascLib hasn't been compiled for Linux.");
+      libName = 'CascLib.so';
+      break;
     default:
       throw new Error(`Unsupported platform: ${process.platform}`);
   }

@@ -136,8 +136,39 @@ jobs:
           name: macos-build
           path: release/build/*.dmg
 
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # GitHub git dependencies don't work in GitHub Action workflows,
+      # so we remove CascLib from package.json and clone it manually instead.
+      - name: Remove CascLib from package.json
+        run: npm remove CascLib --force
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Clone CascLib source
+        run: git clone https://github.com/ladislav-zezula/CascLib.git node_modules/CascLib
+
+      - name: Build package
+        run: npm run package
+
+      - name: Upload linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: release/build/*.zip
+
   release:
-    needs: [check-version, build-windows, build-macos]
+    needs: [check-version, build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download Windows artifact
@@ -150,6 +181,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: macos-build
+          path: artifacts
+
+      - name: Download linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
           path: artifacts
 
       - name: Delete release

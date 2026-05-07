@@ -31,3 +31,11 @@ Pre-built DMG releases are available for Apple Silicon Macs (M1/M2/M3/M4). Intel
 Since Diablo II: Resurrected has no native macOS version, you'll need [CrossOver](https://www.codeweavers.com/crossover) to run the game. Launch D2R from CrossOver with the run options: `-mod D2RMM -txt`
 
 Building from source follows the same steps as Windows. `yarn package` produces a `.dmg` in `release/build/`.
+
+## linux support (experimental)
+
+> **Note:** linux support is experimental and not officially supported. Things may not work as expected.
+
+Since Diablo II: Resurrected has no native linux version, you'll need to run the game using external tools (e.g. [Lutris](https://github.com/lutris/lutris)). Launch D2R with the run options: `-mod D2RMM -txt`
+
+Building from source follows the same steps as Windows. `yarn package` produces a `.zip` archive in `release/build/`.

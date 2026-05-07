@@ -6,11 +6,20 @@
  */
 const { execSync } = require('child_process');
 
-const isWin = process.platform === 'win32';
-
 function run(script) {
   execSync(`npm run ${script}`, { stdio: 'inherit' });
 }
 
-run(isWin ? 'build:updater:win' : 'build:updater:mac');
-run(isWin ? 'build:casclib:win' : 'build:casclib:mac');
+switch(process.platform){
+  case "win32":
+    run('build:updater:win');
+    run('build:casclib:win');
+    break;
+  case "linux":
+    run('build:updater:linux');
+    run('build:casclib:linux');
+    break;
+  default:
+    run('build:updater:mac');
+    run('build:casclib:mac');
+}

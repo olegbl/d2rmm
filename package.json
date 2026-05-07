@@ -6,12 +6,14 @@
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
     "build:main": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.main.prod.ts",
     "build:renderer": "cross-env NODE_ENV=production TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.renderer.prod.ts",
-    "build:casclib": "node -e \"const {execSync}=require('child_process');execSync(process.platform==='win32'?'npm run build:casclib:win':'npm run build:casclib:mac',{stdio:'inherit'})\"",
+    "build:casclib": "node -e \"const {execSync}=require('child_process');execSync(process.platform==='win32'?'npm run build:casclib:win':(process.platform==='linux'?'npm run build:casclib:linux':'npm run build:casclib:mac'),{stdio:'inherit'})\"",
     "build:casclib:win": "node ./.erb/scripts/build-casclib-win.js",
     "build:casclib:mac": "node ./.erb/scripts/build-casclib-mac.js",
-    "build:updater": "concurrently \"npm run build:updater:win\" \"npm run build:updater:mac\"",
+    "build:casclib:linux": "node ./.erb/scripts/build-casclib-linux.js",
+    "build:updater": "concurrently \"npm run build:updater:win\" \"npm run build:updater:mac\" \"npm run build:updater:linux\"",
     "build:updater:win": "pkg -t node22-win-x64 -o tools/updater.exe src/updater/main.js",
     "build:updater:mac": "pkg -t node22-macos-arm64 -o tools/updater src/updater/main.js",
+    "build:updater:linux": "pkg -t node22-linux-x64 -o tools/updater src/updater/main.js",
     "build:config-schema": "npx typescript-json-schema --strictNullChecks --require --noExtraProps --aliasRefs --out \"mods/config-schema.json\" \"src/bridge/ModConfig.d.ts\" \"ModConfig\"",
     "rebuild": "npx @electron/rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "lint": "node lint.js",
@@ -53,6 +55,9 @@
         }
       ],
       "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["zip"]
     },
     "protocols": {
       "name": "nxm",

@@ -34,6 +34,7 @@ class GenerateJsonSchemaPlugin {
         [inFile],
         {
           strictNullChecks: true,
+          skipLibCheck: true,
         },
         workingDirectory,
       );

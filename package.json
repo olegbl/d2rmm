@@ -57,6 +57,7 @@
       "category": "public.app-category.utilities"
     },
     "linux": {
+      "artifactName": "${productName} ${version} linux.${ext}",
       "target": ["zip"]
     },
     "protocols": {

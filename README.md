@@ -26,9 +26,9 @@ You can find some example mods over at [https://github.com/olegbl/d2rmm.mods](ht
 
 > **Note:** macOS support is experimental and not officially supported. Things may not work as expected.
 
-Pre-built DMG releases are available for Apple Silicon Macs (M1/M2/M3/M4). Intel Macs are not currently supported.
+Pre-built releases are available (.dmg) for Apple Silicon Macs (M1/M2/M3/M4). Intel Macs are not currently supported.
 
-Since Diablo II: Resurrected has no native macOS version, you'll need [CrossOver](https://www.codeweavers.com/crossover) to run the game. Launch D2R from CrossOver with the run options: `-mod D2RMM -txt`
+Since Diablo II: Resurrected has no native MacOS version, you'll need to run the game using external tools (e.g. [CrossOver](https://www.codeweavers.com/crossover)). Launch D2R with the run options: `-mod D2RMM -txt`
 
 Building from source follows the same steps as Windows. `yarn package` produces a `.dmg` in `release/build/`.
 
@@ -36,6 +36,8 @@ Building from source follows the same steps as Windows. `yarn package` produces 
 
 > **Note:** linux support is experimental and not officially supported. Things may not work as expected.
 
-Since Diablo II: Resurrected has no native linux version, you'll need to run the game using external tools (e.g. [Lutris](https://github.com/lutris/lutris)). Launch D2R with the run options: `-mod D2RMM -txt`
+Pre-built releases are available (.tar.gz).
 
-Building from source follows the same steps as Windows. `yarn package` produces a `.zip` archive in `release/build/`.
+Since Diablo II: Resurrected has no native Linux version, you'll need to run the game using external tools (e.g. [Lutris](https://github.com/lutris/lutris)). Launch D2R with the run options: `-mod D2RMM -txt`
+
+Building from source follows the same steps as Windows. `yarn package` produces a `.tar.gz` archive in `release/build/`.

@@ -57,8 +57,7 @@
       "category": "public.app-category.utilities"
     },
     "linux": {
-      "artifactName": "${productName} ${version} linux.${ext}",
-      "target": ["zip"]
+      "target": ["tar.gz"]
     },
     "protocols": {
       "name": "nxm",

@@ -165,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: release/build/*.zip
+          path: release/build/*.tar.gz
 
   release:
     needs: [check-version, build-windows, build-macos, build-linux]

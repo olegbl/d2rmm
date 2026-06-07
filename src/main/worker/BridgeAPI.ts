@@ -1554,11 +1554,10 @@ const config = JSON.parse(D2RMM.getConfigJSON());
           );
         } catch (error) {
           if (error instanceof Error) {
-            let message = error.message;
             if (error.stack != null && sourceMap !== '') {
               // a constructor that returns a Promise smh
               const sourceMapConsumer = await new SourceMapConsumer(sourceMap);
-              message = applySourceMapToStackTrace(
+              error.stack = applySourceMapToStackTrace(
                 error.stack
                   ?.replace(/\s*at <eval>[\s\S]*/m, '')
                   ?.replace(
@@ -1569,7 +1568,7 @@ const config = JSON.parse(D2RMM.getConfigJSON());
               );
               sourceMapConsumer.destroy();
             }
-            console.error(tl('worker.mod.runtimeError'), message);
+            console.error(te('worker.mod.runtimeError', null, error));
           }
         }
         scope.dispose();

@@ -74,7 +74,7 @@ export function te(
   ) as I18nError;
   const innerChain: ConsoleArg[] = isI18nError(error)
     ? error.__d2rmm_i18n_list
-    : [];
+    : [error instanceof Error ? error.message : String(error)];
   newError.__d2rmm_i18n_list = [tl(key, args), ...innerChain];
   if (error instanceof Error) {
     newError.stack = error.stack;
@@ -90,7 +90,10 @@ export function localizeConsoleArgs(
     isI18nConsoleArg(arg)
       ? [(t ?? getTEnUS())(arg.key, arg.args)]
       : isI18nError(arg)
-        ? localizeConsoleArgs(arg.__d2rmm_i18n_list, t)
+        ? [
+            ...localizeConsoleArgs(arg.__d2rmm_i18n_list, t),
+            arg.stack?.split('\n')?.slice(1)?.join('\n'),
+          ]
         : arg instanceof Error
           ? [arg.stack]
           : [arg],

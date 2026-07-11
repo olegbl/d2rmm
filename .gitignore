@@ -6,6 +6,7 @@ CHANGELOG.md
 tools/updater
 tools/updater.exe
 tools/CascLib.dll
+tools/CascLib.so
 tools/CascLib.dylib
 /docs/
 

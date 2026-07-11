@@ -1,3 +1,4 @@
+import { getHomePath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
 import useSavedState from 'renderer/react/hooks/useSavedState';
@@ -44,16 +45,18 @@ export function GamePathContextProvider({ children }: Props): JSX.Element {
     useCallback(() => BridgeAPI.getGamePath(), []),
   );
 
-  const path =
-    savedPath ??
-    registryGamePath ??
-    resolvePath(
-      'C:',
-      'Program Files',
-      'Battle.net',
-      'Games',
-      'Diablo II Resurrected',
-    );
+  const defaultPath =
+    window.env.platform === 'linux'
+      ? resolvePath(getHomePath(), 'Games', 'Diablo II Resurrected')
+      : resolvePath(
+          'C:',
+          'Program Files',
+          'Battle.net',
+          'Games',
+          'Diablo II Resurrected',
+        );
+
+  const path = savedPath ?? registryGamePath ?? defaultPath;
 
   const sanitizedPath = path.replace(/\\$/, '');
 

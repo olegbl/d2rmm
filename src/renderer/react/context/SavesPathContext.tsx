@@ -1,4 +1,5 @@
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
+import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
 import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
 import useSavedState from 'renderer/react/hooks/useSavedState';
@@ -56,8 +57,11 @@ export function SavesPathContextProvider({ children }: Props): JSX.Element {
 
   const [isDirectMode] = useIsDirectMode();
   const [outputModName] = useOutputModName();
+  const gamePath = useSanitizedGamePath();
+  const baseSavesPath =
+    window.env.platform === 'linux' ? gamePath : getBaseSavesPath();
   const defaultSavesPath = resolvePath(
-    getBaseSavesPath(),
+    baseSavesPath,
     ...(isDirectMode ? [] : ['mods', outputModName]),
   );
   const finalSavesPath =

@@ -359,6 +359,12 @@ export const BridgeAPI: IBridgeAPI = {
             online,
           });
           break;
+        } else {
+          console.debug('BridgeAPI.openStorage attempt failed', {
+            storagePath,
+            online,
+            error: getLastCascLibError(),
+          });
         }
       }
       if (!cascStorageIsOpen) {

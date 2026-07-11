@@ -35,6 +35,13 @@ export type LutrisGame = {
   runner: string | null;
 };
 
+export type LinuxBinaryInstallStatus = {
+  symlinkPath: string;
+  targetPath: string;
+  isInstalled: boolean;
+  isInPath: boolean;
+};
+
 export type IBridgeAPI = {
   closeStorage: () => Promise<boolean>;
   copyFile: (
@@ -49,6 +56,8 @@ export type IBridgeAPI = {
   execute: (executablePath: string, args?: string[]) => Promise<number>;
   executeCommand: (command: string) => Promise<number>;
   listLutrisGames: () => Promise<LutrisGame[]>;
+  getLinuxBinaryInstallStatus: () => Promise<LinuxBinaryInstallStatus>;
+  installLinuxBinary: () => Promise<LinuxBinaryInstallStatus>;
   isGameFile: (filePath: string) => Promise<boolean>;
   extractFileToMemory: (filePath: string) => Promise<Buffer>;
   getAppPath: () => Promise<string>;

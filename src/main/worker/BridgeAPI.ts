@@ -2,6 +2,7 @@ import type {
   CopiedFile,
   IBridgeAPI,
   IInstallModsOptions,
+  LinuxBinaryInstallStatus,
   Mod,
 } from 'bridge/BridgeAPI';
 import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
@@ -13,11 +14,14 @@ import { execFile, spawn } from 'child_process';
 import {
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'fs';
 import path from 'path';
@@ -33,7 +37,12 @@ import ts from 'typescript';
 import { promisify } from 'util';
 import packageManifest from '../../../release/app/package.json';
 import { te, tl } from '../../shared/i18n';
-import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
+import {
+  getAppPath,
+  getBaseSavesPath,
+  getExecutablePath,
+  getHomePath,
+} from './AppInfoAPI';
 import {
   CASC_ERROR_FILE_OFFLINE,
   CASC_FEATURE_ALLOW_DOWNLOAD,
@@ -197,6 +206,29 @@ let cascStorageIsOpen = false;
 let cascStorageOpenedOnline: boolean | null = null;
 let cascStorageOpenedGamePath: string | null = null;
 
+function getLinuxBinaryInstallStatus(): LinuxBinaryInstallStatus {
+  const targetPath = getExecutablePath();
+  const binDir = path.join(getHomePath(), '.local', 'bin');
+  const symlinkPath = path.join(binDir, 'd2rmm');
+
+  let isInstalled = false;
+  try {
+    if (lstatSync(symlinkPath).isSymbolicLink()) {
+      // readlink may be relative; resolve against the link's directory
+      isInstalled =
+        path.resolve(binDir, readlinkSync(symlinkPath)) === targetPath;
+    }
+  } catch {
+    // no symlink present
+  }
+
+  const isInPath = (process.env.PATH ?? '')
+    .split(path.delimiter)
+    .some((entry) => entry !== '' && path.resolve(entry) === binDir);
+
+  return { symlinkPath, targetPath, isInstalled, isInPath };
+}
+
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
@@ -322,6 +354,25 @@ export const BridgeAPI: IBridgeAPI = {
       }));
     } catch (error) {
       throw te('worker.bridgeapi.listLutrisGames.failed', null, error);
+    }
+  },
+
+  getLinuxBinaryInstallStatus: async () => {
+    console.debug('BridgeAPI.getLinuxBinaryInstallStatus');
+    return getLinuxBinaryInstallStatus();
+  },
+
+  installLinuxBinary: async () => {
+    console.debug('BridgeAPI.installLinuxBinary');
+    try {
+      const { symlinkPath, targetPath } = getLinuxBinaryInstallStatus();
+      mkdirSync(path.dirname(symlinkPath), { recursive: true });
+      // rmSync with force replaces an existing (possibly stale/dangling) link
+      rmSync(symlinkPath, { force: true });
+      symlinkSync(targetPath, symlinkPath);
+      return getLinuxBinaryInstallStatus();
+    } catch (error) {
+      throw te('worker.bridgeapi.installLinuxBinary.failed', null, error);
     }
   },
 

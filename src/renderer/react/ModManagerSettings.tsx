@@ -1,3 +1,4 @@
+import type { LinuxBinaryInstallStatus } from 'bridge/BridgeAPI';
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import { LocaleAPI } from 'renderer/LocaleAPI';
@@ -29,8 +30,9 @@ import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
 import i18next from 'i18next';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import CheckCircle from '@mui/icons-material/CheckCircle';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import {
   Accordion,
@@ -110,6 +112,33 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       setIsDetectingLutris(false);
     }
   }, [setLutrisGames]);
+  const [binaryInstall, setBinaryInstall] =
+    useState<LinuxBinaryInstallStatus | null>(null);
+  const [isInstallingBinary, setIsInstallingBinary] = useState(false);
+  const [binaryInstallError, setBinaryInstallError] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
+    if (!isLinux) {
+      return;
+    }
+    BridgeAPI.getLinuxBinaryInstallStatus()
+      .then(setBinaryInstall)
+      .catch(console.error);
+  }, [isLinux]);
+  const onInstallBinary = useCallback(async (): Promise<void> => {
+    setIsInstallingBinary(true);
+    setBinaryInstallError(null);
+    try {
+      setBinaryInstall(await BridgeAPI.installLinuxBinary());
+    } catch (error) {
+      setBinaryInstallError(
+        error instanceof Error ? error.message : String(error),
+      );
+    } finally {
+      setIsInstallingBinary(false);
+    }
+  }, []);
   const [rawGamePath, setRawGamePath] = useGamePath();
   const gamePath = useSanitizedGamePath();
   const [isDirectMode, setIsDirectMode] = useIsDirectMode();
@@ -508,13 +537,49 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           </StyledAccordionSummary>
           <StyledAccordionDetails id="linux-content">
             <Typography color="text.secondary" variant="subtitle2">
+              {t('settings.linux.install.description')}
+            </Typography>
+            <Button
+              disabled={
+                isInstallingBinary ||
+                binaryInstall?.isInstalled ||
+                (binaryInstall != null && !binaryInstall.isInPath)
+              }
+              onClick={() => {
+                onInstallBinary().catch(console.error);
+              }}
+              startIcon={
+                binaryInstall?.isInstalled ? (
+                  <CheckCircle color="success" />
+                ) : undefined
+              }
+              sx={{ marginTop: 1 }}
+              variant="outlined"
+            >
+              {isInstallingBinary
+                ? t('settings.linux.install.installing')
+                : binaryInstall?.isInstalled
+                  ? t('settings.linux.install.installed')
+                  : t('settings.linux.install.install')}
+            </Button>
+            {binaryInstallError != null ? (
+              <Alert severity="error" sx={{ marginTop: 1 }}>
+                {binaryInstallError}
+              </Alert>
+            ) : null}
+            {binaryInstall != null && !binaryInstall.isInPath ? (
+              <Alert severity="warning" sx={{ marginTop: 1 }}>
+                {t('settings.linux.install.notInPath')}
+              </Alert>
+            ) : null}
+            <Divider sx={{ marginY: 2 }} />
+            <Typography color="text.secondary" variant="subtitle2">
               {t('settings.linux.launchCommand.description')}
             </Typography>
             <TextField
               fullWidth={true}
               label={t('settings.linux.launchCommand.label')}
               onChange={(event) => setLinuxLaunchCommand(event.target.value)}
-              placeholder="lutris lutris:rungame/diablo-ii-resurrected"
               value={linuxLaunchCommand}
               variant="filled"
             />
@@ -525,6 +590,10 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 })}
               </Typography>
             </Alert>
+            <Divider sx={{ marginY: 2 }} />
+            <Typography color="text.secondary" variant="subtitle2">
+              {t('settings.linux.helpers.title')}
+            </Typography>
             {lutrisGames != null && lutrisGames.length > 0 ? null : (
               <Button
                 disabled={isDetectingLutris}

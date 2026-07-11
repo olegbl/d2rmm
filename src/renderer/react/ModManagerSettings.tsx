@@ -83,6 +83,10 @@ const StyledAccordionSummary = styled(AccordionSummary)(({ theme }) => ({
 
 const StyledAccordionDetails = styled(AccordionDetails)(() => ({}));
 
+function stripBackslashOnLinux(text: string): string {
+  return window.env.platform === 'linux' ? text.replace(/^\\/, '') : text;
+}
+
 type Props = Record<string, never>;
 
 export default function ModManagerSettings(_props: Props): JSX.Element {
@@ -117,7 +121,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   const dataPath = useDataPath();
   const outputPath = isDirectMode ? dataPath : mergedPath;
   const [savesPath, setSavesPath] = useSavesPath();
-  const baseSavesPath = getBaseSavesPath();
+  const baseSavesPath = isLinux ? gamePath : getBaseSavesPath();
   const defaultSavesPath = useDefaultSavesPath();
   const finalSavesPath = useFinalSavesPath();
   const [isSavesPathFocused, onSavesPathFocus, onSavesPathBlur] =
@@ -309,9 +313,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           {!finalSavesPath.startsWith(baseSavesPath) ? (
             <Alert severity="warning">
               <Typography>
-                {t('settings.general.savesPath.outsideBase', {
-                  path: baseSavesPath,
-                })}{' '}
+                {
+                  t('settings.general.savesPath.outsideBase', {
+                    path: '\x00',
+                  }).split('\x00')[0]
+                }
                 <Link
                   href="#"
                   onClick={() => {
@@ -320,9 +326,13 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                     );
                   }}
                 >
-                  {baseSavesPath}\
+                  {baseSavesPath}
                 </Link>
-                &rdquo;. Are you sure this is right?
+                {stripBackslashOnLinux(
+                  t('settings.general.savesPath.outsideBase', {
+                    path: '\x00',
+                  }).split('\x00')[1],
+                )}
               </Typography>
             </Alert>
           ) : null}
@@ -342,11 +352,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               >
                 {outputPath}
               </Link>
-              {
+              {stripBackslashOnLinux(
                 t('settings.general.outputPath.info', { path: '\x00' }).split(
                   '\x00',
-                )[1]
-              }
+                )[1],
+              )}
             </Typography>
           </Alert>
           <Alert severity="info" sx={{ marginTop: 1 }}>
@@ -366,11 +376,11 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               >
                 {finalSavesPath}
               </Link>
-              {
+              {stripBackslashOnLinux(
                 t('settings.general.savesLocation.info', {
                   path: '\x00',
-                }).split('\x00')[1]
-              }
+                }).split('\x00')[1],
+              )}
             </Typography>
           </Alert>
           <InstallBeforeRunSettings />

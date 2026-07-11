@@ -12,6 +12,8 @@ import {
 } from 'renderer/react/context/GamePathContext';
 import { useIsDirectMode } from 'renderer/react/context/IsDirectModeContext';
 import { useIsPreExtractedData } from 'renderer/react/context/IsPreExtractedDataContext';
+import { useLinuxLaunchCommand } from 'renderer/react/context/LinuxLaunchCommandContext';
+import { useLutrisGames } from 'renderer/react/context/LutrisGamesContext';
 import { useOutputModName } from 'renderer/react/context/OutputModNameContext';
 import { useOutputPath } from 'renderer/react/context/OutputPathContext';
 import { usePreExtractedDataPath } from 'renderer/react/context/PreExtractedDataPathContext';
@@ -23,6 +25,7 @@ import {
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
+import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
 import { useIsFocused } from 'renderer/react/hooks/useIsFocused';
 import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRunSettings';
 import i18next from 'i18next';
@@ -85,6 +88,24 @@ type Props = Record<string, never>;
 export default function ModManagerSettings(_props: Props): JSX.Element {
   const { t } = useTranslation();
   const [extraArgs, setExtraArgs] = useExtraGameLaunchArgs();
+  const [linuxLaunchCommand, setLinuxLaunchCommand] = useLinuxLaunchCommand();
+  const gameLaunchArgs = useGameLaunchArgs();
+  const isLinux = window.env.platform === 'linux';
+  const [lutrisGames, setLutrisGames] = useLutrisGames();
+  const [isDetectingLutris, setIsDetectingLutris] = useState(false);
+  const [lutrisError, setLutrisError] = useState<string | null>(null);
+  const onDetectLutrisGames = useCallback(async (): Promise<void> => {
+    setIsDetectingLutris(true);
+    setLutrisError(null);
+    try {
+      setLutrisGames(await BridgeAPI.listLutrisGames());
+    } catch (error) {
+      setLutrisGames(null);
+      setLutrisError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsDetectingLutris(false);
+    }
+  }, [setLutrisGames]);
   const [rawGamePath, setRawGamePath] = useGamePath();
   const gamePath = useSanitizedGamePath();
   const [isDirectMode, setIsDirectMode] = useIsDirectMode();
@@ -459,6 +480,90 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           ))}
         </StyledAccordionDetails>
       </StyledAccordion>
+      {isLinux ? (
+        <StyledAccordion
+          defaultExpanded={false}
+          disableGutters={true}
+          elevation={0}
+          square={true}
+        >
+          <StyledAccordionSummary
+            aria-controls="linux-content"
+            expandIcon={<ExpandMore />}
+            id="linux-header"
+          >
+            <Typography sx={{ marginLeft: 1 }}>
+              {t('settings.linux.title')}
+            </Typography>
+          </StyledAccordionSummary>
+          <StyledAccordionDetails id="linux-content">
+            <Typography color="text.secondary" variant="subtitle2">
+              {t('settings.linux.launchCommand.description')}
+            </Typography>
+            <TextField
+              fullWidth={true}
+              label={t('settings.linux.launchCommand.label')}
+              onChange={(event) => setLinuxLaunchCommand(event.target.value)}
+              placeholder="lutris lutris:rungame/diablo-ii-resurrected"
+              value={linuxLaunchCommand}
+              variant="filled"
+            />
+            <Alert severity="info" sx={{ marginTop: 1 }}>
+              <Typography color="text.secondary" variant="subtitle2">
+                {t('settings.linux.launchCommand.helper', {
+                  args: gameLaunchArgs.join(' '),
+                })}
+              </Typography>
+            </Alert>
+            {lutrisGames != null && lutrisGames.length > 0 ? null : (
+              <Button
+                disabled={isDetectingLutris}
+                onClick={() => {
+                  onDetectLutrisGames().catch(console.error);
+                }}
+                sx={{ marginTop: 1 }}
+                variant="outlined"
+              >
+                {isDetectingLutris
+                  ? t('settings.linux.lutris.detecting')
+                  : t('settings.linux.lutris.detect')}
+              </Button>
+            )}
+            {lutrisError != null ? (
+              <Alert severity="error" sx={{ marginTop: 1 }}>
+                {lutrisError}
+              </Alert>
+            ) : null}
+            {lutrisGames != null && lutrisGames.length === 0 ? (
+              <Alert severity="info" sx={{ marginTop: 1 }}>
+                {t('settings.linux.lutris.noGames')}
+              </Alert>
+            ) : null}
+            {lutrisGames != null && lutrisGames.length > 0 ? (
+              <TextField
+                fullWidth={true}
+                label={t('settings.linux.lutris.pick')}
+                onChange={(event) =>
+                  setLinuxLaunchCommand(
+                    `env LUTRIS_SKIP_INIT=1 lutris lutris:rungameid/${event.target.value}`,
+                  )
+                }
+                select={true}
+                sx={{ marginTop: 1 }}
+                value=""
+                variant="filled"
+              >
+                {lutrisGames.map((game) => (
+                  <MenuItem key={game.id} value={game.id}>
+                    {game.name}
+                    {game.runner != null ? ` (${game.runner})` : ''}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : null}
+          </StyledAccordionDetails>
+        </StyledAccordion>
+      ) : null}
       <StyledAccordion
         defaultExpanded={false}
         disableGutters={true}

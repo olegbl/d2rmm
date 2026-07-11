@@ -1,6 +1,7 @@
 import BridgeAPI from 'renderer/BridgeAPI';
 import { useSanitizedGamePath } from 'renderer/react/context/GamePathContext';
 import { useInstallBeforeRun } from 'renderer/react/context/InstallBeforeRunContext';
+import { useLinuxLaunchCommand } from 'renderer/react/context/LinuxLaunchCommandContext';
 import { useIsInstallConfigChanged } from 'renderer/react/context/ModsContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
@@ -25,8 +26,11 @@ export default function RunGameButton(_props: Props): JSX.Element {
   const command = useMemo(() => ['D2R.exe'].concat(args).join(' '), [args]);
 
   const [isInstallBeforeRunEnabled] = useInstallBeforeRun();
+  const [linuxLaunchCommand] = useLinuxLaunchCommand();
 
   const onInstallMods = useInstallMods();
+
+  const isLinux = window.env.platform === 'linux';
 
   const onPress = useAsyncCallback(async () => {
     if (isInstallBeforeRunEnabled) {
@@ -34,29 +38,59 @@ export default function RunGameButton(_props: Props): JSX.Element {
         return;
       }
     }
+    // Linux launches via a user-provided launcher command; {args} expands to the game args.
+    if (isLinux && linuxLaunchCommand.trim() !== '') {
+      const command = linuxLaunchCommand.includes('{args}')
+        ? linuxLaunchCommand.replace('{args}', args.join(' '))
+        : linuxLaunchCommand;
+      await BridgeAPI.executeCommand(command);
+      return;
+    }
     const pathD2rExe = resolvePath(gamePath, 'D2R.exe');
     await BridgeAPI.execute(pathD2rExe, args);
-  }, [isInstallBeforeRunEnabled, onInstallMods, args, gamePath]);
+  }, [
+    isInstallBeforeRunEnabled,
+    onInstallMods,
+    args,
+    gamePath,
+    isLinux,
+    linuxLaunchCommand,
+  ]);
 
-  const tooltipText = isInstallConfigChanged
-    ? `${t('run.tooltip', { command })} ${t('run.tooltip.unsaved')}`
-    : t('run.tooltip', { command });
+  const isLaunchCommandMissing = isLinux && linuxLaunchCommand.trim() === '';
+
+  const tooltipText = isLaunchCommandMissing
+    ? t('run.tooltip.linuxNoCommand')
+    : isInstallConfigChanged
+      ? `${t('run.tooltip', { command })} ${t('run.tooltip.unsaved')}`
+      : t('run.tooltip', { command });
+
+  const button = (
+    <Button
+      disabled={isLaunchCommandMissing}
+      onClick={onPress}
+      startIcon={
+        !isInstallConfigChanged ? (
+          <PlayCircleFilled />
+        ) : (
+          <PlayCircleOutlineOutlined />
+        )
+      }
+      variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
+    >
+      {t('run.button')}
+    </Button>
+  );
 
   return (
     <Tooltip title={tooltipText}>
-      <Button
-        onClick={onPress}
-        startIcon={
-          !isInstallConfigChanged ? (
-            <PlayCircleFilled />
-          ) : (
-            <PlayCircleOutlineOutlined />
-          )
-        }
-        variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
-      >
-        {t('run.button')}
-      </Button>
+      {/* disabled buttons swallow hover events, so wrap in a span for the
+          tooltip; keep enabled buttons unwrapped so ButtonGroup styles them */}
+      {isLaunchCommandMissing ? (
+        <span style={{ display: 'inline-flex' }}>{button}</span>
+      ) : (
+        button
+      )}
     </Tooltip>
   );
 }

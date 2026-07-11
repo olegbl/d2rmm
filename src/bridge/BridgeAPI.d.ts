@@ -28,6 +28,13 @@ export type CopiedFile = {
   toPath: string;
 };
 
+export type LutrisGame = {
+  id: number;
+  slug: string;
+  name: string;
+  runner: string | null;
+};
+
 export type IBridgeAPI = {
   closeStorage: () => Promise<boolean>;
   copyFile: (
@@ -40,6 +47,8 @@ export type IBridgeAPI = {
   createDirectory: (filePath: string) => Promise<boolean>;
   deleteFile: (filePath: string, relative: Relative) => Promise<number>;
   execute: (executablePath: string, args?: string[]) => Promise<number>;
+  executeCommand: (command: string) => Promise<number>;
+  listLutrisGames: () => Promise<LutrisGame[]>;
   isGameFile: (filePath: string) => Promise<boolean>;
   extractFileToMemory: (filePath: string) => Promise<Buffer>;
   getAppPath: () => Promise<string>;

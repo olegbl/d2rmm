@@ -9,7 +9,7 @@ import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import { Relative } from 'bridge/Relative';
 import type { ID2S, IStash } from 'bridge/third-party/d2s/d2/types';
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import {
   copyFileSync,
   existsSync,
@@ -30,6 +30,7 @@ import {
   SourceMapGenerator,
 } from 'source-map';
 import ts from 'typescript';
+import { promisify } from 'util';
 import packageManifest from '../../../release/app/package.json';
 import { te, tl } from '../../shared/i18n';
 import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
@@ -52,6 +53,8 @@ import './asar';
 import { datamod } from './datamod';
 import { getQuickJSProxyAPI, getQuickJS } from './quickjs';
 import * as d2s from './third-party/d2s/index';
+
+const execFileAsync = promisify(execFile);
 
 let runtime: InstallationRuntime | null = null;
 
@@ -276,6 +279,49 @@ export const BridgeAPI: IBridgeAPI = {
       return 0;
     } catch (error) {
       throw te('worker.bridgeapi.execute.failed', null, error);
+    }
+  },
+
+  executeCommand: async (command: string) => {
+    console.debug('BridgeAPI.executeCommand', { command });
+    try {
+      const child = spawn(command, {
+        detached: true,
+        shell: true,
+        stdio: 'ignore',
+      });
+
+      try {
+        child.unref();
+      } catch {}
+
+      return 0;
+    } catch (error) {
+      throw te('worker.bridgeapi.execute.failed', null, error);
+    }
+  },
+
+  listLutrisGames: async () => {
+    console.debug('BridgeAPI.listLutrisGames');
+    try {
+      // -l list games, -o only installed, -j output as JSON
+      const { stdout } = await execFileAsync('lutris', ['-loj'], {
+        timeout: 15000,
+      });
+      const parsed = JSON.parse(stdout) as {
+        id: number;
+        slug: string;
+        name: string;
+        runner: string | null;
+      }[];
+      return parsed.map((game) => ({
+        id: game.id,
+        slug: game.slug,
+        name: game.name,
+        runner: game.runner ?? null,
+      }));
+    } catch (error) {
+      throw te('worker.bridgeapi.listLutrisGames.failed', null, error);
     }
   },
 

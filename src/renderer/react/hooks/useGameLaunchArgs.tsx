@@ -16,7 +16,7 @@ export default function useGameLaunchArgs(): string[] {
       ...baseArgs,
       ...extraArgs
         .map((arg) => arg.trim())
-        .filter((arg) => !baseArgs.includes(arg)),
+        .filter((arg) => arg !== '' && !baseArgs.includes(arg)),
     ];
   }, [extraArgs, isDirectMode, outputModName]);
 }

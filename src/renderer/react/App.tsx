@@ -16,7 +16,9 @@ import { InstallBeforeRunContextProvider } from 'renderer/react/context/InstallB
 import { InstallContextProvider } from 'renderer/react/context/InstallContext';
 import { IsDirectModeContextProvider } from 'renderer/react/context/IsDirectModeContext';
 import { IsPreExtractedDataContextProvider } from 'renderer/react/context/IsPreExtractedDataContext';
+import { LinuxLaunchCommandContextProvider } from 'renderer/react/context/LinuxLaunchCommandContext';
 import { LogsProvider } from 'renderer/react/context/LogContext';
+import { LutrisGamesContextProvider } from 'renderer/react/context/LutrisGamesContext';
 import { ModsContextProvider } from 'renderer/react/context/ModsContext';
 import { NexusModsContextProvider } from 'renderer/react/context/NexusModsContext';
 import { OutputModNameContextProvider } from 'renderer/react/context/OutputModNameContext';
@@ -187,6 +189,8 @@ const CONTEXT_PROVIDERS = [
   OutputPathContextProvider,
   DataPathContextProvider,
   ExtraGameLaunchArgsContextProvider,
+  LinuxLaunchCommandContextProvider,
+  LutrisGamesContextProvider,
   IsDirectModeContextProvider,
   OutputModNameContextProvider,
   IsPreExtractedDataContextProvider,

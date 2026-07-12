@@ -300,6 +300,64 @@ function refreshDesktopDatabase(applicationsDir: string): void {
   execFile('update-desktop-database', ['-q', applicationsDir], () => {});
 }
 
+// pull a top-level "game.<key>" value out of a Lutris game config
+function parseLutrisGameField(yml: string, key: string): string | null {
+  let inGameBlock = false;
+  for (const line of yml.split('\n')) {
+    if (/^game:\s*$/.test(line)) {
+      inGameBlock = true;
+      continue;
+    }
+    if (!inGameBlock) {
+      continue;
+    }
+    // a new top-level (unindented) key ends the game block
+    if (/^\S/.test(line)) {
+      break;
+    }
+    const match = line.match(new RegExp(`^\\s+${key}:\\s*(.+?)\\s*$`));
+    if (match != null) {
+      return match[1].replace(/^['"]|['"]$/g, '');
+    }
+  }
+  return null;
+}
+
+function readLutrisGameConfig(slug: string): {
+  exe: string | null;
+  prefix: string | null;
+} {
+  const gamesDir = path.join(
+    getHomePath(),
+    '.local',
+    'share',
+    'lutris',
+    'games',
+  );
+  let entries: string[];
+  try {
+    entries = readdirSync(gamesDir).filter(
+      (name) => name.startsWith(`${slug}-`) && name.endsWith('.yml'),
+    );
+  } catch {
+    return { exe: null, prefix: null };
+  }
+  for (const entry of entries) {
+    let contents: string;
+    try {
+      contents = readFileSync(path.join(gamesDir, entry), 'utf8');
+    } catch {
+      continue;
+    }
+    const exe = parseLutrisGameField(contents, 'exe');
+    const prefix = parseLutrisGameField(contents, 'prefix');
+    if (exe != null || prefix != null) {
+      return { exe, prefix };
+    }
+  }
+  return { exe: null, prefix: null };
+}
+
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
@@ -417,12 +475,17 @@ export const BridgeAPI: IBridgeAPI = {
         name: string;
         runner: string | null;
       }[];
-      return parsed.map((game) => ({
-        id: game.id,
-        slug: game.slug,
-        name: game.name,
-        runner: game.runner ?? null,
-      }));
+      return parsed.map((game) => {
+        const { exe, prefix } = readLutrisGameConfig(game.slug);
+        return {
+          id: game.id,
+          slug: game.slug,
+          name: game.name,
+          runner: game.runner ?? null,
+          exe,
+          prefix,
+        };
+      });
     } catch (error) {
       throw te('worker.bridgeapi.listLutrisGames.failed', null, error);
     }

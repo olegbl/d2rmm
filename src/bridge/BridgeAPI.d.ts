@@ -33,6 +33,8 @@ export type LutrisGame = {
   slug: string;
   name: string;
   runner: string | null;
+  exe: string | null;
+  prefix: string | null;
 };
 
 export type LinuxBinaryInstallStatus = {

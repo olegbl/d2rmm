@@ -2,7 +2,7 @@ import type {
   LinuxBinaryInstallStatus,
   LinuxShortcutStatus,
 } from 'bridge/BridgeAPI';
-import { getBaseSavesPath } from 'renderer/AppInfoAPI';
+import { getBaseSavesPath, getHomePath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import { LocaleAPI } from 'renderer/LocaleAPI';
 import ShellAPI from 'renderer/ShellAPI';
@@ -380,7 +380,7 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
             value={isSavesPathFocused ? savesPath : finalSavesPath}
             variant="filled"
           />
-          {!finalSavesPath.startsWith(baseSavesPath) ? (
+          {!isLinux && !finalSavesPath.startsWith(baseSavesPath) ? (
             <Alert severity="warning">
               <Typography>
                 {
@@ -626,11 +626,25 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               <TextField
                 fullWidth={true}
                 label={t('settings.linux.lutris.pick')}
-                onChange={(event) =>
+                onChange={(event) => {
                   setLinuxLaunchCommand(
                     `env LUTRIS_SKIP_INIT=1 lutris lutris:rungameid/${event.target.value}`,
-                  )
-                }
+                  );
+                  const game = lutrisGames?.find(
+                    (g) => g.id === Number(event.target.value),
+                  );
+                  if (game?.exe != null) {
+                    setRawGamePath(game.exe.replace(/\/[^/]*$/, ''));
+                  }
+                  if (game?.prefix != null) {
+                    const homeUserName =
+                      getHomePath().split('/').filter(Boolean).pop() ?? '';
+                    const prefix = game.prefix.replace(/\/+$/, '');
+                    setSavesPath(
+                      `${prefix}/drive_c/users/${homeUserName}/Saved Games/Diablo II Resurrected/mods/${outputModName}`,
+                    );
+                  }
+                }}
                 select={true}
                 sx={{ marginTop: 1 }}
                 value=""
@@ -644,10 +658,14 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 ))}
               </TextField>
             ) : null}
+            {lutrisGames != null && lutrisGames.length > 0 ? (
+              <Alert severity="info" sx={{ marginTop: 1 }}>
+                <Typography color="text.secondary" variant="subtitle2">
+                  {t('settings.linux.lutris.autofillInfo')}
+                </Typography>
+              </Alert>
+            ) : null}
             <Divider sx={{ marginY: 2 }} />
-            <Typography color="text.secondary" variant="subtitle2">
-              {t('settings.linux.install.title')}
-            </Typography>
             <Stack
               direction="row"
               sx={{ flexWrap: 'wrap', gap: 1, marginTop: 1 }}

@@ -1,4 +1,7 @@
-import type { LinuxBinaryInstallStatus } from 'bridge/BridgeAPI';
+import type {
+  LinuxBinaryInstallStatus,
+  LinuxShortcutStatus,
+} from 'bridge/BridgeAPI';
 import { getBaseSavesPath } from 'renderer/AppInfoAPI';
 import BridgeAPI from 'renderer/BridgeAPI';
 import { LocaleAPI } from 'renderer/LocaleAPI';
@@ -32,8 +35,11 @@ import InstallBeforeRunSettings from 'renderer/react/mmsettings/InstallBeforeRun
 import i18next from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Apps from '@mui/icons-material/Apps';
 import CheckCircle from '@mui/icons-material/CheckCircle';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import InstallDesktop from '@mui/icons-material/InstallDesktop';
+import Terminal from '@mui/icons-material/Terminal';
 import {
   Accordion,
   AccordionDetails,
@@ -41,6 +47,7 @@ import {
   Alert,
   Box,
   Button,
+  ButtonGroup,
   Checkbox,
   Chip,
   Divider,
@@ -114,10 +121,15 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
   }, [setLutrisGames]);
   const [binaryInstall, setBinaryInstall] =
     useState<LinuxBinaryInstallStatus | null>(null);
-  const [isInstallingBinary, setIsInstallingBinary] = useState(false);
+  const [isTogglingBinary, setIsTogglingBinary] = useState(false);
   const [binaryInstallError, setBinaryInstallError] = useState<string | null>(
     null,
   );
+  const [shortcutStatus, setShortcutStatus] =
+    useState<LinuxShortcutStatus | null>(null);
+  const [isTogglingDesktop, setIsTogglingDesktop] = useState(false);
+  const [isTogglingApplications, setIsTogglingApplications] = useState(false);
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
   useEffect(() => {
     if (!isLinux) {
       return;
@@ -125,20 +137,49 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
     BridgeAPI.getLinuxBinaryInstallStatus()
       .then(setBinaryInstall)
       .catch(console.error);
+    BridgeAPI.getLinuxShortcutStatus()
+      .then(setShortcutStatus)
+      .catch(console.error);
   }, [isLinux]);
-  const onInstallBinary = useCallback(async (): Promise<void> => {
-    setIsInstallingBinary(true);
+  const onToggleBinary = useCallback(async (): Promise<void> => {
+    setIsTogglingBinary(true);
     setBinaryInstallError(null);
     try {
-      setBinaryInstall(await BridgeAPI.installLinuxBinary());
+      setBinaryInstall(await BridgeAPI.toggleLinuxBinary());
     } catch (error) {
       setBinaryInstallError(
         error instanceof Error ? error.message : String(error),
       );
     } finally {
-      setIsInstallingBinary(false);
+      setIsTogglingBinary(false);
     }
   }, []);
+  const onToggleDesktopShortcut = useCallback(async (): Promise<void> => {
+    setIsTogglingDesktop(true);
+    setShortcutError(null);
+    try {
+      setShortcutStatus(await BridgeAPI.toggleLinuxDesktopShortcut());
+    } catch (error) {
+      setShortcutError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsTogglingDesktop(false);
+    }
+  }, []);
+  const onToggleApplicationsShortcut = useCallback(async (): Promise<void> => {
+    setIsTogglingApplications(true);
+    setShortcutError(null);
+    try {
+      setShortcutStatus(await BridgeAPI.toggleLinuxApplicationsShortcut());
+    } catch (error) {
+      setShortcutError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsTogglingApplications(false);
+    }
+  }, []);
+  const isBinaryToggleDisabled =
+    isTogglingBinary ||
+    binaryInstall == null ||
+    (!binaryInstall.isInstalled && !binaryInstall.isInPath);
   const [rawGamePath, setRawGamePath] = useGamePath();
   const gamePath = useSanitizedGamePath();
   const [isDirectMode, setIsDirectMode] = useIsDirectMode();
@@ -537,43 +578,6 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
           </StyledAccordionSummary>
           <StyledAccordionDetails id="linux-content">
             <Typography color="text.secondary" variant="subtitle2">
-              {t('settings.linux.install.description')}
-            </Typography>
-            <Button
-              disabled={
-                isInstallingBinary ||
-                binaryInstall?.isInstalled ||
-                (binaryInstall != null && !binaryInstall.isInPath)
-              }
-              onClick={() => {
-                onInstallBinary().catch(console.error);
-              }}
-              startIcon={
-                binaryInstall?.isInstalled ? (
-                  <CheckCircle color="success" />
-                ) : undefined
-              }
-              sx={{ marginTop: 1 }}
-              variant="outlined"
-            >
-              {isInstallingBinary
-                ? t('settings.linux.install.installing')
-                : binaryInstall?.isInstalled
-                  ? t('settings.linux.install.installed')
-                  : t('settings.linux.install.install')}
-            </Button>
-            {binaryInstallError != null ? (
-              <Alert severity="error" sx={{ marginTop: 1 }}>
-                {binaryInstallError}
-              </Alert>
-            ) : null}
-            {binaryInstall != null && !binaryInstall.isInPath ? (
-              <Alert severity="warning" sx={{ marginTop: 1 }}>
-                {t('settings.linux.install.notInPath')}
-              </Alert>
-            ) : null}
-            <Divider sx={{ marginY: 2 }} />
-            <Typography color="text.secondary" variant="subtitle2">
               {t('settings.linux.launchCommand.description')}
             </Typography>
             <TextField
@@ -639,6 +643,88 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                   </MenuItem>
                 ))}
               </TextField>
+            ) : null}
+            <Divider sx={{ marginY: 2 }} />
+            <Typography color="text.secondary" variant="subtitle2">
+              {t('settings.linux.install.title')}
+            </Typography>
+            <Stack
+              direction="row"
+              sx={{ flexWrap: 'wrap', gap: 1, marginTop: 1 }}
+            >
+              <ButtonGroup sx={{ flexWrap: 'wrap' }} variant="outlined">
+                <Button
+                  disabled={isTogglingDesktop || shortcutStatus == null}
+                  onClick={() => {
+                    onToggleDesktopShortcut().catch(console.error);
+                  }}
+                  startIcon={
+                    shortcutStatus?.isDesktopInstalled ? (
+                      <CheckCircle color="success" />
+                    ) : (
+                      <InstallDesktop />
+                    )
+                  }
+                >
+                  {shortcutStatus?.isDesktopInstalled
+                    ? t('settings.linux.shortcut.desktop.remove')
+                    : t('settings.linux.shortcut.desktop.create')}
+                </Button>
+                <Button
+                  disabled={isTogglingApplications || shortcutStatus == null}
+                  onClick={() => {
+                    onToggleApplicationsShortcut().catch(console.error);
+                  }}
+                  startIcon={
+                    shortcutStatus?.isApplicationsInstalled ? (
+                      <CheckCircle color="success" />
+                    ) : (
+                      <Apps />
+                    )
+                  }
+                >
+                  {shortcutStatus?.isApplicationsInstalled
+                    ? t('settings.linux.shortcut.applications.remove')
+                    : t('settings.linux.shortcut.applications.create')}
+                </Button>
+              </ButtonGroup>
+              <Tooltip title={t('settings.linux.install.description')}>
+                <span style={{ display: 'inline-flex' }}>
+                  <Button
+                    disabled={isBinaryToggleDisabled}
+                    onClick={() => {
+                      onToggleBinary().catch(console.error);
+                    }}
+                    startIcon={
+                      binaryInstall?.isInstalled ? (
+                        <CheckCircle color="success" />
+                      ) : (
+                        <Terminal />
+                      )
+                    }
+                    variant="outlined"
+                  >
+                    {binaryInstall?.isInstalled
+                      ? t('settings.linux.install.remove')
+                      : t('settings.linux.install.install')}
+                  </Button>
+                </span>
+              </Tooltip>
+            </Stack>
+            {binaryInstallError != null ? (
+              <Alert severity="error" sx={{ marginTop: 1 }}>
+                {binaryInstallError}
+              </Alert>
+            ) : null}
+            {shortcutError != null ? (
+              <Alert severity="error" sx={{ marginTop: 1 }}>
+                {shortcutError}
+              </Alert>
+            ) : null}
+            {binaryInstall != null && !binaryInstall.isInPath ? (
+              <Alert severity="warning" sx={{ marginTop: 1 }}>
+                {t('settings.linux.install.notInPath')}
+              </Alert>
             ) : null}
           </StyledAccordionDetails>
         </StyledAccordion>

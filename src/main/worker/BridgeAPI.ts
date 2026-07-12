@@ -3,6 +3,7 @@ import type {
   IBridgeAPI,
   IInstallModsOptions,
   LinuxBinaryInstallStatus,
+  LinuxShortcutStatus,
   Mod,
 } from 'bridge/BridgeAPI';
 import type { ConsoleAPI, ConsoleArg } from 'bridge/ConsoleAPI';
@@ -12,6 +13,7 @@ import { Relative } from 'bridge/Relative';
 import type { ID2S, IStash } from 'bridge/third-party/d2s/d2/types';
 import { execFile, spawn } from 'child_process';
 import {
+  chmodSync,
   copyFileSync,
   existsSync,
   lstatSync,
@@ -42,6 +44,8 @@ import {
   getBaseSavesPath,
   getExecutablePath,
   getHomePath,
+  getIsPackaged,
+  getResourcesPath,
 } from './AppInfoAPI';
 import {
   CASC_ERROR_FILE_OFFLINE,
@@ -229,6 +233,73 @@ function getLinuxBinaryInstallStatus(): LinuxBinaryInstallStatus {
   return { symlinkPath, targetPath, isInstalled, isInPath };
 }
 
+function getLaunchExecPath(): string {
+  return process.env.APPIMAGE ?? getExecutablePath();
+}
+
+function getLinuxShortcutPaths(): {
+  desktopPath: string;
+  applicationsPath: string;
+} {
+  const home = getHomePath();
+  const desktopDir = process.env.XDG_DESKTOP_DIR ?? path.join(home, 'Desktop');
+  const applicationsDir =
+    process.env.XDG_DATA_HOME != null && process.env.XDG_DATA_HOME !== ''
+      ? path.join(process.env.XDG_DATA_HOME, 'applications')
+      : path.join(home, '.local', 'share', 'applications');
+  return {
+    desktopPath: path.join(desktopDir, 'd2rmm.desktop'),
+    applicationsPath: path.join(applicationsDir, 'd2rmm.desktop'),
+  };
+}
+
+// assets ship to resources/assets when packaged; in dev they live at the repo root
+function getIconPath(): string {
+  const assetsDir = getIsPackaged()
+    ? path.join(getResourcesPath(), 'assets')
+    : path.join(getAppPath(), 'assets');
+  return path.join(assetsDir, 'icon.png');
+}
+
+function getDesktopEntryContents(): string {
+  return [
+    '[Desktop Entry]',
+    'Type=Application',
+    'Name=D2RMM',
+    'Comment=Diablo II: Resurrected Mod Manager',
+    `Exec="${getLaunchExecPath()}"`,
+    `Icon=${getIconPath()}`,
+    'Terminal=false',
+    'Categories=Game;Utility;',
+    '',
+  ].join('\n');
+}
+
+function getLinuxShortcutStatus(): LinuxShortcutStatus {
+  const { desktopPath, applicationsPath } = getLinuxShortcutPaths();
+  return {
+    isDesktopInstalled: existsSync(desktopPath),
+    isApplicationsInstalled: existsSync(applicationsPath),
+  };
+}
+
+function toggleLinuxShortcut(shortcutPath: string): void {
+  if (existsSync(shortcutPath)) {
+    rmSync(shortcutPath, { force: true });
+    return;
+  }
+  mkdirSync(path.dirname(shortcutPath), { recursive: true });
+  writeFileSync(shortcutPath, getDesktopEntryContents());
+  // executable bit is required for some desktop environments to trust the entry
+  chmodSync(shortcutPath, 0o755);
+}
+
+// best-effort refresh so app-menu entries appear/disappear without a manual
+// cache update; not installed everywhere, so failures are ignored
+function refreshDesktopDatabase(applicationsDir: string): void {
+  execFile('update-desktop-database', ['-q', applicationsDir], () => {});
+}
+
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
@@ -362,17 +433,48 @@ export const BridgeAPI: IBridgeAPI = {
     return getLinuxBinaryInstallStatus();
   },
 
-  installLinuxBinary: async () => {
-    console.debug('BridgeAPI.installLinuxBinary');
+  toggleLinuxBinary: async () => {
+    console.debug('BridgeAPI.toggleLinuxBinary');
     try {
-      const { symlinkPath, targetPath } = getLinuxBinaryInstallStatus();
-      mkdirSync(path.dirname(symlinkPath), { recursive: true });
-      // rmSync with force replaces an existing (possibly stale/dangling) link
-      rmSync(symlinkPath, { force: true });
-      symlinkSync(targetPath, symlinkPath);
+      const { symlinkPath, targetPath, isInstalled } =
+        getLinuxBinaryInstallStatus();
+      if (isInstalled) {
+        rmSync(symlinkPath, { force: true });
+      } else {
+        mkdirSync(path.dirname(symlinkPath), { recursive: true });
+        rmSync(symlinkPath, { force: true });
+        symlinkSync(targetPath, symlinkPath);
+      }
       return getLinuxBinaryInstallStatus();
     } catch (error) {
-      throw te('worker.bridgeapi.installLinuxBinary.failed', null, error);
+      throw te('worker.bridgeapi.toggleLinuxBinary.failed', null, error);
+    }
+  },
+
+  getLinuxShortcutStatus: async () => {
+    console.debug('BridgeAPI.getLinuxShortcutStatus');
+    return getLinuxShortcutStatus();
+  },
+
+  toggleLinuxDesktopShortcut: async () => {
+    console.debug('BridgeAPI.toggleLinuxDesktopShortcut');
+    try {
+      toggleLinuxShortcut(getLinuxShortcutPaths().desktopPath);
+      return getLinuxShortcutStatus();
+    } catch (error) {
+      throw te('worker.bridgeapi.toggleLinuxShortcut.failed', null, error);
+    }
+  },
+
+  toggleLinuxApplicationsShortcut: async () => {
+    console.debug('BridgeAPI.toggleLinuxApplicationsShortcut');
+    try {
+      const { applicationsPath } = getLinuxShortcutPaths();
+      toggleLinuxShortcut(applicationsPath);
+      refreshDesktopDatabase(path.dirname(applicationsPath));
+      return getLinuxShortcutStatus();
+    } catch (error) {
+      throw te('worker.bridgeapi.toggleLinuxShortcut.failed', null, error);
     }
   },
 

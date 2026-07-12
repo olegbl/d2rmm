@@ -26,6 +26,7 @@ import {
   useFinalSavesPath,
   useSavesPath,
 } from 'renderer/react/context/SavesPathContext';
+import { useSteamGames } from 'renderer/react/context/SteamGamesContext';
 import { IThemeMode, useThemeMode } from 'renderer/react/context/ThemeContext';
 import useNexusAuthState from 'renderer/react/context/hooks/useNexusAuthState';
 import { useAsyncMemo } from 'renderer/react/hooks/useAsyncMemo';
@@ -119,6 +120,30 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
       setIsDetectingLutris(false);
     }
   }, [setLutrisGames]);
+  const [lutrisInstalled, setLutrisInstalled] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!isLinux) {
+      return;
+    }
+    BridgeAPI.isLutrisInstalled()
+      .then(setLutrisInstalled)
+      .catch((error) => {
+        console.error(error);
+        setLutrisInstalled(false);
+      });
+  }, [isLinux]);
+  const [steamDetection, setSteamDetection] = useSteamGames();
+  useEffect(() => {
+    if (!isLinux || steamDetection != null) {
+      return;
+    }
+    BridgeAPI.detectSteamD2RInstall()
+      .then(setSteamDetection)
+      .catch((error) => {
+        console.error(error);
+        setSteamDetection({ isSteamInstalled: false, installs: [] });
+      });
+  }, [isLinux, steamDetection, setSteamDetection]);
   const [binaryInstall, setBinaryInstall] =
     useState<LinuxBinaryInstallStatus | null>(null);
   const [isTogglingBinary, setIsTogglingBinary] = useState(false);
@@ -599,18 +624,41 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
               {t('settings.linux.helpers.title')}
             </Typography>
             {lutrisGames != null && lutrisGames.length > 0 ? null : (
-              <Button
-                disabled={isDetectingLutris}
-                onClick={() => {
-                  onDetectLutrisGames().catch(console.error);
-                }}
-                sx={{ marginTop: 1 }}
-                variant="outlined"
+              <Tooltip
+                title={
+                  lutrisInstalled === false
+                    ? t('settings.linux.lutris.notInstalled')
+                    : ''
+                }
               >
-                {isDetectingLutris
-                  ? t('settings.linux.lutris.detecting')
-                  : t('settings.linux.lutris.detect')}
-              </Button>
+                {/* span keeps the tooltip working while the button is disabled */}
+                <span>
+                  <Button
+                    color={lutrisInstalled === false ? 'warning' : undefined}
+                    disabled={isDetectingLutris || lutrisInstalled !== true}
+                    onClick={() => {
+                      onDetectLutrisGames().catch(console.error);
+                    }}
+                    sx={{
+                      marginTop: 1,
+                      ...(lutrisInstalled === false
+                        ? {
+                            '&.Mui-disabled': {
+                              opacity: 0.6,
+                              color: 'warning.main',
+                              borderColor: 'warning.main',
+                            },
+                          }
+                        : {}),
+                    }}
+                    variant="outlined"
+                  >
+                    {isDetectingLutris
+                      ? t('settings.linux.lutris.detecting')
+                      : t('settings.linux.lutris.detect')}
+                  </Button>
+                </span>
+              </Tooltip>
             )}
             {lutrisError != null ? (
               <Alert severity="error" sx={{ marginTop: 1 }}>
@@ -658,10 +706,87 @@ export default function ModManagerSettings(_props: Props): JSX.Element {
                 ))}
               </TextField>
             ) : null}
-            {lutrisGames != null && lutrisGames.length > 0 ? (
-              <Alert severity="info" sx={{ marginTop: 1 }}>
+            <Tooltip
+              title={
+                steamDetection == null
+                  ? t('settings.linux.steam.checking')
+                  : !steamDetection.isSteamInstalled
+                    ? t('settings.linux.steam.noSteam')
+                    : steamDetection.installs.length === 0
+                      ? t('settings.linux.steam.notFound')
+                      : t('settings.linux.steam.autofillInfo')
+              }
+            >
+              <span>
+                <Button
+                  color={
+                    steamDetection != null &&
+                    steamDetection.installs.length === 0
+                      ? 'warning'
+                      : undefined
+                  }
+                  disabled={
+                    steamDetection == null ||
+                    steamDetection.installs.length === 0
+                  }
+                  onClick={() => {
+                    const game = steamDetection?.installs[0];
+                    if (game == null) {
+                      return;
+                    }
+                    setLinuxLaunchCommand('steam steam://rungameid/2536520');
+                    setRawGamePath(game.gamePath);
+                    const prefix = game.prefixPath.replace(/\/+$/, '');
+                    setSavesPath(
+                      `${prefix}/drive_c/users/steamuser/Saved Games/Diablo II Resurrected/mods/${outputModName}`,
+                    );
+                  }}
+                  sx={{
+                    marginLeft: 1,
+                    marginTop: 1,
+                    ...(steamDetection != null &&
+                    steamDetection.installs.length === 0
+                      ? {
+                          '&.Mui-disabled': {
+                            opacity: 0.6,
+                            color: 'warning.main',
+                            borderColor: 'warning.main',
+                          },
+                        }
+                      : {}),
+                  }}
+                  variant="outlined"
+                >
+                  {t('settings.linux.steam.button')}
+                </Button>
+              </span>
+            </Tooltip>
+            <Alert severity="info" sx={{ marginTop: 1 }}>
+              <Typography color="text.secondary" variant="subtitle2">
+                {t('settings.linux.helpers.lutrisInfo')}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ marginTop: 1 }}
+                variant="subtitle2"
+              >
+                {t('settings.linux.helpers.steamInfo')}
+              </Typography>
+            </Alert>
+            {steamDetection != null && steamDetection.installs.length > 0 ? (
+              <Alert severity="success" sx={{ marginTop: 1 }}>
                 <Typography color="text.secondary" variant="subtitle2">
-                  {t('settings.linux.lutris.autofillInfo')}
+                  {t('settings.linux.helpers.steamPathLabel')}{' '}
+                  <Link
+                    href="#"
+                    onClick={() => {
+                      ShellAPI.showItemInFolder(
+                        steamDetection.installs[0].gamePath,
+                      ).catch(console.error);
+                    }}
+                  >
+                    {steamDetection.installs[0].gamePath}
+                  </Link>
                 </Typography>
               </Alert>
             ) : null}

@@ -385,6 +385,41 @@ function readLutrisGameConfig(slug: string): {
   return { exe: null, prefix: null };
 }
 
+// true if an executable of the given name exists on any PATH entry
+function isBinaryOnPath(binary: string): boolean {
+  return (process.env.PATH ?? '')
+    .split(path.delimiter)
+    .some((dir) => dir !== '' && existsSync(path.join(dir, binary)));
+}
+
+// Diablo II: Resurrected Steam app id
+const D2R_STEAM_APP_ID = '2536520';
+
+// Steam libraryfolders.vdf lives under one of these roots (all usually
+// symlinked to the same place, but we probe each in case they diverge).
+function findSteamLibraryFoldersVdf(): string | null {
+  const home = getHomePath();
+  const candidates = [
+    path.join(home, '.steam', 'steam', 'steamapps', 'libraryfolders.vdf'),
+    path.join(
+      home,
+      '.local',
+      'share',
+      'Steam',
+      'steamapps',
+      'libraryfolders.vdf',
+    ),
+    path.join(home, '.steam', 'root', 'steamapps', 'libraryfolders.vdf'),
+  ];
+  return candidates.find((p) => existsSync(p)) ?? null;
+}
+
+// pull a top-level VDF string value: matches "key"   "value"
+function parseVdfField(vdf: string, key: string): string | null {
+  const match = vdf.match(new RegExp(`"${key}"\\s+"([^"]*)"`));
+  return match != null ? match[1] : null;
+}
+
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
@@ -497,6 +532,11 @@ export const BridgeAPI: IBridgeAPI = {
     return runningGameProcesses > 0;
   },
 
+  isLutrisInstalled: async () => {
+    console.debug('BridgeAPI.isLutrisInstalled');
+    return isBinaryOnPath('lutris');
+  },
+
   listLutrisGames: async () => {
     console.debug('BridgeAPI.listLutrisGames');
     try {
@@ -523,6 +563,56 @@ export const BridgeAPI: IBridgeAPI = {
       });
     } catch (error) {
       throw te('worker.bridgeapi.listLutrisGames.failed', null, error);
+    }
+  },
+
+  detectSteamD2RInstall: async () => {
+    console.debug('BridgeAPI.detectSteamD2RInstall');
+    try {
+      const vdfPath = findSteamLibraryFoldersVdf();
+      if (vdfPath == null) {
+        return { isSteamInstalled: false, installs: [] };
+      }
+      const vdf = readFileSync(vdfPath, 'utf8');
+      const libraries = [...vdf.matchAll(/"path"\s+"([^"]*)"/g)].map((m) =>
+        m[1].replace(/\\\\/g, '\\'),
+      );
+
+      const installs = [];
+      for (const library of libraries) {
+        const steamapps = path.join(library, 'steamapps');
+        const manifestPath = path.join(
+          steamapps,
+          `appmanifest_${D2R_STEAM_APP_ID}.acf`,
+        );
+        if (!existsSync(manifestPath)) {
+          continue;
+        }
+        let installdir: string | null = null;
+        try {
+          installdir = parseVdfField(
+            readFileSync(manifestPath, 'utf8'),
+            'installdir',
+          );
+        } catch {
+          continue;
+        }
+        if (installdir == null) {
+          continue;
+        }
+        installs.push({
+          gamePath: path.join(steamapps, 'common', installdir),
+          prefixPath: path.join(
+            steamapps,
+            'compatdata',
+            D2R_STEAM_APP_ID,
+            'pfx',
+          ),
+        });
+      }
+      return { isSteamInstalled: true, installs };
+    } catch (error) {
+      throw te('worker.bridgeapi.detectSteamD2RInstall.failed', null, error);
     }
   },
 

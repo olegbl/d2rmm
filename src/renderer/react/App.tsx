@@ -26,6 +26,7 @@ import { OutputPathContextProvider } from 'renderer/react/context/OutputPathCont
 import { PreExtractedDataPathContextProvider } from 'renderer/react/context/PreExtractedDataPathContext';
 import { SavesPathContextProvider } from 'renderer/react/context/SavesPathContext';
 import { SessionContextProvider } from 'renderer/react/context/SessionContext';
+import { SteamGamesContextProvider } from 'renderer/react/context/SteamGamesContext';
 import {
   TabContextProvider,
   useTabState,
@@ -191,6 +192,7 @@ const CONTEXT_PROVIDERS = [
   ExtraGameLaunchArgsContextProvider,
   LinuxLaunchCommandContextProvider,
   LutrisGamesContextProvider,
+  SteamGamesContextProvider,
   IsDirectModeContextProvider,
   OutputModNameContextProvider,
   IsPreExtractedDataContextProvider,

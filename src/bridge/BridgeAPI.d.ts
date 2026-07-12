@@ -37,6 +37,16 @@ export type LutrisGame = {
   prefix: string | null;
 };
 
+export type SteamGame = {
+  gamePath: string;
+  prefixPath: string;
+};
+
+export type SteamD2RDetection = {
+  isSteamInstalled: boolean;
+  installs: SteamGame[];
+};
+
 export type LinuxBinaryInstallStatus = {
   symlinkPath: string;
   targetPath: string;
@@ -63,7 +73,9 @@ export type IBridgeAPI = {
   execute: (executablePath: string, args?: string[]) => Promise<number>;
   executeCommand: (command: string) => Promise<number>;
   isGameRunning: () => Promise<boolean>;
+  isLutrisInstalled: () => Promise<boolean>;
   listLutrisGames: () => Promise<LutrisGame[]>;
+  detectSteamD2RInstall: () => Promise<SteamD2RDetection>;
   getLinuxBinaryInstallStatus: () => Promise<LinuxBinaryInstallStatus>;
   toggleLinuxBinary: () => Promise<LinuxBinaryInstallStatus>;
   getLinuxShortcutStatus: () => Promise<LinuxShortcutStatus>;

@@ -11,7 +11,7 @@ import type { JSONData } from 'bridge/JSON';
 import type { ModConfigValue } from 'bridge/ModConfigValue';
 import { Relative } from 'bridge/Relative';
 import type { ID2S, IStash } from 'bridge/third-party/d2s/d2/types';
-import { execFile, spawn } from 'child_process';
+import { type ChildProcess, execFile, spawn } from 'child_process';
 import {
   chmodSync,
   copyFileSync,
@@ -209,6 +209,33 @@ let cascStorage: unknown = null;
 let cascStorageIsOpen = false;
 let cascStorageOpenedOnline: boolean | null = null;
 let cascStorageOpenedGamePath: string | null = null;
+
+// Count of launched game processes still alive; drives the Run button state.
+let runningGameProcesses = 0;
+
+function broadcastGameRunning(): void {
+  EventAPI.send('gameRunningChanged', runningGameProcesses > 0).catch(
+    console.error,
+  );
+}
+
+function trackGameProcess(child: ChildProcess): void {
+  runningGameProcesses += 1;
+  broadcastGameRunning();
+
+  let settled = false;
+  const onExit = (): void => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    runningGameProcesses = Math.max(0, runningGameProcesses - 1);
+    broadcastGameRunning();
+  };
+
+  child.once('exit', onExit);
+  child.once('error', onExit);
+}
 
 function getLinuxBinaryInstallStatus(): LinuxBinaryInstallStatus {
   const targetPath = getExecutablePath();
@@ -433,6 +460,8 @@ export const BridgeAPI: IBridgeAPI = {
         stdio: 'ignore',
       });
 
+      trackGameProcess(child);
+
       try {
         child.unref();
       } catch {}
@@ -452,6 +481,8 @@ export const BridgeAPI: IBridgeAPI = {
         stdio: 'ignore',
       });
 
+      trackGameProcess(child);
+
       try {
         child.unref();
       } catch {}
@@ -460,6 +491,10 @@ export const BridgeAPI: IBridgeAPI = {
     } catch (error) {
       throw te('worker.bridgeapi.execute.failed', null, error);
     }
+  },
+
+  isGameRunning: async () => {
+    return runningGameProcesses > 0;
   },
 
   listLutrisGames: async () => {

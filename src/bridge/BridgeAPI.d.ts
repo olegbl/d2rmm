@@ -62,6 +62,7 @@ export type IBridgeAPI = {
   deleteFile: (filePath: string, relative: Relative) => Promise<number>;
   execute: (executablePath: string, args?: string[]) => Promise<number>;
   executeCommand: (command: string) => Promise<number>;
+  isGameRunning: () => Promise<boolean>;
   listLutrisGames: () => Promise<LutrisGame[]>;
   getLinuxBinaryInstallStatus: () => Promise<LinuxBinaryInstallStatus>;
   toggleLinuxBinary: () => Promise<LinuxBinaryInstallStatus>;

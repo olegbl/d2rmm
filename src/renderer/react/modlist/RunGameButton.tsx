@@ -5,6 +5,7 @@ import { useLinuxLaunchCommand } from 'renderer/react/context/LinuxLaunchCommand
 import { useIsInstallConfigChanged } from 'renderer/react/context/ModsContext';
 import useAsyncCallback from 'renderer/react/hooks/useAsyncCallback';
 import useGameLaunchArgs from 'renderer/react/hooks/useGameLaunchArgs';
+import useIsGameRunning from 'renderer/react/hooks/useIsGameRunning';
 import useInstallMods from 'renderer/react/modlist/hooks/useInstallMods';
 import resolvePath from 'renderer/utils/resolvePath';
 import { useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
   PlayCircleFilled,
   PlayCircleOutlineOutlined,
 } from '@mui/icons-material';
-import { Button, Tooltip } from '@mui/material';
+import { Button, CircularProgress, Tooltip } from '@mui/material';
 
 type Props = Record<string, never>;
 
@@ -27,6 +28,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
 
   const [isInstallBeforeRunEnabled] = useInstallBeforeRun();
   const [linuxLaunchCommand] = useLinuxLaunchCommand();
+  const isGameRunning = useIsGameRunning();
 
   const onInstallMods = useInstallMods();
 
@@ -58,25 +60,45 @@ export default function RunGameButton(_props: Props): JSX.Element {
   ]);
 
   const isLaunchCommandMissing = isLinux && linuxLaunchCommand.trim() === '';
+  const isDisabled = isLaunchCommandMissing || isGameRunning;
 
-  const tooltipText = isLaunchCommandMissing
-    ? t('run.tooltip.linuxNoCommand')
-    : isInstallConfigChanged
-      ? `${t('run.tooltip', { command })} ${t('run.tooltip.unsaved')}`
-      : t('run.tooltip', { command });
+  const tooltipText = isGameRunning
+    ? t('run.tooltip.running')
+    : isLaunchCommandMissing
+      ? t('run.tooltip.linuxNoCommand')
+      : isInstallConfigChanged
+        ? `${t('run.tooltip', { command })} ${t('run.tooltip.unsaved')}`
+        : t('run.tooltip', { command });
 
   const button = (
     <Button
-      disabled={isLaunchCommandMissing}
+      disabled={isDisabled}
       onClick={onPress}
       startIcon={
-        !isInstallConfigChanged ? (
+        isGameRunning ? (
+          <CircularProgress color="inherit" size={16} />
+        ) : !isInstallConfigChanged ? (
           <PlayCircleFilled />
         ) : (
           <PlayCircleOutlineOutlined />
         )
       }
-      variant={!isInstallConfigChanged ? 'contained' : 'outlined'}
+      sx={
+        isGameRunning
+          ? {
+              // keep the running button blue instead of the greyed-out
+              // disabled look, so it's not confused with "no launch command"
+              '&.Mui-disabled': {
+                backgroundColor: 'primary.main',
+                color: 'primary.contrastText',
+                opacity: 0.6,
+              },
+            }
+          : undefined
+      }
+      variant={
+        isGameRunning || !isInstallConfigChanged ? 'contained' : 'outlined'
+      }
     >
       {t('run.button')}
     </Button>
@@ -84,9 +106,7 @@ export default function RunGameButton(_props: Props): JSX.Element {
 
   return (
     <Tooltip title={tooltipText}>
-      {/* disabled buttons swallow hover events, so wrap in a span for the
-          tooltip; keep enabled buttons unwrapped so ButtonGroup styles them */}
-      {isLaunchCommandMissing ? (
+      {isDisabled ? (
         <span style={{ display: 'inline-flex' }}>{button}</span>
       ) : (
         button

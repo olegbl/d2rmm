@@ -2779,7 +2779,7 @@
 
 "CascLib@https://github.com/olegbl/CascLib.git":
   version "0.0.0"
-  resolved "https://github.com/olegbl/CascLib.git#3f4d2994076f4c5bb3481cf8186e3b6e5d210d20"
+  resolved "https://github.com/olegbl/CascLib.git#d9e8da11ea282c0912fa4482f71b21b9bea3380a"
 
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.5"

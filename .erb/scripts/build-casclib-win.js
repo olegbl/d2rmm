@@ -48,8 +48,10 @@ function getMSBuildInfo() {
     );
   }
 
+  // -products * is required to include Build Tools-only installs — vswhere's
+  // default product filter only covers the full VS Community/Professional/Enterprise SKUs.
   const msbuildPath = execSync(
-    `"${vswhere}" -latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe`,
+    `"${vswhere}" -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\MSBuild.exe`,
   )
     .toString()
     .trim();
@@ -62,7 +64,7 @@ function getMSBuildInfo() {
   // Detect the installed VS major version so we can set the right toolset.
   // This lets older VS installs build a vcxproj that targets a newer toolset.
   const vsVersionStr = execSync(
-    `"${vswhere}" -latest -requires Microsoft.Component.MSBuild -property installationVersion`,
+    `"${vswhere}" -latest -products * -requires Microsoft.Component.MSBuild -property installationVersion`,
   )
     .toString()
     .trim();

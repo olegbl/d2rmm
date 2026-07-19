@@ -47,7 +47,6 @@ export const STAGING_SENTINEL_FILE: StashFile = {
     version: '',
     type: 'shared',
     pageCount: 0,
-    sharedGold: 0,
     kind: 0,
     pages: [],
   },

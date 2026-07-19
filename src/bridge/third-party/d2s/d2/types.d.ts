@@ -422,7 +422,6 @@ export interface IStash {
   version: string;
   type: EStashType;
   pageCount: number;
-  sharedGold: number;
   kind: number;
   pages: IStashPage[];
   chronicle?: Uint8Array;
@@ -433,6 +432,7 @@ export interface IStashPage {
   type: number;
   items: IItem[];
   sectionType?: number; // D2R section padding[0]: 0=normal, 1=advanced stash items, 2=advanced tab metadata
+  sharedGold?: number;
 }
 
 export type EStashType = 'shared' | 'private';

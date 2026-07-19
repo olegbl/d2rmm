@@ -25,7 +25,10 @@ export async function read(
     let pageCount = 0;
     while (reader.offset < reader.bits.length) {
       pageCount++;
-      const { sectionSize, sectionType } = readStashHeader(stash, reader);
+      const { sectionSize, sectionType, sharedGold } = readStashHeader(
+        stash,
+        reader,
+      );
       const saveVersion = version || parseInt(stash.version);
       if (!constants) {
         constants = getConstantData(saveVersion);
@@ -43,6 +46,7 @@ export async function read(
             realm,
             constants,
             sectionType,
+            sharedGold,
           );
         } catch (error) {
           throw te(
@@ -58,12 +62,18 @@ export async function read(
     stash.pageCount = pageCount;
   } else {
     // LoD
-    readStashHeader(stash, reader);
+    const { sharedGold } = readStashHeader(stash, reader);
     const saveVersion = version || parseInt(stash.version);
     if (!constants) {
       constants = getConstantData(saveVersion);
     }
     await readStashPages(stash, reader, saveVersion, realm, constants);
+    // LoD stores a single stash-wide gold value in the file header (read
+    // before any pages exist yet) - keep it on the first page for
+    // consistency with the Resurrected per-section format.
+    if (stash.pages.length > 0) {
+      stash.pages[0].sharedGold = sharedGold;
+    }
   }
   return stash;
 }
@@ -71,7 +81,7 @@ export async function read(
 function readStashHeader(
   stash: types.IStash,
   reader: BitReader,
-): { sectionSize: number; sectionType: number } {
+): { sectionSize: number; sectionType: number; sharedGold: number } {
   const header = reader.ReadUInt32();
   switch (header) {
     // Resurrected
@@ -79,11 +89,11 @@ function readStashHeader(
       stash.type = 'shared' as types.EStashType;
       stash.kind = reader.ReadUInt32();
       stash.version = reader.ReadUInt32().toString();
-      stash.sharedGold = reader.ReadUInt32();
+      const sharedGold = reader.ReadUInt32();
       const sectionSize = reader.ReadUInt32(); // total section size in bytes
       const sectionType = reader.ReadUInt8(8); // 0=normal, 1=advanced stash items, 2=advanced tab metadata
       reader.SkipBytes(43); // remaining padding
-      return { sectionSize, sectionType };
+      return { sectionSize, sectionType, sharedGold };
     }
     // LoD
     case 0x535353: // SSS
@@ -101,20 +111,21 @@ function readStashHeader(
           ? ('shared' as types.EStashType)
           : ('private' as types.EStashType);
 
+      let sharedGold = 0;
       if (
         stash.type === ('shared' as types.EStashType) &&
         stash.version == '02'
       ) {
-        stash.sharedGold = reader.ReadUInt32();
+        sharedGold = reader.ReadUInt32();
       }
 
       if (stash.type === ('private' as types.EStashType)) {
         reader.ReadUInt32();
-        stash.sharedGold = 0;
+        sharedGold = 0;
       }
 
       stash.pageCount = reader.ReadUInt32();
-      return { sectionSize: 0, sectionType: 0 };
+      return { sectionSize: 0, sectionType: 0, sharedGold };
     default:
       throw te('d2s.parse.stash.headerNotFound', {
         position: reader.offset - 3 * 8,
@@ -192,12 +203,14 @@ async function readStashPart(
   realm: number,
   constants: types.IConstantData,
   sectionType: number,
+  sharedGold: number,
 ) {
   const page: types.IStashPage = {
     items: [],
     name: '',
     type: 0,
     sectionType,
+    sharedGold,
   };
   try {
     page.items = await items.readItems(
@@ -261,7 +274,7 @@ async function writeStashHeader(data: types.IStash): Promise<Uint8Array> {
     writer.WriteString('', 4);
   } else {
     if (data.version == '02') {
-      writer.WriteUInt32(data.sharedGold);
+      writer.WriteUInt32(data.pages[0]?.sharedGold ?? 0);
     }
   }
   writer.WriteUInt32(data.pages.length);
@@ -280,7 +293,7 @@ async function writeStashSection(
   writer.WriteUInt32(0xaa55aa55);
   writer.WriteUInt32(data.kind);
   writer.WriteUInt32(version);
-  writer.WriteUInt32(data.sharedGold);
+  writer.WriteUInt32(page.sharedGold ?? 0);
   writer.WriteUInt32(0); // total section size in bytes, patched after writing items
   const padding = new Uint8Array(44);
   padding[0] = page.sectionType ?? 0;
@@ -303,7 +316,7 @@ function writeChronicle(
   writer.WriteUInt32(0xaa55aa55);
   writer.WriteUInt32(data.kind);
   writer.WriteUInt32(version);
-  writer.WriteUInt32(data.sharedGold);
+  writer.WriteUInt32(0); // sharedGold
   writer.WriteUInt32(0); // total section size in bytes, patched below
   const padding = new Uint8Array(44);
   padding[0] = 2; // chronicle metadata section marker

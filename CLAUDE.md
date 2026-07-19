@@ -18,7 +18,7 @@ yarn build:updater  # Build auto-updater binaries (requires pkg)
 yarn build:casclib  # Build CascLib native module (requires node-gyp)
 ```
 
-> CI uses `npm` (not yarn), despite `yarn.lock`. Local dev uses `yarn`. Node v22 required.
+> **Always use `yarn` for local commands and installs — never `npm`,** including one-off `npm install <pkg>` for a new dependency. This applies inside `release/app/` too (it has its own `yarn.lock`; see below). CI is the only place that uses `npm run` - this is not a local convention to follow. Node v22 required.
 
 > **Local machine config** (shell, paths, tools): see @.claude/local.md
 

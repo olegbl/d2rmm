@@ -49,7 +49,7 @@ export default function useModDropZone(): ModDropZoneHandlers {
       setIsDraggingOver(false);
 
       type InstallableItem =
-        | { kind: 'zip'; file: File }
+        | { kind: 'archive'; file: File }
         | { kind: 'folder'; file: File };
 
       const installable: InstallableItem[] = [];
@@ -59,8 +59,8 @@ export default function useModDropZone(): ModDropZoneHandlers {
         const entry = event.dataTransfer.items[index]?.webkitGetAsEntry();
         if (entry?.isDirectory) {
           installable.push({ kind: 'folder', file });
-        } else if (file.name.endsWith('.zip')) {
-          installable.push({ kind: 'zip', file });
+        } else if (/\.(zip|7z)$/i.test(file.name)) {
+          installable.push({ kind: 'archive', file });
         } else {
           ignoredCount += 1;
         }
@@ -71,7 +71,7 @@ export default function useModDropZone(): ModDropZoneHandlers {
           severity: 'info',
           title: `${ignoredCount} file${ignoredCount > 1 ? 's' : ''} ignored`,
           description:
-            'Only .zip files and mod folders can be installed by drag-and-drop.',
+            'Only .zip/.7z files and mod folders can be installed by drag-and-drop.',
           duration: 4000,
         });
       }
@@ -85,12 +85,12 @@ export default function useModDropZone(): ModDropZoneHandlers {
         for (const item of installable) {
           const itemPath = ElectronUtilsAPI.getPathForFile(item.file);
           const modID =
-            item.kind === 'zip'
-              ? item.file.name.replace(/\.zip$/i, '')
+            item.kind === 'archive'
+              ? item.file.name.replace(/\.(zip|7z)$/i, '')
               : item.file.name;
           try {
-            if (item.kind === 'zip') {
-              await ModUpdaterAPI.installModFromZip(itemPath);
+            if (item.kind === 'archive') {
+              await ModUpdaterAPI.installModFromArchive(itemPath);
             } else {
               await ModUpdaterAPI.installModFromFolder(itemPath);
             }

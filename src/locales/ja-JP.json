@@ -1,5 +1,5 @@
 {
-  "app.dropZone": ".zipをドロップしてMODをインストール",
+  "app.dropZone": ".zipまたは.7zをドロップしてMODをインストール",
   "collection.dialog.cancel": "キャンセル",
   "collection.dialog.close": "閉じる",
   "collection.dialog.config.include": "設定を含める",

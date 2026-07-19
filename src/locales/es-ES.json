@@ -1,5 +1,5 @@
 {
-  "app.dropZone": "Suelta un .zip para instalar el mod",
+  "app.dropZone": "Suelta un .zip o .7z para instalar el mod",
   "collection.dialog.cancel": "Cancelar",
   "collection.dialog.close": "Cerrar",
   "collection.dialog.config.include": "Incluir config",

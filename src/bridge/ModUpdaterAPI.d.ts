@@ -34,7 +34,7 @@ export type IModUpdaterAPI = {
     key?: string,
     expires?: number,
   ) => Promise<string>;
-  installModFromZip: (zipFilePath: string) => Promise<string>;
+  installModFromArchive: (archiveFilePath: string) => Promise<string>;
   installModFromFolder: (folderPath: string) => Promise<string>;
   getCollectionRevision: (
     nexusApiKey: string,

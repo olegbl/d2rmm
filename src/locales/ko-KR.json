@@ -1,5 +1,5 @@
 {
-  "app.dropZone": ".zip 파일을 드롭하여 MOD 설치",
+  "app.dropZone": ".zip 또는 .7z 파일을 드롭하여 MOD 설치",
   "collection.dialog.cancel": "취소",
   "collection.dialog.close": "닫기",
   "collection.dialog.config.include": "설정 포함",

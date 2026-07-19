@@ -42,7 +42,8 @@
     "asar": true,
     "asarUnpack": [
       "**/*.{node,dll,dylib,wasm}",
-      "**/node_modules/@jitl/quickjs-wasmfile-release-asyncify/dist/{index.js,emscripten-module.mjs,emscripten-module.wasm}"
+      "**/node_modules/@jitl/quickjs-wasmfile-release-asyncify/dist/{index.js,emscripten-module.mjs,emscripten-module.wasm}",
+      "**/node_modules/7zip-bin/**"
     ],
     "win": {
       "target": ["zip"]

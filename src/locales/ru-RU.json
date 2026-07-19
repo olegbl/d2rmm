@@ -1,5 +1,5 @@
 {
-  "app.dropZone": "Перетащите .zip для установки мода",
+  "app.dropZone": "Перетащите .zip или .7z для установки мода",
   "collection.dialog.cancel": "Отмена",
   "collection.dialog.close": "Закрыть",
   "collection.dialog.config.include": "Включить конфиг",

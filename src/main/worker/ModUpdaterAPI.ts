@@ -12,9 +12,11 @@ import type {
   ValidateResult,
 } from 'bridge/NexusModsAPI';
 import type { ResponseHeaders } from 'bridge/RequestAPI';
+import { path7za } from '7zip-bin';
 import decompress from 'decompress';
 import { zipSync } from 'fflate';
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -24,9 +26,10 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
+import { extractFull } from 'node-7z';
 import os from 'os';
 import path from 'path';
-import { getAppPath } from './AppInfoAPI';
+import { getAppPath, getIsPackaged } from './AppInfoAPI';
 import { EventAPI } from './EventAPI';
 import { provideAPI } from './IPC';
 import { RequestAPI } from './RequestAPI';
@@ -471,11 +474,69 @@ function findModInfo(dirPath: string): string | null {
   return null;
 }
 
-async function installFromZipPath(
-  zipFilePath: string,
+// 7zip-bin resolves its binary path relative to its own package directory,
+// which ends up inside app.asar in a packaged build. child_process cannot
+// exec a binary from inside an asar archive, so it must be unpacked
+// (see the "**/node_modules/7zip-bin/**" asarUnpack entry) and we redirect
+// the path there, mirroring the app.asar -> app.asar.unpacked rewrite that
+// initAsar() does for .wasm files.
+function get7zaBinaryPath(): string {
+  let binaryPath = path7za;
+  if (
+    getIsPackaged() &&
+    binaryPath.includes('app.asar') &&
+    !binaryPath.includes('app.asar.unpacked')
+  ) {
+    const unpackedPath = binaryPath.replace(/app\.asar/g, 'app.asar.unpacked');
+    if (existsSync(unpackedPath)) {
+      binaryPath = unpackedPath;
+    }
+  }
+  if (process.platform !== 'win32') {
+    // the executable bit can be lost when packaging/unpacking the binary
+    chmodSync(binaryPath, 0o755);
+  }
+  return binaryPath;
+}
+
+// The download_link.json URI doesn't carry the original file's extension in
+// a dedicated field, but Nexus CDN URLs embed the originally uploaded
+// filename in their path, so we sniff it from there instead of assuming
+// every Nexus download is a .zip.
+function getArchiveExtensionFromDownloadUrl(downloadUrl: string): string {
+  try {
+    const ext = path.extname(new URL(downloadUrl).pathname).toLowerCase();
+    if (ext === '.7z') {
+      return ext;
+    }
+  } catch {
+    // malformed URL; fall through to the .zip default below
+  }
+  return '.zip';
+}
+
+async function extract7zArchive(
+  archiveFilePath: string,
+  extractDirPath: string,
+): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const stream = extractFull(archiveFilePath, extractDirPath, {
+      $bin: get7zaBinaryPath(),
+      $progress: false,
+    });
+    stream.on('end', () => resolve());
+    stream.on('error', (error: Error) => reject(error));
+  });
+}
+
+async function installFromArchivePath(
+  archiveFilePath: string,
   modID: string,
 ): Promise<string> {
-  console.debug('ModUpdaterAPI', 'installFromZipPath', { zipFilePath, modID });
+  console.debug('ModUpdaterAPI', 'installFromArchivePath', {
+    archiveFilePath,
+    modID,
+  });
 
   const extractDirPath = path.join(os.tmpdir(), 'D2RMM', 'ModInstall', modID);
   if (existsSync(extractDirPath)) {
@@ -484,12 +545,16 @@ async function installFromZipPath(
   mkdirSync(extractDirPath, { recursive: true });
 
   process.noAsar = true;
-  await decompress(zipFilePath, extractDirPath);
+  if (path.extname(archiveFilePath).toLowerCase() === '.7z') {
+    await extract7zArchive(archiveFilePath, extractDirPath);
+  } else {
+    await decompress(archiveFilePath, extractDirPath);
+  }
   process.noAsar = false;
 
-  console.debug('ModUpdaterAPI', 'extracted zip file', {
+  console.debug('ModUpdaterAPI', 'extracted archive file', {
     modID,
-    zipFilePath,
+    archiveFilePath,
     extractDirPath,
   });
 
@@ -497,7 +562,7 @@ async function installFromZipPath(
   if (extractedModDirPath == null) {
     rmSync(extractDirPath, { force: true, recursive: true });
     throw new Error(
-      `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the .zip file.`,
+      `Mod has an unexpected file structure. Expected to find a "mod.json" (for D2RMM mods) or a "modinfo.json" (for data mods) file somewhere in the archive.`,
     );
   }
 
@@ -615,7 +680,7 @@ export async function initModUpdaterAPI(): Promise<void> {
         nexusModID,
         nexusFileID,
       });
-      // get link to the zip file on Nexus Mods CDN
+      // get link to the archive file on Nexus Mods CDN
       const downloadLink = await NexusModsAPI.getDownloadLink(
         nexusApiKey,
         nexusModID,
@@ -640,13 +705,13 @@ export async function initModUpdaterAPI(): Promise<void> {
         modID = file.name;
       }
 
-      // download the zip file
-      const fileName = `${modID}.zip`;
+      // download the archive file
+      const fileName = `${modID}${getArchiveExtensionFromDownloadUrl(downloadUrl)}`;
       const { filePath } = await RequestAPI.downloadToFile(downloadUrl, {
         fileName,
       });
 
-      console.debug('ModUpdaterAPI', 'downloaded zip file', {
+      console.debug('ModUpdaterAPI', 'downloaded archive file', {
         modID,
         nexusModID,
         nexusFileID,
@@ -654,17 +719,20 @@ export async function initModUpdaterAPI(): Promise<void> {
       });
 
       try {
-        return await installFromZipPath(filePath, modID);
+        return await installFromArchivePath(filePath, modID);
       } finally {
-        // Always remove the downloaded temp zip, even on failure.
+        // Always remove the downloaded temp archive, even on failure.
         if (existsSync(filePath)) {
           rmSync(filePath);
         }
       }
     },
-    installModFromZip: async (zipFilePath) => {
-      const modID = path.basename(zipFilePath, '.zip');
-      return installFromZipPath(zipFilePath, modID);
+    installModFromArchive: async (archiveFilePath) => {
+      const modID = path.basename(
+        archiveFilePath,
+        path.extname(archiveFilePath),
+      );
+      return installFromArchivePath(archiveFilePath, modID);
     },
     installModFromFolder: async (folderPath) => {
       const modID = path.basename(folderPath);

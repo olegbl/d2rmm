@@ -1,5 +1,5 @@
 {
-  "app.dropZone": "拖放 .zip 以安裝模組",
+  "app.dropZone": "拖放 .zip 或 .7z 以安裝模組",
   "collection.dialog.cancel": "取消",
   "collection.dialog.close": "關閉",
   "collection.dialog.config.include": "包含設定",

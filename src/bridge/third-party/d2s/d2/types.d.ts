@@ -36,7 +36,29 @@ export interface ID2S {
   merc_items: IItem[];
   golem_item: IItem;
   has_demon: number;
-  demon: Uint8Array;
+  demon?: IDemon;
+}
+
+export interface IDemon {
+  is_super_unique: number;
+  index: number;
+  difficulty: number;
+  level_id: number;
+  level: number;
+  is_desecrated: number;
+  difficulty2: number;
+  difficulty3: number;
+  mods: number[]; // 9 raw mod bytes
+  stats: Uint8Array; // trailing 26 bytes of the section (stat rolls + terminator)
+  _unknown_data: {
+    b0_2?: Uint8Array;
+    b7_12?: Uint8Array;
+    b14_24?: Uint8Array;
+    b27_28?: Uint8Array;
+    b31_52?: Uint8Array;
+    b54_56?: Uint8Array;
+    b58_80?: Uint8Array;
+  };
 }
 
 export interface IAttributes {

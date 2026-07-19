@@ -260,9 +260,28 @@ async function readDemonData(
     if (header === '\x01\x00lf') {
       char.has_demon = reader.ReadUInt16(); // wtf lol, in yr 2000 this would have been 1 bit
       if (char.has_demon) {
-        // the demon section seems to always be 928 bits
-        // and ends with a 0x1FF followed by 3 0 bits
-        char.demon = reader.ReadBitArray(928); // 0x0004
+        // the demon section is a fixed 928 bits (116 bytes) - decode the
+        // known fields and preserve everything else verbatim for round-tripping
+        const demon = { _unknown_data: {} } as types.IDemon;
+        demon._unknown_data.b0_2 = reader.ReadBytes(3);
+        demon.is_super_unique = reader.ReadUInt16();
+        demon.index = reader.ReadUInt16();
+        demon._unknown_data.b7_12 = reader.ReadBytes(6);
+        demon.difficulty = reader.ReadUInt8();
+        demon._unknown_data.b14_24 = reader.ReadBytes(11);
+        demon.level_id = reader.ReadUInt16();
+        demon._unknown_data.b27_28 = reader.ReadBytes(2);
+        demon.level = reader.ReadUInt8();
+        demon.is_desecrated = reader.ReadUInt8();
+        demon._unknown_data.b31_52 = reader.ReadBytes(22);
+        demon.difficulty2 = reader.ReadUInt8();
+        demon._unknown_data.b54_56 = reader.ReadBytes(3);
+        demon.difficulty3 = reader.ReadUInt8();
+        demon._unknown_data.b58_80 = reader.ReadBytes(23);
+        demon.mods = Array.from(reader.ReadBytes(9));
+        // remaining bytes of the fixed section (stat rolls + 0x1FF terminator)
+        demon.stats = reader.ReadBytes(26);
+        char.demon = demon;
       }
     } else {
       // header is not present in first save after char is created
@@ -294,8 +313,27 @@ async function writeDemonData(
   const writer = new BitWriter();
   writer.WriteString('\x01\x00lf', 4);
   writer.WriteUInt16(char.has_demon ?? 0);
-  if (char.has_demon) {
-    writer.WriteBits(char.demon, char.demon.length);
+  if (char.has_demon && char.demon) {
+    const demon = char.demon;
+    writer.WriteBytes(demon._unknown_data.b0_2 ?? new Uint8Array(3));
+    writer.WriteUInt16(demon.is_super_unique ?? 0);
+    writer.WriteUInt16(demon.index ?? 0);
+    writer.WriteBytes(demon._unknown_data.b7_12 ?? new Uint8Array(6));
+    writer.WriteUInt8(demon.difficulty ?? 0);
+    writer.WriteBytes(demon._unknown_data.b14_24 ?? new Uint8Array(11));
+    writer.WriteUInt16(demon.level_id ?? 0);
+    writer.WriteBytes(demon._unknown_data.b27_28 ?? new Uint8Array(2));
+    writer.WriteUInt8(demon.level ?? 0);
+    writer.WriteUInt8(demon.is_desecrated ?? 0);
+    writer.WriteBytes(demon._unknown_data.b31_52 ?? new Uint8Array(22));
+    writer.WriteUInt8(demon.difficulty2 ?? 0);
+    writer.WriteBytes(demon._unknown_data.b54_56 ?? new Uint8Array(3));
+    writer.WriteUInt8(demon.difficulty3 ?? 0);
+    writer.WriteBytes(demon._unknown_data.b58_80 ?? new Uint8Array(23));
+    writer.WriteBytes(
+      demon.mods ? Uint8Array.from(demon.mods) : new Uint8Array(9),
+    );
+    writer.WriteBytes(demon.stats ?? new Uint8Array(26));
   }
   return writer.ToArray();
 }

@@ -20,6 +20,7 @@ import {
   statSync,
   writeFileSync,
 } from 'fs';
+import os from 'os';
 import path from 'path';
 import { Scope } from 'quickjs-emscripten';
 import regedit from 'regedit';
@@ -1475,6 +1476,15 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       );
     } catch {}
 
+    // try to prevent background throttling during installation
+    if (process.platform === 'win32') {
+      try {
+        os.setPriority(os.constants.priority.PRIORITY_ABOVE_NORMAL);
+      } catch (error) {
+        console.debug('Failed to raise process priority for install', error);
+      }
+    }
+
     try {
       if (!runtime.options.isPreExtractedData) {
         await BridgeAPI.openStorage(runtime.options.gamePath);
@@ -1688,6 +1698,17 @@ const config = JSON.parse(D2RMM.getConfigJSON());
       return modsInstalled;
     } finally {
       runtime = null;
+
+      if (process.platform === 'win32') {
+        try {
+          os.setPriority(os.constants.priority.PRIORITY_NORMAL);
+        } catch (error) {
+          console.debug(
+            'Failed to restore process priority after install',
+            error,
+          );
+        }
+      }
     }
   },
 };

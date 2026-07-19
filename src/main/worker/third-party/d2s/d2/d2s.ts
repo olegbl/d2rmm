@@ -265,9 +265,14 @@ async function readDemonData(
         char.demon = reader.ReadBitArray(928); // 0x0004
       }
     } else {
+      // header is not present in first save after char is created
+      if (char?.header.level === 1) {
+        return;
+      }
+
       throw te('d2s.parse.demon.demonHeaderNotFound', {
         found: header,
-        offset: Math.floor((reader.offset - 2 * 8) / 8),
+        offset: Math.floor((reader.offset - 4 * 8) / 8),
       });
     }
   } catch (error) {
@@ -288,7 +293,7 @@ async function writeDemonData(
 ): Promise<Uint8Array> {
   const writer = new BitWriter();
   writer.WriteString('\x01\x00lf', 4);
-  writer.WriteUInt16(char.has_demon);
+  writer.WriteUInt16(char.has_demon ?? 0);
   if (char.has_demon) {
     writer.WriteBits(char.demon, char.demon.length);
   }

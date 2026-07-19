@@ -47,13 +47,7 @@ export function GamePathContextProvider({ children }: Props): JSX.Element {
   const path =
     savedPath ??
     registryGamePath ??
-    resolvePath(
-      'C:',
-      'Program Files',
-      'Battle.net',
-      'Games',
-      'Diablo II Resurrected',
-    );
+    '';
 
   const sanitizedPath = path.replace(/\\$/, '');
 

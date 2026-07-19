@@ -33,7 +33,7 @@ import {
 import ts from 'typescript';
 import packageManifest from '../../../release/app/package.json';
 import { te, tl } from '../../shared/i18n';
-import { getAppPath, getBaseSavesPath } from './AppInfoAPI';
+import { getAppPath, getBaseSavesPath, getHomePath } from './AppInfoAPI';
 import {
   CASC_ERROR_FILE_OFFLINE,
   CASC_FEATURE_ALLOW_DOWNLOAD,
@@ -195,6 +195,78 @@ let cascStorageIsOpen = false;
 let cascStorageOpenedOnline: boolean | null = null;
 let cascStorageOpenedGamePath: string | null = null;
 
+// Diablo II: Resurrected Steam app id
+const D2R_STEAM_APP_ID = '2536520';
+
+// pull a top-level VDF string value: matches "key"   "value"
+function parseVdfField(vdf: string, key: string): string | null {
+  const match = vdf.match(new RegExp(`"${key}"\\s+"([^"]*)"`));
+  return match != null ? match[1] : null;
+}
+
+// Steam's libraryfolders.vdf lists every library folder Steam knows about
+// (including ones added for extra drives / an SD card on Steam Deck). Each
+// library may contain an appmanifest_<id>.acf for an installed app, which
+// tells us the actual install directory name (usually, but not guaranteed
+// to be, "Diablo II Resurrected").
+function getSteamGamePathsFromLibraryFoldersVdf(vdfPath: string): string[] {
+  try {
+    const vdf = readFileSync(vdfPath, 'utf8');
+    const libraries = [...vdf.matchAll(/"path"\s+"([^"]*)"/g)].map((m) =>
+      m[1].replace(/\\\\/g, '\\'),
+    );
+
+    const gamePaths: string[] = [];
+    for (const library of libraries) {
+      const steamapps = path.join(library, 'steamapps');
+      const manifestPath = path.join(
+        steamapps,
+        `appmanifest_${D2R_STEAM_APP_ID}.acf`,
+      );
+      if (!existsSync(manifestPath)) {
+        continue;
+      }
+      try {
+        const installdir = parseVdfField(
+          readFileSync(manifestPath, 'utf8'),
+          'installdir',
+        );
+        if (installdir != null) {
+          gamePaths.push(path.join(steamapps, 'common', installdir));
+        }
+      } catch {
+        // malformed manifest, skip it
+      }
+    }
+    return gamePaths;
+  } catch {
+    return [];
+  }
+}
+
+// Steam on Windows records its own install location in the registry (as
+// forward-slash paths), which tells us exactly where to find
+// libraryfolders.vdf instead of guessing at "C:\Program Files (x86)\Steam".
+async function getSteamInstallPathFromRegistry(): Promise<string | null> {
+  try {
+    regedit.setExternalVBSLocation(
+      path.resolve(path.join(getAppPath(), 'tools')),
+    );
+    const regKey = 'HKCU\\Software\\Valve\\Steam';
+    const result = await regedit.promisified.list([regKey]);
+    const value = result[regKey].values.SteamPath.value;
+    return value != null ? path.normalize(value.toString()) : null;
+  } catch (error) {
+    // useful for debugging, but not useful to expose to user
+    console.debug(
+      'BridgeAPI.getGamePath',
+      'Failed to fetch Steam path from the registry',
+      String(error),
+    );
+    return null;
+  }
+}
+
 export const BridgeAPI: IBridgeAPI = {
   getVersion: async () => {
     console.debug('BridgeAPI.getVersion');
@@ -214,22 +286,94 @@ export const BridgeAPI: IBridgeAPI = {
   getGamePath: async () => {
     console.debug('BridgeAPI.getGamePath');
 
-    if (process.platform !== 'win32') {
-      return null;
-    }
-
+    const candidates = [];
+    const isWindows = process.platform === 'win32';
     const appPath = getAppPath();
 
-    const isSteamDeck = appPath.startsWith('Z:\\home\\deck\\');
+    // detect Steam Deck installs (D2RMM itself is a Windows build running
+    // under Proton, so appPath is a Z:\ path into the Deck's Linux
+    // filesystem; extract the actual username instead of assuming "deck")
+    const steamDeckUserMatch = appPath.match(/^Z:\\home\\([^\\]+)\\/);
+    if (isWindows && steamDeckUserMatch != null) {
+      const steamDir = path.join(
+        'Z:',
+        'home',
+        steamDeckUserMatch[1],
+        '.local',
+        'share',
+        'Steam',
+      );
+      const vdfPath = path.join(steamDir, 'steamapps', 'libraryfolders.vdf');
+      if (existsSync(vdfPath)) {
+        candidates.push(...getSteamGamePathsFromLibraryFoldersVdf(vdfPath));
+      }
+      // fall back to the default library location in case the vdf couldn't
+      // be found/parsed (e.g. a non-standard Steam data directory)
+      candidates.push(
+        path.join(steamDir, 'steamapps', 'common', 'Diablo II Resurrected'),
+      );
+    }
 
-    if (isSteamDeck) {
-      return path.resolve(
+    // detect Battle.net installs on Windows via Registry
+    if (isWindows) {
+      try {
+        regedit.setExternalVBSLocation(
+          path.resolve(path.join(getAppPath(), 'tools')),
+        );
+        const regKey =
+          'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
+        const result = await regedit.promisified.list([regKey]);
+        const value = result[regKey].values.InstallLocation.value;
+        if (value != null) {
+          candidates.push(value.toString());
+        }
+      } catch (error) {
+        // useful for debugging, but not useful to expose to user
+        console.debug(
+          'BridgeAPI.getGamePath',
+          'Failed to fetch game path from the registry',
+          String(error),
+        );
+      }
+    }
+
+    // detect Steam installs on Windows via Registry + libraryfolders.vdf
+    if (isWindows) {
+      const steamInstallPath = await getSteamInstallPathFromRegistry();
+      const vdfCandidates = [
+        steamInstallPath != null
+          ? path.join(steamInstallPath, 'steamapps', 'libraryfolders.vdf')
+          : null,
         path.join(
-          'Z:',
-          'home',
-          'deck',
-          '.local',
-          'share',
+          'C:',
+          'Program Files (x86)',
+          'Steam',
+          'steamapps',
+          'libraryfolders.vdf',
+        ),
+      ].filter((p): p is string => p != null);
+
+      const vdfPath = vdfCandidates.find((p) => existsSync(p));
+      if (vdfPath != null) {
+        candidates.push(...getSteamGamePathsFromLibraryFoldersVdf(vdfPath));
+      }
+    }
+
+    // detect installs on Windows by guessing
+    if (isWindows) {
+      candidates.push(
+        path.resolve(
+          'C:',
+          'Program Files',
+          'Battle.net',
+          'Games',
+          'Diablo II Resurrected',
+        ),
+      );
+      candidates.push(
+        path.resolve(
+          'C:',
+          'Program Files (x86)',
           'Steam',
           'steamapps',
           'common',
@@ -238,27 +382,47 @@ export const BridgeAPI: IBridgeAPI = {
       );
     }
 
-    try {
-      regedit.setExternalVBSLocation(
-        path.resolve(path.join(getAppPath(), 'tools')),
-      );
-      const regKey =
-        'HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Diablo II Resurrected';
-      const result = await regedit.promisified.list([regKey]);
-      const value = result[regKey].values.InstallLocation.value;
-      if (value == null) {
-        return null;
+    // detect Steam installs on Linux or OSX via libraryfolders.vdf
+    if (!isWindows) {
+      const vdfCandidates = [
+        path.join(
+          getHomePath(),
+          '.local',
+          'share',
+          'Steam',
+          'steamapps',
+          'libraryfolders.vdf',
+        ),
+        path.join(
+          getHomePath(),
+          '.steam',
+          'steam',
+          'steamapps',
+          'libraryfolders.vdf',
+        ),
+        path.join(
+          getHomePath(),
+          '.steam',
+          'root',
+          'steamapps',
+          'libraryfolders.vdf',
+        ),
+      ];
+
+      const vdfPath = vdfCandidates.find((p) => existsSync(p));
+      if (vdfPath != null) {
+        candidates.push(...getSteamGamePathsFromLibraryFoldersVdf(vdfPath));
       }
-      return value.toString();
-    } catch (error) {
-      // useful for debugging, but not useful to expose to user
-      console.debug(
-        'BridgeAPI.getGamePath',
-        'Failed to fetch game path from the registry',
-        String(error),
-      );
-      return null;
     }
+
+    // detect Steam installs on Linux or OSX by guessing
+    if (!isWindows) {
+      candidates.push(
+        path.resolve(getHomePath(), 'Games', 'Diablo II Resurrected'),
+      );
+    }
+
+    return candidates.find((gamePath) => existsSync(gamePath)) ?? null;
   },
 
   execute: async (executablePath: string, args: string[] = []) => {

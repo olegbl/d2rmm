@@ -2777,9 +2777,9 @@
     tinyglobby "^0.2.11"
     unzipper "^0.12.3"
 
-"CascLib@https://github.com/olegbl/CascLib.git":
+"CascLib@https://github.com/ladislav-zezula/CascLib.git":
   version "0.0.0"
-  resolved "https://github.com/olegbl/CascLib.git#d9e8da11ea282c0912fa4482f71b21b9bea3380a"
+  resolved "https://github.com/ladislav-zezula/CascLib.git#32ea004fa4fce5b87a564cfbb93ecdccad142ee4"
 
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.5"

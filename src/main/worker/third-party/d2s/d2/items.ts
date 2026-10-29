@@ -949,7 +949,7 @@ export async function writeItem(
   }
 
   if (version >= 0x69) {
-    writer.WriteBit(item.advanced_stash_quantity ? 1 : 0);
+    writer.WriteBit(item.has_advanced_stash_quantity ? 1 : 0);
     if (item.has_advanced_stash_quantity) {
       writer.WriteUInt8(item.advanced_stash_quantity ?? 1, 8);
     }

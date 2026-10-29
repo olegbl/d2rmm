@@ -7,7 +7,10 @@ const VERSION_ROTW = 0x69;
 const constants = {
   armor_items: {},
   weapon_items: {},
-  other_items: { r01: { c: ['Rune', 'Socket Filler', 'Misc'] } },
+  other_items: {
+    r01: { c: ['Rune', 'Socket Filler', 'Misc'] },
+    r11: { c: ['Rune', 'Socket Filler', 'Misc'] },
+  },
   magical_properties: [],
 } as unknown as types.IConstantData;
 const config = {} as types.IConfig;
@@ -33,17 +36,31 @@ async function roundTrip(hex: string) {
 }
 
 describe('d2s items (RotW)', () => {
-  // El rune (r01) in the inventory; only the advanced stash quantity differs
-  it('round-trips an item with advanced stash quantity 0', async () => {
-    const hex = '1000a0000548e47c7f1200';
+  // Items taken from a RotW save written by the game. Runes are written with
+  // the advanced stash quantity present but set to 0.
+  it('round-trips an inventory rune with advanced stash quantity 0', async () => {
+    // El rune (r01) in the inventory
+    const hex = '1000a0000524e47c7f1200';
     const result = await roundTrip(hex);
+    expect(result.item.type).toBe('r01');
     expect(result.item.has_advanced_stash_quantity).toBe(true);
     expect(result.item.advanced_stash_quantity).toBe(0);
     expect(result.hex).toBe(hex);
   });
 
+  it('round-trips a socketed rune with advanced stash quantity 0', async () => {
+    // Amn rune (r11) socketed in a runeword
+    const hex = '1000a000350ce07c3e0900';
+    const result = await roundTrip(hex);
+    expect(result.item.type).toBe('r11');
+    expect(result.item.has_advanced_stash_quantity).toBe(true);
+    expect(result.item.advanced_stash_quantity).toBe(0);
+    expect(result.hex).toBe(hex);
+  });
+
+  // Variants of the El rune above with the advanced stash quantity edited
   it('round-trips an item with a non-zero advanced stash quantity', async () => {
-    const hex = '1000a0000548e47c7fb200';
+    const hex = '1000a0000524e47c7fb200';
     const result = await roundTrip(hex);
     expect(result.item.has_advanced_stash_quantity).toBe(true);
     expect(result.item.advanced_stash_quantity).toBe(5);
@@ -51,7 +68,7 @@ describe('d2s items (RotW)', () => {
   });
 
   it('round-trips an item without an advanced stash quantity', async () => {
-    const hex = '1000a0000548e47c7f02';
+    const hex = '1000a0000524e47c7f02';
     const result = await roundTrip(hex);
     expect(result.item.has_advanced_stash_quantity).toBe(false);
     expect(result.hex).toBe(hex);

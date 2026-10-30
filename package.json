@@ -277,6 +277,10 @@
     "yargs": "^17.7.2"
   },
   "overrides": {
+    "@testing-library/react": {
+      "react": "^18.0.0",
+      "react-dom": "^18.0.0"
+    },
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "@babel/runtime": "^7.28.6",
@@ -311,6 +315,9 @@
     "tar": "^7.5.9",
     "tmp": "^0.2.5",
     "tough-cookie": "^6.0.0",
+    "ts-jest": {
+      "typescript": "^5.0"
+    },
     "ws": "^8.19.0",
     "yargs": "^17.7.2"
   },
